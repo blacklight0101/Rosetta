@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import type { ListedAccount } from '../api/admin-schemas.js';
 import { Button } from '../components/Button.js';
-import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
+import { hasTooltip, MoneyAmount, useAmountTabStop } from '../components/MoneyAmount.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { signInText } from './admin-format.js';
 import { ScrollRegion } from './ScrollRegion.js';
@@ -58,28 +58,30 @@ function RowActions(props: RowProps): JSX.Element | null {
   );
 }
 
-function MonthCost(props: {
-  readonly money: ListedAccount['monthToDate'];
-  readonly tabStop: boolean;
-}): JSX.Element {
-  if (props.money.length === 0) return <>$0.00</>;
-  const stop = firstExactAt(props.money.map(({ costMicros }) => costMicros));
+type Stops = ReturnType<typeof useAmountTabStop>;
+
+/** One amount of the table: a currency of the month to date of an account. */
+const amountKey = (user: ListedAccount, currency: string): string => `${user.id}/${currency}`;
+
+function MonthCost(props: { readonly user: ListedAccount; readonly stops: Stops }): JSX.Element {
+  const { user, stops } = props;
+  if (user.monthToDate.length === 0) return <>$0.00</>;
   return (
     <>
-      {props.money.flatMap(({ currency, costMicros }, at) => [
+      {user.monthToDate.flatMap(({ currency, costMicros }, at) => [
         at === 0 ? null : ' + ',
         <MoneyAmount
           key={currency}
           micros={costMicros}
           currency={currency}
-          tabStop={props.tabStop && at === stop}
+          {...stops.stopOf(amountKey(user, currency))}
         />,
       ])}
     </>
   );
 }
 
-function AccountRow(props: RowProps & { readonly tabStop: boolean }): JSX.Element {
+function AccountRow(props: RowProps & { readonly stops: Stops }): JSX.Element {
   const { user } = props;
   return (
     <tr>
@@ -98,7 +100,7 @@ function AccountRow(props: RowProps & { readonly tabStop: boolean }): JSX.Elemen
         {user.projects}
       </td>
       <td class="rst-table__num" data-label="Month to date">
-        <MonthCost money={user.monthToDate} tabStop={props.tabStop} />
+        <MonthCost user={user} stops={props.stops} />
       </td>
       <td data-label="Server keys">{user.serverKeysAllowed ? 'allowed' : 'not allowed'}</td>
       <td>
@@ -110,8 +112,13 @@ function AccountRow(props: RowProps & { readonly tabStop: boolean }): JSX.Elemen
 
 // RF-1102
 export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Element {
-  const stop = users.findIndex(
-    ({ monthToDate }) => firstExactAt(monthToDate.map(({ costMicros }) => costMicros)) >= 0,
+  const stops = useAmountTabStop(
+    users.flatMap((user) =>
+      user.monthToDate.map(({ currency, costMicros }) => ({
+        key: amountKey(user, currency),
+        exact: hasTooltip(costMicros),
+      })),
+    ),
   );
   return (
     <ScrollRegion label="Accounts table">
@@ -136,8 +143,8 @@ export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Eleme
           </tr>
         </thead>
         <tbody>
-          {users.map((user, at) => (
-            <AccountRow key={user.id} user={user} tabStop={at === stop} {...rest} />
+          {users.map((user) => (
+            <AccountRow key={user.id} user={user} stops={stops} {...rest} />
           ))}
         </tbody>
       </table>

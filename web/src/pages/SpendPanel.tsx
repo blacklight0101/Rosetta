@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useContext } from 'preact/hooks';
 import { Button } from '../components/Button.js';
 import { Link } from '../components/Link.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { capTokensNote } from '../lib/live-run/cap-tokens.js';
 import type { CapsState } from '../lib/live-run/run-state.js';
@@ -123,7 +124,9 @@ export function SpendPanel(props: SpendPanelProps): JSX.Element {
           <span class="rst-spend__cap">{`cap ${costLabel(caps.maxCostMicros)}`}</span>
         )}
       </header>
-      <p class="rst-spend__cost">{costLabel(costMicros)}</p>
+      <p class="rst-spend__cost">
+        <MoneyAmount micros={costMicros} tabStop />
+      </p>
       {approved === undefined ? (
         <Figures props={props} />
       ) : (

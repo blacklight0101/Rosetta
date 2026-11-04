@@ -70,7 +70,9 @@ export function formatValue(value: number, unit: LimitUnit): string {
  * An amount for a sentence that compares two of them: by the one money formatter (DEC-54) when what it
  * writes is the amount itself, and in all its digits when rounding would hide the difference between the
  * two (so 1.004 stays $1.004 beside a limit of $1.00); a minus sign before the dollar sign; counts as
- * formatValue.
+ * formatValue. The exception to "four decimals below $1, two from $1" (RF-428, design-system.md
+ * section 10): `$1.004` has three decimals, the one amount written so, because `$1.00 is outside the range,
+ * limit $1.00` would be wrong and `$1.0040` would break the rule the other way.
  */
 export function formatAmount(value: number, unit: LimitUnit): string {
   if (unit === 'count') return formatValue(value, 'count');

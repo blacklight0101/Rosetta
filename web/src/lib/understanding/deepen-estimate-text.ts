@@ -1,6 +1,6 @@
 import type { DeepenEstimate } from '../../api/understanding.js';
 import { dollars, isLocalModel, tokensText } from '../estimate-math.js';
-import { costLabel } from '../live-run/format.js';
+import { costLabel, leftLabel } from '../live-run/format.js';
 import { countText } from './measure-text.js';
 
 // RF-209, RF-425, RF-434, ADR-007, DEC-145, DEC-206: the words for the estimate of a Deepen. The first
@@ -47,7 +47,7 @@ function approvalOf(estimate: DeepenEstimate): { left: string; approved: string 
     };
   }
   return {
-    left: costLabel(journey.remainingMicros),
+    left: leftLabel(journey.remainingMicros),
     approved: costLabel(journey.approvedMicros),
   };
 }

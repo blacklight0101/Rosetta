@@ -1,5 +1,6 @@
-import type { JSX } from 'preact';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import type { ComponentChildren, JSX } from 'preact';
+import { MoneyAmount } from '../components/MoneyAmount.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import type { EndFacts } from '../lib/live-run/end-facts.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
@@ -8,7 +9,7 @@ import type { RunState } from '../lib/live-run/run-state.js';
 
 export function Fact(props: {
   readonly label: string;
-  readonly value: string;
+  readonly value: ComponentChildren;
   /** What the figure is of, for example `of 72 judged`. */
   readonly detail?: string;
 }): JSX.Element {
@@ -52,7 +53,7 @@ export function RunFacts(props: {
         value={String(facts.areas)}
         detail={areasDetail(props.state.ended?.unreadAreas ?? 0, facts)}
       />
-      <Fact label="Cost" value={costLabel(props.costMicros)} />
+      <Fact label="Cost" value={<MoneyAmount micros={props.costMicros} tabStop />} />
       <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
     </ul>
   );

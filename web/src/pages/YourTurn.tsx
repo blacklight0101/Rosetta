@@ -1,7 +1,8 @@
 import type { JSX } from 'preact';
 import { waitsForAnswer } from '../api/answers.js';
 import { Button } from '../components/Button.js';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
 import { PlanNext, type CapLeft } from './PlanNext.js';
 import { PlanTurn } from './PlanTurn.js';
@@ -206,7 +207,7 @@ function PlanTurnPanel(props: YourTurnProps): JSX.Element {
         sourceRunId={props.run.sourceRunId}
       />
       <ul class="rst-p170-facts" aria-label="Run facts">
-        <Fact label="Cost" value={costLabel(props.costMicros)} />
+        <Fact label="Cost" value={<MoneyAmount micros={props.costMicros} tabStop />} />
         <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
       </ul>
     </section>

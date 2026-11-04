@@ -41,6 +41,17 @@ export function hasExactFigure(totals: UsageTotals): boolean {
   });
 }
 
+/**
+ * The exact figures of totals as one line, for the title of a link that holds the amounts (a tooltip cannot
+ * sit inside a link without being read twice and adding a Tab stop); none when every amount is plain.
+ */
+export function exactCostTitle(totals: UsageTotals): string | undefined {
+  if (!hasExactFigure(totals)) return undefined;
+  return knownCosts(totals)
+    .map(({ currency, costMicros }) => writtenAmount(currency, costMicros).full)
+    .join(' + ');
+}
+
 const AMOUNT_ATTRIBUTE = 'data-rst-amount';
 
 /** The amount the key moves to among those of the table, or `null` for a key that moves nowhere. */

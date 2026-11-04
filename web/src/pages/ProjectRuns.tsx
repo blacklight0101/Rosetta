@@ -1,7 +1,12 @@
 import type { JSX } from 'preact';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { Link } from '../components/Link.js';
-import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
@@ -26,13 +31,7 @@ function State({ run }: { readonly run: HistoryRun }): JSX.Element {
   return <StatusBadge list="RunQueueState" value={run.queueState} />;
 }
 
-function Row({
-  run,
-  tabStop,
-}: {
-  readonly run: HistoryRun;
-  readonly tabStop: boolean;
-}): JSX.Element {
+function Row({ run, stop }: { readonly run: HistoryRun; readonly stop: AmountStop }): JSX.Element {
   return (
     <tr>
       <td data-label="Run">
@@ -50,7 +49,7 @@ function Row({
         {run.totals.costMicros === 0 ? (
           'No cost'
         ) : (
-          <MoneyAmount micros={run.totals.costMicros} tabStop={tabStop} />
+          <MoneyAmount micros={run.totals.costMicros} {...stop} />
         )}
       </td>
     </tr>
@@ -63,8 +62,10 @@ export function ProjectRuns({
 }: {
   readonly runs: readonly HistoryRun[];
 }): JSX.Element | null {
+  const stops = useAmountTabStop(
+    runs.map((run) => ({ key: run.id, exact: hasTooltip(run.totals.costMicros) })),
+  );
   if (runs.length === 0) return null;
-  const stop = firstExactAt(runs.map((run) => run.totals.costMicros));
   return (
     <section class="rst-card rst-p826-runs" aria-labelledby="runs-heading">
       <h2 id="runs-heading" class="rst-settings__heading">
@@ -86,8 +87,8 @@ export function ProjectRuns({
             </tr>
           </thead>
           <tbody>
-            {runs.map((run, at) => (
-              <Row key={run.id} run={run} tabStop={at === stop} />
+            {runs.map((run) => (
+              <Row key={run.id} run={run} stop={stops.stopOf(run.id)} />
             ))}
           </tbody>
         </table>

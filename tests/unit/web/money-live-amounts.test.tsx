@@ -18,7 +18,7 @@ import { agentStarted, ev, planned, startedData, stateAfter } from './live-run-f
 
 // RF-428, RNF-010, DEC-54, DEC-217, P8-91: the amount a run has spent stands on the other pages as it
 // does on the cost page: written by the one formatter, with the exact figure in a tooltip, so rounding
-// it ($3.113515 as $3.11) loses nothing. The amounts of a table take one Tab stop.
+// as $3.11 for $3.113515 loses nothing. The amounts of a table take one Tab stop.
 
 afterEach(cleanup);
 
@@ -64,14 +64,22 @@ describe('the live run', () => {
 
   it('RF-428 the spend panel gives the cost of the run its exact figure', () => {
     render(
-      <SpendPanel runId="r-1" costMicros={3_113_515} tokens={10} onOpenRoles={() => undefined} />,
+      <SpendPanel
+        runId="r-1"
+        costMicros={3_113_515}
+        tokens={10}
+        caps={undefined}
+        onOpenRoles={() => undefined}
+      />,
     );
 
     const panel = screen.getByRole('region', { name: 'Spend for this run' });
     expect(tipsOf(panel)).toEqual(['$3.113515']);
     expect(stopsOf(panel)).toHaveLength(1);
   });
+});
 
+describe('the facts of a run', () => {
   it('RF-428 the facts of an ended run give the cost its exact figure', () => {
     render(<RunFacts facts={endFactsOf(oneRun)} costMicros={3_113_515} state={oneRun} />);
 

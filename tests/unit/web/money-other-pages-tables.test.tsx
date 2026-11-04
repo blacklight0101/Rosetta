@@ -20,41 +20,50 @@ afterEach(cleanup);
 const amountsOf = (table: HTMLElement): HTMLElement[] => [
   ...table.querySelectorAll<HTMLElement>('[data-rst-amount]'),
 ];
-const stopsOf = (table: HTMLElement): HTMLElement[] =>
-  amountsOf(table).filter((amount) => amount.getAttribute('tabindex') === '0');
+const stopsOf = (table: HTMLElement): number[] =>
+  amountsOf(table).flatMap((amount, at) => (amount.getAttribute('tabindex') === '0' ? [at] : []));
 
-/** Three amounts: two with an exact figure, one plain ($3.88 is exact), in the order a table lists them. */
+/** Two amounts with an exact figure, one plain ($3.88 is exact), one tiny, in the order a table lists them. */
 const costs = [3_113_515, 237_000, 3_880_000, 12_345] as const;
+const shape = {
+  shown: ['$3.11', '$0.2370', '$0.0123'],
+  tips: ['$3.113515', '$0.237', '$0.012345'],
+  stops: [0],
+};
 
-function checkTable(table: HTMLElement): void {
-  const amounts = amountsOf(table);
-  expect(amounts.map((amount) => amount.textContent)).toEqual(['$3.11', '$0.2370', '$0.0123']);
-  expect(
-    within(table)
-      .getAllByRole('tooltip')
-      .map((tip) => tip.textContent),
-  ).toEqual(['$3.113515', '$0.237', '$0.012345']);
-  expect(table.textContent).toContain('$3.88');
-  expect(stopsOf(table)).toEqual([amounts[0]]);
-}
+/** What a table shows: its amounts, their tooltips and which of them is the Tab stop. */
+const readTable = (table: HTMLElement) => ({
+  shown: amountsOf(table).map((amount) => amount.textContent),
+  tips: within(table)
+    .getAllByRole('tooltip')
+    .map((tip) => tip.textContent),
+  stops: stopsOf(table),
+});
 
-async function checkTabStopFollowsFocus(table: HTMLElement): Promise<void> {
+/** Focus the second amount, press ArrowDown on it and Home on the next: where the focus went and where the Tab stop ends. */
+async function followFocus(table: HTMLElement) {
   const amounts = amountsOf(table);
   fireEvent.focus(amounts[1] ?? table);
   await waitFor(
     () => {
-      expect(stopsOf(table)).toEqual([amounts[1]]);
+      expect(stopsOf(table)).toEqual([1]);
     },
     { timeout: 500 },
   );
   fireEvent.keyDown(amounts[1] ?? table, { key: 'ArrowDown' });
-  expect(document.activeElement).toBe(amounts[2]);
+  const down = amounts.indexOf(
+    document.activeElement instanceof HTMLElement ? document.activeElement : table,
+  );
   fireEvent.keyDown(amounts[2] ?? table, { key: 'Home' });
-  expect(document.activeElement).toBe(amounts[0]);
+  const home = amounts.indexOf(
+    document.activeElement instanceof HTMLElement ? document.activeElement : table,
+  );
+  return { stopAtEnd: stopsOf(table), down, home };
 }
+const followed = { stopAtEnd: [0], down: 2, home: 0 };
 
-describe('the other tables follow the cost page for amounts', () => {
-  it('RF-428 the accounts table gives the month to date a tooltip and one Tab stop that follows the focus', async () => {
+describe('the accounts table', () => {
+  it('RF-428 gives the month to date a tooltip and one Tab stop that follows the focus', async () => {
     const users = userListSchema.parse({
       users: costs.map((cost, at) =>
         accountBody(`u-${String(at)}`, `user${String(at)}`, { monthToDate: spent(String(cost)) }),
@@ -72,11 +81,13 @@ describe('the other tables follow the cost page for amounts', () => {
     );
 
     const table = screen.getByRole('table', { name: 'Accounts' });
-    checkTable(table);
-    await checkTabStopFollowsFocus(table);
+    expect(readTable(table)).toEqual(shape);
+    expect(await followFocus(table)).toEqual(followed);
   });
+});
 
-  it('RF-428 the API calls table gives the cost of a call a tooltip and one Tab stop that follows the focus', async () => {
+describe('the API calls table', () => {
+  it('RF-428 gives the cost of a call a tooltip and one Tab stop that follows the focus', async () => {
     const calls = costs.map((costMicros, at) => cloud(at + 1, { costMicros }));
     render(
       <CallsTable
@@ -88,11 +99,13 @@ describe('the other tables follow the cost page for amounts', () => {
     );
 
     const table = screen.getByRole('table');
-    checkTable(table);
-    await checkTabStopFollowsFocus(table);
+    expect(readTable(table)).toEqual(shape);
+    expect(await followFocus(table)).toEqual(followed);
   });
+});
 
-  it('RF-428 the summary per provider and role gives the cost a tooltip and one Tab stop that follows the focus', async () => {
+describe('the summary per provider and role', () => {
+  it('RF-428 gives the cost a tooltip and one Tab stop that follows the focus', async () => {
     const [first] = callsSchema.parse(callsBody({}, sampleCalls)).summary;
     if (first === undefined) throw new Error('The summary has no row.');
     const rows = costs.map((costMicros, at) => ({
@@ -103,11 +116,13 @@ describe('the other tables follow the cost page for amounts', () => {
     render(<CallSummary rows={rows} />);
 
     const table = screen.getByRole('table');
-    checkTable(table);
-    await checkTabStopFollowsFocus(table);
+    expect(readTable(table)).toEqual(shape);
+    expect(await followFocus(table)).toEqual(followed);
   });
+});
 
-  it('RF-428 the runs of a project give the cost a tooltip and one Tab stop that follows the focus, and a run of no cost reads No cost', async () => {
+describe('the runs of a project', () => {
+  it('RF-428 give the cost a tooltip and one Tab stop that follows the focus, and a run of no cost reads No cost', async () => {
     const runs = runHistorySchema.parse({
       ...history,
       runs: [...costs, 0].map((cost, at) => {
@@ -118,8 +133,8 @@ describe('the other tables follow the cost page for amounts', () => {
     render(<ProjectRuns runs={runs} />);
 
     const table = screen.getByRole('table', { name: 'Runs of this project' });
-    checkTable(table);
+    expect(readTable(table)).toEqual(shape);
     expect(table.textContent).toContain('No cost');
-    await checkTabStopFollowsFocus(table);
+    expect(await followFocus(table)).toEqual(followed);
   });
 });

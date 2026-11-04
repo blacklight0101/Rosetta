@@ -1,7 +1,7 @@
 import { cleanup, screen, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it } from 'vitest';
 import { carriesExactFigure } from '../../../web/src/components/CostFigure.js';
-import { firstExactAt } from '../../../web/src/components/MoneyAmount.js';
+import { hasTooltip } from '../../../web/src/components/MoneyAmount.js';
 import { costText } from '../../../web/src/lib/api-calls/format.js';
 import { dollars } from '../../../web/src/lib/estimate-math.js';
 import { costLabel } from '../../../web/src/lib/live-run/format.js';
@@ -53,11 +53,11 @@ describe('the one money formatter on every text builder', () => {
     expect(formatAmount(-2, 'dollars')).toBe('-$2.00');
   });
 
-  it('RF-428 given a table of amounts, the Tab stop is the first one that has an exact figure', () => {
+  it('RF-428 given a table of amounts, only an amount that has an exact figure can take the Tab stop', () => {
     expect(carriesExactFigure('3113515')).toBe(true);
     expect(carriesExactFigure('3880000')).toBe(false);
-    expect(firstExactAt([3_880_000, 237_000, 7])).toBe(1);
-    expect(firstExactAt(['3880000'])).toBe(-1);
+    expect([3_880_000, 237_000, 7].map(hasTooltip)).toEqual([false, true, true]);
+    expect(hasTooltip('3880000')).toBe(false);
   });
 });
 

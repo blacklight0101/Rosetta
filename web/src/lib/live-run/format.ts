@@ -6,3 +6,6 @@ import { moneyText } from '../money.js';
 export const tokensLabel = (tokens: number): string => tokens.toLocaleString('en-US');
 
 export const costLabel = (micros: number): string => moneyText(micros);
+
+/** An amount left of the approved amount, rounded down so it never exceeds what is left (DEC-206). */
+export const leftLabel = (micros: number): string => moneyText(micros, 'down');

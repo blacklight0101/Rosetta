@@ -1,6 +1,11 @@
 import type { JSX } from 'preact';
 import type { CallRow } from '../api/call-schemas.js';
-import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { isProblem } from '../lib/api-calls/call-filter.js';
 import { clockText, durationText, tokenText } from '../lib/api-calls/format.js';
@@ -68,7 +73,7 @@ function TranscriptCell(props: {
 }
 
 function Row(
-  props: CallsTableProps & { readonly call: CallRow; readonly tabStop: boolean },
+  props: CallsTableProps & { readonly call: CallRow; readonly stop: AmountStop },
 ): JSX.Element {
   const { call, selected } = props;
   const answered = call.status === 'ok';
@@ -104,7 +109,7 @@ function Row(
         ) : null}
       </td>
       <td data-label="Cost" class="rst-table__num">
-        <MoneyAmount micros={call.costMicros} tabStop={props.tabStop} />
+        <MoneyAmount micros={call.costMicros} {...props.stop} />
       </td>
       <StatusCell call={call} />
       <TranscriptCell call={call} transcriptHref={props.transcriptHref} onSelect={props.onSelect} />
@@ -128,7 +133,9 @@ const heads = [
 
 // RF-1011
 export function CallsTable(props: CallsTableProps): JSX.Element {
-  const stop = firstExactAt(props.calls.map((call) => call.costMicros));
+  const stops = useAmountTabStop(
+    props.calls.map((call) => ({ key: String(call.seq), exact: hasTooltip(call.costMicros) })),
+  );
   return (
     <div class="rst-table-scroll">
       <table class="rst-table rst-table--stack">
@@ -142,8 +149,8 @@ export function CallsTable(props: CallsTableProps): JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {props.calls.map((call, at) => (
-            <Row key={call.seq} {...props} call={call} tabStop={at === stop} />
+          {props.calls.map((call) => (
+            <Row key={call.seq} {...props} call={call} stop={stops.stopOf(String(call.seq))} />
           ))}
         </tbody>
       </table>

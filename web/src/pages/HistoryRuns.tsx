@@ -4,7 +4,12 @@ import { navigate } from '../app/router.js';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
-import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { RowMenu, type RowMenuItem } from '../components/RowMenu.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
@@ -119,7 +124,7 @@ function rowMenuItems(run: HistoryRun, onDelete: (run: HistoryRun) => void): Row
 function Row(props: {
   readonly run: HistoryRun;
   readonly showCommit: boolean;
-  readonly tabStop: boolean;
+  readonly stop: AmountStop;
   readonly onDelete: (run: HistoryRun) => void;
 }): JSX.Element {
   const { run } = props;
@@ -149,7 +154,7 @@ function Row(props: {
         {tokensLabel(inputTokens + outputTokens)}
       </td>
       <td class="rst-table__num" data-label="Cost">
-        <MoneyAmount micros={costMicros} tabStop={props.tabStop} />
+        <MoneyAmount micros={costMicros} {...props.stop} />
       </td>
       <td>
         <div class="rst-p140-row-actions">
@@ -166,7 +171,9 @@ function Row(props: {
 
 // RF-1008
 export function HistoryRuns({ runs, showCommit, onDelete }: HistoryRunsProps): JSX.Element {
-  const stop = firstExactAt(runs.map((run) => run.totals.costMicros));
+  const stops = useAmountTabStop(
+    runs.map((run) => ({ key: run.id, exact: hasTooltip(run.totals.costMicros) })),
+  );
   return (
     <ScrollRegion label="Runs table">
       <table class="rst-table rst-table--stack" aria-label="Runs">
@@ -191,12 +198,12 @@ export function HistoryRuns({ runs, showCommit, onDelete }: HistoryRunsProps): J
           </tr>
         </thead>
         <tbody>
-          {runs.map((run, at) => (
+          {runs.map((run) => (
             <Row
               key={run.id}
               run={run}
               showCommit={showCommit}
-              tabStop={at === stop}
+              stop={stops.stopOf(run.id)}
               onDelete={onDelete}
             />
           ))}
