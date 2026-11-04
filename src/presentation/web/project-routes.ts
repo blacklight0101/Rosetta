@@ -216,8 +216,8 @@ function registerSettings(server: FastifyInstance, services: ProjectServices): v
       if (outcome.ok) {
         return reply
           .status(200)
-          .header('etag', etagOf(outcome.value))
-          .send(projectView(outcome.value));
+          .header('etag', etagOf(outcome.value.project))
+          .send(projectView(outcome.value.project));
       }
       const { error } = outcome;
       if (error.code === ERROR_CODES.notFound) throw notFound();

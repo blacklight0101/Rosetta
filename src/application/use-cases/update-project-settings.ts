@@ -23,6 +23,18 @@ export type UpdateSettingsRefusal =
       readonly problems: readonly FieldProblem[];
     };
 
+/** RF-436: the answer of a save that raised the parallel readers because the reader went hosted. */
+export interface ParallelismChange {
+  readonly from: number;
+  readonly to: number;
+}
+
+export interface SavedSettings {
+  readonly project: Project;
+  /** Set only when the save changed `agents.parallelism` by the provider-switch rule. */
+  readonly parallelismChange?: ParallelismChange;
+}
+
 export interface UpdateProjectSettingsRequest {
   readonly actor: Actor;
   readonly projectId: string;
@@ -49,7 +61,7 @@ export class UpdateProjectSettings {
   // RF-002
   async execute(
     request: UpdateProjectSettingsRequest,
-  ): Promise<Result<Project, UpdateSettingsRefusal>> {
+  ): Promise<Result<SavedSettings, UpdateSettingsRefusal>> {
     const { projects, clock, models } = this.deps;
     const { userId } = request.actor;
     const existing = await projects.find(userId, request.projectId);
@@ -63,7 +75,7 @@ export class UpdateProjectSettings {
       updatedAt: clock.now().getTime(),
       expectedVersion: request.expectedVersion,
     });
-    if (updated.kind === 'updated') return ok(updated.project);
+    if (updated.kind === 'updated') return ok({ project: updated.project });
     return err({
       code: updated.kind === 'stale' ? ERROR_CODES.settingsVersionStale : ERROR_CODES.notFound,
     });

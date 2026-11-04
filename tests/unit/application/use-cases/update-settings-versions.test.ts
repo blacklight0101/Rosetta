@@ -27,7 +27,7 @@ describe('UpdateProjectSettings: versions', () => {
       expectedVersion: 1,
     });
 
-    expect(outcome).toMatchObject({ ok: true, value: { settingsVersion: 2 } });
+    expect(outcome).toMatchObject({ ok: true, value: { project: { settingsVersion: 2 } } });
   });
 
   it('RF-002 a save made from an older version is refused with RST-1007 and changes nothing', async () => {
