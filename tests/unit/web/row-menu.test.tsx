@@ -195,7 +195,7 @@ const closeWays: readonly (readonly [string, (trigger: HTMLElement) => void])[] 
   ['a click elsewhere', () => fireEvent.mouseDown(screen.getByLabelText('Elsewhere'))],
   ['its button', (trigger) => fireEvent.click(trigger)],
   ['Tab', () => fireEvent.keyDown(panel(), { key: 'Tab' })],
-  ['leaving the page', () => cleanup()],
+  ['leaving the page', cleanup],
 ];
 
 it.each(closeWays)('RNF-010 closing the menu by %s leaves no listener behind', (_way, closeIt) => {
