@@ -8,6 +8,7 @@ import { fakeResponse } from '../../support/fake-recordings.js';
 import { cardsOfTexts, hold, settle } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
 import {
+  callsInFlight,
   verifierHarness,
   verifierRecording,
   verdictEvents,
@@ -122,5 +123,7 @@ describe('P5-15 a failing claim', () => {
       'Supported',
     ]);
     expect(verdictEvents(h.events)).toHaveLength(5);
+    // P8-58: the claim whose call threw started and ended like the others.
+    expect(callsInFlight(h.events)).toEqual({ peak: 4, min: 0, final: 0 });
   });
 });

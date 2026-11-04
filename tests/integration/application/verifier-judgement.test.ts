@@ -3,6 +3,7 @@ import { judgeClaims } from '../../../src/application/understand/claim-judgement
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { blockExcerpts, blockTexts, fixtureCards } from '../../support/verifier-cards.js';
 import {
+  callEvents,
   verdictEvents,
   verifierHarness,
   verifierRecording,
@@ -50,6 +51,13 @@ describe('verifier judgement', () => {
       ['verify.claim.judged', 'reader-003', 'Rejected'],
       ['verify.claim.judged', 'reader-004', 'Supported'],
     ]);
+    // P8-58: five model calls one after another: each claim starts and ends before the next.
+    expect(callEvents(h.events)).toEqual(
+      ['FEAT-001.c1', 'OQ-001.c1', 'BR-001.c1', 'BR-002.c1', 'ENT-001.c1'].flatMap((id) => [
+        `start ${id}`,
+        `end ${id}`,
+      ]),
+    );
     expect(verdicts[3]?.data).toEqual({
       claimId: 'BR-002.c1',
       status: 'Rejected',

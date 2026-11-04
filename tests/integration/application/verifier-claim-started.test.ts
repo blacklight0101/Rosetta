@@ -32,7 +32,7 @@ async function watched() {
 }
 
 describe('verify.claim.started', () => {
-  it('RF-1002 a judgement call publishes verify.claim.started with the claim id and its task before the call', async () => {
+  it('RF-1002 a judgement call publishes verify.claim.started with the claim id and its task, requested before the call', async () => {
     const { h, sentAfter } = await watched();
 
     await judgeClaims(fixtureCards(), h.step());
@@ -45,7 +45,8 @@ describe('verify.claim.started', () => {
       [{ claimId: 'BR-002.c1' }, 'reader-003'],
       [{ claimId: 'ENT-001.c1' }, 'reader-004'],
     ]);
-    // The event of a claim is out before its call is sent.
+    // The harness emit records at once, so this is the order of the requests; the real publisher
+    // queues, and its order is proved in verifier-call-events-sink.test.ts.
     expect(sentAfter.map((ids) => ids.length)).toEqual([1, 2, 3, 4, 5]);
   });
 

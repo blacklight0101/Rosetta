@@ -10,6 +10,7 @@ import { recordingOf } from '../../support/fake-recordings.js';
 import { footerOf, OTHER_TAG } from '../../support/data-block-tags.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
 import {
+  callEvents,
   verifierHarness,
   verifierRecording,
   verdictEvents,
@@ -206,6 +207,11 @@ describe('verifier judgement guards: caps', () => {
       'Supported',
       ...Array.from({ length: 4 }, () => 'Unverified'),
     ]);
+    // P8-58: the first call and the refused one each start and end; the four claims after it, halted, none.
+    expect(callEvents(h.events)).toEqual([
+      ...['start FEAT-001.c1', 'end FEAT-001.c1'],
+      ...['start OQ-001.c1', 'end OQ-001.c1'],
+    ]);
   });
 
   it('RF-304 a run stopped by a cap leaves every claim not judged Unverified and sends nothing', async () => {
@@ -219,6 +225,7 @@ describe('verifier judgement guards: caps', () => {
     expect(cards[0]?.claims[0]).toMatchObject({ status: 'Unverified' });
     expect(cards[0]?.claims[0]?.verdict?.reason).toBe(CAP_REASON);
     expect(h.events.map((event) => event.type)).toEqual(['verify.claim.judged']);
+    expect(callEvents(h.events)).toEqual([]);
     expect(h.requests()).toEqual([]);
   });
 });
