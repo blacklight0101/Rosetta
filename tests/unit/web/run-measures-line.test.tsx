@@ -67,22 +67,6 @@ describe('RF-231 the measures beside each run of the history', () => {
     expect(cell.querySelector('svg')).not.toBeNull();
   });
 
-  it('RF-231 RNF-010 gives the coverage value a focusable tooltip that Escape dismisses', async () => {
-    renderHistory(answers);
-    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
-    const wrapper = value.parentElement;
-
-    expect(value.tabIndex).toBe(0);
-    expect(tooltipOf(value).getAttribute('role')).toBe('tooltip');
-    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
-
-    fireEvent.keyDown(value, { key: 'Escape' });
-    expect(wrapper?.hasAttribute('data-dismissed')).toBe(true);
-
-    fireEvent.blur(value);
-    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
-  });
-
   it('RF-231 reads nothing for a scan', async () => {
     const page = renderHistory(answers);
 
@@ -103,6 +87,26 @@ describe('RF-231 the measures beside each run of the history', () => {
       expect(within(row).queryByTestId('run-coverage')).toBeNull();
     });
     expect(within(row).getByText('Completed')).toBeTruthy();
+  });
+});
+
+describe('RF-231 the Coverage tooltip of the history', () => {
+  const answers = { [measuresOf('r-1')]: understanding(measures()) };
+
+  it('RF-231 RNF-010 gives the coverage value a focusable tooltip that Escape dismisses', async () => {
+    renderHistory(answers);
+    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
+    const wrapper = value.parentElement;
+
+    expect(value.tabIndex).toBe(0);
+    expect(tooltipOf(value).getAttribute('role')).toBe('tooltip');
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
+
+    fireEvent.keyDown(value, { key: 'Escape' });
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(true);
+
+    fireEvent.blur(value);
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
   });
 });
 
