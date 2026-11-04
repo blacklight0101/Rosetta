@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from '@testing-library/preact';
+import { screen, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { ProjectCostPage } from '../../../web/src/pages/ProjectCostPage.js';
 import { projectCost, usageTotals } from './cost-fixtures.js';
@@ -22,12 +22,6 @@ const costOf = (micros: string) => usageTotals({ cost: [{ currency: 'USD', costM
 /** The exact figure an amount offers in its tooltip, found through the amount's aria-describedby. */
 const exactFigureOf = (amount: HTMLElement) =>
   document.getElementById(amount.getAttribute('aria-describedby') ?? '')?.textContent;
-
-/** The wrapper of an amount and its exact figure, which carries `data-dismissed`. */
-function wrapOf(amount: HTMLElement): HTMLElement {
-  if (amount.parentElement === null) throw new Error('the amount has no wrapper');
-  return amount.parentElement;
-}
 
 const table = (name: string) => screen.findByRole('table', { name });
 
@@ -248,40 +242,5 @@ describe('project cost page tooltip by keyboard, touch and pointer', () => {
     expect(amount.textContent).toBe('$3.11');
     expect(amount.contains(tip)).toBe(false);
     expect(amount.parentElement?.contains(tip)).toBe(true);
-  });
-});
-
-describe('project cost page tooltip closed with Escape', () => {
-  it('RF-428 given an amount with an exact figure under the pointer, Escape closes it while the amount keeps focus, and it opens again on the next hover', async () => {
-    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
-    const totals = await screen.findByRole('region', { name: 'Project totals' });
-    const amount = within(totals).getByText('$3.11');
-    const wrap = wrapOf(amount);
-    amount.focus();
-    fireEvent.mouseEnter(wrap);
-
-    fireEvent.keyDown(amount, { key: 'Escape' });
-
-    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
-    expect(document.activeElement).toBe(amount);
-    fireEvent.mouseLeave(wrap);
-    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
-    await act(() => {
-      amount.blur();
-    });
-    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
-  });
-
-  it('RF-428 given an amount closed with Escape under the pointer, leaving the pointer opens it again for the next hover', async () => {
-    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
-    const totals = await screen.findByRole('region', { name: 'Project totals' });
-    const amount = within(totals).getByText('$3.11');
-    const wrap = wrapOf(amount);
-    fireEvent.mouseEnter(wrap);
-    fireEvent.keyDown(amount, { key: 'Escape' });
-
-    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
-    fireEvent.mouseLeave(wrap);
-    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
   });
 });

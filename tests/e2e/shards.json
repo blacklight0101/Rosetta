@@ -36,6 +36,7 @@
     "tests/e2e/create-project-slow.spec.ts",
     "tests/e2e/harness.spec.ts",
     "tests/e2e/history.spec.ts",
+    "tests/e2e/history-coverage-tooltip.spec.ts",
     "tests/e2e/journeys/full-understand.spec.ts",
     "tests/e2e/journeys/pipeline.spec.ts",
     "tests/e2e/journeys/visitor.spec.ts",

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it } from 'vitest';
 import { HistoryPage } from '../../../web/src/pages/HistoryPage.js';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
@@ -33,28 +33,38 @@ async function rowOf(runKey: string): Promise<HTMLElement> {
   return row;
 }
 
+const tooltipOf = (value: HTMLElement): HTMLElement => {
+  const id = value.getAttribute('aria-describedby') ?? '';
+  const tip = value.ownerDocument.getElementById(id);
+  if (tip === null) throw new Error('The Coverage value has no tooltip.');
+  return tip;
+};
+
 describe('RF-231 the measures beside each run of the history', () => {
   const answers = { [measuresOf('r-1')]: understanding(measures()) };
 
   it('RF-231 shows the coverage, the Supported share and what was not judged beside an ended run', async () => {
     renderHistory(answers);
 
-    const line = await within(await rowOf(doneKey)).findByTestId('run-measures');
+    const cell = await within(await rowOf(doneKey)).findByTestId('run-coverage');
 
-    expect(line.textContent).toContain('42% of first-party tokens read');
-    expect(line.textContent).toContain('68 of 118 judged claims supported');
-    expect(line.textContent).toContain('3 not judged');
-    expect(line.textContent).not.toMatch(/complete/iu);
+    expect(cell.textContent).toBe('42% read');
+    const tip = tooltipOf(cell);
+    expect(tip.textContent).toContain('42% of first-party tokens read');
+    expect(tip.textContent).toContain('68 of 118 judged claims supported');
+    expect(tip.textContent).toContain('3 not judged');
+    expect(cell.hasAttribute('title')).toBe(false);
+    expect(cell.textContent).not.toMatch(/complete/iu);
   });
 
   it('RF-231 says well covered, with a glyph, only for a run at the bar', async () => {
     const good = measures({ firstPartyCoverage: 0.9, notJudged: 0, wellCovered: true });
     renderHistory({ [measuresOf('r-1')]: understanding(good) });
 
-    const line = await within(await rowOf(doneKey)).findByTestId('run-measures');
+    const cell = await within(await rowOf(doneKey)).findByTestId('run-coverage');
 
-    expect(line.textContent).toContain('Well covered');
-    expect(line.querySelector('svg')).not.toBeNull();
+    expect(cell.textContent).toContain('Well covered');
+    expect(cell.querySelector('svg')).not.toBeNull();
   });
 
   it('RF-231 reads nothing for a scan', async () => {
@@ -65,7 +75,7 @@ describe('RF-231 the measures beside each run of the history', () => {
       expect(page.calls.filter((call) => call.path.includes('/understanding'))).not.toHaveLength(0);
     });
     expect(page.calls.some((call) => call.path.includes('r-3/understanding'))).toBe(false);
-    expect(within(await rowOf(scanKey)).queryByTestId('run-measures')).toBeNull();
+    expect(within(await rowOf(scanKey)).queryByTestId('run-coverage')).toBeNull();
   });
 
   it('RF-231 shows nothing for a run without measures or when the read fails, and keeps the row', async () => {
@@ -74,9 +84,56 @@ describe('RF-231 the measures beside each run of the history', () => {
     const row = await rowOf(doneKey);
 
     await waitFor(() => {
-      expect(within(row).queryByTestId('run-measures')).toBeNull();
+      expect(within(row).queryByTestId('run-coverage')).toBeNull();
     });
     expect(within(row).getByText('Completed')).toBeTruthy();
+  });
+});
+
+describe('RF-231 the Coverage tooltip of the history', () => {
+  const answers = { [measuresOf('r-1')]: understanding(measures()) };
+
+  it('RF-231 RNF-010 gives the coverage value a focusable tooltip that Escape dismisses', async () => {
+    renderHistory(answers);
+    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
+    const wrapper = value.parentElement;
+
+    expect(value.tabIndex).toBe(0);
+    expect(tooltipOf(value).getAttribute('role')).toBe('tooltip');
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
+
+    fireEvent.keyDown(value, { key: 'Escape' });
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(true);
+
+    fireEvent.blur(value);
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
+  });
+
+  it('RF-231 RNF-010 opens the tooltip on focus and on hover, and Escape closes it', async () => {
+    renderHistory(answers);
+    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
+    const wrapper = value.parentElement;
+    if (wrapper === null) throw new Error('The Coverage value has no box.');
+    const isOpen = (): boolean => wrapper.hasAttribute('data-open');
+
+    expect(isOpen()).toBe(false);
+    fireEvent.focus(value);
+    await waitFor(() => {
+      expect(isOpen()).toBe(true);
+    });
+    fireEvent.keyDown(value, { key: 'Escape' });
+    await waitFor(() => {
+      expect(isOpen()).toBe(false);
+    });
+    fireEvent.blur(value);
+    fireEvent.mouseEnter(wrapper);
+    await waitFor(() => {
+      expect(isOpen()).toBe(true);
+    });
+    fireEvent.mouseLeave(wrapper);
+    await waitFor(() => {
+      expect(isOpen()).toBe(false);
+    });
   });
 });
 
