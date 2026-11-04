@@ -23,13 +23,16 @@ const wordsOf = [
   ['QueueCancel', 'Cancelled while queued'],
 ] as const;
 
-it.each(wordsOf)('RF-1008 the badge of an Interrupted run with reason %s reads %s', (reason, word) => {
-  render(<RunEndBadge endState="Interrupted" endReason={reason} />);
+it.each(wordsOf)(
+  'RF-1008 the badge of an Interrupted run with reason %s reads %s',
+  (reason, word) => {
+    render(<RunEndBadge endState="Interrupted" endReason={reason} />);
 
-  const badge = screen.getByTestId('status-badge');
-  expect(badge.textContent).toBe(word);
-  expect(badge.querySelector('svg')).not.toBeNull();
-});
+    const badge = screen.getByTestId('status-badge');
+    expect(badge.textContent).toBe(word);
+    expect(badge.querySelector('svg')).not.toBeNull();
+  },
+);
 
 it('RF-1008 a reason never changes the word of a run that did not end Interrupted', () => {
   render(<RunEndBadge endState="Failed" endReason="Restart" />);
@@ -84,25 +87,31 @@ it.each([
   ['QueueCancel', 'Cancelled while queued', 'Understand cancelled while queued'],
   ['UserStop', 'Stopped by you', 'Understand stopped by you'],
   [null, 'Stopped by you', 'Understand stopped by you'],
-] as const)('RF-1020 the strip and the title of a run with reason %s read %s', (reason, word, title) => {
-  const view = journeyOf(stopped(reason), projectId);
-  renderPage(<JourneyStrip view={view} onResumed={() => undefined} />, {});
+] as const)(
+  'RF-1020 the strip and the title of a run with reason %s read %s',
+  (reason, word, title) => {
+    const view = journeyOf(stopped(reason), projectId);
+    renderPage(<JourneyStrip view={view} onResumed={() => undefined} />, {});
 
-  const region = screen.getByRole('region', { name: 'Journey from code to package' });
-  const step = within(region)
-    .getAllByRole('listitem')
-    .find((each) => each.querySelector('.rst-road__title')?.textContent === 'Understand');
-  expect(step?.querySelector('.rst-road__state')?.textContent).toBe(word);
-  expect(step?.textContent).not.toContain('Failed');
-  expect(region.textContent).toContain('Resume this run');
-  expect(headingOf('OrderDesk', view).status?.text).toBe(title);
-});
+    const region = screen.getByRole('region', { name: 'Journey from code to package' });
+    const step = within(region)
+      .getAllByRole('listitem')
+      .find((each) => each.querySelector('.rst-road__title')?.textContent === 'Understand');
+    expect(step?.querySelector('.rst-road__state')?.textContent).toBe(word);
+    expect(step?.textContent).not.toContain('Failed');
+    expect(region.textContent).toContain('Resume this run');
+    expect(headingOf('OrderDesk', view).status?.text).toBe(title);
+  },
+);
 
 it.each([
   ['Restart', 'Plan stopped by a restart'],
   ['QueueCancel', 'Plan cancelled while queued'],
 ] as const)('RF-1020 the title of a plan run with reason %s is %s', (endReason, title) => {
-  const view = journeyOf(facts({ plan: planRun({ endState: 'Interrupted', endReason }) }), projectId);
+  const view = journeyOf(
+    facts({ plan: planRun({ endState: 'Interrupted', endReason }) }),
+    projectId,
+  );
 
   expect(headingOf('OrderDesk', view).status?.text).toBe(title);
 });
