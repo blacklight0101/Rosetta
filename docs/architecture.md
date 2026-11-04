@@ -1138,7 +1138,7 @@ a language pack, two users). They sign in through the sign-in page and use the p
 accounts are seeded (`seed.ts`, kinds `journey-*`). The test server's fake GitHub also knows `octo/ledger`, the COBOL
 fixture, for the language-without-pack journey (RF-112), and `octo/inventory`, a small Python project that is not
 .NET (`tests/fixtures/repos/python-inventory/`, scanned like `octo/demo`), with its own account kind `plan-non-dotnet`,
-for the Plan setup walks that must tell the legacy stack from a chosen platform (RF-609, P8-103).
+for the Plan setup walks that must tell the legacy stack from a chosen platform (RF-609, P8-103). The test model double replays a recorded understand run for it (`understand-python-inventory.json`, four areas, cards that cite its files) and a recorded plan (`planner-python-inventory.json`), told apart from the webforms run by the files its calls list (`e2e-provider.ts`), so the understand run ends with cards and Start the plan is enabled; `e2e/python-project-plan.spec.ts` (account kind `plan-python`) walks it to the package (P8-120).
 
 **Release 1 journeys (P3-12).** `journeys/handoff-package.spec.ts` runs flows 1 and 7 end to end: from the address of
 `octo/webforms` through scan, understand, a planning brief saved in Plan setup and the plan run to the hand-off zip

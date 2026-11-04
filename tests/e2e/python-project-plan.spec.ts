@@ -36,5 +36,11 @@ test('RF-609 RF-1005 ADR-005 the understand run of the Python project ends with 
   await openStartOf(page, inventoryUrl);
   await showStartChoices(page);
   await openPlanSetup(page);
+  await expect(writeButton(page)).toBeDisabled();
+  await page.getByRole('button', { name: 'Use the defaults for the rest' }).click();
   await expect(writeButton(page)).toBeEnabled();
+
+  await writeButton(page).click();
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(page.getByRole('link', { name: 'Download hand-off zip' })).toBeVisible();
 });
