@@ -48,3 +48,30 @@ describe('RF-210 reading priority of the areas', () => {
     expect(priority.get('Ghost')).toEqual({ entryPoint: false, firstPartyTokens: 0 });
   });
 });
+
+describe('RF-210 reading priority cost', () => {
+  it('RF-210 reads the files and symbols of the code map once, however many areas it ranks', () => {
+    const many = Array.from({ length: 50 }, (_, index) => ({
+      name: `Area${String(index)}`,
+      files: [`Area${String(index)}/a.cs`],
+    }));
+    const listed = many.map((each) => entry(each.files[0] ?? '', 10));
+    const reads = { files: 0, symbols: 0 };
+    const map = {
+      get files() {
+        reads.files += 1;
+        return listed;
+      },
+      get symbols() {
+        reads.symbols += 1;
+        return [];
+      },
+    };
+
+    const priority = readingPriorityOf(many, map);
+
+    expect(priority.size).toBe(50);
+    expect(reads.files).toBeLessThanOrEqual(2);
+    expect(reads.symbols).toBeLessThanOrEqual(1);
+  });
+});

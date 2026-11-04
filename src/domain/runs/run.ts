@@ -56,6 +56,11 @@ export interface AreaCounts {
 /** What a run records besides its end state when it ends: the area counts and, if interrupted, why (P8-111). */
 export interface RunEndDetail extends AreaCounts {
   readonly endReason?: RunEndReason;
+  /**
+   * P8-122: the last instant the run is known to have been alive. The span the run ended in counts
+   * only up to it, so the time a server was down is not running time (orphan recovery).
+   */
+  readonly activeUntil?: EpochMs;
 }
 
 export type StartProblem = 'not-queued';
@@ -103,7 +108,7 @@ export function endRun(
     endState,
     endedAt: at,
     spanStartedAt: null,
-    activeMs: activeAt(run, at),
+    activeMs: activeAt(run, Math.min(at, detail.activeUntil ?? at)),
     failedAreas: detail.failedAreas ?? 0,
     unreadAreas: detail.unreadAreas ?? 0,
     // P8-111: only an interrupted run has a reason.
