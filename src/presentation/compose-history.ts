@@ -11,6 +11,9 @@ import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FileSnapshotCache } from '../infrastructure/files/file-snapshot-cache.js';
 import { NodeWorkspaceFolders } from '../infrastructure/files/node-workspace-folders.js';
+import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
+import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
+import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { createUploadStore } from './compose-uploads.js';
 import type { HistoryServices } from './web/history-routes.js';
 
@@ -23,17 +26,23 @@ export interface HistoryParts {
   readonly logger: Logger;
   /** `ROSETTA_DATA_DIR`. */
   readonly dataDir: string;
+  /** P8-89: masks the manifests the history reads to tell a Deepen run from another. */
+  readonly masker: TextMasker;
 }
 
 // RF-1012
 export function composeHistory(parts: HistoryParts): HistoryServices {
-  const { pool, logger, dataDir } = parts;
+  const { pool, logger, dataDir, masker } = parts;
   const projects = new PgProjectRepository(pool);
   const runs = new PgRunIndex(pool);
   const folders = new NodeWorkspaceFolders(dataDir);
   const snapshots = new FileSnapshotCache(dataDir);
+  const manifests = new FileRunManifestStore({
+    writer: new NodeOutputWriter({ dataDir, logger }),
+    masker,
+  });
   return {
-    listHistory: new ListHistory({ projects, runs, folders }),
+    listHistory: new ListHistory({ projects, runs, folders, manifests, logger }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({

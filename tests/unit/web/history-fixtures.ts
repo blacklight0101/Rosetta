@@ -15,6 +15,7 @@ export const liveKey = '20261011-091204-understand';
 export const scanKey = '20261011-091150-scan';
 export const capKey = '20261010-201533-understand';
 export const doneKey = '20261009-184012-understand';
+export const deepenKey = '20261012-100000-understand';
 
 /** Four runs, newest first: one in progress, a scan, a run stopped by its cap and a finished one. */
 export const history = {
@@ -22,6 +23,7 @@ export const history = {
     id: 'p-1',
     name: 'octo/webforms',
     sourceUrl: 'https://github.com/octo/webforms',
+    sourceKind: 'github',
     ref: '',
     subpath: '',
     folder: 'projects/p-1',
@@ -59,6 +61,15 @@ export const history = {
       ...{ runningMs: 1_308_000, wallMs: 1_308_000 },
     },
   ],
+};
+
+/** P8-89: a Deepen run that finished three rounds, and one that was queued and has not finished any. */
+export const deepenRun = {
+  ...{ id: 'r-5', runId: deepenKey, stage: 'understand', queueState: 'Ended' },
+  ...{ endState: 'Completed', commitSha: olderSha, deepenRounds: 3 },
+  ...{ totals: totals(930_000, 100_000, 20_000), sizeBytes: 1_000 },
+  ...{ queuedAt: '2026-10-12T10:00:00.000Z', startedAt: '2026-10-12T10:00:02.000Z' },
+  ...{ endedAt: '2026-10-12T10:06:00.000Z', runningMs: 358_000, wallMs: 358_000 },
 };
 
 /** The same project once no run is in progress. */
