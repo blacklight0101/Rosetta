@@ -52,16 +52,13 @@ describe('journeyOf: the plan run', () => {
     }
   });
 
-  it('RF-615 a plan run that ended CapReached is a failed step with its code and is tried again', () => {
+  it('RF-615 RF-1020 a plan run that ended CapReached is a capped step with its code and is tried again', () => {
     const view = journeyOf(
       facts({ plan: planRun({ endState: 'CapReached', errorCode: 'RST-1403' }) }),
       projectId,
     );
 
-    expect(step(view, 'plan')).toMatchObject({
-      state: 'failed',
-      detail: 'Stopped at its cap (RST-1403)',
-    });
+    expect(step(view, 'plan')).toMatchObject({ state: 'capped', detail: 'RST-1403' });
     expect(view.action).toMatchObject({ label: 'Try the plan again' });
   });
 });

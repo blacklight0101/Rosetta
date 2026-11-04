@@ -1890,6 +1890,7 @@ As a user I want to see where I am in the journey and what each step cost so tha
 - Given the project page or any run page of a project with a journey, when it opens, then the journey strip shows each step with its state (waiting, running, waiting for approval, done, skipped, failed) and its cost, the current step is marked, and each step is a link to its page.
 - Given the strip, when it is used with the keyboard or a screen reader, then it is an ordered list, the current step has `aria-current="step"`, and every state is carried by a word and a glyph as well as colour.
 - Given an understand or plan run that I stopped with Stop, when the strip shows its step, then the step's state word is "Stopped by you", not "Failed", and the project title reads "Understand stopped by you" or "Plan stopped by you" (P8-87).
+- Given an understand or plan run that ended `CapReached`, when the strip shows its step, then the step's state word is "Stopped at its cap" in the warn tone with a warning glyph, never "Failed"; the detail keeps the run's code, or "Partly read" and the code when planned areas were left unread (P7-02); the project title reads "Understand stopped at its cap" or "Plan stopped at its cap" in the warn tone; and the step still offers its next action, Resume for an understand run and "Try the plan again" for a plan run (DEC-217, P8-112).
   Verification: component and web tests of the strip states; an accessibility check.
 
 **RF-1021 The page offers the next step in place** - R1 - Must - Source DEC-179, DEC-204 - ADR-012, ADR-027
