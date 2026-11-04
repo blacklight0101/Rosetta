@@ -1,5 +1,5 @@
 import type { JSX, RefObject } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 // design-system.md section 14 (History, row menu), P8-89: the "More actions" button of a table row and the
 // menu it opens. The button has `aria-haspopup="menu"` and `aria-expanded`; the menu holds links and buttons
@@ -112,6 +112,25 @@ interface Popup {
   readonly close: () => void;
 }
 
+interface FlipParts {
+  readonly open: boolean;
+  readonly menu: RefObject<HTMLDivElement | null>;
+  readonly trigger: RefObject<HTMLButtonElement | null>;
+  readonly setPlace: (change: (current: Place | undefined) => Place | undefined) => void;
+}
+
+/** The panel opens under the button; one that would end below the viewport opens above it instead. */
+function useFlipAbove({ open, menu, trigger, setPlace }: FlipParts): void {
+  useLayoutEffect(() => {
+    const panel = menu.current?.getBoundingClientRect();
+    const button = trigger.current?.getBoundingClientRect();
+    if (!open || panel === undefined || button === undefined) return;
+    if (panel.bottom <= window.innerHeight) return;
+    const above = Math.max(4, button.top - 4 - panel.height);
+    setPlace((current) => (current === undefined ? current : { ...current, top: above }));
+  }, [open]);
+}
+
 /** Where the menu stands, how it opens and closes, and where the focus goes when it does. */
 function usePopup(): Popup {
   const [place, setPlace] = useState<Place | undefined>();
@@ -122,6 +141,7 @@ function usePopup(): Popup {
   const close = (): void => {
     setPlace(undefined);
   };
+  useFlipAbove({ open, menu, trigger, setPlace });
   useEffect(() => {
     if (!open) return undefined;
     focusItem(menu.current, landing.current);

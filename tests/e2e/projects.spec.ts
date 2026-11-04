@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { accountFor } from './support/seed.js';
@@ -85,6 +86,22 @@ test('RF-010 creating the same address again opens the existing project', async 
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
 });
 
+/** P8-99: the row menu opens inside the viewport at this width, and the page does not scroll sideways. */
+async function expectMenuInView(page: Page, width: number, height: number): Promise<void> {
+  await page.setViewportSize({ width, height });
+  await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
+  const box = await page.getByRole('menu', { name: 'More actions for octo/demo' }).boundingBox();
+  if (box === null) throw new Error('The row menu has no box.');
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(width);
+  expect(box.y + box.height).toBeLessThanOrEqual(height);
+  const overflow = await page.evaluate('document.documentElement.scrollWidth - window.innerWidth');
+  expect(Number(overflow)).toBeLessThanOrEqual(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+}
+
 test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu whose Delete removes the project', async ({
   page,
 }, info) => {
@@ -105,7 +122,9 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
     'Cost',
     'Actions',
   ]);
-  await expect(row.getByRole('cell').nth(2)).toContainText('Scan not started');
+  // The new project scans by itself (RF-160), so the row is read once the scan has ended; "Scan not
+  // started" is pinned in the unit tests, where no scan can start.
+  await expect(row.getByRole('cell').nth(2)).toContainText('Scan done', { timeout: 30_000 });
   // P8-99 screenshots of the list at 1280 px and at 390 px, attached to the test report.
   for (const [name, width, height] of [
     ['projects-list-1280', 1280, 800],
@@ -120,6 +139,9 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
   }
   await page.setViewportSize({ width: 1280, height: 800 });
 
+  await expectMenuInView(page, 1280, 800);
+  await expectMenuInView(page, 360, 780);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
   await page.getByRole('menuitem', { name: 'Delete project…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Delete project octo/demo?' });
