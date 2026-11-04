@@ -79,7 +79,17 @@ export const estimate = (page: Page): Locator =>
 export const writeButton = (page: Page): Locator =>
   page.getByRole('button', { name: /^Start the plan/u });
 
-/** Holds the planner's options request until the returned function is called, then fails it. */
+/** Presses a save button and waits until the brief was saved. */
+export async function saveBrief(page: Page, button: Locator): Promise<void> {
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+  );
+  await button.click();
+  expect((await saved).ok()).toBe(true);
+}
+
+/** Holds the planner's options request until the returned function is called, then lets it through. */
 export async function holdPlanOptions(page: Page): Promise<() => void> {
   let release = (): void => undefined;
   const held = new Promise<void>((resolve) => {
@@ -87,7 +97,7 @@ export async function holdPlanOptions(page: Page): Promise<() => void> {
   });
   await page.route('**/plan-options', async (route) => {
     await held;
-    await route.abort();
+    await route.continue();
   });
   return release;
 }
