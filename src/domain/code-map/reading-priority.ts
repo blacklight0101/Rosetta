@@ -1,5 +1,5 @@
 import type { Area } from './area.js';
-import { surfaceOf } from './area-surface.js';
+import { surfaceReaderOf } from './area-surface.js';
 import type { CodeMap } from './code-map.js';
 import { isThirdPartyFile } from './third-party.js';
 
@@ -22,6 +22,7 @@ export function readingPriorityOf(
   map: Pick<CodeMap, 'files' | 'symbols'>,
 ): ReadingPriority {
   const known = new Map(map.files.map((file) => [file.path, file]));
+  const surfaceOf = surfaceReaderOf(map);
   return new Map(
     areas.map((area) => {
       const own = area.files.flatMap((path) => {
@@ -29,7 +30,7 @@ export function readingPriorityOf(
         return file === undefined || isThirdPartyFile(file) ? [] : [file.estimatedTokens];
       });
       const firstPartyTokens = own.reduce((sum, tokens) => sum + tokens, 0);
-      const entryPoint = surfaceOf(area, map).entryPoints.length > 0;
+      const entryPoint = surfaceOf(area).entryPoints.length > 0;
       return [area.name, { entryPoint, firstPartyTokens }];
     }),
   );
