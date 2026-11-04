@@ -14,7 +14,9 @@ export interface CreatedProject {
 
 /** RF-436: the answer of a save, with the change the provider-switch rule made when it fired. */
 const savedSettingsSchema = projectSchema.extend({
-  parallelismChange: z.object({ from: z.number(), to: z.number() }).optional(),
+  parallelismChange: z
+    .object({ from: z.number().int().min(1), to: z.number().int().min(1) })
+    .optional(),
 });
 
 export type SavedSettings = z.output<typeof savedSettingsSchema>;

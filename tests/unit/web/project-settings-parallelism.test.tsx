@@ -92,6 +92,19 @@ it('RF-436 the line goes away with the next edit, and the saved message with it'
   expect(readers().value).toBe('2');
 });
 
+it('RF-436 an edit put back to the saved values does not bring the line or the saved message back', async () => {
+  renderSettings(json(200, storedOnAnthropic(4, { parallelismChange: { from: 1, to: 4 } })));
+  await switchReaderToAnthropicAndSave();
+  await screen.findByText(line);
+
+  fireEvent.input(screen.getByLabelText('Parallel readers'), { target: { value: '2' } });
+  fireEvent.input(screen.getByLabelText('Parallel readers'), { target: { value: '4' } });
+
+  expect(screen.queryByText(line)).toBeNull();
+  expect(screen.queryByText('Settings saved.')).toBeNull();
+  expect(readers().value).toBe('4');
+});
+
 it('RF-436 the help text of Parallel readers states the rule', async () => {
   renderSettings(json(200, demo));
   await screen.findByRole('heading', { name: 'Project settings' });
@@ -102,6 +115,6 @@ it('RF-436 the help text of Parallel readers states the rule', async () => {
     .join(' ');
 
   expect(help).toContain(
-    'A local reader defaults to 1; switching to a hosted provider while it is still 1 makes it 4; a value you chose is never changed.',
+    'A local reader defaults to 1; switching to a hosted provider while it is still 1 makes it 4; a value other than 1 is never changed.',
   );
 });

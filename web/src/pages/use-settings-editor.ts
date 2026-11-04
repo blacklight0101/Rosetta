@@ -22,6 +22,8 @@ import type { ContextLimit } from './ollama-context.js';
 
 export interface DraftEditor {
   readonly draft: SettingsDraft;
+  /** How many edits the form has had; a revert to an earlier value is an edit too. */
+  readonly edits: number;
   readonly change: (patch: Partial<SettingsDraft>) => void;
   readonly changeRole: (name: RoleName, patch: Partial<RoleDraft>) => void;
   readonly changePrice: (index: number, patch: Partial<PriceDraft>) => void;
@@ -41,29 +43,33 @@ const emptyPrice: PriceDraft = {
 };
 
 export function useSettingsDraft(settings: ProjectSettings): DraftEditor {
-  const [draft, setDraft] = useState(() => draftOf(settings));
+  const [state, setState] = useState(() => ({ draft: draftOf(settings), edits: 0 }));
+  const update = (next: (current: SettingsDraft) => SettingsDraft): void => {
+    setState((current) => ({ draft: next(current.draft), edits: current.edits + 1 }));
+  };
   return {
-    draft,
+    draft: state.draft,
+    edits: state.edits,
     change: (patch) => {
-      setDraft((current) => ({ ...current, ...patch }));
+      update((current) => ({ ...current, ...patch }));
     },
     changeRole: (name, patch) => {
-      setDraft((current) => ({
+      update((current) => ({
         ...current,
         roles: { ...current.roles, [name]: { ...current.roles[name], ...patch } },
       }));
     },
     changePrice: (index, patch) => {
-      setDraft((current) => ({
+      update((current) => ({
         ...current,
         prices: current.prices.map((price, at) => (at === index ? { ...price, ...patch } : price)),
       }));
     },
     addPrice: () => {
-      setDraft((current) => ({ ...current, prices: [...current.prices, emptyPrice] }));
+      update((current) => ({ ...current, prices: [...current.prices, emptyPrice] }));
     },
     removePrice: (index) => {
-      setDraft((current) => ({
+      update((current) => ({
         ...current,
         prices: current.prices.filter((_price, at) => at !== index),
       }));
@@ -120,17 +126,15 @@ function issueIn(refusal: Refusal | undefined, field: string): FieldIssue | unde
   return local ?? problemFor(refusal?.failure, field);
 }
 
-/** RF-436: the draft as the form shows it after a save (a field the server changed shows what it stored) and the line about it. */
-function afterSave(
-  draft: SettingsDraft,
+/** RF-436: a field the server changed shows what it stored (one more edit of the form); the save is current until the next edit. */
+function showStored(
+  editor: DraftEditor,
   change: ParallelismChange | undefined,
-): { readonly draft: SettingsDraft; readonly notice: string } {
-  const shown = change === undefined ? draft : { ...draft, parallelism: String(change.to) };
-  return { draft: shown, notice: noticeOf(change) };
+): { readonly edits: number; readonly notice: string } {
+  if (change === undefined) return { edits: editor.edits, notice: '' };
+  editor.change({ parallelism: String(change.to) });
+  return { edits: editor.edits + 1, notice: noticeOf(change) };
 }
-
-const sameDraft = (a: SettingsDraft, b: SettingsDraft): boolean =>
-  a === b || JSON.stringify(a) === JSON.stringify(b);
 
 export function useSettingsSave(
   project: Project,
@@ -142,7 +146,7 @@ export function useSettingsSave(
   const [stored, setStored] = useState<Project>(project);
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | undefined>();
-  const [saved, setSaved] = useState<{ draft: SettingsDraft; notice: string } | undefined>();
+  const [saved, setSaved] = useState<ReturnType<typeof showStored> | undefined>();
 
   const save = async (): Promise<void> => {
     const built = settingsOf(stored.settings, draft, limit);
@@ -163,11 +167,10 @@ export function useSettingsSave(
     }
     setStored(answer.value);
     setRefusal(undefined);
-    const after = afterSave(draft, answer.value.parallelismChange);
-    if (after.draft !== draft) editor.change({ parallelism: after.draft.parallelism });
-    setSaved(after);
+    setSaved(showStored(editor, answer.value.parallelismChange));
   };
-  const current = saved !== undefined && sameDraft(saved.draft, draft);
+  // Any edit after the save hides the message and the line for good, even one that restores the saved values.
+  const current = saved?.edits === editor.edits;
   return {
     busy,
     message: current ? 'Settings saved.' : '',
