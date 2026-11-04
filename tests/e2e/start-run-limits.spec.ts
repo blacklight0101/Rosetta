@@ -98,7 +98,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
 
   const warning = page.getByTestId('cap-warning');
   await expect(warning).toContainText('daily cap today');
-  await expect(warning).toContainText('$0.000001 left of $1.00');
+  await expect(warning).toContainText('<$0.0001 left of $1.00');
   await expect(page.getByRole('button', { name: /^Analyse/u })).toBeEnabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

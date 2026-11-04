@@ -147,7 +147,7 @@ it('RF-425 adds the dollar range when the run has a price', () => {
   meter(used(1_000, 500), 0, cloud);
 
   expect(screen.getByTestId('estimate-line').textContent).toContain(
-    'Range 22,000 to 88,000 tokens, $0.12 to $0.80.',
+    'Range 22,000 to 88,000 tokens, $0.1200 to $0.8000.',
   );
 });
 
@@ -163,7 +163,7 @@ it('RF-425 says the run is over the estimate when the cost passes the likely cos
   meter(used(1_000, 500), 500_000, cloud);
 
   expect(screen.getByTestId('estimate-over').textContent).toBe(
-    'Over the estimate: $0.50 spent so far against $0.39 likely.',
+    'Over the estimate: $0.5000 spent so far against $0.3900 likely.',
   );
 });
 
@@ -292,6 +292,6 @@ it('RF-425 the likely estimate of a priced model keeps its dollars (P3-68)', () 
   meter(used(1_000, 500), 0, cloud);
 
   expect(screen.getByTestId('estimate-line').textContent).toMatch(
-    /^Estimate \(likely\): [\d,]+ tokens, \$\d+\.\d\d\. Range /u,
+    /^Estimate \(likely\): [\d,]+ tokens, \$\d+\.\d{2,4}\. Range /u,
   );
 });

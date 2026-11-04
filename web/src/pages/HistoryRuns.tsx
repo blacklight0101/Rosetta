@@ -4,13 +4,19 @@ import { navigate } from '../app/router.js';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { RowMenu, type RowMenuItem } from '../components/RowMenu.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
 import { queueText } from '../lib/live-run/queue-text.js';
 import { isResumable } from '../lib/live-run/resumable.js';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import { runKindText } from '../lib/run-kind.js';
 import { runningTimeText, startedText, wallTimeNote } from '../lib/run-times.js';
 import { ResumeButton } from './ResumeButton.js';
@@ -118,6 +124,7 @@ function rowMenuItems(run: HistoryRun, onDelete: (run: HistoryRun) => void): Row
 function Row(props: {
   readonly run: HistoryRun;
   readonly showCommit: boolean;
+  readonly stop: AmountStop;
   readonly onDelete: (run: HistoryRun) => void;
 }): JSX.Element {
   const { run } = props;
@@ -147,7 +154,7 @@ function Row(props: {
         {tokensLabel(inputTokens + outputTokens)}
       </td>
       <td class="rst-table__num" data-label="Cost">
-        {costLabel(costMicros)}
+        <MoneyAmount micros={costMicros} {...props.stop} />
       </td>
       <td>
         <div class="rst-p140-row-actions">
@@ -164,6 +171,9 @@ function Row(props: {
 
 // RF-1008
 export function HistoryRuns({ runs, showCommit, onDelete }: HistoryRunsProps): JSX.Element {
+  const stops = useAmountTabStop(
+    runs.map((run) => ({ key: run.id, exact: hasTooltip(run.totals.costMicros) })),
+  );
   return (
     <ScrollRegion label="Runs table">
       <table class="rst-table rst-table--stack" aria-label="Runs">
@@ -189,7 +199,13 @@ export function HistoryRuns({ runs, showCommit, onDelete }: HistoryRunsProps): J
         </thead>
         <tbody>
           {runs.map((run) => (
-            <Row key={run.id} run={run} showCommit={showCommit} onDelete={onDelete} />
+            <Row
+              key={run.id}
+              run={run}
+              showCommit={showCommit}
+              stop={stops.stopOf(run.id)}
+              onDelete={onDelete}
+            />
           ))}
         </tbody>
       </table>

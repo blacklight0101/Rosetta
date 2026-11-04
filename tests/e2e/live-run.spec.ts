@@ -12,6 +12,7 @@ import {
   startUnderstand,
   typeOwnAnswerWithKeyboard,
   valueOf,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { expectMeterFromUsage } from './support/meter-usage.js';
 import { accountFor } from './support/seed.js';
@@ -25,7 +26,6 @@ import { showStartChoices } from './support/start-choices.js';
 // (e2e-provider.ts); nothing of the API or the event stream is replaced. The steps run in order, sharing one run.
 
 test.describe.configure({ mode: 'serial' });
-
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('live-run', info.project.name));
 });
@@ -68,7 +68,7 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   // The run has ended: the page is in the after-the-run mode, and its agents are in the Evidence tab.
   await openRunTab(page, 'Evidence');
   const overview = page.getByRole('region', { name: 'Overview', exact: true });
@@ -257,7 +257,7 @@ test('RF-1006 a stream asked from an event number sends the stored events after 
   const runUuid = finishedRun.split('/').at(-1) ?? '';
 
   await page.goto(finishedRun);
-  await expect(runStatus(page)).toContainText('Completed');
+  await expect(runStatus(page)).toContainText(RUN_DONE);
   const reply = await page.evaluate(async (uuid) => {
     const response = await fetch(`/api/runs/${uuid}/events`, {
       headers: { 'last-event-id': '10' },

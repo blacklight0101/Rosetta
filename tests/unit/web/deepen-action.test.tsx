@@ -38,10 +38,10 @@ async function opened(extra: EndedOptions['extra'] = {}) {
 const posts = (page: Pick<RenderedPage, 'calls'>, suffix: string) =>
   page.calls.filter((call) => call.method === 'POST' && call.path.endsWith(suffix));
 
-/** Waits until the page has folded the events of the run: its facts then show the areas read. */
+/** Waits until the page has folded the events of the run: its facts then count the one area. */
 async function eventsApplied(): Promise<void> {
   await waitFor(() => {
-    expect(turn().textContent).toContain('all read');
+    expect(within(turn()).getByText('Areas').closest('li')?.textContent).toMatch(/^1/u);
   });
 }
 
@@ -97,7 +97,7 @@ describe('RF-209 the estimate of a Deepen', () => {
     const plan = screen.getByTestId('deepen-plan').textContent;
     expect(plan).toContain('judges 10 claims');
     expect(plan).toContain('re-reads 40 rejected claims');
-    expect(screen.getByTestId('deepen-first-round').textContent).toBe('First roundlikely $0.40');
+    expect(screen.getByTestId('deepen-first-round').textContent).toBe('First roundlikely $0.4000');
     expect(screen.getByTestId('deepen-all-rounds').textContent).toBe('Up to 3 roundslikely $1.20');
     expect(screen.getByTestId('deepen-stops').textContent).toBe('What stops it$2.00 run cap');
   });

@@ -103,7 +103,7 @@ describe('RF-209 what the first round does', () => {
 describe('RF-434 the three figures of the panel', () => {
   it('RF-434 gives the first round, up to N rounds and what stops it, each once', () => {
     expect(deepenFiguresOf(estimate())).toEqual({
-      first: 'likely $0.40',
+      first: 'likely $0.4000',
       all: 'likely $1.20',
       allLabel: 'Up to 3 rounds',
       stops: '$2.00 run cap',
@@ -117,7 +117,7 @@ describe('RF-434 the three figures of the panel', () => {
 
   it('RF-425 says at least when a model has no price', () => {
     expect(deepenFiguresOf(estimate({ roles: [role(true), role(false)] })).first).toBe(
-      'likely at least $0.40',
+      'likely at least $0.4000',
     );
   });
 

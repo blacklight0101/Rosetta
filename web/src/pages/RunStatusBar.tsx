@@ -24,6 +24,8 @@ export interface RunStatusBarProps {
   readonly failedAreas?: number;
   /** P7-02: the planned areas no reader started, for "Partly read". */
   readonly unreadAreas?: number;
+  /** P8-93: the areas read below the coverage bar and the share of the code read, for "Partly read". */
+  readonly partlyRead?: PartlyRead;
   readonly stopping: boolean;
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
@@ -39,12 +41,19 @@ export interface RunStatusBarProps {
   readonly resume?: ComponentChildren;
 }
 
+export interface PartlyRead {
+  readonly areas: number;
+  readonly share: number | null | undefined;
+}
+
 function Badge({
   phase,
   unreadAreas,
+  partlyRead,
 }: {
   readonly phase: RunPhase;
   readonly unreadAreas?: number | undefined;
+  readonly partlyRead?: PartlyRead | undefined;
 }): JSX.Element {
   if (phase.kind === 'queued') return <StatusBadge list="RunQueueState" value="Queued" />;
   if (phase.kind === 'running') return <StatusBadge list="RunQueueState" value="Running" />;
@@ -55,7 +64,12 @@ function Badge({
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
   ) : (
-    <RunEndBadge endState={endState} unreadAreas={unreadAreas} endReason={phase.endReason} />
+    <RunEndBadge
+      {...{ endState, unreadAreas }}
+      endReason={phase.endReason}
+      partlyReadAreas={partlyRead?.areas}
+      readShare={partlyRead?.share}
+    />
   );
 }
 
@@ -83,7 +97,7 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           <span class="rst-mono rst-live-head__key">{props.runKey}</span>
         </div>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
-          <Badge phase={phase} unreadAreas={props.unreadAreas} />
+          <Badge phase={phase} unreadAreas={props.unreadAreas} partlyRead={props.partlyRead} />
           <QueuePlace phase={phase} />
           {phase.kind === 'ended' ? (
             <FailedAreasNote count={props.failedAreas ?? 0} class="rst-live-head__note" />

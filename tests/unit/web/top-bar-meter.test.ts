@@ -7,8 +7,8 @@ import { topBarMeterOf } from '../../../web/src/lib/live-run/top-bar-meter.js';
 it('RF-1003 shows spent, cap and share of the cap', () => {
   const meter = topBarMeterOf(412_000, 2_000_000);
 
-  expect(meter).toMatchObject({ share: 21, level: 'ok', spent: '$0.412', cap: '$2.00' });
-  expect(meter.valueText).toBe('$0.412 of $2.00 (21%)');
+  expect(meter).toMatchObject({ share: 21, level: 'ok', spent: '$0.4120', cap: '$2.00' });
+  expect(meter.valueText).toBe('$0.4120 of $2.00 (21%)');
 });
 
 it.each([

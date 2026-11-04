@@ -99,12 +99,12 @@ it('RF-434 DEC-210 a likely figure above what can be approved shows the approvab
   );
 
   const total = screen.getByTestId('journey-total').textContent;
-  expect(total).toContain('$4.00 (likely above what can be approved (likely $4.085))');
+  expect(total).toContain('$4.00 (likely above what can be approved (likely $4.09))');
   expect(screen.getByTestId('journey-approved').textContent).toContain('$4.00');
   expect(screen.getByTestId('journey-stops').textContent).toContain(
     'the run will pause and ask at the approved amount',
   );
-  expect(total).not.toContain('likely $4.085.');
+  expect(total).not.toContain('likely $4.09.');
 });
 
 it('RF-434 DEC-205 the approved amount is the same on two reads of the same inputs', () => {

@@ -123,7 +123,7 @@ export async function openScanRun(page: Page): Promise<void> {
   await expect(
     page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
   ).toBeVisible();
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 }
 
 /** Starts an understand run of the named areas and opens its live page. */
@@ -141,6 +141,12 @@ export function agentPanel(page: Page, area: string): Locator {
 export function valueOf(scope: Locator, label: string): Locator {
   return scope.locator(`dt:text-is("${label}") + dd`);
 }
+
+/**
+ * P8-93: how an ended understand run reads in the head of its page: "Completed", or, when the run
+ * read an area below the coverage bar (as the recorded small apps do), "Partly read: 67% of your code".
+ */
+export const RUN_DONE = /Completed|Partly read: \d+% of your code/u;
 
 export function runStatus(page: Page): Locator {
   return page.getByTestId('run-status');

@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useContext } from 'preact/hooks';
 import { waitsForAnswer } from '../api/answers.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Link } from '../components/Link.js';
@@ -9,6 +10,7 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunReport } from './RunReport.js';
 import type { AnswersLoad } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
+import { AreaReadContext } from './area-read-context.js';
 import { YourTurn } from './YourTurn.js';
 
 // RF-1015, RF-1017: the rail beside the results of an ended run: the Your turn panel and the report
@@ -33,9 +35,10 @@ export interface RailProps {
 /** The Your turn panel, and the report, the downloads and the calls link, one click away. */
 export function Rail(props: RailProps): JSX.Element {
   const { run, stage } = props;
+  const { reading } = useContext(AreaReadContext);
   return (
     <aside class="rst-p170-rail">
-      <YourTurn {...props} />
+      <YourTurn {...props} reading={reading} />
       <section
         id={packageSectionId}
         class="rst-card rst-p170-downloads"

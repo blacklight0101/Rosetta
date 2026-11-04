@@ -31,6 +31,7 @@ const coverageJson = JSON.stringify({
       tokens: 100,
       readTokens: 50,
       readTokenShare: 0.5,
+      firstPartyShare: 0.9,
       note: 'a note',
     },
     {
@@ -66,6 +67,7 @@ describe('ReadRunCoverage', () => {
               { path: 'Catalog/Edit.cs', read: [{ startLine: 1, endLine: 40 }] },
               { path: 'Catalog/List.cs', read: [] },
             ],
+            firstPartyShare: 0.9,
             note: 'a note',
           },
           {

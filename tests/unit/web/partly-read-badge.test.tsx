@@ -24,3 +24,30 @@ it('P7-02 gives Partly read the warn tone with a glyph', () => {
   expect(badge.getAttribute('data-tone')).toBe('warn');
   expect(badge.querySelector('svg')).not.toBeNull();
 });
+
+// RF-230 (P8-93, UX-23, artboard P8Run): a run that ended with areas read below the coverage bar
+// reads "Partly read: 16% of your code" beside its title, also when it ended Completed.
+
+it('RF-230 a Completed run with partly read areas shows the percent of the code read', () => {
+  render(<RunEndBadge endState="Completed" partlyReadAreas={2} readShare={0.16} />);
+
+  expect(screen.getByTestId('status-badge').textContent).toBe('Partly read: 16% of your code');
+});
+
+it('RF-230 the badge says only Partly read while the share of the code is not known', () => {
+  render(<RunEndBadge endState="Completed" partlyReadAreas={1} readShare={undefined} />);
+
+  expect(screen.getByTestId('status-badge').textContent).toBe('Partly read');
+});
+
+it('RF-230 a run that read above the bar keeps Completed', () => {
+  render(<RunEndBadge endState="Completed" partlyReadAreas={0} readShare={0.95} />);
+
+  expect(screen.getByTestId('status-badge').textContent).toBe('Completed');
+});
+
+it('RF-230 a run that failed keeps Failed whatever the coverage says', () => {
+  render(<RunEndBadge endState="Failed" partlyReadAreas={2} readShare={0.16} />);
+
+  expect(screen.getByTestId('status-badge').textContent).toBe('Failed');
+});

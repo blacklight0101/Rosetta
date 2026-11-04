@@ -88,7 +88,7 @@ describe('RF-209 the estimate of a Deepen with a local model', () => {
 
 describe('RF-427 the estimate of a Deepen with a priced model', () => {
   it('RF-209 keeps the figures in dollars', () => {
-    expect(deepenFiguresOf(estimate('anthropic')).first).toBe('likely $0.40');
+    expect(deepenFiguresOf(estimate('anthropic')).first).toBe('likely $0.4000');
   });
 
   it('RF-427 warns in dollars when the high figure could pass the cost cap', () => {

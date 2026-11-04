@@ -1,5 +1,5 @@
 import type { Account, ListedAccount, Money } from '../api/admin-schemas.js';
-import { microsToDollars } from '../lib/usd.js';
+import { moneyText } from '../lib/money.js';
 
 // RF-1102, RF-1109: how the administration pages write cost and time. Instants are UTC, as the
 // server writes them, and are labelled as such in the column headings.
@@ -10,8 +10,8 @@ export function costText(monthToDate: readonly Money[]): string {
   return monthToDate
     .map(({ currency, costMicros }) =>
       currency === 'USD'
-        ? `$${microsToDollars(costMicros)}`
-        : `${microsToDollars(costMicros)} ${currency}`,
+        ? moneyText(costMicros)
+        : `${moneyText(costMicros).replace('$', '')} ${currency}`,
     )
     .join(' + ');
 }

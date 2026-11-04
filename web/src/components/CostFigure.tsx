@@ -27,12 +27,29 @@ function writtenAmount(currency: string, micros: string): { shown: string; full:
 const knownCosts = (totals: UsageTotals): UsageTotals['cost'] =>
   totals.cost.length === 0 ? [{ currency: 'USD', costMicros: '0' }] : totals.cost;
 
+/** Whether one amount carries a tooltip (its exact figure differs from the one shown), so it can take focus. */
+export function carriesExactFigure(micros: string): boolean {
+  const { text, exact } = formatMoney(micros);
+  return text !== exact;
+}
+
 /** Whether an amount of the totals carries a tooltip, so it can take focus. */
 export function hasExactFigure(totals: UsageTotals): boolean {
   return knownCosts(totals).some(({ currency, costMicros }) => {
     const { shown, full } = writtenAmount(currency, costMicros);
     return shown !== full;
   });
+}
+
+/**
+ * The exact figures of totals as one line, for the title of a link that holds the amounts (a tooltip cannot
+ * sit inside a link without being read twice and adding a Tab stop); none when every amount is plain.
+ */
+export function exactCostTitle(totals: UsageTotals): string | undefined {
+  if (!hasExactFigure(totals)) return undefined;
+  return knownCosts(totals)
+    .map(({ currency, costMicros }) => writtenAmount(currency, costMicros).full)
+    .join(' + ');
 }
 
 const AMOUNT_ATTRIBUTE = 'data-rst-amount';
@@ -96,7 +113,7 @@ function useDismissal() {
   };
 }
 
-interface AmountProps {
+export interface AmountProps {
   readonly currency: string;
   readonly micros: string;
   /** Whether the amount is in the Tab order; a table keeps one of its amounts there. */
@@ -136,7 +153,7 @@ function ExactAmount(props: AmountProps & { readonly shown: string; readonly ful
   );
 }
 
-function Amount(props: AmountProps): JSX.Element {
+export function Amount(props: AmountProps): JSX.Element {
   const { shown, full } = writtenAmount(props.currency, props.micros);
   if (full === shown) return <span>{shown}</span>;
   return <ExactAmount {...props} shown={shown} full={full} />;

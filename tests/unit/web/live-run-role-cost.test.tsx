@@ -40,7 +40,8 @@ it('RF-1003 shows the cost of each role and each agent from the usage events, an
     expect(within(meter).getByRole('row', { name: /Total/u }).textContent).toContain('$0.0041');
   });
   expect(valueOf(screen.getByLabelText('Agent Catalog'), 'Cost')).toBe('$0.0015');
-  expect(valueOf(screen.getByLabelText('Agent Services'), 'Cost')).toBe('$0.002');
+  // P8-91: the amount is followed by its exact figure ($0.002), which a tooltip holds.
+  expect(valueOf(screen.getByLabelText('Agent Services'), 'Cost')).toMatch(/^\$0\.0020/u);
   expect(meter.textContent).not.toContain('shows a dash');
 });
 

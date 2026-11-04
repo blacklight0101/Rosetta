@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { filesOf, readZip } from '../../support/zip-reader.js';
 import { expect } from './fixtures.js';
 import { chooseAreas, openProjectStart, repositories, runScan } from './journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from './live-run-page.js';
 import { chooseModel } from './choose-model.js';
 
 // P2-13: the steps the full-understand journeys share, written as a person does them: scan the
@@ -46,7 +46,7 @@ export async function scanAndChooseModels(page: Page, models: JourneyModels): Pr
 export async function understandEveryArea(page: Page): Promise<string> {
   await chooseAreas(page, 'all');
   const path = await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 120_000 });
   return path;
 }
 
