@@ -19,6 +19,8 @@ const coverageSchema = z.object({
     z.object({
       area: z.string(),
       files: z.array(z.object({ path: z.string(), read: z.array(lines) })),
+      /** P8-93: the share of the area's first-party tokens read; absent in older files. */
+      firstPartyShare: z.number().min(0).max(1).optional(),
       note: z.string().optional(),
       failure: z.string().optional(),
     }),

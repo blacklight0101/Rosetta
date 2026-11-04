@@ -5,6 +5,7 @@ import type { Citation } from './citation.js';
 import {
   areaCoverage,
   mergedRanges,
+  rounded,
   tokensRead,
   type AreaCoverage,
   type CoverageArea,
@@ -55,11 +56,20 @@ export function readShare(files: readonly FileEntry[], reads: readonly Citation[
   return { tokens, readTokens, share: tokens === 0 ? 1 : Math.min(1, readTokens / tokens), unread };
 }
 
-// RF-230, RF-231 (P8-93)
+/**
+ * RF-230, RF-231 (P8-93): the coverage of an area with its share of first-party tokens read, the
+ * number `readShare` gives (library and generated files in none), to four decimals like
+ * `readTokenShare`. The page calls an area "read" only above the coverage bar of that share.
+ */
 export function areaCoverageWithShare(
   area: CoverageArea,
   files: readonly FileEntry[],
   reads: readonly Citation[],
 ): AreaCoverage {
-  return areaCoverage(area, files, reads);
+  const paths = new Set(area.files);
+  const share = readShare(
+    files.filter((file) => paths.has(file.path)),
+    reads,
+  ).share;
+  return { ...areaCoverage(area, files, reads), firstPartyShare: rounded(share, 4) };
 }

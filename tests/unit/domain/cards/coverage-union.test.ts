@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { unionCoverage } from '../../../../src/domain/cards/coverage-union.js';
+import { entry } from '../../../support/code-map-builders.js';
 import { coverageOf } from '../../../support/deepen-fixtures.js';
 
 // RF-230, RF-209: one coverage row per area when a Deepen read an area again.
 
 const files = [
-  { path: 'src/a.cs', lines: 100, estimatedTokens: 100 },
-  { path: 'src/b.cs', lines: 100, estimatedTokens: 300 },
-  { path: 'web/x.ts', lines: 10, estimatedTokens: 10 },
+  entry('src/a.cs', 100),
+  entry('src/b.cs', 300, { lines: 100 }),
+  entry('web/x.ts', 10),
 ];
 const areas = [
   { name: 'src', files: ['src/a.cs', 'src/b.cs'], estimatedTokens: 400 },
