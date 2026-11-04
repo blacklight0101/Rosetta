@@ -763,6 +763,11 @@
     display: block;
   }
 
+  /* A caption stays a table-caption box inside the block table and shrinks to one letter per line. */
+  .rst-table.rst-table--stack caption {
+    display: block;
+  }
+
   .rst-table.rst-table--stack thead {
     position: absolute;
     inline-size: 1px;
