@@ -84,3 +84,39 @@ test('RF-010 creating the same address again opens the existing project', async 
   await page.goto('/projects');
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
 });
+
+test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu whose Delete removes the project', async ({
+  page,
+}, info) => {
+  await page.getByLabel('GitHub repository URL').fill(demoUrl);
+  await page.getByRole('button', { name: 'Create project' }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  await page.goto('/projects');
+  const row = page.getByRole('row').filter({ hasText: 'octo/demo' });
+  await expect(row.getByRole('link', { name: 'octo/demo', exact: true })).toBeVisible();
+  await expect(row.locator('.rst-badge', { hasText: 'GitHub' })).toBeVisible();
+  await expect(row.getByRole('link', { name: 'Open for octo/demo' })).toBeVisible();
+  await expect(page.locator('.rst-table .rst-button--primary')).toHaveCount(0);
+  // P8-99 screenshots of the list at 1280 px and at 390 px, attached to the test report.
+  for (const [name, width, height] of [
+    ['projects-list-1280', 1280, 800],
+    ['projects-list-390', 390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await expect(row).toBeVisible();
+    await info.attach(name, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
+  await page.getByRole('menuitem', { name: 'Delete project' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete project octo/demo?' });
+  await expect(dialog).toContainText('cost ledger');
+  await dialog.getByRole('button', { name: 'Delete project' }).click();
+
+  await expect(page.getByText('No projects yet')).toBeVisible();
+  await expectNoSeriousViolations(page);
+});

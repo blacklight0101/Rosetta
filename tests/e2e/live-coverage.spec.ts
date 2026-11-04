@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openSettingsFromList } from './support/projects-list.js';
 import {
   agentPanel,
   openRunTab,
@@ -46,7 +47,7 @@ async function waitingEvents(page: Page): Promise<number> {
 /** Lets two reader tasks run at once, so a held reader does not keep the others from starting. */
 async function twoParallelReaders(page: Page): Promise<void> {
   await page.goto('/projects');
-  await page.getByRole('link', { name: 'Settings for octo/webforms' }).click();
+  await openSettingsFromList(page, 'octo/webforms');
   await page.getByLabel('Parallel readers', { exact: true }).fill('2');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();

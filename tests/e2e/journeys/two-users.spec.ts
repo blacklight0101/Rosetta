@@ -42,7 +42,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   await signInThroughPage(other, accountFor('journey-other', project));
   await expect(other).toHaveURL(/\/projects$/u);
   await expect(other.getByText('No projects yet')).toBeVisible();
-  await expect(other.getByRole('link', { name: 'Start run for octo/demo' })).toHaveCount(0);
+  await expect(other.getByRole('link', { name: 'Open for octo/demo' })).toHaveCount(0);
   for (const path of [startPath, costPath, runPath]) {
     await other.goto(path);
     await expect(other.getByTestId('error-banner')).toContainText('RST-2003');

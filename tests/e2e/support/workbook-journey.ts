@@ -65,7 +65,7 @@ export async function uploadFromNewProject(
 /** Opens the start page of the account's workbook project from the projects list. */
 export async function openWorkbookStart(page: Page, projectName: string): Promise<void> {
   await page.goto('/projects');
-  await page.getByRole('link', { name: `Start run for ${projectName}` }).click();
+  await page.getByRole('link', { name: `Open for ${projectName}` }).click();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await showStartChoices(page);
 }

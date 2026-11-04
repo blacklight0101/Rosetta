@@ -3,6 +3,7 @@ import { gotoWithoutScripts } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
 import { confirmation, openHistory, rowMenuItem, runRow } from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
+import { openSettingsFromList } from '../support/projects-list.js';
 import {
   agentPanel,
   openRunTab,
@@ -151,7 +152,7 @@ test('RNF-010 projects with the run columns and the project settings', visual, a
   );
   await expectPageInView(page);
 
-  await page.getByRole('link', { name: 'Settings for octo/webforms' }).click();
+  await openSettingsFromList(page, 'octo/webforms');
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
 
   await expectPageInView(page);

@@ -48,7 +48,7 @@ test('RF-1008 a completed scan shows as the last run with its state and the proj
   const row = projectRow(page);
   await expect(row).toContainText('scan ·');
   await expect(row).toContainText('Completed');
-  await expect(row.getByRole('cell').nth(3)).toHaveText('1');
+  await expect(row.getByRole('cell').nth(4)).toHaveText('1');
   await expect(row).toContainText('$0.00');
   await expect(page.getByTestId('queue-notice')).toHaveCount(0);
   await expectNoSeriousViolations(page);
