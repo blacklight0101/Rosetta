@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 133     | 5         | 116        | 12        | 0                  | 102     | 25      | 6      | 49         | 24        |
-| **Total**                    | **623** | **123**   | **452**    | **48**    | **0**              | **328** | **269** | **26** | **311**    | **24**    |
+| P8 Evaluation fixes, round 2 | 138     | 5         | 121        | 12        | 0                  | 103     | 29      | 6      | 54         | 24        |
+| **Total**                    | **628** | **123**   | **457**    | **48**    | **0**              | **329** | **273** | **26** | **316**    | **24**    |
 
 ## Conventions for every card
 
@@ -8111,7 +8111,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-49
 - **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean. A flaky e2e spec (`live-run-controls.spec.ts`, fixed in #1146) cost about five extra full runs.
 - **Reads**: `.github/workflows/ci.yml` (the jobs and the `changes` job), `docs/runbooks/`.
 - **Do**: measure first (queue time vs job time per run over the last 50 runs, with `gh run view --json jobs`), then pick the changes that cut wall time without losing coverage, each with the number it saves:
@@ -8218,7 +8218,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-49, P8-56
 - **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-02, P8-17 evaluation): (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1
 - **Reads**: `web/src/pages/LimitSettings.tsx` (`parallelismDefault`, `ParallelReaders`), `web/src/pages/project-settings-form.ts`, `src/application/use-cases/update-project-settings.ts` (the answer of the save), RF-436.
 - **Do**: red tests first.
@@ -8234,7 +8234,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-49
 - **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
 - **Reads**: `src/domain/runs/run-event.ts`, `src/application/understand/claim-judgement.ts` (the verifier pool; `verify.claim.judged` is published only when a judgement ends), `docs/data-model.md` section 3.9.
 - **Do**: red tests first.
@@ -8268,7 +8268,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Evidence** (2026-11-02, P8-17 evaluation): (1) The live run page shows one panel per agent task (RF-1002), so with `agents.parallelism` 4 the owner saw "only 1 agent" while the verifier ran about 4 judgement calls at once (about 125 calls a minute, against about 35 at parallelism 1). Nothing on the page says how many calls a role runs at once or what the limit is
 - **Reads**: `web/src/lib/live-run/run-state.ts` (`RunState`, `AgentPanelState`), `web/src/lib/live-run/reduce-run.ts`, `web/src/lib/live-run/agent-events.ts` (`onStarted` and the `agent.ended` handler), `web/src/lib/live-run/run-level-events.ts` (`onRunStarted`), `src/domain/runs/run-event.ts`, RF-1002.
 - **Do**: add the Givens to RF-1002 first; red tests first.
-  - Part 1, the state. It starts at 0 and follows the events of the run, also after a reload of the page (the stored events are replayed). The reader count is the `agent.started` events that have no `agent.ended` yet; the verifier count is the `verify.claim.started` events without a `verify.claim.judged`; the limit comes from `run.started`.
+  - Part 1, the state. It starts at 0 and follows the events of the run, also after a reload of the page (the stored events are replayed). The reader count is the `agent.started` events that have no `agent.ended` yet; the verifier count is the size of a set of claim ids as RF-1002 states it: add at `verify.claim.started`, remove at `verify.claim.callEnded`, empty at `verify.judgement.started`, `verify.judgement.ended` and `run.ended` (corrected 2026-11-04: started minus judged is not the calls in flight, P8-58); the limit comes from `run.started`.
 - **Delivers**: the run-state and reducer changes and unit tests of the reducer.
 - **Done when**: on a run with parallelism 4 the state counts the verifier at up to 4 at once with the limit, and back to 0 when the step ends; CI green.
 - **Refs**: RF-1002, RF-1015, RF-301; ADR-012; owner request of 2026-11-02; P8-17; split from P8-19 (DEC-214).
@@ -8294,7 +8294,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: owner (DEC-207 decided the behaviour; the owner accepts ADR-028, runs the provisioning that creates the scheduler and its token, and watches two mornings)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: DEC-207, Q-63, ADR-024, ADR-025, RF-1304, `docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md` (58), `docs/adr/README.md`, `tests/integration/docs/release-flow.test.ts` (57-62).
 - **Evidence** (2026-11-03): the first slot is 05:07 UTC in winter time (06:07 Madrid). GitHub started the first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min after that slot (`gh run list --workflow scheduled-release.yml --json createdAt,event`, event `schedule`), and none had started on 2026-11-03 by 08:07 UTC. A Release started by `workflow_dispatch` starts within seconds. Release #1120 was deployed by hand at 09:07 Madrid on 2026-11-03.
 - **Do** (DEC-207):
@@ -8445,7 +8445,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-57
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1269; the order lives in `prices/models.yaml`, not in `agent-models.v1.yaml` as the card says)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): switching a role to Anthropic leaves its model at "Choose a model", so four providers and four models are set one by one.
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/provider-choices.ts`, `web/src/pages/model-lists.ts`, `web/src/pages/project-settings-form.ts`, RF-436.
 - **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; add the Givens to RF-436 first; red tests first.
@@ -8747,7 +8747,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26, P8-90, P8-89, P8-87
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: Cost "By run" names runs by UUID while History names them `20261102-183533-understand`, repeats "Price table 2026-10-21" on every row, and mixes 3 and 6 decimals ($3.113515 beside $0.237).
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/HistoryRuns.tsx`, `web/src/components/TopbarRunMeter.tsx`, the money formatter in `web/src/lib/`, `docs/design-system.md` (number formats, section 10), RF-006, RF-1020.
 - **Do**: red tests first.
@@ -8778,7 +8778,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-92
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-23, EV-97, EV-76: the first understand of Asset Manager (2 areas, 52,749 first-party tokens) ended in 2 min with "2 / 2 Areas read" and "16% of first-party tokens read", leaving 21 files never read, so even a small project needs a Deepen before anything is usable.
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/UnderstandingSummary.tsx`, `web/src/lib/understanding/measure-text.ts`, `src/application/understand/`, RF-230, RF-231, RF-1005.
 - **Do**: red tests first.
@@ -8869,7 +8869,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-91
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: the project name is not a link, and each row has a primary "Start run" button that only opens the project page (8 identical primary buttons); scratch projects can be deleted only at the bottom of History; names are in monospace with an automatic "(zip, 2 Nov 2026)" suffix, and Last run shows the date only.
 - **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/ProjectsPage.tsx`, `web/src/pages/DeleteProjectSection.tsx`, `docs/design-system.md`, RF-010, RF-1020.
 - **Do**: add the Givens first; red tests first.
@@ -8885,7 +8885,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-91
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1272; built to the `P8Project` and `P8Run` artboards, the card names `P8Projects`)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: The journey strip (7 cards in a 5 + 2 grid) is repeated in full on every page.
 - **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/JourneyStrip.tsx`, `docs/design-system.md`, RF-1010, RF-1012.
 - **Do**: add the Givens first; red tests first.
@@ -8901,7 +8901,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-91
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: At 1280 px the live run meter pushes the user name, Sign out and System to a second header line.
 - **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/components/TopbarRunMeter.tsx`, `web/src/components/Header.tsx`, `docs/design-system.md`, RF-1012.
 - **Do**: add the Givens first; red tests first.
@@ -8917,7 +8917,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-91
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1273; built to the `Landing` artboard, the card names `P8Projects`)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-05, UX-15, UX-18, UX-20: The landing "Six stages" timeline puts the sixth step alone on a second row.
 - **Reads**: `docs/design/board/P8Projects.dc.html`, the landing page in `web/`, `docs/design-system.md`, RF-1200.
 - **Do**: add the Givens first; red tests first.
@@ -9187,7 +9187,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-104
 - **Gate**: none
-- **Status**: Blocked (see P8-120)
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-104 verifier, #1215): the walk of `tests/e2e/plan-setup-stack.spec.ts` stops at the Stack step; the package the plan produces is not walked, so "the package proposes them" is not checked.
 - **Reads**: `tests/e2e/plan-setup-stack.spec.ts`, the end-to-end seed and accounts, RF-609, DEC-208, ADR-008.
 - **Do**:
@@ -9203,7 +9203,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-104
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-119 builder): the end-to-end provider has no reader or planner recording for `tests/fixtures/repos/python-inventory`, so its understand run has no cards and Start the plan stays disabled with RST-1802. The walk of P8-119 cannot reach the package without them.
 - **Reads**: `tests/e2e/support/e2e-provider.ts`, `tests/fixtures/repos/python-inventory/`, the existing reader and planner recordings the provider routes to, `tests/e2e/plan-setup-stack.spec.ts`, RF-609, RF-1005.
 - **Do**: red test first.
@@ -9219,7 +9219,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-106
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, the withdrawn P8-113 and the P8-106 verifier, #1206): a reload after a completed scan makes no POST (P8-113 was not reproducible on 386e9fdd7), yet the comments in `tests/e2e/support/start-choices.ts` say the page scans by itself on every load. `start-choices.ts:47` waits with `waitForTimeout(1_000)`. The page fix of P8-106 has no end-to-end pin; `project-page-states.spec.ts:45` holds `**/history` and could give one.
 - **Reads**: `tests/e2e/support/start-choices.ts`, `tests/e2e/project-page-states.spec.ts`, `web/src/pages/use-auto-scan.ts`, the card P8-113.
 - **Do**: red test first.
@@ -9252,7 +9252,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-111
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-88 verifier #1217, P8-111 verifier #1234): the CHECK of migration 0022 lets a NULL `end_state` carry a reason (`docs/data-model.md:1073`; `IS NOT DISTINCT FROM` closes it). The backfill cases of migration 0021 are not named in its header or in `data-model.md`, and the wall-time note at `docs/spec/requirements.md:1780` does not say what the running time now measures.
 - **Reads**: migrations 0021 and 0022, `docs/data-model.md`, `docs/spec/requirements.md`, the rule on changing merged migrations in `docs/conventions.md`.
 - **Do**: red test first.
@@ -9367,7 +9367,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-93
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-93 fix round, #1244): `ProjectRuns` and `HistoryRuns` still show a green "Completed" for an understand run the run page calls "Partly read: 16% of your code", because the lists do not read the coverage.
 - **Reads**: `web/src/pages/ProjectRuns.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/components/RunEndBadge.tsx`, `docs/design/board/P8HistoryCost.dc.html`, RF-230.
 - **Do**: red test first.
@@ -9382,7 +9382,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-122
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1266; the Evidence was false: a torn last line already recovers, so the card added the tests and the note only)
 - **Evidence** (2026-11-04, P8-122 verifier, #1245): the usual crash case, a torn last line, makes `lastSeq` throw, so recovery counts the open span as 0 (`src/application/runs/run-lifecycle.ts:164-170`, read from the code and not run); `read(last-1)` streams the whole log; no test covers the fallback, and no recovery test covers a resumed run with earlier running time (`run-recovery.test.ts:53-76`). A long silent call loses its time (`run-lifecycle.ts:162-169`), so the value is a lower bound.
 - **Reads**: `src/application/runs/run-lifecycle.ts`, the run log reader, `tests/**/run-recovery.test.ts`, `docs/data-model.md` on `active_ms`.
 - **Do**: red tests first.
@@ -9399,7 +9399,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-56
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-56 verifier, #1251, reproduced): with four readers and a cap under about two worst-case calls, the run ends "Cap reached" with zero areas read and no spend booked, because the readers' room counts booked spend and not reservations in flight. With one reader it read "Partly read". No journey proves the cap at four readers; `admin-and-cap` and `server-key-cap` now pin one reader. Default caps are not affected. The owner is also asked whether a call in flight should finish and be booked rather than be cancelled (Q-67).
 - **Reads**: `reader-room.ts`, RF-422, RF-429, `tests/e2e/journeys/admin-and-cap.spec.ts`, `tests/e2e/support/parallel-readers.ts`.
 - **Do**: red test first.
@@ -9425,3 +9425,88 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the wording, the small change and its tests.
 - **Done when**: all three are closed; CI green.
 - **Refs**: RF-210, RF-428; follow-up of P8-109 and P8-124; GitHub issue #1260
+
+### P8-134 - Follow-up: rename a project from the row menu (P8-99)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P8-99
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-99 verifier and DEC-222): the `P8Projects` artboard draws a Rename item in the row menu, and no server route renames a project; P8-99 merged without it (`docs/spec/requirements.md`, the Given on the row menu names this card).
+- **Reads**: `docs/design/board/P8Projects.dc.html`, `web/src/pages/ProjectRowActions.tsx`, `src/presentation/web/`, the project repository, RF-010, RF-1009, DEC-222.
+- **Do**: add the Givens to RF-010 first; red tests first.
+  - A route renames a project: owner only, another user's id answers 404, the name is validated as it is at creation, and the access matrix test has its row.
+  - The row menu gets the "Rename" item as drawn, and the list shows the new name after saving.
+  - Replace the Given that says the row menu has no Rename.
+- **Delivers**: the route, the menu item and their tests.
+- **Done when**: the owner of a project renames it from the row menu, another user cannot; CI green.
+- **Refs**: RF-010, RF-1009, DEC-222; follow-up of P8-99; GitHub issue #1275
+
+### P8-135 - Follow-up: the Roles table of the settings page as drawn (P8-72)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P8-72, P8-73, P8-74, P8-75, P8-76
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-72 verifier and DEC-224): the `P8ProjectSettings` artboard draws the roles as one table, and no card owns that layout; the card P8-72 changed what a provider choice selects and left the form's layout alone.
+- **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/project-settings-form.ts`, RF-436.
+- **Do**: read what P8-72..P8-76 left first; add the Givens to RF-436 first; red tests first.
+  - The roles are laid out as the artboard's table: layout, order, wording and states as drawn; a change from it is agreed with the owner first.
+  - It holds at the design system's breakpoints, in light and dark.
+- **Delivers**: the table and its web and visual tests.
+- **Done when**: the settings page matches the artboard's Roles table at each width; CI green.
+- **Refs**: RF-436, DEC-211, DEC-224; follow-up of P8-72; GitHub issue #1276
+
+### P8-136 - Follow-up: the History Runs table fits 1024 px (P8-130)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-130
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-130 verifier, #1271): at 1024 px the Runs table is 932 px wide in a 760 px box, so its More actions button ends at 1154 px, outside the view until the box is scrolled sideways.
+- **Reads**: `web/src/pages/HistoryPage.tsx`, `web/src/styles/history.css`, `docs/design/board/P8HistoryCost.dc.html`, RF-1008.
+- **Do**: add the Given to RF-1008 first; red test first at 1024 px.
+  - The table fits its box at 1024 px with More actions in view, without dropping a column the artboard draws; the phone layout stays as it is.
+- **Delivers**: the CSS change and a layout test at 1024 px.
+- **Done when**: at 1024 px More actions is in view without sideways scrolling; CI green.
+- **Refs**: RF-1008, RF-230; follow-up of P8-130; GitHub issue #1277
+
+### P8-137 - Follow-up: the full journey position in the projects overview (P8-99)
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P8-99
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-99 verifiers and DEC-222): "Where it is" reads the last run only, so the artboard's "Questions waiting" and "Deepen running" cannot show, "Understand running" also stands for a Deepen, and "Package ready" also stands for a package that is out of date. The limit is also worded too narrowly at `docs/spec/requirements.md:227` and in DEC-222: any newer understand run that did not complete changes the answer, not only a Deepen (P8-99 verifier round 3, MINOR).
+- **Reads**: `web/src/lib/journey/project-position.ts`, `src/application/use-cases/` (the overview and the journey read), `web/src/pages/ProjectRunsTable.tsx`, RF-010, RF-615, RF-1108, DEC-222.
+- **Do**: add the Givens first; red tests first.
+  - The overview answers each project's journey position in the words of the strip, with a fixed number of reads however many projects there are (P1-137).
+  - The list reads that position, and it agrees with the strip of the same project.
+  - Replace the Givens that state the limit, including the wording above.
+- **Delivers**: the overview field, the list change and tests.
+- **Done when**: a project's list row and its strip say the same position; the read does not grow per project; CI green.
+- **Refs**: RF-010, RF-615, RF-1108, DEC-222; follow-up of P8-99; GitHub issue #1278
+
+### P8-138 - Follow-up: minor findings of Phase 8 wave 3
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, the verifiers of wave 3): MINOR findings that blocked no merge, read from the verdicts and not re-checked since. A line number may have moved.
+  - Live run: `log-text.ts:62-63` writes three lines per verifier call against `LOG_LIMIT` 1000; the verifier harness's `callsInFlight` does not follow the set rule of RF-1002 (P8-60's reducer tests must prove the rule); `reader-room.ts:179` the park-then-abort path is untested; `lastSignOfLife` streams the whole log (P8-131).
+  - Run pages: `RUN_DONE` also matches CapReached and scan (`live-run-page.ts:149`); `code-map-tiles.ts:93` shows read before the coverage loads; `run-coverage.ts:96` restored tasks read; `read-run-partly-read.ts:22` reads `task-results.json` uncapped per partly read row; `data-model.md:395` Readers row.
+  - Money: `TotalsPill.tsx:39` title on a `strong`; `ServerMeter.tsx:41`, `ProviderTest.tsx:81`, `RunMeter.tsx:79` show plain amounts; `cap-warnings.ts:63,73,89`.
+  - Tests: `cap-resume.spec.ts:46` `fill(1)` is dead; `replace-source-scan.spec.ts:10` cites RF-156; `landing-stages.spec.ts:23-39` leaves the connector and the 1168 px breakpoint unasserted; `journey.css:202` glyph tone is untested and the compact spec is not `@visual`; `showStepDetails` in `journey-strip.ts` waits on `aria-expanded`; the P8-119 decisions assertion; the release-flow note test is weak; `project-cost.spec.ts:53` uses `toContainText`, which passes on the server figure that is now hidden below 1600 px; the P8-101 screenshots exist only as Playwright attachments.
+  - Header: at 1280 px with the largest token meter in a font as wide as Verdana the user's name can shrink to 0 px, so its tooltip is out of reach (P8-101).
+  - Words: `requirements.md`, the RF-1010 Given that the administrator "also sees" the server totals lacks the 1600 px rule; `start-choices.ts:34-37,47-50` needs an area; `design-system.md` rows 256 and 375; `requirements.md:1792` "wall time counts all of that" is too broad; migration 0023's header; ADR-028 lines 11, 18 and 54-55; the P8-50 note lines 30, 34, 80 and 82.
+- **Reads**: the files named in the evidence.
+- **Do**: red test where one applies. Check each finding against the code first, and drop one that no longer holds, saying so in the pull request.
+- **Delivers**: the small fixes and their tests.
+- **Done when**: each finding is fixed or dropped with its reason; CI green.
+- **Refs**: RF-1002, RF-428, RF-230; follow-ups of the wave 3 cards; GitHub issue #1279
