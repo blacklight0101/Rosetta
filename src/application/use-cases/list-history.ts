@@ -1,12 +1,15 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
 import type { Project } from '../projects/project.js';
+import { scopeOf } from '../runs/run-scope.js';
 
 // RF-1008, RF-1012, RF-1105: List history gives the history page the runs of one of the signed-in
 // user's projects, newest first, each with the size of its folder, and the size of the project
@@ -19,6 +22,11 @@ export interface HistoryRun {
   readonly sizeBytes: number;
   /** EV-80: the place of a queued run in the server's queue, counted from 1; null for any other run. */
   readonly position: number | null;
+  /**
+   * P8-89: the rounds a Deepen run has finished (0 until its first round ends), or null for a run
+   * that is not a Deepen. Read from the manifest; a manifest that cannot be read counts as none.
+   */
+  readonly deepenRounds: number | null;
 }
 
 export interface RunHistory {
@@ -32,6 +40,23 @@ export interface ListHistoryDependencies {
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
   readonly folders: WorkspaceFolders;
+  readonly manifests: Pick<RunManifestStore, 'read'>;
+}
+
+/** P8-89: the rounds of a Deepen run from its manifest (the record, or the options of a queued one). */
+async function deepenRoundsOf(
+  manifests: Pick<RunManifestStore, 'read'>,
+  run: Run,
+): Promise<number | null> {
+  if (run.stage !== 'understand') return null;
+  try {
+    const manifest = await manifests.read(scopeOf(run));
+    if (manifest?.deepen !== undefined) return manifest.deepen.roundsDone;
+    return manifest !== undefined && 'deepen' in manifest.options ? 0 : null;
+  } catch (error) {
+    if (error instanceof RosettaError) return null;
+    throw error;
+  }
 }
 
 export class ListHistory {
@@ -46,7 +71,7 @@ export class ListHistory {
     readonly actor: Actor;
     readonly projectId: string;
   }): Promise<Result<RunHistory, typeof ERROR_CODES.notFound>> {
-    const { projects, runs, folders } = this.deps;
+    const { projects, runs, folders, manifests } = this.deps;
     const { userId } = request.actor;
     const project = await projects.find(userId, request.projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
@@ -54,7 +79,8 @@ export class ListHistory {
     const listed: HistoryRun[] = [];
     for (const run of await runs.list(userId, project.id)) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
-      listed.push({ run, sizeBytes, position: positions.get(run.id) ?? null });
+      const position = positions.get(run.id) ?? null;
+      listed.push({ run, sizeBytes, position, deepenRounds: await deepenRoundsOf(manifests, run) });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

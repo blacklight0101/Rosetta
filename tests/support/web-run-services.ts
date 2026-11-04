@@ -286,7 +286,7 @@ export function historyServices(parts: {
   const { projects, folders, snapshots, logger, costs, upload } = parts;
   const runs = parts.runs.runs;
   return {
-    listHistory: new ListHistory({ projects, runs, folders }),
+    listHistory: new ListHistory({ projects, runs, folders, manifests: parts.runs.manifests }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({

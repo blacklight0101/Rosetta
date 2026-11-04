@@ -272,6 +272,12 @@ export function mayHaveMeasures(run: {
   );
 }
 
+/** P8-89, History artboard: the Coverage column, "42% read" or "none read". */
+export function coverageReadText(measures: MeasureSet): string {
+  const share = measures.firstPartyCoverage;
+  return share === null ? 'none read' : `${percentText(share)} read`;
+}
+
 /** RF-231: the measures of a run on one line, for a list: what was read, confirmed and not judged. */
 export function measureLine(measures: MeasureSet): string {
   const share = measures.firstPartyCoverage;

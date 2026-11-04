@@ -33,6 +33,8 @@ const historyRunSchema = z.object({
   runningMs: count.nullable().default(null),
   /** P8-88: from the first start to the end; null until the run ends. */
   wallMs: count.nullable().default(null),
+  /** P8-89: the rounds a Deepen run has finished; null for a run that is not a Deepen. */
+  deepenRounds: count.nullable().default(null),
 });
 
 export type HistoryRun = z.output<typeof historyRunSchema>;
@@ -42,6 +44,8 @@ export const runHistorySchema = z.object({
     id: z.string(),
     name: z.string(),
     sourceUrl: z.string(),
+    /** P8-89: only a GitHub project pins a commit, so only it has a Commit column. */
+    sourceKind: z.enum(['github', 'upload', 'workbook']).default('github'),
     ref: z.string(),
     subpath: z.string(),
     /** `projects/<id>`, the folder a deletion removes, relative to the workspace. */

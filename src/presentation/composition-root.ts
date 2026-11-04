@@ -164,7 +164,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     auth: auth.services,
     projects,
     runs: runs.services,
-    history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
+    history: composeHistory({ ...{ pool, logger, masker }, dataDir: environment.dataDir }),
     models: composeModels({ environment, priceTable: auth.priceTable, list: auth.models }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,

@@ -15,7 +15,7 @@ import { useDeletion } from './use-deletion.js';
 import { useHistory } from './use-history.js';
 
 // RF-1008, RF-1012, RF-1105, History artboard: `/projects/:projectId/history`, the runs of a project
-// with their source, commit, stage, state, cost and links to the report and zip, and the deletion of
+// with their kind, commit (GitHub projects), state, coverage, cost and links to the report and zip, and the deletion of
 // a run or of the project behind a confirmation that names the folder and the space it frees. Another
 // user's project answers 404 like an unknown one, and the page shows that error and no table.
 
@@ -47,7 +47,11 @@ function HistoryView(props: {
       {history.runs.length === 0 ? (
         <EmptyState message="No runs yet. A run shows here as soon as you start one." />
       ) : (
-        <HistoryRuns runs={history.runs} onDelete={runDeletion.ask} />
+        <HistoryRuns
+          runs={history.runs}
+          showCommit={history.project.sourceKind === 'github'}
+          onDelete={runDeletion.ask}
+        />
       )}
       <DeleteProjectSection
         history={history}
