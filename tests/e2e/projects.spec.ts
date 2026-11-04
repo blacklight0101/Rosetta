@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { accountFor } from './support/seed.js';
+import { expectRowMenuWorks } from './support/row-menu.js';
 import { signInAs } from './support/sign-in.js';
 
 // RF-010, RF-1105, DEC-70, P1-41: the projects page. A user pastes a public GitHub URL (the test
@@ -86,32 +87,6 @@ test('RF-010 creating the same address again opens the existing project', async 
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
 });
 
-/** Two animation frames: the resize and scroll events of what the test just did have been delivered. */
-const settle = (page: Page): Promise<unknown> =>
-  page.evaluate(
-    '(async () => { await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))); })()',
-  );
-
-/** P8-99: the row menu opens inside the viewport at this width, and the page does not scroll sideways. */
-async function expectMenuInView(page: Page, width: number, height: number): Promise<void> {
-  await page.setViewportSize({ width, height });
-  // The menu closes on a resize and on a scroll: bring the button into view and let both land first.
-  const button = page.getByRole('button', { name: 'More actions for octo/demo' });
-  await button.scrollIntoViewIfNeeded();
-  await settle(page);
-  await button.click();
-  const box = await page.getByRole('menu', { name: 'More actions for octo/demo' }).boundingBox();
-  if (box === null) throw new Error('The row menu has no box.');
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(width);
-  expect(box.y + box.height).toBeLessThanOrEqual(height);
-  const overflow = await page.evaluate('document.documentElement.scrollWidth - window.innerWidth');
-  expect(Number(overflow)).toBeLessThanOrEqual(0);
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('menu')).toHaveCount(0);
-}
-
 /** RF-160: creates the demo project and waits on its page for the scan it starts by itself to end. */
 async function createScannedProject(page: Page): Promise<void> {
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
@@ -156,11 +131,14 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
   }
   await page.setViewportSize({ width: 1280, height: 800 });
 
-  await expectMenuInView(page, 1280, 800);
-  await expectMenuInView(page, 360, 780);
+  const menuButton = page.getByRole('button', { name: 'More actions for octo/demo' });
+  await expectRowMenuWorks(page, menuButton);
+  await page.setViewportSize({ width: 360, height: 780 });
+  await expectRowMenuWorks(page, menuButton);
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
+  await menuButton.click();
   await page.getByRole('menuitem', { name: 'Delete project…' }).click();
+  await expect(page.getByRole('menu')).toHaveCount(0);
   const dialog = page.getByRole('dialog', { name: 'Delete project octo/demo?' });
   await expect(dialog).toContainText('cost ledger');
   await dialog.getByRole('button', { name: 'Delete project' }).click();

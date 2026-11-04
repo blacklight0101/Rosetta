@@ -1,12 +1,13 @@
 import type { JSX, RefObject } from 'preact';
-import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 // design-system.md section 14 (History, row menu), P8-89: the "More actions" button of a table row and the
 // menu it opens. The button has `aria-haspopup="menu"` and `aria-expanded`; the menu holds links and buttons
 // as `menuitem`. ArrowDown or ArrowUp on the button opens it (at the first or the last item); the arrows,
-// Home and End move within it. Escape, a click elsewhere, a scroll or leaving the menu with Tab closes it, and
-// the focus returns to the button so that a dialog an item opens gives it back there. An item that cannot be
-// used is `aria-disabled` and says why under its name. The panel is `position: fixed`, so the scrolling box
+// Home and End move within it. Escape (wherever the focus is), a click elsewhere, a scroll or resize that
+// moves the button, or leaving the menu with Tab closes it, and the focus returns to the button so that a
+// dialog an item opens gives it back there. The panel opens under the button, or above it when it would end
+// below the viewport. An item that cannot be used is `aria-disabled` and says why under its name. The panel is `position: fixed`, so the scrolling box
 // of a table never clips it.
 
 export interface RowMenuItem {
@@ -91,7 +92,8 @@ function focusItem(menu: HTMLElement | null, target: Target): void {
     next: (at + 1) % items.length,
     previous: (at - 1 + items.length) % items.length,
   }[target];
-  items[index]?.focus();
+  // The panel is fixed and already in view: focusing an item must not scroll the page under it.
+  items[index]?.focus({ preventScroll: true });
 }
 
 const MENU_KEYS: Readonly<Record<string, Target>> = {
@@ -112,22 +114,88 @@ interface Popup {
   readonly close: () => void;
 }
 
-interface FlipParts {
+/** Where the button stood, and how big the viewport was, when the menu opened. */
+interface Anchor {
+  readonly top: number;
+  readonly left: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+function anchorOf(button: HTMLElement): Anchor {
+  const { top, left } = button.getBoundingClientRect();
+  return { top, left, width: window.innerWidth, height: window.innerHeight };
+}
+
+/** True when the button or the viewport is not where the menu opened, so the panel no longer hangs from it. */
+function moved(button: HTMLElement | null, anchor: Anchor | undefined): boolean {
+  if (button === null || anchor === undefined) return true;
+  const now = anchorOf(button);
+  return (
+    now.top !== anchor.top ||
+    now.left !== anchor.left ||
+    now.width !== anchor.width ||
+    now.height !== anchor.height
+  );
+}
+
+interface Parts {
   readonly open: boolean;
   readonly menu: RefObject<HTMLDivElement | null>;
   readonly trigger: RefObject<HTMLButtonElement | null>;
+  readonly anchor: RefObject<Anchor | undefined>;
+  readonly landing: RefObject<'first' | 'last'>;
   readonly setPlace: (change: (current: Place | undefined) => Place | undefined) => void;
+  readonly closeAndReturn: () => void;
+  readonly close: () => void;
 }
 
 /** The panel opens under the button; one that would end below the viewport opens above it instead. */
-function useFlipAbove({ open, menu, trigger, setPlace }: FlipParts): void {
+function flipAbove({ menu, trigger, setPlace }: Parts): void {
+  const panel = menu.current?.getBoundingClientRect();
+  const button = trigger.current?.getBoundingClientRect();
+  if (panel === undefined || button === undefined || panel.bottom <= window.innerHeight) return;
+  const above = Math.max(4, button.top - 4 - panel.height);
+  setPlace((current) => (current === undefined ? current : { ...current, top: above }));
+}
+
+/**
+ * Runs when the panel is in the DOM, before anything is painted: the panel is whole in the viewport and holds
+ * the focus from its first frame, and Escape works at once, even when a click moved the focus elsewhere.
+ * A scroll or a resize closes it only when the button or the viewport really moved: the event of a scroll that
+ * ended before the menu opened may still be on its way, and must not close it.
+ */
+function useOpenMenu(parts: Parts): void {
+  const { open, menu, trigger, anchor, landing, closeAndReturn, close } = parts;
   useLayoutEffect(() => {
-    const panel = menu.current?.getBoundingClientRect();
-    const button = trigger.current?.getBoundingClientRect();
-    if (!open || panel === undefined || button === undefined) return;
-    if (panel.bottom <= window.innerHeight) return;
-    const above = Math.max(4, button.top - 4 - panel.height);
-    setPlace((current) => (current === undefined ? current : { ...current, top: above }));
+    if (!open) return undefined;
+    flipAbove(parts);
+    focusItem(menu.current, landing.current);
+    // A press on the button itself is left to its click, which toggles; closing here would let the click reopen.
+    const outside = (event: Event): void => {
+      const { target } = event;
+      const inside = (box: Element | null): boolean =>
+        target instanceof Node && box?.contains(target) === true;
+      if (target instanceof Node && !inside(menu.current) && !inside(trigger.current)) close();
+    };
+    const away = (): void => {
+      if (moved(trigger.current, anchor.current)) close();
+    };
+    const escape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeAndReturn();
+    };
+    document.addEventListener('mousedown', outside);
+    document.addEventListener('keydown', escape);
+    window.addEventListener('resize', away);
+    window.addEventListener('scroll', away, true);
+    return () => {
+      document.removeEventListener('mousedown', outside);
+      document.removeEventListener('keydown', escape);
+      window.removeEventListener('resize', away);
+      window.removeEventListener('scroll', away, true);
+    };
   }, [open]);
 }
 
@@ -137,43 +205,26 @@ function usePopup(): Popup {
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const landing = useRef<'first' | 'last'>('first');
-  const open = place !== undefined;
+  const anchor = useRef<Anchor | undefined>(undefined);
   const close = (): void => {
     setPlace(undefined);
   };
-  useFlipAbove({ open, menu, trigger, setPlace });
-  useEffect(() => {
-    if (!open) return undefined;
-    focusItem(menu.current, landing.current);
-    // A press on the button itself is left to its click, which toggles; closing here would let the click reopen.
-    const outside = (event: Event): void => {
-      const { target } = event;
-      const inside = (box: Element | null): boolean =>
-        target instanceof Node && box?.contains(target) === true;
-      if (target instanceof Node && !inside(menu.current) && !inside(trigger.current)) close();
-    };
-    document.addEventListener('mousedown', outside);
-    window.addEventListener('resize', close);
-    window.addEventListener('scroll', close, true);
-    return () => {
-      document.removeEventListener('mousedown', outside);
-      window.removeEventListener('resize', close);
-      window.removeEventListener('scroll', close, true);
-    };
-  }, [open]);
+  const closeAndReturn = (): void => {
+    close();
+    trigger.current?.focus();
+  };
+  const open = place !== undefined;
+  useOpenMenu({ open, menu, trigger, anchor, landing, setPlace, closeAndReturn, close });
   const openAt = (first: 'first' | 'last'): void => {
     if (trigger.current === null) return;
     landing.current = first;
+    anchor.current = anchorOf(trigger.current);
     const box = trigger.current.getBoundingClientRect();
     setPlace({ top: box.bottom + 4, right: Math.max(0, window.innerWidth - box.right) });
   };
   const toggle = (): void => {
     if (open) close();
     else openAt('first');
-  };
-  const closeAndReturn = (): void => {
-    close();
-    trigger.current?.focus();
   };
   return { place, trigger, menu, toggle, openAt, closeAndReturn, close };
 }
@@ -183,10 +234,7 @@ export function RowMenu(props: RowMenuProps): JSX.Element {
   const { place, trigger, menu, toggle, openAt, closeAndReturn, close } = usePopup();
   const open = place !== undefined;
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeAndReturn();
-    } else if (event.key === 'Tab') {
+    if (event.key === 'Tab') {
       close();
     } else if (event.key in MENU_KEYS) {
       event.preventDefault();

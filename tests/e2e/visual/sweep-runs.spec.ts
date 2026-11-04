@@ -4,6 +4,7 @@ import { expect, test } from '../support/fixtures.js';
 import { confirmation, openHistory, rowMenuItem, runRow } from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
 import { openSettingsFromList } from '../support/projects-list.js';
+import { expectRowMenuWorks } from '../support/row-menu.js';
 import {
   agentPanel,
   openRunTab,
@@ -105,6 +106,7 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await expect(row.getByTestId('run-coverage')).toBeVisible();
   await expectPageInView(page);
 
+  await expectRowMenuWorks(page, row.getByRole('button', { name: /^More actions for run / }));
   await (await rowMenuItem(row, 'Delete')).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
