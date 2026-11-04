@@ -51,7 +51,7 @@ test(
     await expect(page.getByText('No projects yet')).toBeVisible();
     await expectPageInView(page);
 
-    await openStartPage(page);
+    await openStartPage(page, 'scanning');
     await expect(page.getByTestId('scan-running')).toBeVisible();
     await expectPageInView(page);
 

@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from './fixtures.js';
-import { revealAreas, showStartChoices } from './start-choices.js';
+import { revealAreas, showStartPage, type StartPageState } from './start-choices.js';
 
 // RF-1002, RF-1003, RF-1004, P1-35: what the live run journeys do on the start page and on the live
 // page, so the specs read as steps. The repository is `octo/webforms` (serve.ts), the C# fixture whose
@@ -49,14 +49,17 @@ export async function openStartOf(page: Page, url: string): Promise<void> {
   await page.goto((await link.getAttribute('href')) ?? '/projects');
 }
 
-/** Opens the start page of the account's `octo/webforms` project, creating the project once. */
-export async function openStartPage(page: Page): Promise<void> {
+/**
+ * Opens the start page of the account's `octo/webforms` project, creating the project once.
+ * `scanning` leaves the page while its own scan runs (RF-160); the default waits until it ended.
+ */
+export async function openStartPage(page: Page, state: StartPageState = 'settled'): Promise<void> {
   await page.goto('/projects');
   await openStartOf(page, webformsUrl);
   // P8-26: a project with a run is titled with its name, not "Start a run".
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
-  await showStartChoices(page);
+  await showStartPage(page, state);
 }
 
 /** The area checkboxes of the start page. */
