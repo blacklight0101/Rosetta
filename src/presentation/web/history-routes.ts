@@ -40,7 +40,13 @@ function instantOrNull(value: number | null): string | null {
   return value === null ? null : formatInstant(value);
 }
 
-function runRow({ run, sizeBytes, position, deepenRounds }: HistoryRun): Record<string, unknown> {
+function runRow({
+  run,
+  sizeBytes,
+  position,
+  deepenRounds,
+  partlyRead,
+}: HistoryRun): Record<string, unknown> {
   // P8-88: the first start, the running time (the sum of the spans) and the wall time of an ended run.
   const times = runTimesOf(run);
   return {
@@ -57,6 +63,9 @@ function runRow({ run, sizeBytes, position, deepenRounds }: HistoryRun): Record<
     totals: run.totals,
     failedAreas: run.failedAreas,
     unreadAreas: run.unreadAreas,
+    // P8-130: what the State badge needs to read "Partly read" as the run page does.
+    partlyReadAreas: partlyRead.areas,
+    readShare: partlyRead.share,
     position,
     deepenRounds,
     sizeBytes,

@@ -30,6 +30,10 @@ const historyRunSchema = z.object({
   failedAreas: count.default(0),
   /** P7-02: the planned areas no reader started; a capped run with some reads "Partly read". */
   unreadAreas: count.default(0),
+  /** P8-130: the areas read below the coverage bar; the lists read "Partly read" from it, as the run page does. */
+  partlyReadAreas: count.default(0),
+  /** P8-130: the share of the first-party code the run read (0 to 1); null when it cannot be worked out. */
+  readShare: z.number().min(0).max(1).nullable().default(null),
   /** EV-80: the place of a queued run in the server's queue, counted from 1. */
   position: z.number().int().positive().nullable().default(null),
   /** P8-88: the sum of the spans the run was running in; null until it ends. */

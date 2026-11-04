@@ -34,7 +34,8 @@ export interface ReadRunCoverageDependencies {
   readonly files: RunTextFiles;
 }
 
-function listingOf(text: string | undefined): CoverageListing {
+/** The areas of the text of a `coverage.json`; none for a missing, torn or foreign file. */
+export function listingOf(text: string | undefined): CoverageListing {
   if (text === undefined) return { areas: [] };
   try {
     const parsed = coverageSchema.safeParse(JSON.parse(text));

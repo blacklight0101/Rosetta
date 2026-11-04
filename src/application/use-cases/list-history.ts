@@ -96,13 +96,8 @@ export class ListHistory {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
       const position = positions.get(run.id) ?? null;
       const deepenRounds = await deepenRoundsOf(this.deps, run);
-      listed.push({
-        run,
-        sizeBytes,
-        position,
-        deepenRounds,
-        partlyRead: { areas: 0, share: null },
-      });
+      const partlyRead = await this.deps.partlyRead.execute({ actor: request.actor, run });
+      listed.push({ run, sizeBytes, position, deepenRounds, partlyRead });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

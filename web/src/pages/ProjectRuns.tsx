@@ -25,6 +25,8 @@ function State({ run }: { readonly run: HistoryRun }): JSX.Element {
       <RunEndBadge
         {...{ endState: ended, endReason: run.endReason }}
         unreadAreas={run.unreadAreas}
+        partlyReadAreas={run.partlyReadAreas}
+        readShare={run.readShare}
       />
     );
   }

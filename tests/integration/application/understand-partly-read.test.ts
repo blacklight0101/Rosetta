@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ReadRunPartlyRead } from '../../../src/application/use-cases/read-run-partly-read.js';
 import { ReadRunCoverage } from '../../../src/application/use-cases/read-run-coverage.js';
 import { MemoryRunIndex } from '../../../src/infrastructure/db/memory-run-index.js';
 import { readingOf } from '../../../web/src/lib/understanding/area-read.js';
@@ -52,5 +53,26 @@ describe('an understand run on the C# fixture: partly read areas', () => {
       'Services',
       'Database',
     ]);
+  });
+});
+
+describe('the run lists on the C# fixture: partly read areas', () => {
+  it('RF-230 RF-1008 gives the run lists the same three partly read areas, from the same coverage', async () => {
+    const { folder } = full.current();
+    const run = sampleRun({
+      userId: userAmy.userId,
+      runKey: replayDemoRunKey,
+      stage: 'understand',
+      queueState: 'Ended',
+      endState: 'Completed',
+      startedAt: 1,
+      endedAt: 2,
+    });
+    const files = new MapRunTextFiles({
+      'coverage.json': await readFile(join(folder, 'coverage.json'), 'utf8'),
+    });
+    const reader = new ReadRunPartlyRead({ files, share: () => Promise.resolve(0.16) });
+
+    expect(await reader.execute({ actor: userAmy, run })).toEqual({ areas: 3, share: 0.16 });
   });
 });

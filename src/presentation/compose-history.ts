@@ -4,7 +4,10 @@ import { DeleteRun } from '../application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../application/use-cases/delete-snapshot.js';
 import { ListHistory } from '../application/use-cases/list-history.js';
 import { ListProjectOverview } from '../application/use-cases/list-project-overview.js';
-import { ReadRunPartlyRead } from '../application/use-cases/read-run-partly-read.js';
+import {
+  ReadRunPartlyRead,
+  shareOfUnderstanding,
+} from '../application/use-cases/read-run-partly-read.js';
 import { ListSnapshots } from '../application/use-cases/list-snapshots.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
@@ -17,6 +20,7 @@ import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { createUploadStore } from './compose-uploads.js';
+import type { RunServices } from './web/run-routes.js';
 import type { HistoryServices } from './web/history-routes.js';
 
 // Architecture section 2 (composition root), RF-1008, RF-1012, RF-1105: the adapters and the use
@@ -30,6 +34,8 @@ export interface HistoryParts {
   readonly dataDir: string;
   /** P8-89: masks the manifests the history reads to tell a Deepen run from another. */
   readonly masker: TextMasker;
+  /** P8-130: the run services, whose measures give the share of code read that a State badge names. */
+  readonly runs: { readonly services: Pick<RunServices, 'readUnderstanding'> };
 }
 
 // RF-1012
@@ -43,7 +49,7 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
   const manifests = new FileRunManifestStore({ writer, masker });
   const partlyRead = new ReadRunPartlyRead({
     files: new FileRunTextFiles(writer),
-    share: () => Promise.resolve(null),
+    share: shareOfUnderstanding(parts.runs.services.readUnderstanding),
   });
   return {
     listHistory: new ListHistory({ projects, runs, folders, manifests, logger, partlyRead }),

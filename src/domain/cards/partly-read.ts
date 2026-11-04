@@ -8,7 +8,18 @@ export interface ListedAreaShare {
   readonly note?: string | undefined;
 }
 
-// RF-230
+/** Areas with nothing a reader could read are no part of the count (RF-243, RF-206). */
+const NOTHING_TO_READ = ['no application logic', 'no readable file'];
+
+/**
+ * RF-230: how many areas of own code were read below the coverage bar, counted the way the run page
+ * counts them. An area with no share (an old file) says nothing. This is the 80% bar of RF-231, not the
+ * 50% at which readers ask for more (Q-50, DEC-220).
+ */
 export function partlyReadAreas(areas: readonly ListedAreaShare[]): number {
-  return areas.length * 0;
+  return areas.filter((each) => {
+    const share = each.firstPartyShare;
+    if (share === undefined || share >= COVERAGE_BAR) return false;
+    return !NOTHING_TO_READ.some((note) => each.note?.includes(note) === true);
+  }).length;
 }
