@@ -64,7 +64,7 @@ const byRun = () => screen.findByRole('table', { name: 'By run' });
 
 /** What a cell shows: the amount alone, without the exact figure beside it. */
 const shown = (cell: HTMLElement): string =>
-  cell.querySelector('[data-rst-amount]')?.textContent ?? cell.textContent;
+  (cell.querySelector('[data-rst-amount], [aria-hidden]') ?? cell).textContent ?? '';
 
 const rowOf = (table: HTMLElement, name: string | RegExp): HTMLElement =>
   within(table).getByRole('row', { name });

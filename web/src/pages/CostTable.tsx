@@ -67,7 +67,8 @@ function Row(props: RowProps): JSX.Element {
   );
 }
 
-const versionsOf = (rows: readonly CostRow[]): string[] => [
+/** The price table versions the totals used, each once. */
+export const versionsOf = (rows: readonly { readonly totals: UsageTotals }[]): string[] => [
   ...new Set(rows.flatMap((row) => row.totals.priceTableVersions)),
 ];
 
@@ -100,7 +101,9 @@ function Head(props: { readonly firstColumn: string; readonly perRow: boolean })
 // The one Tab stop of the amounts is the row last reached, the first row until one is, among the rows whose
 // amount carries a tooltip (a plain amount cannot take focus). A row that is gone or turned plain hands the
 // stop back to the first of those rows.
-function useTabStop(rows: readonly CostRow[]): {
+export function useTabStop(
+  rows: readonly { readonly key: string; readonly totals: UsageTotals }[],
+): {
   readonly stopKey: string | undefined;
   readonly reach: (key: string) => void;
 } {
@@ -110,24 +113,39 @@ function useTabStop(rows: readonly CostRow[]): {
   return { stopKey: stopKey ?? undefined, reach: setReached };
 }
 
+/** The caption of a cost table: its name, and the price table named once when every row used the same one. */
+export function CostCaption(props: {
+  readonly caption: string;
+  readonly versions: readonly string[];
+}): JSX.Element {
+  const [only] = props.versions;
+  return (
+    <caption class="rst-p136-caption">
+      <span id={captionIdOf(props.caption)}>{props.caption}</span>
+      {only !== undefined && props.versions.length === 1 ? (
+        <span class="rst-p136-pricenote">
+          {`Prices of ${priceTableText(only)}, for every row below`}
+        </span>
+      ) : null}
+    </caption>
+  );
+}
+
+export const captionIdOf = (caption: string): string =>
+  `rst-cost-${caption.toLowerCase().replaceAll(' ', '-')}`;
+
 // RF-428
 export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.Element {
   const versions = versionsOf(rows);
-  const [only] = versions;
   const perRow = versions.length > 1;
   const { stopKey, reach } = useTabStop(rows);
-  const captionId = `rst-cost-${caption.toLowerCase().replaceAll(' ', '-')}`;
   return (
     <ScrollRegion label={`Cost ${caption.toLowerCase()} table`}>
-      <table class="rst-table rst-table--stack rst-p136-table" aria-labelledby={captionId}>
-        <caption class="rst-p136-caption">
-          <span id={captionId}>{caption}</span>
-          {only !== undefined && !perRow ? (
-            <span class="rst-p136-pricenote">
-              {`Prices of ${priceTableText(only)}, for every row below`}
-            </span>
-          ) : null}
-        </caption>
+      <table
+        class="rst-table rst-table--stack rst-p136-table"
+        aria-labelledby={captionIdOf(caption)}
+      >
+        <CostCaption caption={caption} versions={versions} />
         <Head firstColumn={firstColumn} perRow={perRow} />
         <tbody>
           {rows.map((row) => (

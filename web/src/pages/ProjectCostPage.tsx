@@ -7,8 +7,9 @@ import { Link } from '../components/Link.js';
 import { tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
 import { CostTable, type CostRow } from './CostTable.js';
+import { RunCostTable, type RunCostRow } from './RunCostTable.js';
 import { useProjectCost } from './use-project-cost.js';
-import { useRunNames } from './use-run-names.js';
+import { useRunNames, type HistoryRunName } from './use-run-names.js';
 
 // RF-428, RF-1010, RF-1105, DEC-49: `/projects/:projectId/cost`, every model call of every run on
 // the project from the cost ledger: the totals and the breakdown by run, stage, role, provider and
@@ -42,21 +43,28 @@ const plainRows = (lines: readonly CostLine[]): CostRow[] =>
   lines.map((line) => ({ ...line, name: line.key }));
 
 /** A run is named as History names it (its folder name); the run id when History has no name. */
-function runRows(cost: ProjectCost, names: ReadonlyMap<string, string>): CostRow[] {
-  return cost.byRun.map((line) => ({
-    ...line,
-    name:
-      line.runId === null ? (
-        'Plan setup options'
-      ) : (
-        <>
-          <Link href={`/runs/${encodeURIComponent(line.runId)}`} class="rst-mono">
-            {names.get(line.runId) ?? line.runId}
-          </Link>
-          <div class="rst-table__sub">{`${secondsText(line.firstAt)} UTC`}</div>
-        </>
-      ),
-  }));
+function runRows(cost: ProjectCost, names: ReadonlyMap<string, HistoryRunName>): RunCostRow[] {
+  return cost.byRun.map((line) => {
+    const known = line.runId === null ? undefined : names.get(line.runId);
+    return {
+      key: line.key,
+      local: line.local,
+      totals: line.totals,
+      kind: known?.kind ?? '-',
+      roles: new Map(line.byRole.map((role) => [role.key, role.totals])),
+      name:
+        line.runId === null ? (
+          'Plan setup options'
+        ) : (
+          <>
+            <Link href={`/runs/${encodeURIComponent(line.runId)}`} class="rst-mono">
+              {known?.name ?? line.runId}
+            </Link>
+            <div class="rst-table__sub">{`${secondsText(line.firstAt)} UTC`}</div>
+          </>
+        ),
+    };
+  });
 }
 
 function modelRows(cost: ProjectCost): CostRow[] {
@@ -91,13 +99,13 @@ function ProviderTests({ line }: { readonly line: CostLine }): JSX.Element {
 
 function Breakdown(props: {
   readonly cost: ProjectCost;
-  readonly names: ReadonlyMap<string, string>;
+  readonly names: ReadonlyMap<string, HistoryRunName>;
 }): JSX.Element {
   const { cost, names } = props;
   return (
     <>
       <Totals totals={cost.totals} />
-      <CostTable caption="By run" firstColumn="Run" rows={runRows(cost, names)} />
+      <RunCostTable caption="By run" rows={runRows(cost, names)} total={cost.totals} />
       <CostTable caption="By stage" firstColumn="Stage" rows={plainRows(cost.byStage)} />
       <CostTable caption="By role" firstColumn="Role" rows={plainRows(cost.byRole)} />
       <CostTable caption="By provider" firstColumn="Provider" rows={plainRows(cost.byProvider)} />
@@ -128,7 +136,7 @@ export function ProjectCostPage(): JSX.Element {
       </div>
     );
   }
-  const loaded = names ?? new Map<string, string>();
+  const loaded = names ?? new Map<string, HistoryRunName>();
   return (
     <div class="rst-p136-cost">
       <div>
