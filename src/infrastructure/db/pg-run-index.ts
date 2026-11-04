@@ -47,9 +47,12 @@ const START =
 // P8-88: the milliseconds of the span that ends at $3; 0 for a run that is not in a span.
 const SPAN_MS =
   'COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM ($3::timestamptz - span_started_at)) * 1000)::bigint), 0)';
+// P8-122: the open span counts up to $7 (the last sign of life) when one is given, not up to the end.
+const END_SPAN_MS =
+  'COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM (LEAST($3::timestamptz, COALESCE($7::timestamptz, $3::timestamptz)) - span_started_at)) * 1000)::bigint), 0)';
 const END =
   "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5, end_reason = CASE WHEN $2::text = 'Interrupted' THEN $6::text END, span_started_at = NULL, active_ms = active_ms + " +
-  SPAN_MS +
+  END_SPAN_MS +
   " WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted') OR (queue_state = 'AwaitingApproval' AND $2::text IN ('CapReached', 'Interrupted')))" +
   RETURNING;
 // RF-432: a running run pauses near its approved amount; Continue queues the owner's paused run again.
@@ -159,8 +162,12 @@ export class PgRunIndex implements RunIndex {
     at: EpochMs,
     detail: RunEndDetail = {},
   ): Promise<Run | undefined> {
-    const { failedAreas = 0, unreadAreas = 0, endReason = null } = detail;
-    return this.change(runId, END, [endState, new Date(at), failedAreas, unreadAreas, endReason]);
+    const { failedAreas = 0, unreadAreas = 0, endReason = null, activeUntil } = detail;
+    const until = activeUntil === undefined ? null : new Date(activeUntil);
+    return this.change(runId, END, [
+      ...[endState, new Date(at), failedAreas, unreadAreas, endReason],
+      until,
+    ]);
   }
 
   pause(runId: string, at: EpochMs, counts: AreaCounts = {}): Promise<Run | undefined> {
