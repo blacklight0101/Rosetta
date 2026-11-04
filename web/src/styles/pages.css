@@ -289,7 +289,13 @@
   resize: vertical;
 }
 
+/*
+ * The box is the containing block of the table's visually hidden text (an "Actions" header is
+ * absolutely placed): without it that text sits at the table's far edge, outside the box, and the
+ * page scrolls sideways when the table is wider than its box (P8-130, 1024 px).
+ */
 .rst-table-scroll {
+  position: relative;
   overflow-x: auto;
 }
 
@@ -399,6 +405,11 @@
 .rst-table__sub {
   color: var(--rst-ink-muted);
   font-size: var(--rst-fs-xs);
+}
+
+/* P8-130: the share under a Partly read badge. A whole-pixel line (12px by 1.5) keeps the rows of the table on whole pixels. */
+.rst-table__sub--share {
+  line-height: 1.5;
 }
 
 /* The row actions of an account stay on one line; the table scrolls inside its region. */

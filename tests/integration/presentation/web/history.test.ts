@@ -5,6 +5,7 @@ import {
   createHistoryHarness,
   type HistoryHarness,
 } from '../../../support/history-harness.js';
+import { realPartlyRead } from '../../../support/partly-read-pipeline.js';
 import { addUser, signedInBrowser } from '../../../support/test-browser.js';
 import { createTestServer } from '../../../support/web-server.js';
 
@@ -47,6 +48,8 @@ describe('GET /api/projects/:id/history runs', () => {
         sizeBytes: 5,
         failedAreas: 0,
         unreadAreas: 0,
+        partlyReadAreas: 0,
+        readShare: null,
         endReason: null,
         position: null,
         deepenRounds: null,
@@ -57,6 +60,27 @@ describe('GET /api/projects/:id/history runs', () => {
         ...{ costMicros: 1_310_000, inputTokens: 400_000 },
         ...{ outputTokens: 12_606, cachedInputTokens: 0 },
       },
+    });
+  });
+});
+
+describe('GET /api/projects/:id/history partly read runs (P8-130)', () => {
+  it('RF-1008 RF-230 gives an ended understand run read below the bar its areas and the real share of its code', async () => {
+    harness = await createHistoryHarness({ partlyRead: realPartlyRead() });
+    const { amy, projectId, done, live, test } = harness;
+    test.runs.executor.settle(live.id, { endState: 'Completed' });
+    await test.runs.ended(live);
+
+    const response = await amy.request({ method: 'GET', url: historyUrl(projectId) });
+
+    const runs = response.json<{ runs: Record<string, unknown>[] }>().runs;
+    const row = runs.find((each) => each['id'] === live.id);
+    expect(row?.['partlyReadAreas']).toBe(1);
+    expect(row?.['readShare']).toBeGreaterThan(0);
+    expect(row?.['readShare']).toBeLessThan(0.8);
+    expect(runs.find((each) => each['id'] === done.id)).toMatchObject({
+      partlyReadAreas: 0,
+      readShare: null,
     });
   });
 });

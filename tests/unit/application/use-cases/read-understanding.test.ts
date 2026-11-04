@@ -70,6 +70,8 @@ interface Setup {
   readonly run?: Partial<Run>;
   /** False: the project has no completed scan. */
   readonly scanned?: boolean;
+  /** The areas of the scan's code map; `areas` above by default. */
+  readonly codeMapAreas?: readonly Area[];
 }
 
 async function setup(options: Setup = {}) {
@@ -85,13 +87,15 @@ async function setup(options: Setup = {}) {
   });
   await runs.insert(understand);
   const manifest = sampleManifest({ codemapHash: 'a'.repeat(64), ...options.manifest });
+  const scans = new FixedScans(options.codeMapAreas ?? areas, deepenFiles);
   const read = new ReadUnderstanding({
     runs,
-    scans: new FixedScans(areas, deepenFiles),
+    scans,
     taskResults: { read: () => Promise.resolve(options.results ?? [result]) },
     manifests: { read: () => Promise.resolve(manifest) },
   });
-  return { read, understand };
+  const listed = await runs.list(userAmy.userId, 'project');
+  return { read, understand, scans, listed };
 }
 
 describe('RF-231 reading the understanding of an ended run', () => {
@@ -169,5 +173,63 @@ describe('RF-231 a run with nothing to measure', () => {
     const outcome = await read.execute({ actor: userAmy, runId: understand.id });
 
     expect(outcome).toMatchObject({ ok: true, value: { measures: null } });
+  });
+});
+
+describe('P8-130 reading the figures of the runs of a list', () => {
+  it('RF-231 gives the first-party coverage of a run: the figure of its measures, never null for a run that has them', async () => {
+    const { read, understand, listed } = await setup();
+    const outcome = await read.execute({ actor: userAmy, runId: understand.id });
+    const expected = outcome.ok ? outcome.value.measures?.firstPartyCoverage : undefined;
+
+    const share = await read.forListing(listed).firstPartyShare(understand);
+
+    expect(expected).toBeGreaterThan(0);
+    expect(share).toBe(expected);
+  });
+
+  it('RF-231 opens the scan of the project once for every run of the list', async () => {
+    const { read, understand, scans, listed } = await setup();
+    const other = { ...understand, id: 'another', runKey: '20261002-100000-understand' };
+    const listing = read.forListing(listed);
+
+    await listing.firstPartyShare(understand);
+    await listing.firstPartyShare(other);
+    await listing.libraryAreas();
+
+    expect(scans.opened).toHaveLength(1);
+  });
+
+  it.each([
+    ['a run with no task results', { results: [] }],
+    [
+      'a run whose code map is not the one of the scan',
+      { manifest: { codemapHash: 'b'.repeat(64) } },
+    ],
+    ['a project with no completed scan', { scanned: false }],
+  ])('RF-231 gives no share for %s', async (_name, options) => {
+    const { read, understand, listed } = await setup(options);
+
+    expect(await read.forListing(listed).firstPartyShare(understand)).toBeNull();
+  });
+});
+
+describe('P8-130 the third-party areas of the scan of a list', () => {
+  it('RF-231 gives the areas the code map calls third-party, and none without a scan', async () => {
+    const library: Area = {
+      name: 'Scripts',
+      files: [libraryPath],
+      estimatedTokens: 1000,
+      mapLevel: 'coarse',
+      origin: 'folder',
+    };
+    const withScan = await setup({ codeMapAreas: [...areas, library] });
+    const without = await setup({ scanned: false });
+
+    const named = await withScan.read.forListing(withScan.listed).libraryAreas();
+    const none = await without.read.forListing(without.listed).libraryAreas();
+
+    expect([...named]).toEqual(['Scripts']);
+    expect([...none]).toEqual([]);
   });
 });

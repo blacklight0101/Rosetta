@@ -184,6 +184,15 @@ function partlyReadOf(read: AreaReadState, understanding: UnderstandingLoad): Pa
   return { areas, share: measures?.firstPartyCoverage };
 }
 
+/**
+ * RF-230, RF-231, P7-02 (P8-130): an understand run that ended with no error, or stopped at its cap
+ * (RST-1600), has measures, so the head names the share for a capped run as the History row does.
+ */
+function hasMeasures(state: RunState): boolean {
+  const ended = state.ended;
+  return ended?.errorCode === undefined || ended.endState === 'CapReached';
+}
+
 /** P8-93: what the coverage and the summary of the run say, read once for the head and the body. */
 function useReading(
   props: Pick<LiveRunViewProps, 'run' | 'phase'> & {
@@ -195,8 +204,7 @@ function useReading(
 ): { readonly read: AreaReadState; readonly understanding: UnderstandingLoad } {
   const { run, phase, state } = props;
   const read = useAreaRead(run, stage, props.shown);
-  const asks =
-    phase.kind === 'ended' && stage === 'understand' && state.ended?.errorCode === undefined;
+  const asks = phase.kind === 'ended' && stage === 'understand' && hasMeasures(state);
   return { read, understanding: useUnderstanding(run.id, asks) };
 }
 
