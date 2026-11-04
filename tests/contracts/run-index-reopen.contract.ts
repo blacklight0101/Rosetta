@@ -39,7 +39,6 @@ function reopensTests(name: string, fresh: FreshRuns): void {
         queueState: 'Queued',
         endState: null,
         queuedAt: 20_000,
-        startedAt: null,
         endedAt: null,
       });
       expect(await index.find(runAmy, run.id)).toEqual(reopened);
@@ -56,6 +55,49 @@ function reopensTests(name: string, fresh: FreshRuns): void {
 
     expect(first).toBeDefined();
     expect(second).toBeUndefined();
+  });
+}
+
+function spansTests(name: string, fresh: FreshRuns): void {
+  it(`P8-88 ${name} keeps the first start and sums the spans across a resume`, async () => {
+    const index = await fresh();
+    const run = await ended(index, 'Failed');
+    await index.reopen(runAmy, run.id, 20_000);
+
+    const second = await index.start(run.id, 30_000);
+    const done = await index.end(run.id, 'Completed', 45_000);
+
+    expect(second).toMatchObject({ startedAt: 5_000, spanStartedAt: 30_000, activeMs: 4_000 });
+    expect(done).toMatchObject({
+      ...{ startedAt: 5_000, spanStartedAt: null, activeMs: 19_000, endedAt: 45_000 },
+    });
+    expect(await index.find(runAmy, run.id)).toEqual(done);
+  });
+
+  it(`P8-88 ${name} does not count the wait for an answer: pause ends the span, Continue keeps the start`, async () => {
+    const index = await fresh();
+    const run = await stored(index);
+    await index.start(run.id, 5_000);
+
+    const paused = await index.pause(run.id, 8_000, { unreadAreas: 1 });
+    const queued = await index.continueAwaiting(runAmy, run.id, 20_000);
+    await index.start(run.id, 30_000);
+    const done = await index.end(run.id, 'Completed', 33_000);
+
+    expect(paused).toMatchObject({ startedAt: 5_000, spanStartedAt: null, activeMs: 3_000 });
+    expect(queued).toMatchObject({ startedAt: 5_000, activeMs: 3_000, queueState: 'Queued' });
+    expect(done).toMatchObject({ startedAt: 5_000, activeMs: 6_000, endedAt: 33_000 });
+  });
+
+  it(`P8-88 ${name} ends a paused run without adding the wait to its running time`, async () => {
+    const index = await fresh();
+    const run = await stored(index);
+    await index.start(run.id, 5_000);
+    await index.pause(run.id, 8_000);
+
+    const done = await index.end(run.id, 'CapReached', 90_000);
+
+    expect(done).toMatchObject({ startedAt: 5_000, activeMs: 3_000, endedAt: 90_000 });
   });
 }
 
@@ -83,5 +125,6 @@ function refusesTests(name: string, fresh: FreshRuns): void {
 
 export function runIndexReopenContract(name: string, fresh: FreshRuns): void {
   reopensTests(name, fresh);
+  spansTests(name, fresh);
   refusesTests(name, fresh);
 }

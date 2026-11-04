@@ -20,3 +20,8 @@ export function runningTimeText(startedAt: string | null, endedAt: string | null
   if (minutes < 60) return `${String(minutes)} min`;
   return `${String(Math.floor(minutes / 60))} h ${String(minutes % 60).padStart(2, '0')} min`;
 }
+
+/** P8-88: skeleton, filled in by the next commit. */
+export function wallTimeNote(runningMs: number | null, wallMs: number | null): string | null {
+  return runningMs === wallMs ? null : null;
+}

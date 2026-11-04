@@ -197,3 +197,30 @@ describe('RF-432 a crafted Continue', () => {
     });
   });
 });
+
+describe('P8-88 the running time of a paused run', () => {
+  it('P8-88 Continue keeps the first start and counts only the time the run was running', async () => {
+    const h = createRunHarness();
+    const run = await startUnderstand(h, userAmy);
+    const first = (await stateOf(h, run, 'Running')).startedAt;
+    h.clock.advance(60_000);
+    h.executor.started[0]?.stop(new ApprovalPause());
+    h.executor.settle(run.id, { endState: 'Completed', unreadAreas: 1 });
+    await stateOf(h, run, 'AwaitingApproval');
+    h.clock.advance(600_000);
+
+    await continuer(h).execute({ actor: userAmy, runId: run.id });
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(2);
+    });
+    h.clock.advance(30_000);
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+
+    const ended = await h.runs.find(userAmy.userId, run.id);
+    expect(ended).toMatchObject({ startedAt: first, spanStartedAt: null, activeMs: 90_000 });
+    expect(ended?.endedAt).toBe((first ?? 0) + 690_000);
+    const manifest = await h.manifests.read(h.scopeOf(run));
+    expect(manifest?.startedAt).toBe(new Date(first ?? 0).toISOString());
+  });
+});

@@ -71,6 +71,42 @@ describe('history page rows', () => {
   });
 });
 
+describe('history page running time (P8-88)', () => {
+  const timeOf = async (runKey: string): Promise<string | undefined> => {
+    const row = await rowOf(runKey);
+    return row.querySelector('[data-label="Running time"]')?.textContent ?? undefined;
+  };
+
+  it('RF-1008 has a Running time column before Tokens, with a dash while the run has not ended', async () => {
+    renderHistory();
+
+    const table = await screen.findByRole('table', { name: 'Runs' });
+
+    const headers = within(table)
+      .getAllByRole('columnheader')
+      .map((header) => header.textContent);
+    expect(headers.indexOf('Running time')).toBeGreaterThan(headers.indexOf('State'));
+    expect(headers.indexOf('Running time')).toBeLessThan(headers.indexOf('Tokens'));
+    expect(await timeOf(liveKey)).toBe('–');
+    expect(await timeOf(scanKey)).toBe('8 s');
+    expect(await timeOf(doneKey)).toBe('22 min');
+  });
+
+  it('RF-1008 shows 66 min of running time and the wall time of a run that was resumed', async () => {
+    const resumed = { ...history.runs[3], runningMs: 3_960_000, wallMs: 7_800_000 };
+    renderHistory({ [historyPath]: json(200, { ...history, runs: [resumed] }) });
+
+    expect(await timeOf(doneKey)).toBe('66 min (over 2 h 10 min)');
+  });
+
+  it('RF-1008 leaves the wall time out when it is less than a minute longer than the running time', async () => {
+    const quick = { ...history.runs[3], runningMs: 3_960_000, wallMs: 4_000_000 };
+    renderHistory({ [historyPath]: json(200, { ...history, runs: [quick] }) });
+
+    expect(await timeOf(doneKey)).toBe('66 min');
+  });
+});
+
 describe('history page rows, states', () => {
   it('RF-1008 offers the zip of a run in progress only when it ends', async () => {
     renderHistory();

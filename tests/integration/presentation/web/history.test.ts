@@ -37,6 +37,7 @@ describe('GET /api/projects/:id/history runs', () => {
     expect(runs[0]).toMatchObject({
       ...{ id: live.id, runId: live.runKey, stage: 'understand', queueState: 'Running' },
       ...{ endState: null, commitSha: null, sizeBytes: 0 },
+      ...{ runningMs: null, wallMs: null },
     });
     expect(runs[1]).toEqual({
       ...{ id: done.id, runId: done.runKey, stage: 'scan', queueState: 'Ended' },
@@ -47,12 +48,35 @@ describe('GET /api/projects/:id/history runs', () => {
         failedAreas: 0,
         unreadAreas: 0,
         position: null,
+        ...{ runningMs: 0, wallMs: 0 },
       },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
       totals: {
         ...{ costMicros: 1_310_000, inputTokens: 400_000 },
         ...{ outputTokens: 12_606, cachedInputTokens: 0 },
       },
+    });
+  });
+});
+
+describe('GET /api/projects/:id/history run times', () => {
+  it('RF-1008 shows the first start, the running time and the wall time of a resumed run (P8-88)', async () => {
+    harness = await createHistoryHarness();
+    const { amy, projectId, done, userId, test } = harness;
+    const first = Date.parse(instant);
+    const again = first + 3_600_000;
+    await test.runs.runs.reopen(userId, done.id, again, ['Completed']);
+    await test.runs.runs.start(done.id, again);
+    await test.runs.runs.end(done.id, 'Completed', again + 120_000);
+
+    const response = await amy.request({ method: 'GET', url: historyUrl(projectId) });
+
+    const runs = response.json<{ runs: Record<string, unknown>[] }>().runs;
+    expect(runs.find((run) => run['id'] === done.id)).toMatchObject({
+      startedAt: instant,
+      endedAt: '2026-10-11T10:02:00.000Z',
+      runningMs: 120_000,
+      wallMs: 3_720_000,
     });
   });
 });
