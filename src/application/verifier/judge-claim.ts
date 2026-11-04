@@ -226,6 +226,9 @@ export async function judgeClaim(
   ];
   // P5-15: the first call of each claim is sent in claim order.
   await parts.turn?.wait();
+  // P8-58: a stop or a cap that came during the wait leaves the claim with no call and no start.
+  const late = endedBefore(parts);
+  if (late !== undefined) return late;
   // P8-58: the claim's calls sit between its start and its end in the run log.
   return withCallEvents(parts, claim, () => judgeByModel(parts, claim, parentSpanId, asked));
 }

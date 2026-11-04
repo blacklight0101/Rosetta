@@ -14,24 +14,20 @@ export interface CallEventHooks {
   readonly onCallEnded?: (claim: { readonly claimId: string }) => Promise<void>;
 }
 
-interface Guarded extends CallEventHooks {
-  /** The step's word that a cap or a stop ended it: then no call is sent and there is no start. */
-  readonly halted?: () => 'stopped' | 'capped' | undefined;
-}
-
 /**
  * Runs `calls` (the claim's model calls) between its start and end events. The start is queued before
  * `calls` begins, so it holds no call back, and its write is observed at once: a rejection waits in
  * `failures` instead of being unhandled while the call is pending. A write that failed does not lose
  * a call already sent: the calls finish and the error is thrown once they have, so the run fails
- * cleanly. If the calls themselves throw, that error wins over a failed write.
+ * cleanly. If the calls themselves throw, that error wins over a failed write. The caller has already
+ * checked that no stop or cap halted the claim: nothing runs between that check and the first call.
  */
 export async function withCallEvents<T>(
-  parts: Guarded,
+  parts: CallEventHooks,
   claim: { readonly claimId: string },
   calls: () => Promise<T>,
 ): Promise<T> {
-  if (parts.onCallStarted === undefined || parts.halted?.() !== undefined) return calls();
+  if (parts.onCallStarted === undefined) return calls();
   const failures: unknown[] = [];
   const noted = (write: Promise<void> | undefined): Promise<void> =>
     (write ?? Promise.resolve()).catch((error: unknown) => {
