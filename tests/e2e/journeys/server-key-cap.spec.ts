@@ -9,6 +9,7 @@ import {
   repositories,
   chooseAreas,
 } from '../support/journey-pages.js';
+import { runsTable } from '../support/history-page.js';
 import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
 import { expectNoFullKey } from '../support/no-full-key.js';
 import { filesHolding } from '../support/run-folder.js';
@@ -70,6 +71,20 @@ async function expectKeyInNoLogOrReport(page: Page): Promise<void> {
   expect(held, 'no log, report or run file holds the server key').toEqual([]);
 }
 
+/**
+ * P8-130, RF-230: the History row of the capped run reads "Partly read" with the same share as the
+ * head of its page, both worked out by the test server from the real run (no mocked share).
+ */
+async function expectHistoryRowSaysTheSame(page: Page, head: string): Promise<void> {
+  const share = /(\d+)% of your code/u.exec(head)?.[1];
+  expect(share, 'the head of the capped run names its share').toBeDefined();
+  await openProjectStart(page, repositories.webforms);
+  await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();
+  const row = runsTable(page).getByRole('row').filter({ hasText: '-understand' }).first();
+  await expect(row).toContainText('Partly read');
+  await expect(row).toContainText(`${share ?? ''}% of your code`);
+}
+
 async function userPicksTheReader(page: Page, user: Credentials): Promise<void> {
   await signIn(page, user);
   await openProjectStart(page, repositories.webforms);
@@ -113,7 +128,10 @@ test(
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Partly read: \d+% of your code/u, {
+        timeout: 90_000,
+      });
+      await expectHistoryRowSaysTheSame(page, (await runStatus(page).innerText()).trim());
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');

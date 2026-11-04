@@ -1,7 +1,13 @@
 import type { Page } from '@playwright/test';
 import { gotoWithoutScripts } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
-import { confirmation, openHistory, rowMenuItem, runRow } from '../support/history-page.js';
+import {
+  confirmation,
+  openHistory,
+  rowMenuItem,
+  runRow,
+  runsTable,
+} from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
 import {
   agentPanel,
@@ -100,6 +106,9 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await openHistory(page);
   const row = runRow(page, '-understand');
   await expect(row).toContainText('Partly read');
+  // P8-130: the share of the row is a real one (the server works it out), the one of the run page.
+  const share = /(\d+)% of your code/u.exec(await row.innerText())?.[1];
+  expect(share, 'the row names the share of code read').toBeDefined();
   // RF-231: the coverage of the run is part of the page that must fit (P2-41, P8-89).
   await expect(row.getByTestId('run-coverage')).toBeVisible();
   await expectPageInView(page);
@@ -110,7 +119,32 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await expectPageInView(page);
   await page.keyboard.press('Escape');
   await expect(confirmation(page)).toHaveCount(0);
+
+  await page.goto(understandRun);
+  await expect(runStatus(page)).toContainText(`Partly read: ${share ?? ''}% of your code`);
 });
+
+test(
+  'RNF-010 RF-1008 the history at 1024 px does not scroll the page sideways and reaches every More actions',
+  visual,
+  async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await openHistory(page);
+    await expect(runRow(page, '-understand')).toContainText('Partly read');
+    // The page never scrolls sideways (the hidden "Actions" header sat outside the box that scrolls).
+    await expectPageInView(page);
+
+    // The table is wider than its box at 1024 px and scrolls inside it (design-system.md section 8):
+    // each row's button comes into view, inside the viewport, by scrolling that box.
+    for (const button of await runsTable(page)
+      .getByRole('button', { name: /^More actions for run / })
+      .all()) {
+      await button.scrollIntoViewIfNeeded();
+      const box = await button.boundingBox();
+      expect((box?.x ?? 2000) + (box?.width ?? 0)).toBeLessThanOrEqual(1024);
+    }
+  },
+);
 
 test('RNF-010 the cost page of the project', visual, async ({ page }) => {
   await openStartPage(page);
