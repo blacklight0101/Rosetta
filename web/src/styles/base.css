@@ -354,27 +354,33 @@ select {
   }
 }
 
-/* While a run is active the pill keeps its figures and the split into input, output and cached
-   tokens is its tooltip, so the meter fits on the line (RF-1010). Without a run the pill is one line
-   with the split, as it always was. */
+/* The pill is one line of figures. The split into input, output and cached tokens stands in it from
+   1280 px when no run is active; otherwise it is the tooltip of the figures, so a large total never
+   makes a second line of the header (RF-1010, P8-101). */
 @media (min-width: 64rem) {
   .rst-header__totals {
     flex: 0 0 auto;
   }
 
-  .rst-header--run .rst-p136-pill__split {
+  .rst-header__totals .rst-p136-pill__split {
     display: none;
   }
 }
 
-/* The administrator's server figure leaves the header while a run is active and the window is
-   narrower than 1600 px; it stays on the users and caps page and in the cap banner (RF-1106). */
-.rst-header--run .rst-p136-pill__server {
+@media (min-width: 80rem) {
+  .rst-header:not(.rst-header--run) .rst-header__totals .rst-p136-pill__split {
+    display: inline;
+  }
+}
+
+/* The administrator's server figure stands in the header from 1600 px; below that it is on the users
+   and caps page and in the cap banner (RF-1106). */
+.rst-header__totals .rst-p136-pill__server {
   display: none;
 }
 
 @media (min-width: 100rem) {
-  .rst-header--run .rst-p136-pill__server {
+  .rst-header__totals .rst-p136-pill__server {
     display: inline-flex;
   }
 }

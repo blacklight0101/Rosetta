@@ -14,8 +14,6 @@ export interface TotalsPillProps {
   readonly totals: AccountTotals;
   /** The cost page of the open project, when one is open. */
   readonly href?: string | undefined;
-  /** A run is active: the header hides the split, so it is the tooltip of the figures (P8-101). */
-  readonly runActive?: boolean | undefined;
 }
 
 // P5-07: a local-only account has tokens and no dollar amount.
@@ -62,18 +60,17 @@ function Server({ server }: { readonly server: NonNullable<AccountTotals['server
   );
 }
 
-// RF-1010
-export function TotalsPill({ totals, href, runActive = false }: TotalsPillProps): JSX.Element {
+// RF-1010: the split is also the tooltip of the figures, for the widths at which the header folds it (P8-101).
+export function TotalsPill({ totals, href }: TotalsPillProps): JSX.Element {
   const split = tokenSplitText(totals.totals);
-  const title = runActive ? split : undefined;
   return (
     <>
       {href === undefined ? (
-        <span class="rst-p136-pill__own" title={title}>
+        <span class="rst-p136-pill__own" title={split}>
           <Own totals={totals.totals} local={totals.local} linked={false} />
         </span>
       ) : (
-        <Link href={href} class="rst-p136-pill__own rst-p136-pill__link" title={title}>
+        <Link href={href} class="rst-p136-pill__own rst-p136-pill__link" title={split}>
           <Own totals={totals.totals} local={totals.local} linked />
         </Link>
       )}

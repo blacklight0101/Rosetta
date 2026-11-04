@@ -60,11 +60,7 @@ export function SignedInShell(props: SignedInShellProps): JSX.Element {
               />
             )
           }
-          totals={
-            totals === undefined ? undefined : (
-              <TotalsPill totals={totals} href={href} runActive={reading !== undefined} />
-            )
-          }
+          totals={totals === undefined ? undefined : <TotalsPill totals={totals} href={href} />}
           banners={bannerOf(totals, path)}
         />
       </RunMeterContext.Provider>
