@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 126     | 5         | 109        | 12        | 0                  | 95      | 25      | 6      | 42         | 22        |
-| **Total**                    | **616** | **123**   | **445**    | **48**    | **0**              | **321** | **269** | **26** | **304**    | **22**    |
+| P8 Evaluation fixes, round 2 | 128     | 5         | 111        | 12        | 0                  | 97      | 25      | 6      | 44         | 23        |
+| **Total**                    | **618** | **123**   | **447**    | **48**    | **0**              | **323** | **269** | **26** | **306**    | **23**    |
 
 ## Conventions for every card
 
@@ -7860,7 +7860,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-29
 - **Gate**: none
-- **Status**: Blocked (Q-66)
+- **Status**: Blocked (withdrawn 2026-11-04 - see DEC-220)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): EV-84 (P8-17 evaluation, item 5 of its follow-ups): the pause-and-ask at the approved amount was never reached in an evaluation, because the approved amount is always well above the spend, Under DEC-206 the approved amount is the lower of the worst case and the run cap, so a project run cap below the spend makes the pause reachable without new behaviour.
 - **Reads**: RF-434, RF-435, DEC-205, DEC-206, the approval control (`web/src/pages/ApprovalControl.tsx`, `web/src/pages/PauseUpdates.tsx`, `web/src/pages/use-pause-updates.ts`), the end-to-end specs of the live run, the fake provider with recorded responses.
 - **Do**: no new behaviour; tests only.
@@ -9107,7 +9107,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-106
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-106 fixer, #1206): `useFold.onToggle` in `web/src/pages/StartRunForm.tsx` sets `chosen` on the page's own automatic toggle, so "Replace the source" stays open after a scan instead of following the page state again.
 - **Reads**: `web/src/pages/StartRunForm.tsx`, `web/src/pages/StartChoices.tsx`, `tests/unit/web/`, `tests/e2e/journeys/workbook-project.spec.ts`, RF-1021, ADR-008.
 - **Do**:
@@ -9155,7 +9155,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-110
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-110 verifier, #1214): Escape does not close the exact figure when an unfocused amount is hovered (`web/src/components/CostFigure.tsx:38-40`, WCAG 1.4.13); each amount is its own tab stop, so a six-row page has nine extra stops.
 - **Reads**: `web/src/components/CostFigure.tsx`, `web/src/pages/CostTable.tsx`, `tests/unit/web/`, RF-428, RNF-010, DEC-217.
 - **Do**:
@@ -9312,3 +9312,35 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the changed tests only; no product code.
 - **Done when**: every gap above is closed; CI green.
 - **Refs**: follow-up of P8-105, P8-107, P8-115 and P8-116; GitHub issue #1242
+
+### P8-127 - Follow-up: a Cost table tooltip does not move the table (P8-89)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-89
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-89 fix round 3, #1229; not probed there): the History tooltip pushed the table wider because it sat in the table flow. `cost.css` keeps the Cost figure's tooltip in flow too, so Cost tables may shift the same way. DEC-220 accepts the overlay variant of `docs/design-system.md` section 5.1 and asks for this check.
+- **Reads**: `web/src/components/CostFigure.tsx`, `web/src/components/overlay-tip.ts`, `web/src/styles/cost.css`, `tests/e2e/history-coverage-tooltip.spec.ts`, `docs/design-system.md` section 5.1, RF-428.
+- **Do**: red test first.
+  - A browser test at 1280 px and 360 px, light and dark: focusing and hovering an amount leaves the cell boxes, the table width and the page size unchanged, and the tooltip is whole.
+  - If the test fails, the Cost figure moves to the overlay variant with `useOverlayTip`; if it passes, the test stays and the code does not change.
+- **Delivers**: the test and, if needed, the move.
+- **Done when**: no Cost table moves when a tooltip opens; CI green.
+- **Refs**: RF-428, DEC-220; follow-up of P8-89; GitHub issue #1246
+
+### P8-128 - Follow-up: the fold test reads what the hook returns (P8-114)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-114
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-114 verifier, #1235): the mutation `setChosen(!currentTarget.open)` survives all four tests of `tests/unit/web/use-fold.test.tsx:55-101`, because they read the DOM `open` the test itself set and never the hook's returned `open`. A user flip that lands before the queued `toggle` of the page's own change could be misread (`web/src/pages/use-fold.ts:20-27`).
+- **Reads**: `web/src/pages/use-fold.ts`, `tests/unit/web/use-fold.test.tsx`, RF-1021.
+- **Do**: red test first.
+  - The tests assert the hook's returned `open` after a user flip, and the mutation above is killed.
+  - Check the flip before a queued `toggle` in a browser; fix it only if it reproduces, otherwise say so in the pull request.
+- **Delivers**: the tests and, if it reproduces, the fix.
+- **Done when**: the mutation fails a test; CI green.
+- **Refs**: RF-1021; follow-up of P8-114; GitHub issue #1247
