@@ -195,6 +195,25 @@ component in every state and both themes; the end-to-end suite screenshots it. T
 `/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
 and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
+### 5.1 Tooltip (RF-428, RNF-010, DEC-217, P8-118)
+
+The one Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
+classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
+only when the exact figure differs from the shown amount; otherwise the amount is plain text.
+
+- **Trigger:** the shown amount, a `span` with `tabindex="0"`, a dotted underline in `ink-soft` and the help cursor. The
+  tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the
+  trigger points at the tip with `aria-describedby`, so a screen reader reads the exact figure after the amount.
+- **Opening:** pointer hover, keyboard focus (Tab) and touch (a tap focuses the trigger) show the tip. It sits in the
+  flow beside the amount, in the mono font at `fs-xs` in `ink-muted`, with `sp-2` of space before it, on one line
+  (`white-space: nowrap`); it is never positioned absolutely or in a layer, so the scroll region of a table cannot clip it.
+- **Keyboard:** Tab reaches the trigger and shows the tip; Escape closes it while the trigger keeps focus, even while the
+  pointer rests on it (WCAG 1.4.13).
+- **Dismissal:** Escape, moving the pointer away when the focus is elsewhere, or moving the focus away. The tip opens
+  again the next time the pointer enters or the focus returns.
+- **Tokens:** `ink-soft`, `ink-muted`, `fs-xs`, `sp-2`, `fw-body` and the mono family; it has no colour of its own, so it
+  follows both themes.
+
 ## 6. Status badges
 
 The state lists are canonical in [architecture](architecture.md) section 5; this table adds only their presentation.
