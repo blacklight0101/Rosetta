@@ -58,8 +58,8 @@ describe('P5-15 the first calls leave in claim order', () => {
       'verifier-FEAT-001.c1',
       'verifier-OQ-001.c1',
       'verifier-BR-001.c1',
-      'verifier-ENT-001.c1',
       'verifier-BR-002.c1',
+      'verifier-ENT-001.c1',
     ]);
   });
 });
