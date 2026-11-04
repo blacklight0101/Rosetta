@@ -86,10 +86,20 @@ test('RF-010 creating the same address again opens the existing project', async 
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
 });
 
+/** Two animation frames: the resize and scroll events of what the test just did have been delivered. */
+const settle = (page: Page): Promise<unknown> =>
+  page.evaluate(
+    '(async () => { await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))); })()',
+  );
+
 /** P8-99: the row menu opens inside the viewport at this width, and the page does not scroll sideways. */
 async function expectMenuInView(page: Page, width: number, height: number): Promise<void> {
   await page.setViewportSize({ width, height });
-  await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
+  // The menu closes on a resize and on a scroll: bring the button into view and let both land first.
+  const button = page.getByRole('button', { name: 'More actions for octo/demo' });
+  await button.scrollIntoViewIfNeeded();
+  await settle(page);
+  await button.click();
   const box = await page.getByRole('menu', { name: 'More actions for octo/demo' }).boundingBox();
   if (box === null) throw new Error('The row menu has no box.');
   expect(box.x).toBeGreaterThanOrEqual(0);
@@ -102,12 +112,20 @@ async function expectMenuInView(page: Page, width: number, height: number): Prom
   await expect(page.getByRole('menu')).toHaveCount(0);
 }
 
-test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu whose Delete removes the project', async ({
-  page,
-}, info) => {
+/** RF-160: creates the demo project and waits on its page for the scan it starts by itself to end. */
+async function createScannedProject(page: Page): Promise<void> {
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  // Leaving at once would start no scan or leave one running; the areas appear when it has ended.
+  const areas = page.getByRole('group', { name: 'Areas from the code map' }).locator('label');
+  await expect(areas.first()).toBeVisible({ timeout: 60_000 });
+}
+
+test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu whose Delete removes the project', async ({
+  page,
+}, info) => {
+  await createScannedProject(page);
   await page.goto('/projects');
   const row = page.getByRole('row').filter({ hasText: 'octo/demo' });
   await expect(row.getByRole('link', { name: 'octo/demo', exact: true })).toBeVisible();
@@ -122,9 +140,8 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
     'Cost',
     'Actions',
   ]);
-  // The new project scans by itself (RF-160), so the row is read once the scan has ended; "Scan not
-  // started" is pinned in the unit tests, where no scan can start.
-  await expect(row.getByRole('cell').nth(2)).toContainText('Scan done', { timeout: 30_000 });
+  // The scan has ended, so the position is Scan done; "Scan not started" is pinned in the unit tests.
+  await expect(row.getByRole('cell').nth(2)).toHaveText('Scan done');
   // P8-99 screenshots of the list at 1280 px and at 390 px, attached to the test report.
   for (const [name, width, height] of [
     ['projects-list-1280', 1280, 800],
