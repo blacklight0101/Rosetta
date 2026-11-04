@@ -132,6 +132,18 @@ function spansTests(name: string, fresh: FreshRuns): void {
   });
 }
 
+function lastSignOfLifeTests(name: string, fresh: FreshRuns): void {
+  it(`P8-122 ${name} counts the open span only up to the last sign of life when one is given`, async () => {
+    const index = await fresh();
+    const run = await stored(index);
+    await index.start(run.id, 5_000);
+
+    const done = await index.end(run.id, 'Interrupted', 9_000, { activeUntil: 6_500 });
+
+    expect(done).toMatchObject({ endedAt: 9_000, activeMs: 1_500, spanStartedAt: null });
+  });
+}
+
 function refusesTests(name: string, fresh: FreshRuns): void {
   it(`RF-006 ${name} does not reopen a run that completed, or one that has not ended`, async () => {
     const index = await fresh();
@@ -158,5 +170,6 @@ export function runIndexReopenContract(name: string, fresh: FreshRuns): void {
   reopensTests(name, fresh);
   endReasonTests(name, fresh);
   spansTests(name, fresh);
+  lastSignOfLifeTests(name, fresh);
   refusesTests(name, fresh);
 }

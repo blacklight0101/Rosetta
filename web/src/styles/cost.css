@@ -134,3 +134,23 @@
   font-size: var(--rst-fs-xs);
   font-weight: var(--rst-fw-label);
 }
+
+/* The breakdown by run (P8-109, DEC-211): the run's total in bold and the project total as a last row set
+   off by a heavier rule, as the P8HistoryCost artboard draws it. */
+.rst-p136-table .rst-p136-total {
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p136-table .rst-p136-projecttotal th,
+.rst-p136-table .rst-p136-projecttotal td {
+  border-block-start: 2px solid var(--rst-ink-soft);
+  background: var(--rst-surface-2);
+  font-weight: var(--rst-fw-head);
+}
+
+/* At 360 px the empty cells of the project total row, which keep its total under its column, take no room. */
+@media (max-width: 40rem) {
+  .rst-p136-table .rst-p136-projecttotal td:empty {
+    display: none;
+  }
+}

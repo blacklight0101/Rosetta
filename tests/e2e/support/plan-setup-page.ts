@@ -29,7 +29,8 @@ export async function understandInventory(page: Page): Promise<void> {
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
   await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
   await pressStart(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  // The run ends "Completed", or "Partly read" when it stays below the bar of the read (P8-93).
+  await expect(runStatus(page)).toContainText(/Completed|Partly read/u, { timeout: 60_000 });
   await page.goto('/projects');
   await openStartOf(page, inventoryUrl);
   await showStartChoices(page);
