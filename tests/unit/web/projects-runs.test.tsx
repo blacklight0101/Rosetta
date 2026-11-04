@@ -59,9 +59,9 @@ it('RF-1008 shows the last run, its state, the runs, tokens and cost of each pro
   const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent);
 
   expect(headers).toEqual(
-    expect.arrayContaining(['Repository', 'Last run', 'State', 'Runs', 'Tokens', 'Cost']),
+    expect.arrayContaining(['Project', 'Source', 'Last run', 'State', 'Runs', 'Tokens', 'Cost']),
   );
-  expect(row.textContent).toContain('scan · 2026-10-12');
+  expect(row.textContent).toContain('scan · 12 Oct, 09:31');
   expect(within(row).getByText('Completed')).not.toBeNull();
   expect(within(row).getByText('6')).not.toBeNull();
   expect(within(row).getByText('1,284,903')).not.toBeNull();
