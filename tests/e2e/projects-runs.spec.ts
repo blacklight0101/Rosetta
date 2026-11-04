@@ -72,7 +72,9 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   await expectNoSeriousViolations(page);
   await notice.getByRole('button', { name: /Cancel queued run/u }).click();
   await expect(notice).toHaveCount(0);
-  await expect(projectRow(page)).toContainText('Stopped by you');
+  // P8-111: a run cancelled while it waited never reads "Stopped by you".
+  await expect(projectRow(page)).toContainText('Cancelled while queued');
+  await expect(projectRow(page)).not.toContainText('Stopped by you');
   await page.goto(held);
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });

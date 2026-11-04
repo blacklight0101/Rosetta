@@ -24,6 +24,37 @@ async function ended(index: RunIndex, endState: RunEndState): Promise<Run> {
   return done;
 }
 
+function endReasonTests(name: string, fresh: FreshRuns): void {
+  it(`RF-006 ${name} keeps the reason an interrupted run ended for, and a resume clears it`, async () => {
+    const index = await fresh();
+    const run = await stored(index);
+    await index.start(run.id, 5_000);
+
+    const done = await index.end(run.id, 'Interrupted', 9_000, { endReason: 'Restart' });
+    const found = await index.find(runAmy, run.id);
+    const reopened = await index.reopen(runAmy, run.id, 20_000);
+
+    expect(done?.endReason).toBe('Restart');
+    expect(found?.endReason).toBe('Restart');
+    expect(reopened?.endReason).toBeNull();
+  });
+
+  it(`RF-006 ${name} keeps the cancel of a queued run, and no reason when none is given`, async () => {
+    const index = await fresh();
+    const queued = await stored(index);
+    const running = await stored(index);
+    await index.start(running.id, 5_000);
+
+    const cancelled = await index.end(queued.id, 'Interrupted', 9_000, {
+      endReason: 'QueueCancel',
+    });
+    const plain = await index.end(running.id, 'Interrupted', 9_000);
+
+    expect(cancelled?.endReason).toBe('QueueCancel');
+    expect(plain?.endReason).toBeNull();
+  });
+}
+
 function reopensTests(name: string, fresh: FreshRuns): void {
   it.each(['CapReached', 'Failed', 'Interrupted'] as const)(
     `RF-006 ${name} queues a run that ended %s again at the end of the queue, totals kept`,
@@ -125,6 +156,7 @@ function refusesTests(name: string, fresh: FreshRuns): void {
 
 export function runIndexReopenContract(name: string, fresh: FreshRuns): void {
   reopensTests(name, fresh);
+  endReasonTests(name, fresh);
   spansTests(name, fresh);
   refusesTests(name, fresh);
 }

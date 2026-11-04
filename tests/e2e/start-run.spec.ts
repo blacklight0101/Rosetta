@@ -100,6 +100,8 @@ test('RF-1108 a second run waits in the queue, shows its position and can be can
   await expect(page.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0, {
     timeout: 30_000,
   });
+  // P8-111: the cancel of a queued run reads by its reason, never "Stopped by you".
+  await expect(runStatus(page)).toContainText('Cancelled while queued');
 });
 
 test('RF-143 a cloud reader needs the consent before Start and the notice names the provider', async ({

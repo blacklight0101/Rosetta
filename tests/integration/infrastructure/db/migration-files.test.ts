@@ -66,6 +66,7 @@ describe('release migrations', () => {
       '0019_runs_awaiting_approval.sql',
       '0020_journeys.sql',
       '0021_runs_running_time.sql',
+      '0022_runs_end_reason.sql',
     ]);
   });
 
