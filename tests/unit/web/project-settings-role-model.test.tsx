@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/preact';
+import { act, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { ProjectSettingsPage } from '../../../web/src/pages/ProjectSettingsPage.js';
 import { json, renderPage, type Answer } from './fake-api.js';
@@ -169,7 +169,7 @@ it('RF-436 a list that arrives after the provider was chosen sets the model when
 
 it('RF-436 a model typed before the list arrives is not replaced by the recommended one', async () => {
   const slow = held(anthropic);
-  renderSettings({ 'GET /api/models/anthropic': slow.answer });
+  const { calls } = renderSettings({ 'GET /api/models/anthropic': slow.answer });
   await loaded();
   await waitFor(() => selectOf('Planner model'));
 
@@ -177,10 +177,20 @@ it('RF-436 a model typed before the list arrives is not replaced by the recommen
   fireEvent.input(screen.getByLabelText('Planner model'), { target: { value: 'claude-typed' } });
   slow.release();
 
+  // The list is on the page once its recommended option shows; the role's wait ends in the effect
+  // of that render, so what is asserted after it is what the effect left.
   await waitFor(() => {
-    expect(selectOf('Planner model').value).toBe('__other__');
+    expect(optionTexts(selectOf('Planner model'))).toContain('Claude Opus 5.5 (recommended)');
   });
+  await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+  expect(selectOf('Planner model').value).toBe('__other__');
   expect(screen.getByLabelText<HTMLInputElement>('Planner other model').value).toBe('claude-typed');
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
+
+  await screen.findByText('Settings saved.');
+  expect(calls.findLast((call) => call.method === 'PUT')?.body).toMatchObject({
+    roles: { planner: { provider: 'anthropic', model: 'claude-typed' } },
+  });
 });
 
 it('RF-436 a list that cannot be loaded leaves the empty text field', async () => {

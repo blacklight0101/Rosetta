@@ -44,7 +44,7 @@
 # the one that choosing the provider selects. Each provider leads with a low-cost model: Claude Haiku
 # 5.5 for Anthropic and gpt-5-nano, the cheapest OpenAI model with tool calling (docs/providers.md 3.5), for OpenAI.
 schemaVersion: 1
-version: '2026-10-21'
+version: '2026-11-04'
 models:
   - provider: anthropic
     model: claude-haiku-5-5
