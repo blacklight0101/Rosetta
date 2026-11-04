@@ -76,9 +76,7 @@ it('RF-1020 P8-112 a run at its cap never reads Failed, is in the warn tone and 
   const understand = item('Understand');
   expect(understand.textContent).not.toContain('Failed');
   expect(understand.getAttribute('data-state')).toBe('capped');
-  expect(understand.querySelector('.rst-road__detail')?.textContent).toBe(
-    'Partly read (RST-1403)',
-  );
+  expect(understand.querySelector('.rst-road__detail')?.textContent).toBe('Partly read (RST-1403)');
   expect(journey().textContent).toContain('Start the plan');
 });
 
