@@ -45,8 +45,26 @@ function worstCaseOfCall(request: LlmRequest) {
   });
 }
 
+/** The readers' room over the run's budget events, with the guard's worst case of a call. */
+function roomOver(events: RunBudgetEvents, limits: ConstructorParameters<typeof ReaderRoom>[1]) {
+  return new ReaderRoom(
+    {
+      spend: (role) => events.roleSpend(role),
+      runSpend: () => events.runSpend(),
+      stoppedAtLine: () => false,
+      announce: () => Promise.resolve(),
+      worstCaseOf: worstCaseOfCall,
+    },
+    limits,
+  );
+}
+
 /** Four reader tasks over a real budget guard and memory ledger, each call held until let go. */
-function fourReaders(cap: bigint, usage: { input: number; output: number }) {
+function fourReaders(
+  cap: bigint,
+  usage: { input: number; output: number },
+  tokenCap = 10_000_000n,
+) {
   const run = new AbortController();
   const events = new RunBudgetEvents({
     events: { emit: () => Promise.resolve(undefined) },
@@ -75,16 +93,7 @@ function fourReaders(cap: bigint, usage: { input: number; output: number }) {
       run.abort();
     },
   });
-  const room = new ReaderRoom(
-    {
-      spend: (role) => events.roleSpend(role),
-      runSpend: () => events.runSpend(),
-      stoppedAtLine: () => false,
-      announce: () => Promise.resolve(),
-      worstCaseOf: worstCaseOfCall,
-    },
-    { runTokens: 10_000_000n, runMicros: cap, callTokens: 512n },
-  );
+  const room = roomOver(events, { runTokens: tokenCap, runMicros: cap, callTokens: 512n });
   const calls = tasks.map((task, index) =>
     room
       .guard(budget.guard, task)
@@ -108,7 +117,7 @@ async function finish(parts: ReturnType<typeof fourReaders>): Promise<string[]> 
   return Promise.all(parts.calls);
 }
 
-const oneCall = worstCaseOfCall(budgetRequest()).micros;
+const { micros: oneCall, tokens: oneCallTokens } = worstCaseOfCall(budgetRequest());
 
 describe('four readers at a cap that cannot pay for two calls', () => {
   it('RF-429 P8-132 the run stops at its cap only after the first call was answered and booked', async () => {
@@ -143,5 +152,19 @@ describe('four readers at a cap that cannot pay for two calls', () => {
     expect(parts.held.state.peak).toBe(4);
     expect(parts.bookedAtStop).toEqual([]);
     expect(ends).toEqual(Array(4).fill('answered'));
+  });
+
+  it('RF-429 P8-132 a token cap that pays for one call at a time reads every reader in turn, though the cost cap is wide', async () => {
+    const parts = fourReaders(
+      oneCall * 10n,
+      { input: 10, output: 5 },
+      oneCallTokens + oneCallTokens / 2n,
+    );
+
+    const ends = await finish(parts);
+
+    expect(parts.held.state.peak).toBe(1);
+    expect(ends).toEqual(Array(4).fill('answered'));
+    expect(parts.budget.costs).toHaveLength(4);
   });
 });

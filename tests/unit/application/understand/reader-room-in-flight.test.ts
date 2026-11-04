@@ -28,7 +28,7 @@ interface Setup {
   readonly started: string[];
   readonly gates: Hold[];
   readonly spent: { run: Spend };
-  guarded(task: string): ReturnType<LlmProvider['complete']>;
+  guarded(task: string, signal?: AbortSignal): ReturnType<LlmProvider['complete']>;
 }
 
 /** A room over a run whose booked spend the test moves, and a provider that answers when let go. */
@@ -55,9 +55,10 @@ function setup(caps: Partial<typeof limits> = {}, worst: Spend | null = oneCall)
       return answer;
     },
   };
-  const guarded = (task: string): ReturnType<LlmProvider['complete']> =>
+  const guarded = (task: string, signal?: AbortSignal): ReturnType<LlmProvider['complete']> =>
     room.guard(inner, task).complete({
       ...contractRequest(),
+      ...(signal === undefined ? {} : { signal }),
       context: { ...contractRequest().context, agentTaskId: task },
     });
   return { room, started, gates, spent, guarded };
@@ -184,5 +185,78 @@ describe('P8-132 the readers room holds back only what the cap cannot pay for', 
     await expect(second).rejects.toMatchObject({ code: ERROR_CODES.budgetCapReached });
     expect(s.room.reason).toBe('share');
     expect(s.started).toEqual(['reader-001']);
+  });
+});
+
+/** The calls of the four readers that are let through at once, then let go so none is left hanging. */
+async function startedAt(s: Setup, count: number): Promise<string[]> {
+  const calls = tasks.slice(0, count).map((task) => s.guarded(task));
+  await settle();
+  const started = [...s.started];
+  for (let round = 0; round < 8; round += 1) {
+    s.gates.forEach((gate) => {
+      gate.open();
+    });
+    await settle();
+  }
+  await Promise.all(calls);
+  return started;
+}
+
+describe('P8-132 the readers room counts what is booked beside the calls in flight', () => {
+  const small: Spend = { tokens: 3_000n, micros: 3_000n };
+
+  it('RF-429 the tokens already booked count: a call that fits only without them waits', async () => {
+    const s = setup({}, small);
+    s.spent.run = { tokens: 5_000n, micros: 0n };
+
+    expect(await startedAt(s, 2)).toEqual(['reader-001']);
+  });
+
+  it('RF-429 the cost already booked counts: a call that fits only without it waits', async () => {
+    const s = setup({ runTokens: 1_000_000n, runMicros: 10_000n }, small);
+    s.spent.run = { tokens: 0n, micros: 5_000n };
+
+    expect(await startedAt(s, 2)).toEqual(['reader-001']);
+  });
+});
+
+describe('P8-132 the readers room lets a call through when it fits the cap exactly', () => {
+  const half: Spend = { tokens: 5_000n, micros: 5_000n };
+
+  it('RF-429 calls whose worst cases add up to the token cap are all let through, one more waits', async () => {
+    const s = setup({ runTokens: 10_000n, runMicros: 0n }, half);
+
+    expect(await startedAt(s, 3)).toEqual(['reader-001', 'reader-002']);
+  });
+
+  it('RF-429 calls whose worst cases add up to the cost cap are all let through, one more waits', async () => {
+    const s = setup({ runTokens: 1_000_000n, runMicros: 10_000n }, half);
+
+    expect(await startedAt(s, 3)).toEqual(['reader-001', 'reader-002']);
+  });
+});
+
+describe('P8-132 the readers room keeps each call in flight as an entry of its own', () => {
+  it('RF-429 a source that hands out the same figures each time still has each call counted', async () => {
+    // `oneCall` is one object, returned for every call: a cap for two calls starts two, not three.
+    const s = setup({ runTokens: 13_000n, runMicros: 0n });
+
+    expect(await startedAt(s, 3)).toEqual(['reader-001', 'reader-002']);
+  });
+
+  it('RF-429 a call whose run is already stopped goes straight to the provider, whatever is in flight', async () => {
+    const s = setup();
+    const first = s.guarded('reader-001');
+    await settle();
+
+    const stopped = s.guarded('reader-002', AbortSignal.abort());
+    await settle();
+
+    expect(s.started).toEqual(['reader-001', 'reader-002']);
+    s.gates.forEach((gate) => {
+      gate.open();
+    });
+    await Promise.all([first, stopped]);
   });
 });

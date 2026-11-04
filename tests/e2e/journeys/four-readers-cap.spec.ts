@@ -9,13 +9,17 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 import { saveHostedReaderWithFourParallelReaders } from '../support/parallel-readers.js';
+import { recordedTokens } from '../support/run-tokens.js';
 
-// RF-422, RF-429, RF-436, P8-132, Q-67: four parallel readers at a cap under two calls at their
-// worst case. The readers' room counts the calls in flight, so one call is made, answered and
-// booked, and the run stops at the administrator's run cap after it, with the spend in the totals.
-// It ends as one reader ends it: "Partly read" in the head, as the areas the cap left unread are
-// named (P7-02, journey-context.ts), and RST-1600 in the failure. Before, the second call was
-// refused at once and the call in flight cancelled, so that the run booked nothing.
+// RF-422, RF-429, RF-436, P8-132, Q-67: four parallel readers at a cap under two calls at their worst
+// case. The readers' room counts the calls in flight, so the readers' first calls are let through one
+// after another, each answered and booked, and the run stops at the administrator's run cap before
+// any reader takes a second turn, with the spend in the run meter and the totals. It ends as one
+// reader ends it: "Partly read" in the head, as the areas the cap left unread are named (P7-02,
+// journey-context.ts), and RST-1600 in the failure. Before, the second call was refused at once and
+// the call in flight cancelled, so the meter showed no reader spend at all. The figure the page
+// shows, the reader's three recorded first calls, is what tells the two apart; the integration test
+// understand-readers-in-flight.test.ts holds the same rule against the budget guard.
 // admin-and-cap.spec.ts and server-key-cap.spec.ts keep one reader. The administrator's caps are
 // server-wide: they are saved just before the run and put back to the figures the other specs keep
 // (admin-users.spec.ts).
@@ -62,7 +66,7 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
 }
 
 test(
-  'RF-429 RF-422 four parallel readers at a cap under two worst-case calls make one call, book it, and stop at the cap',
+  'RF-429 RF-422 four parallel readers at a cap under two worst-case calls answer one call after another, book them, and stop at the cap',
   { tag: '@caps' },
   async ({ page }, info) => {
     test.setTimeout(240_000);
@@ -85,7 +89,16 @@ test(
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
-      await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
+      // The reader's first call of each of the three areas: calls 2, 6 and 9 of the recording, each
+      // 900 in and 40 out. Without the room counting calls in flight the readers book nothing.
+      const read = await recordedTokens('understand-csharp-full.json', [2, 6, 9]);
+      const meter = page.getByRole('region', { name: 'Run meter' });
+      await expect(meter.getByRole('row', { name: /^reader/u })).toContainText(
+        read.toLocaleString('en-US'),
+      );
+      await expect
+        .poll(() => tokensOf(pill), { timeout: 15_000 })
+        .toBeGreaterThanOrEqual(before + read);
     } finally {
       await page.context().clearCookies();
       await adminSavesRunCap(page, admin, keptCaps.run);
