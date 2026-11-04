@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
 import type { Project, ProjectSettings } from '../api/project-schemas.js';
 import { problemFor } from '../api/problems.js';
-import { saveProjectSettings } from '../api/projects.js';
+import { saveProjectSettings, type SavedSettings } from '../api/projects.js';
 import { useApp } from '../app/app-context.js';
 import {
   draftOf,
@@ -28,6 +28,8 @@ export interface DraftEditor {
   readonly addPrice: () => void;
   readonly removePrice: (index: number) => void;
 }
+
+type ParallelismChange = NonNullable<SavedSettings['parallelismChange']>;
 
 const emptyPrice: PriceDraft = {
   provider: 'openai',
@@ -84,6 +86,8 @@ export interface FieldIssue {
 export interface SettingsSave {
   readonly busy: boolean;
   readonly message: string;
+  /** RF-436: what the save did to the parallel readers, while the form still shows what was stored. */
+  readonly notice: string;
   /** Changes on every refusal; focus follows it. */
   readonly refusal: Refusal | undefined;
   /** What the last refusal said about the field, if anything. */
@@ -103,20 +107,45 @@ function bannerOf(refusal: Refusal | undefined, draft: SettingsDraft): ApiFailur
   return { ...failure, problems: unplaced };
 }
 
+/** RF-436: the plain line for a save that raised the parallel readers because the reader went hosted. */
+function noticeOf(change: ParallelismChange | undefined): string {
+  return change === undefined
+    ? ''
+    : `Parallel readers set from ${String(change.from)} to ${String(change.to)}, because the reader is no longer a local model.`;
+}
+
+/** What the last refusal said about the field, if anything. */
+function issueIn(refusal: Refusal | undefined, field: string): FieldIssue | undefined {
+  const local = refusal?.local.find((problem) => problem.field === field);
+  return local ?? problemFor(refusal?.failure, field);
+}
+
+/** RF-436: the draft as the form shows it after a save (a field the server changed shows what it stored) and the line about it. */
+function afterSave(
+  draft: SettingsDraft,
+  change: ParallelismChange | undefined,
+): { readonly draft: SettingsDraft; readonly notice: string } {
+  const shown = change === undefined ? draft : { ...draft, parallelism: String(change.to) };
+  return { draft: shown, notice: noticeOf(change) };
+}
+
+const sameDraft = (a: SettingsDraft, b: SettingsDraft): boolean =>
+  a === b || JSON.stringify(a) === JSON.stringify(b);
+
 export function useSettingsSave(
   project: Project,
-  draft: SettingsDraft,
+  editor: DraftEditor,
   limit?: ContextLimit,
 ): SettingsSave {
+  const { draft } = editor;
   const { client } = useApp();
-  const [base, setBase] = useState(project.settings);
-  const [version, setVersion] = useState(project.settingsVersion);
+  const [stored, setStored] = useState<Project>(project);
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | undefined>();
-  const [savedDraft, setSavedDraft] = useState<SettingsDraft | undefined>();
+  const [saved, setSaved] = useState<{ draft: SettingsDraft; notice: string } | undefined>();
 
   const save = async (): Promise<void> => {
-    const built = settingsOf(base, draft, limit);
+    const built = settingsOf(stored.settings, draft, limit);
     if (!built.ok) {
       setRefusal({ failure: undefined, local: built.problems });
       return;
@@ -124,7 +153,7 @@ export function useSettingsSave(
     setBusy(true);
     const answer = await saveProjectSettings(
       client,
-      { id: project.id, settingsVersion: version },
+      { id: project.id, settingsVersion: stored.settingsVersion },
       built.settings,
     );
     setBusy(false);
@@ -132,20 +161,19 @@ export function useSettingsSave(
       setRefusal({ failure: answer.error, local: [] });
       return;
     }
-    setBase(answer.value.settings);
-    setVersion(answer.value.settingsVersion);
+    setStored(answer.value);
     setRefusal(undefined);
-    setSavedDraft(draft);
+    const after = afterSave(draft, answer.value.parallelismChange);
+    if (after.draft !== draft) editor.change({ parallelism: after.draft.parallelism });
+    setSaved(after);
   };
-  const errorFor = (field: string): FieldIssue | undefined => {
-    const local = refusal?.local.find((problem) => problem.field === field);
-    return local ?? problemFor(refusal?.failure, field);
-  };
+  const current = saved !== undefined && sameDraft(saved.draft, draft);
   return {
     busy,
-    message: savedDraft === draft ? 'Settings saved.' : '',
+    message: current ? 'Settings saved.' : '',
+    notice: current ? saved.notice : '',
     refusal,
-    errorFor,
+    errorFor: (field) => issueIn(refusal, field),
     banner: bannerOf(refusal, draft),
     forgetRefusal: () => {
       setRefusal(undefined);

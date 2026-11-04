@@ -43,7 +43,6 @@ async function saveSettings(page: Page): Promise<void> {
   await chooseModel(page, 'Reader', 'gpt-5-nano');
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await chooseModel(page, 'Summariser', 'gpt-5-nano');
-  await page.getByLabel('Parallel readers', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
 }

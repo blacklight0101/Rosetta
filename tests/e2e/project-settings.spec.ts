@@ -95,6 +95,13 @@ test('RF-405 chooses the Reader model from the Anthropic list, then from Other m
   await model.selectOption('claude-haiku-5-5');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
+  // RF-436, P8-57: the reader left Ollama with 1 parallel reader, so 4 was stored and the form says so.
+  await expect(
+    page.getByText(
+      'Parallel readers set from 1 to 4, because the reader is no longer a local model.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel('Parallel readers', { exact: true })).toHaveValue('4');
   await page.reload();
   await expect(page.getByLabel('Reader model', { exact: true })).toHaveValue('claude-haiku-5-5');
   await expectNoSeriousViolations(page);
