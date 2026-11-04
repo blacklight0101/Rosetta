@@ -37,7 +37,7 @@ export function countText(count: number): string {
 }
 
 /** A share in whole percent, cut down: 0.7996 is 79%, and a share above zero is never 0%. */
-function percentText(share: number): string {
+export function percentText(share: number): string {
   const whole = Math.floor(share * 100);
   return whole === 0 && share > 0 ? 'less than 1%' : `${String(whole)}%`;
 }

@@ -6,7 +6,7 @@ import { endedWithoutCard } from './run-summary.js';
 // that the run did not take are drawn as library, left out. Names come from the repository and are
 // kept as plain strings; the page shows them as text.
 
-export type TileState = 'waiting' | 'reading' | 'done' | 'gap' | 'library';
+export type TileState = 'waiting' | 'reading' | 'done' | 'partly' | 'gap' | 'library';
 
 export interface CodeAreaInfo {
   readonly name: string;
@@ -30,6 +30,8 @@ export interface Tile {
   readonly progress: number | undefined;
   /** EV-16: set on every tile of a Deepen run, whose cards are the ones this run wrote. */
   readonly deepen?: boolean;
+  /** P8-93: the share of the area's first-party tokens read (0 to 1) of a `partly` tile. */
+  readonly readShare?: number;
 }
 
 interface Known {
