@@ -78,6 +78,8 @@ export interface ClaimJudgeParts {
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
   /** P5-15: told by the step that a cap or a stop ended it, so a claim still waiting sends no call. */
   readonly halted?: () => 'stopped' | 'capped' | undefined;
+  /** P8-58: told when the claim's first call is about to be sent, so the run log shows it began. */
+  readonly onCallStarted?: (claim: JudgedClaim) => Promise<void>;
   /** P5-15: orders the first call of parallel judgements; `pass` is told once that call is sent. */
   readonly turn?: { readonly wait: () => Promise<void>; readonly pass: () => void };
 }
@@ -175,6 +177,11 @@ async function ask(
   }
 }
 
+/** P8-58: tells the step the claim's first call begins, unless the step has ended and none is sent. */
+async function announceCall(parts: ClaimJudgeParts, claim: JudgedClaim): Promise<void> {
+  if (parts.halted?.() === undefined) await parts.onCallStarted?.(claim);
+}
+
 /** P5-34, P3-122, P5-31: the claims the cited lines settle by a rule cost no call. */
 function ruleJudgement(
   parts: ClaimJudgeParts,
@@ -225,6 +232,7 @@ export async function judgeClaim(
   ];
   // P5-15: the first call of each claim is sent in claim order.
   await parts.turn?.wait();
+  await announceCall(parts, claim);
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);

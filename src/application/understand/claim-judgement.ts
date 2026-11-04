@@ -35,7 +35,8 @@ import { runPool } from './task-pool.js';
 
 // RF-301, RF-302, RF-1004, ADR-005: the judgement step of an understand run. Every claim still
 // `Proposed` after the citation check (step 1) is judged by the `verifier` role, at most
-// `agents.parallelism` at a time; each verdict is published as `verify.claim.judged` the moment it
+// `agents.parallelism` at a time; a claim whose judgement sends a call publishes `verify.claim.started`
+// when the call begins (P8-58); each verdict is published as `verify.claim.judged` the moment it
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
 // and claim order. A claim is never removed; one the run stopped before judging keeps its status,
 // unless a cap stopped the judgement: then it is `Unverified`, so a later run can judge it (RF-304).
@@ -149,7 +150,11 @@ function judgeOne(
   call: Pick<ClaimJudgeParts, 'halted' | 'turn'>,
 ): Promise<Judgement> {
   const owner = answersOfArea(parts.ownerAnswers, each.card.area);
-  const judge = { ...parts.judge, ...call, ownerAnswers: owner };
+  const { claimId } = each.claim;
+  // P8-58, RF-1002: the call's start, so the live page counts the calls the verifier runs at once.
+  const onCallStarted = () =>
+    parts.events.emit('verify.claim.started', { claimId }, each.card.agentTaskId);
+  const judge = { ...parts.judge, ...call, ownerAnswers: owner, onCallStarted };
   return judgeClaim(judge, each.claim, spanIdOf(parts.judge.call.traceId, each.index));
 }
 
