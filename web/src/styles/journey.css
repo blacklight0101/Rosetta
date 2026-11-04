@@ -8,6 +8,18 @@
   min-inline-size: 0;
 }
 
+.rst-road__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-3);
+}
+
+.rst-road__head .rst-live-section__title {
+  margin: 0;
+}
+
 .rst-road__steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
@@ -108,6 +120,42 @@
   color: var(--rst-ink-muted);
 }
 
+.rst-road__body {
+  display: grid;
+  gap: var(--rst-sp-1);
+  min-inline-size: 0;
+}
+
+.rst-road__body[hidden] {
+  display: none;
+}
+
+/* P8-100: the compact row of the artboards (P8Project, P8Run): glyph, name and state of each step, one
+   row at 1280 px and 1024 px, wrapping to fewer columns below 720 px. */
+.rst-road--compact .rst-road__steps {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--rst-sp-1);
+}
+
+.rst-road--compact .rst-road__step {
+  padding: var(--rst-sp-2);
+  border-color: transparent;
+  background: transparent;
+}
+
+.rst-road--compact .rst-road__step[aria-current='step'] {
+  border-width: 1px;
+  border-color: var(--rst-brand);
+  padding: var(--rst-sp-2);
+  background: var(--rst-brand-tint);
+}
+
+.rst-road--compact .rst-road__state {
+  padding: 0;
+  background: transparent;
+  color: var(--rst-ink-soft);
+}
+
 .rst-road__links {
   display: flex;
   flex-wrap: wrap;
@@ -144,8 +192,15 @@
   font-size: var(--rst-fs-sm);
 }
 
+@media (max-width: 720px) {
+  .rst-road--compact .rst-road__steps {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  }
+}
+
 @media (max-width: 480px) {
-  .rst-road__steps {
+  .rst-road__steps,
+  .rst-road--compact .rst-road__steps {
     grid-template-columns: minmax(0, 1fr);
   }
 }

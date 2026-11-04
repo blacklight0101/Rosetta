@@ -40,6 +40,8 @@ export interface JourneyPanelProps {
   readonly liveRunId?: string | undefined;
   /** RF-241, P8-26: the choice to re-run with the answers that wait, held by the Questions step. */
   readonly rerun?: RerunChoice | undefined;
+  /** RF-1020, P8-100: the strip stays expanded, with no button to hide the details (the project page). */
+  readonly alwaysExpanded?: boolean | undefined;
 }
 
 /** RF-1021: what the project page does in place: Deepen, skipping it, and the questions and plan setup. */
@@ -91,6 +93,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
       packageHere={props.packageHere}
       onPackage={props.onPackage}
       pagePath={props.pagePath}
+      alwaysExpanded={props.alwaysExpanded}
       {...inPlace}
       onResumed={
         props.onResumed ??

@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useState } from 'preact/hooks';
 import { navigate } from '../app/router.js';
 import { Button } from '../components/Button.js';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
@@ -21,6 +22,8 @@ import { ResumeButton } from './ResumeButton.js';
 // gives its reason or its code and its cost, and is a link only when it has a page the user may open.
 // The step that holds the next action is marked `aria-current="step"` and says so in text. One next
 // action sits under the list. All the styles are under `.rst-road`.
+// RF-1020, P8-100: on every page but the project page the steps are one compact row (glyph, name, state)
+// and "Show step details" opens the detail cards; the project page keeps them open and has no button.
 
 /** RF-241, P8-26: the choice to re-run with the answers that wait, held by the Questions step. */
 export interface RerunChoice {
@@ -50,6 +53,8 @@ export interface JourneyStripProps {
   readonly setup?: JSX.Element | undefined;
   /** RF-646: the user chose not to Deepen, so the questions are asked now (the project page). */
   readonly onSkipDeepen?: (() => void) | undefined;
+  /** RF-1020, P8-100: the detail cards stay open and no button hides them (the project page). */
+  readonly alwaysExpanded?: boolean | undefined;
 }
 
 const words: Readonly<Record<StepState, string>> = {
@@ -118,6 +123,7 @@ function RerunControl({ rerun }: { readonly rerun: RerunChoice }): JSX.Element {
 function StepItem(props: {
   readonly step: JourneyStep;
   readonly rerun: RerunChoice | undefined;
+  readonly expanded: boolean;
 }): JSX.Element {
   const { step, rerun } = props;
   const { state } = step;
@@ -135,18 +141,20 @@ function StepItem(props: {
       </span>{' '}
       <span class="rst-road__state">{words[state]}</span>{' '}
       {step.here && state !== 'current' ? <span class="rst-road__here">Current step</span> : null}{' '}
-      <span class="rst-road__detail">{step.detail}</span>{' '}
-      <span class="rst-road__cost">
-        {step.costMicros === undefined ? (
-          step.cost
-        ) : (
-          <MoneyAmount micros={step.costMicros} tabStop />
-        )}
-      </span>
-      <StepLinks links={step.links} />
-      {step.key === 'questions' && rerun !== undefined && rerun.answered > 0 ? (
-        <RerunControl rerun={rerun} />
-      ) : null}
+      <div class="rst-road__body" hidden={!props.expanded}>
+        <span class="rst-road__detail">{step.detail}</span>{' '}
+        <span class="rst-road__cost">
+          {step.costMicros === undefined ? (
+            step.cost
+          ) : (
+            <MoneyAmount micros={step.costMicros} tabStop />
+          )}
+        </span>
+        <StepLinks links={step.links} />
+        {step.key === 'questions' && rerun !== undefined && rerun.answered > 0 ? (
+          <RerunControl rerun={rerun} />
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -235,14 +243,34 @@ function Next(props: JourneyStripProps): JSX.Element {
 // RF-615, RF-1020, RF-1021
 export function JourneyStrip(props: JourneyStripProps): JSX.Element {
   const { view } = props;
+  const [shown, setShown] = useState(false);
+  const expanded = props.alwaysExpanded === true || shown;
   return (
-    <section class="rst-card rst-road" aria-labelledby="rst-road-title">
-      <h2 class="rst-live-section__title" id="rst-road-title">
-        Journey from code to package
-      </h2>
-      <ol class="rst-road__steps">
+    <section
+      class={`rst-card rst-road${expanded ? '' : ' rst-road--compact'}`}
+      aria-labelledby="rst-road-title"
+    >
+      <div class="rst-road__head">
+        <h2 class="rst-live-section__title" id="rst-road-title">
+          Journey from code to package
+        </h2>
+        {props.alwaysExpanded === true ? null : (
+          <button
+            type="button"
+            class="rst-button rst-button--secondary"
+            aria-expanded={expanded}
+            aria-controls="rst-road-steps"
+            onClick={() => {
+              setShown(!shown);
+            }}
+          >
+            {expanded ? 'Hide step details' : 'Show step details'}
+          </button>
+        )}
+      </div>
+      <ol class="rst-road__steps" id="rst-road-steps">
         {view.steps.map((step) => (
-          <StepItem key={step.key} step={step} rerun={props.rerun} />
+          <StepItem key={step.key} step={step} rerun={props.rerun} expanded={expanded} />
         ))}
       </ol>
       <div class="rst-road__foot">
