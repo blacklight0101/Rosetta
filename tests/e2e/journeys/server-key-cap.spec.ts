@@ -131,13 +131,14 @@ test(
       await expect(runStatus(page)).toContainText(/Partly read: \d+% of your code/u, {
         timeout: 90_000,
       });
-      await expectHistoryRowSaysTheSame(page, (await runStatus(page).innerText()).trim());
+      const head = (await runStatus(page).innerText()).trim();
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
       await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
       await expectNoFullKey(page, [e2eServerOpenAiKey()]);
       await expectKeyInNoLogOrReport(page);
+      await expectHistoryRowSaysTheSame(page, head);
     } finally {
       // However the run ended, the next sign-in starts clean and the caps go back to the shared figures.
       await page.context().clearCookies();
