@@ -58,13 +58,20 @@ async function actAs(page: Page): Promise<void> {
   await page.route('**/api/account/totals', async (route) => {
     const response = await route.fetch();
     const body = totalsBody.parse(await response.json());
+    const large = {
+      ...body.totals,
+      inputTokens: 999_999_999,
+      outputTokens: 99_999_999,
+      cachedInputTokens: 999_999_999,
+      cost: [{ currency: 'USD', costMicros: '9999990000' }],
+    };
     const server = {
       caps: { runMicros: '4000000', userDayMicros: '4000000', serverMonthMicros: '10000000' },
       serverMonthToDate: [{ currency: 'USD', costMicros: '8500000' }],
     };
     return route.fulfill({
       response,
-      json: { ...body, server: account.administrator ? server : null },
+      json: { ...body, totals: large, server: account.administrator ? server : null },
     });
   });
 }
@@ -105,6 +112,30 @@ async function expectPillOnOneLine(page: Page, at: string): Promise<void> {
   expect(Math.abs(split.y - own.y), `${at}: the split beside the figures`).toBeLessThan(own.height);
 }
 
+/**
+ * RF-1010: with no run the header is one line however large the totals (the test makes them the
+ * largest): 1280 px and wider holds the split in the pill, 1024 px has it as the tooltip only, and
+ * the server figure stays out of the header below 1600 px.
+ */
+async function expectHeaderWithoutRun(
+  page: Page,
+  info: TestInfo,
+  widths: readonly number[],
+): Promise<void> {
+  for (const width of widths) {
+    const { shape, at } = await shapeAt(page, info, width, 'no run');
+    expect(shape.height, `${at}: the header height`).toBeLessThanOrEqual(ONE_LINE_HEIGHT);
+    expect(shape.spread, `${at}: the header line`).toBeLessThanOrEqual(ONE_LINE);
+    expect(shape.broken, `${at}: texts broken ${shape.widths.join(' | ')}`).toEqual([]);
+    expect(shape.splitShown, `${at}: the split in the pill`).toBe(width >= 1280);
+    expect(shape.totalsTitle, `${at}: the split in the tooltip`).toContain('cached');
+    expect(shape.serverShown, `${at}: the server figure`).toBe(
+      width >= 1600 && account.administrator,
+    );
+    if (width >= 1280) await expectPillOnOneLine(page, at);
+  }
+}
+
 /** Opens a run's page and waits for the meter of the top bar. */
 async function startRun(page: Page): Promise<void> {
   await startUnderstand(page, ['Catalog', 'Controllers']);
@@ -129,13 +160,7 @@ test(
     await openScannedStartPage(page);
     await expect(page.getByTestId('header-totals')).toBeVisible();
 
-    // No run: the pill is one line (figures and split) and the header is no taller than that.
-    for (const width of [1280, 1024]) {
-      const { shape, at } = await shapeAt(page, info, width, 'no run');
-      expect(shape.height, `${at}: the header height`).toBeLessThanOrEqual(ONE_LINE_HEIGHT);
-      expect(shape.splitShown, `${at}: the split in the pill`).toBe(true);
-      await expectPillOnOneLine(page, at);
-    }
+    await expectHeaderWithoutRun(page, info, [1280, 1024]);
 
     await startRun(page);
 
@@ -146,7 +171,8 @@ test(
       expectLine(shape, at, width);
       expect(shape.splitShown, `${at}: the split out of the pill`).toBe(false);
       expect(shape.totalsTitle, `${at}: the split in the tooltip`).toContain('cached');
-      expect(shape.nameCut, `${at}: a short name is whole`).toBe(false);
+      // With the largest totals and a run the line is full at 1280 px: the name gives way first.
+      if (width < 1280) expect(shape.nameCut, `${at}: a short name is whole`).toBe(false);
       if (width === 1280)
         expect(shape.height, `${at}: the header height`).toBeLessThanOrEqual(ONE_LINE_HEIGHT);
     }
@@ -171,6 +197,7 @@ test(
     account.administrator = true;
     await actAs(page);
     await openScannedStartPage(page);
+    await expectHeaderWithoutRun(page, info, [1600, 1440, 1280, 1024]);
     await startRun(page);
     await lengthenMeter(page);
 
@@ -201,8 +228,10 @@ test(
   async ({ page }, info) => {
     test.setTimeout(150_000);
     account.administrator = false;
+    account.displayName = LONG_NAME;
     await actAs(page);
     await openScannedStartPage(page);
+    await expectHeaderWithoutRun(page, info, [1280, 1024]);
     await startRun(page);
     await lengthenMeter(page);
 
