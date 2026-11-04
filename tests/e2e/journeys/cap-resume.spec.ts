@@ -7,6 +7,7 @@ import {
   openRunTab,
   runStatus,
   startAndOpenLiveRun,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { fixtureKeyEndingIn } from '../support/no-full-key.js';
 import { accountFor } from '../support/seed.js';
@@ -61,7 +62,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
   const live = await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 180_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 180_000 });
   const runUuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/u.exec(live)?.[0];
   if (runUuid === undefined) throw new Error(`No run id in ${live}`);
   await pauseFinishedRun(page, runUuid, 'Services');
@@ -74,7 +75,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
 
   await page.getByRole('button', { name: /^Continue/u }).click();
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 180_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 180_000 });
   await expect(page).toHaveURL(live);
   await expect(page.getByTestId('approval-question')).toHaveCount(0);
   await openRunTab(page, 'Evidence');

@@ -7,7 +7,7 @@ import {
   repositories,
   runScan,
 } from '../support/journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 
@@ -35,7 +35,7 @@ test('RF-112 a repository without a language pack completes scan, understand and
   await chooseAreas(page, 'all');
   const understand = await startAndOpenLiveRun(page);
   expect(understand).not.toBe(scan);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await expectNoSeriousViolations(page);
 
   await buildReport(page);

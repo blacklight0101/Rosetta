@@ -11,6 +11,7 @@ import {
   runStatus,
   startAndOpenLiveRun,
   startUnderstand,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { estimate, writeButton } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
@@ -98,7 +99,7 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await scanAndChooseModels(page, { reader: heldReaderModel, planner: planFailsModel });
   await chooseAreas(page, ['Catalog']);
   await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await expect(stepOf(page, 'Understand')).toContainText('Done');
   const turn = page.getByRole('region', { name: 'Your turn' });
   await turn.getByRole('button', { name: 'Set up the plan' }).click();

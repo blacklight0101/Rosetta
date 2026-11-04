@@ -10,6 +10,7 @@ import {
   runStatus,
   startUnderstand,
   valueOf,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -87,7 +88,7 @@ test('RF-1002 RF-504 P8-11 the Report step of an ended run is absent until the r
   await openStartPage(page);
   await openScanRun(page);
   await startUnderstand(page, ['Catalog']);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
   await expect(step(page, 'Report')).toHaveCount(0);
@@ -132,7 +133,7 @@ test('RF-1002 RF-1004 the journey of an understand run reads while it runs and t
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await expect(step(page, 'Understand')).toContainText('4 of 4 agents done');
   await expect(step(page, 'Understand')).toContainText('done');
   await expect(step(page, 'Verify')).toContainText('7 of 7 citations checked, 5 judged');

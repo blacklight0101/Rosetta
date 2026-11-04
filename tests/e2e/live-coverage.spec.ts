@@ -8,6 +8,7 @@ import {
   openStartPage,
   runStatus,
   startUnderstand,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -146,5 +147,5 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   await expect(map).toContainText('4 of 8 files read in 2 areas');
   await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '75');
   await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '25');
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 });
