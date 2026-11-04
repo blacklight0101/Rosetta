@@ -114,7 +114,9 @@ it('RF-405 changing the provider of a role lists the new provider and picks its 
     expect(optionTexts(found)).toContain('GPT-5 future (no price)');
     return found;
   });
-  expect(select.value).toBe('gpt-5-nano');
+  await waitFor(() => {
+    expect(select.value).toBe('gpt-5-nano');
+  });
   fireEvent.change(select, { target: { value: 'gpt-5-nano' } });
   save();
 
