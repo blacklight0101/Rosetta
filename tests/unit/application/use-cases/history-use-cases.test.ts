@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ListHistory } from '../../../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../../../src/application/use-cases/list-snapshots.js';
+import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
+import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { MemorySnapshotCache } from '../../../support/memory-snapshot-cache.js';
 import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folders.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
-import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
+import { runningRun, sampleManifest, sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
 import { sampleCachedSnapshot, snapshotSha } from '../../../support/snapshot-listing-fixtures.js';
 
@@ -32,9 +34,42 @@ async function historySetup() {
       endedAt: 2,
       ...overrides,
     });
-  const listHistory = new ListHistory({ projects, runs, folders });
-  return { runs, folders, project, ended, listHistory };
+  const manifests = new MemoryRunManifestStore();
+  const listHistory = new ListHistory({ projects, runs, folders, manifests });
+  return { runs, folders, manifests, project, ended, listHistory };
 }
+
+describe('ListHistory: Deepen runs (P8-89)', () => {
+  const record = {
+    ...{ parentRunId: 'parent', parentRunKey: '20261001-100000-understand', maxRounds: 3 },
+    ...{ coveragePass: true, roundsDone: 3, stopReason: 'roundLimit' as const },
+    ...{ outOfScope: [], rounds: [], before: null, after: null },
+  };
+
+  it('RF-1008 P8-89 gives a Deepen run its rounds and every other run none', async () => {
+    const { runs, manifests, project, ended, listHistory } = await historySetup();
+    const plain = ended({ queuedAt: 1_000, stage: 'understand' });
+    const deepen = ended({
+      queuedAt: 2_000,
+      ...{ stage: 'understand', runKey: '20261003-100000-understand' },
+    });
+    const waiting = sampleRun({
+      ...{ userId: userAmy.userId, projectId: project.id, queueState: 'Queued', queuedAt: 3_000 },
+      ...{ runKey: '20261004-100000-understand', stage: 'understand' },
+    });
+    for (const run of [plain, deepen, waiting]) await runs.insert(run);
+    await manifests.write(scopeOf(deepen), sampleManifest({ stage: 'understand', deepen: record }));
+    await manifests.write(
+      scopeOf(waiting),
+      sampleManifest({ stage: 'understand', options: { deepen: { parentRunId: 'parent' } } }),
+    );
+
+    const result = await listHistory.execute({ actor: userAmy, projectId: project.id });
+
+    if (!result.ok) throw new Error('The history was not listed');
+    expect(result.value.runs.map((each) => each.deepenRounds)).toEqual([0, 3, null]);
+  });
+});
 
 describe('ListHistory: the queue', () => {
   it('RF-1108 EV-80 gives a queued run its place in the server queue and every other run none', async () => {

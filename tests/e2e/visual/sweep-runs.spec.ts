@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { gotoWithoutScripts } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
-import { confirmation, openHistory, runRow } from '../support/history-page.js';
+import { confirmation, openHistory, rowMenuItem, runRow } from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
 import {
   agentPanel,
@@ -99,11 +99,11 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await openHistory(page);
   const row = runRow(page, '-understand');
   await expect(row).toContainText('Completed');
-  // RF-231: the measures beside the run are part of the page that must fit (P2-41).
-  await expect(row.getByTestId('run-measures')).toBeVisible();
+  // RF-231: the coverage of the run is part of the page that must fit (P2-41, P8-89).
+  await expect(row.getByTestId('run-coverage')).toBeVisible();
   await expectPageInView(page);
 
-  await row.getByRole('button', { name: /^Delete:/u }).click();
+  await (await rowMenuItem(row, 'Delete')).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
   await expectPageInView(page);

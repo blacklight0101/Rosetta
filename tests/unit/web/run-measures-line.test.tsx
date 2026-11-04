@@ -39,22 +39,23 @@ describe('RF-231 the measures beside each run of the history', () => {
   it('RF-231 shows the coverage, the Supported share and what was not judged beside an ended run', async () => {
     renderHistory(answers);
 
-    const line = await within(await rowOf(doneKey)).findByTestId('run-measures');
+    const cell = await within(await rowOf(doneKey)).findByTestId('run-coverage');
 
-    expect(line.textContent).toContain('42% of first-party tokens read');
-    expect(line.textContent).toContain('68 of 118 judged claims supported');
-    expect(line.textContent).toContain('3 not judged');
-    expect(line.textContent).not.toMatch(/complete/iu);
+    expect(cell.textContent).toBe('42% read');
+    expect(cell.getAttribute('title')).toContain('42% of first-party tokens read');
+    expect(cell.getAttribute('title')).toContain('68 of 118 judged claims supported');
+    expect(cell.getAttribute('title')).toContain('3 not judged');
+    expect(cell.textContent).not.toMatch(/complete/iu);
   });
 
   it('RF-231 says well covered, with a glyph, only for a run at the bar', async () => {
     const good = measures({ firstPartyCoverage: 0.9, notJudged: 0, wellCovered: true });
     renderHistory({ [measuresOf('r-1')]: understanding(good) });
 
-    const line = await within(await rowOf(doneKey)).findByTestId('run-measures');
+    const cell = await within(await rowOf(doneKey)).findByTestId('run-coverage');
 
-    expect(line.textContent).toContain('Well covered');
-    expect(line.querySelector('svg')).not.toBeNull();
+    expect(cell.textContent).toContain('Well covered');
+    expect(cell.querySelector('svg')).not.toBeNull();
   });
 
   it('RF-231 reads nothing for a scan', async () => {
@@ -65,7 +66,7 @@ describe('RF-231 the measures beside each run of the history', () => {
       expect(page.calls.filter((call) => call.path.includes('/understanding'))).not.toHaveLength(0);
     });
     expect(page.calls.some((call) => call.path.includes('r-3/understanding'))).toBe(false);
-    expect(within(await rowOf(scanKey)).queryByTestId('run-measures')).toBeNull();
+    expect(within(await rowOf(scanKey)).queryByTestId('run-coverage')).toBeNull();
   });
 
   it('RF-231 shows nothing for a run without measures or when the read fails, and keeps the row', async () => {
@@ -74,7 +75,7 @@ describe('RF-231 the measures beside each run of the history', () => {
     const row = await rowOf(doneKey);
 
     await waitFor(() => {
-      expect(within(row).queryByTestId('run-measures')).toBeNull();
+      expect(within(row).queryByTestId('run-coverage')).toBeNull();
     });
     expect(within(row).getByText('Completed')).toBeTruthy();
   });

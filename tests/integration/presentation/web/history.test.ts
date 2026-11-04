@@ -48,6 +48,7 @@ describe('GET /api/projects/:id/history runs', () => {
         failedAreas: 0,
         unreadAreas: 0,
         position: null,
+        deepenRounds: null,
         ...{ runningMs: 0, wallMs: 0 },
       },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
@@ -90,7 +91,7 @@ describe('GET /api/projects/:id/history project', () => {
 
     expect(response.json<Record<string, unknown>>()['project']).toEqual({
       ...{ id: projectId, name: 'octo/webforms', ref: '', subpath: '' },
-      ...{ sourceUrl: 'https://github.com/octo/webforms' },
+      ...{ sourceUrl: 'https://github.com/octo/webforms', sourceKind: 'github' },
       ...{ folder: `projects/${projectId}`, sizeBytes: 7 },
     });
   });
