@@ -137,7 +137,10 @@ describe('the journey', () => {
   );
 
   it('RF-428 the strip gives the cost of each step and the total their exact figures', () => {
-    renderPage(<JourneyStrip view={view} onResumed={() => undefined} onAnswer={undefined} />, {});
+    renderPage(
+      <JourneyStrip view={view} onResumed={() => undefined} onAnswer={undefined} alwaysExpanded />,
+      {},
+    );
 
     const strip = screen.getByRole('region', { name: 'Journey from code to package' });
     expect(tipsOf(strip)).toEqual(['$3.113515', '$0.237', '$3.350515']);
