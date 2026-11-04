@@ -118,6 +118,18 @@ select {
   gap: var(--rst-sp-2);
 }
 
+/* P8-101: the user, Sign out and the theme toggle are one group. On a phone it may wrap but never
+   grows wider than the window; from 640 px it never breaks over two lines. */
+.rst-header__account {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
 .rst-shell__body {
   display: flex;
   flex: 1 1 auto;
@@ -311,9 +323,62 @@ select {
   }
 }
 
-/* The totals pill keeps one width while its figures grow, so the run meter beside it stays put. */
-@media (min-width: 900px) {
+/* P8-101: the run meter is the last thing of the header to be placed. Below 1280 px it does not fit
+   beside the totals, so it takes a row of its own under the wordmark and the account links stay on
+   the first row; from 1280 px the header is one line, the meter after the wordmark, and the totals
+   pill (which may wrap inside itself) is what gives way if the line is crowded. */
+@media (min-width: 40rem) {
+  .rst-header > .rst-topbar-runmeter {
+    order: 10;
+  }
+
+  .rst-header__account {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+/* From 1024 px the totals pill stacks its figures over the in, out and cached split, so it is
+   narrow enough for the line and the split stays on screen (RF-1010). */
+@media (min-width: 64rem) {
   .rst-header__totals {
-    min-inline-size: 28rem;
+    display: grid;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    justify-items: start;
+    gap: 0 var(--rst-sp-3);
+    flex: 0 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* The figures keep their own line height; the split line is a whole 17 px. The header then grows by
+     a whole number of pixels over the one-line pill it replaces, so the fraction of its height (the
+     figures' line) is the same as before and the pages below it end on the same sub-pixels (the
+     tooltip at the foot of the History table, P8-101). */
+  .rst-header__totals > .rst-p136-pill__own,
+  .rst-header__totals > .rst-p136-pill__split {
+    white-space: nowrap;
+  }
+
+  .rst-header__totals > .rst-p136-pill__split {
+    line-height: 1.0625rem;
+  }
+
+  /* The administrator's server figure stands beside the two lines and gives way first. */
+  .rst-header__totals > .rst-p136-pill__server {
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+}
+
+@media (min-width: 80rem) {
+  .rst-header {
+    flex-wrap: nowrap;
+    column-gap: var(--rst-sp-4);
+  }
+
+  .rst-header > .rst-topbar-runmeter {
+    order: 0;
   }
 }
