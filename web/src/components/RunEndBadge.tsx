@@ -49,7 +49,7 @@ function PartlyReadBadge(props: RunEndBadgeProps): JSX.Element {
   return (
     <>
       <StatusBadge list="RunPartlyRead" value="PartlyRead" />
-      <div class="rst-table__sub">{share}</div>
+      <div class="rst-table__sub rst-table__sub--share">{share}</div>
     </>
   );
 }
