@@ -23,9 +23,8 @@ import {
 // RF-1108, RF-003, RNF-002, DEC-61, DEC-112: the run queue of this server process (one instance
 // assumed). Queued runs start in queue order while fewer than `maxRunning` run and their user has
 // none running; a run that ends frees its slot and the next one starts by itself. Everything that
-// changes who runs (starting, stopping, recovery) happens one step at a time, so a run cannot be
-// stopped half-way through starting. The run itself is not awaited: the executor of its stage runs
-// in the background with an abort signal, and its outcome is recorded when it returns.
+// changes who runs (starting, stopping, recovery) is one step at a time, so a run cannot be stopped
+// half-way through starting. The executor runs in the background; its outcome is recorded on return.
 
 /** The default of at most this many running runs on the server (RF-1108). */
 export const DEFAULT_MAX_RUNNING_RUNS = 2;
@@ -56,7 +55,7 @@ export class RunQueue {
   private readonly controllers = new Map<string, AbortController>();
   /** P8-12: aborted only by the owner's Stop or a shutdown, never by a cap, so a step after a cap can be stopped. */
   private readonly ownerStops = new Map<string, AbortController>();
-  /** P8-111: the runs whose owner pressed Stop, so their `Interrupted` end reads `UserStop`. */
+  /** P8-111: the runs whose owner pressed Stop (`UserStop`); dropped when the run ends (P8-122). */
   private readonly userStops = new Set<string>();
   private readonly inFlight = new Set<Promise<void>>();
   private closing = false;
@@ -145,7 +144,7 @@ export class RunQueue {
     return this.steps.run(STEP, async () => {
       for (const run of await this.deps.runs.listRunning()) {
         if (this.controllers.has(run.id)) continue;
-        await this.deps.lifecycle.finish(run, 'Interrupted', { endReason: 'Restart' });
+        await this.deps.lifecycle.endOrphan(run);
       }
       await this.startWaiting();
     });
@@ -230,6 +229,7 @@ export class RunQueue {
     }
     this.controllers.delete(run.id);
     this.ownerStops.delete(run.id);
+    this.userStops.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
       this.report(run, 'could not start the next run', error),
     );
