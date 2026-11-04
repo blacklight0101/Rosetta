@@ -129,6 +129,16 @@ flowchart TB
 | 1280-1439 px      | side navigation                      | agent panels in 3 columns                      |
 | below 1280 px     | side navigation stacks above content | supported but not optimised; nothing is hidden |
 
+**The header during a run (P8-101, RF-1003, RF-1010).** The run meter stands after the wordmark, as the artboard
+`P8Projects` draws it, and reserves no width for its figures. From 1280 px the header is one line. From 1024 px to
+1279 px the meter takes a line of its own under the wordmark, and the totals, the user, Sign out and the theme toggle
+stay on the first line. The totals pill is always one line, however large the totals: from 1280 px with no run it
+holds the figures and the input, output and cached split; otherwise (1024 px to 1279 px, or a run active) it holds the
+figures and the split is their tooltip. The administrator's server figure stands in the header from 1600 px only; below
+it is on the users and caps page and in the cap banner. The user's name is cut with an ellipsis, its full text the tooltip; the name, Sign out and the theme toggle
+are one group in which only the name gives way, so Sign out and the toggle never break inside a word. On a phone the
+header wraps and no page scrolls sideways, with or without the meter.
+
 **One side navigation on every signed-in page (P1-175).** The navigation always has the same groups in the same
 order: the main pages (Projects, Settings and keys), the project group, and Administration for the administrator
 only. The project group is never absent. Its heading names the project (`Project: owner/repo`), cut with an ellipsis

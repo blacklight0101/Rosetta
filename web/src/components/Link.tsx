@@ -13,6 +13,8 @@ export interface LinkProps {
   /** The accessible name when the visible words are not all of it (a run id: "View run <id>"). */
   readonly ariaLabel?: string;
   readonly current?: boolean;
+  /** A tooltip for words that do not show all they carry (the pill's split during a run, P8-101). */
+  readonly title?: string | undefined;
 }
 
 const isPlainClick = (event: MouseEvent): boolean =>
@@ -26,6 +28,7 @@ export function Link(props: LinkProps): JSX.Element {
       href={props.href}
       class={props.class}
       aria-label={props.ariaLabel}
+      title={props.title}
       aria-current={props.current === true ? 'page' : undefined}
       onClick={(event) => {
         if (!isPlainClick(event) || !isPageOfThisApp(props.href)) return;

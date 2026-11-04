@@ -60,20 +60,21 @@ function Server({ server }: { readonly server: NonNullable<AccountTotals['server
   );
 }
 
-// RF-1010
+// RF-1010: the split is also the tooltip of the figures, for the widths at which the header folds it (P8-101).
 export function TotalsPill({ totals, href }: TotalsPillProps): JSX.Element {
+  const split = tokenSplitText(totals.totals);
   return (
     <>
       {href === undefined ? (
-        <span class="rst-p136-pill__own">
+        <span class="rst-p136-pill__own" title={split}>
           <Own totals={totals.totals} local={totals.local} linked={false} />
         </span>
       ) : (
-        <Link href={href} class="rst-p136-pill__own rst-p136-pill__link">
+        <Link href={href} class="rst-p136-pill__own rst-p136-pill__link" title={split}>
           <Own totals={totals.totals} local={totals.local} linked />
         </Link>
       )}
-      <span class="rst-p136-pill__split">{tokenSplitText(totals.totals)}</span>
+      <span class="rst-p136-pill__split">{split}</span>
       {totals.server === null ? null : <Server server={totals.server} />}
     </>
   );
