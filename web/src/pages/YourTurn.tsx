@@ -24,6 +24,8 @@ type AnswersLoadReady = Extract<AnswersLoad, { readonly status: 'ready' }>;
 export interface YourTurnProps {
   readonly state: RunState;
   readonly costMicros: number;
+  /** P8-93: the areas read below the coverage bar; undefined until the coverage is known. */
+  readonly partlyRead?: number | undefined;
   /** The run ended with an error. */
   readonly failed: boolean;
   /** An understand run is the only one that asks questions. */
@@ -276,7 +278,12 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
-      <RunFacts facts={facts} costMicros={props.costMicros} state={state} />
+      <RunFacts
+        facts={facts}
+        costMicros={props.costMicros}
+        state={state}
+        partlyRead={props.partlyRead}
+      />
     </section>
   );
 }

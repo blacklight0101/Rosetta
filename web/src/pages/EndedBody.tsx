@@ -24,6 +24,7 @@ import { RunFailure } from './RunFailure.js';
 import { RunStepper } from './RunStepper.js';
 import { ScanResult } from './ScanResult.js';
 import { useQuestionsFocus, type FocusRequest } from './use-focus-first-question.js';
+import { usePartlyRead } from './use-partly-read.js';
 import { useRunAnswers, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
 import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
@@ -211,6 +212,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const answers = useRunAnswers(run.id, asks);
   const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks, stage);
+  const partlyRead = usePartlyRead(run, stage, state);
   const open = openQuestions(answers.load);
   const { focus, showQuestions } = useQuestionsFocus(() => {
     results.show('questions');
@@ -244,6 +246,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
             deepenRunId={asks && mayDeepen(state.ended, run) ? run.id : undefined}
             state={shown}
             costMicros={props.costMicros}
+            partlyRead={partlyRead}
             report={report}
             onAnswer={showQuestions}
           />

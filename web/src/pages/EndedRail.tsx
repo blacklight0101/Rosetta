@@ -19,6 +19,8 @@ export interface RailProps {
   readonly stage: string;
   readonly state: RunState;
   readonly costMicros: number;
+  /** P8-93: the areas read below the coverage bar; undefined until the coverage is known. */
+  readonly partlyRead?: number | undefined;
   readonly failed: boolean;
   readonly asks: boolean;
   readonly answers: AnswersLoad;

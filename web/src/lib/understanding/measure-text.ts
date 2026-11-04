@@ -24,8 +24,11 @@ export interface Standing {
   readonly text: string;
 }
 
-/** Q-K: the share of the first-party tokens read from which a run may be called well covered. */
-const WELL_COVERED_SHARE = 0.8;
+/**
+ * Q-K, P8-93: the coverage bar: the share of the first-party tokens read from which a run may be
+ * called well covered, and from which an area counts as read.
+ */
+export const COVERAGE_BAR = 0.8;
 
 const number = new Intl.NumberFormat('en-US');
 
@@ -45,7 +48,7 @@ const plural = (count: number, word: string): string =>
 /** RF-231, Q-K. */
 function isWellCovered(measures: MeasureSet): boolean {
   const share = measures.firstPartyCoverage;
-  return share !== null && share >= WELL_COVERED_SHARE && measures.notJudged === 0;
+  return share !== null && share >= COVERAGE_BAR && measures.notJudged === 0;
 }
 
 // RF-231

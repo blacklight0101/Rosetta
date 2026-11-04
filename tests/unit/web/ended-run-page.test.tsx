@@ -59,6 +59,17 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
   expect(text('Areas')).toContain('all read');
 });
 
+it('RF-230 the Areas figure says partly read for an area the run started but read 16% of', async () => {
+  const area = { area: 'Catalog', files: [], tokens: 52_749, readTokenShare: 0.16 };
+  await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) } });
+
+  const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });
+  await waitFor(() => {
+    expect(within(facts).getByText('Areas').closest('li')?.textContent).toContain('1 partly read');
+  });
+  expect(within(facts).queryByText('all read')).toBeNull();
+});
+
 it('RF-008 RF-504 the report and the downloads stay one click away on the ended page', async () => {
   await openEnded();
 

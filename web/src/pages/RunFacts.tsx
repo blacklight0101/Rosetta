@@ -21,9 +21,14 @@ export function Fact(props: {
   );
 }
 
-/** The artboard says "2 partly read"; a run that read every area says "all read". */
-function areasDetail(unread: number, facts: EndFacts): string {
-  if (unread > 0) return `${String(unread)} partly read`;
+/**
+ * The artboard says "2 partly read"; a run that read every area says "all read". P8-93: an area read
+ * below the coverage bar is partly read too (`partlyRead`, from the coverage); until the coverage is
+ * known the areas no reader started are all that is said.
+ */
+function areasDetail(unread: number, partlyRead: number | undefined, facts: EndFacts): string {
+  const partly = partlyRead ?? unread;
+  if (partly > 0) return `${String(partly)} partly read`;
   return facts.areasRead === facts.areas ? 'all read' : `${String(facts.areasRead)} read`;
 }
 
@@ -33,6 +38,8 @@ export function RunFacts(props: {
   readonly costMicros: number;
   /** The run's state: a Deepen marks its cards, and the areas no reader started read "partly read". */
   readonly state: RunState;
+  /** P8-93: the areas read below the coverage bar; undefined until the run's coverage is known. */
+  readonly partlyRead?: number | undefined;
 }): JSX.Element {
   const { facts } = props;
   return (
@@ -50,7 +57,7 @@ export function RunFacts(props: {
       <Fact
         label="Areas"
         value={String(facts.areas)}
-        detail={areasDetail(props.state.ended?.unreadAreas ?? 0, facts)}
+        detail={areasDetail(props.state.ended?.unreadAreas ?? 0, props.partlyRead, facts)}
       />
       <Fact label="Cost" value={costLabel(props.costMicros)} />
       <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
