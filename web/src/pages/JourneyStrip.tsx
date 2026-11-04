@@ -3,6 +3,7 @@ import { navigate } from '../app/router.js';
 import { Button } from '../components/Button.js';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
+import { interruptedWord } from '../lib/interrupted-word.js';
 import { costLabel } from '../lib/live-run/format.js';
 import type {
   JourneyAction,
@@ -61,7 +62,9 @@ const words: Readonly<Record<StepState, string>> = {
   gaps: 'With gaps',
   awaiting: 'Waiting for approval',
   skipped: 'Skipped',
-  stopped: 'Stopped by you',
+  stopped: interruptedWord('UserStop'),
+  restarted: interruptedWord('Restart'),
+  cancelled: interruptedWord('QueueCancel'),
   capped: 'Stopped at its cap',
 };
 
@@ -76,6 +79,8 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   awaiting: 'pause-bars',
   skipped: 'dashed-circle',
   stopped: 'pause-bars',
+  restarted: 'pause-bars',
+  cancelled: 'pause-bars',
   capped: 'warning-triangle',
 };
 

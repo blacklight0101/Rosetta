@@ -29,7 +29,11 @@ describe('the reason of a run that its owner stopped or cancelled', () => {
 
     const run = await h.runs.find(userAmy.userId, id);
     expect(run).toMatchObject({ endState: 'Interrupted', endReason: 'UserStop' });
-    const stored = run === undefined ? [] : await h.events.read(h.scopeOf(run), 0);
+    if (run === undefined) throw new Error('No run');
+    await vi.waitFor(async () => {
+      expect((await h.events.read(h.scopeOf(run), 0)).at(-1)?.type).toBe('run.ended');
+    });
+    const stored = await h.events.read(h.scopeOf(run), 0);
     expect(stored.at(-1)?.data).toMatchObject({ endState: 'Interrupted', endReason: 'UserStop' });
   });
 

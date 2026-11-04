@@ -1,6 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import type { Result } from '../../domain/errors/result.js';
-import type { AreaCounts, Run, RunTotals } from '../../domain/runs/run.js';
+import type { AreaCounts, Run, RunEndDetail, RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, data-model.md section 4 (`runs`), RF-1108, RF-1105: the run rows. The
@@ -60,14 +60,14 @@ export interface RunIndex {
   start(runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
    * `Running` -> `Ended`, `Queued` -> `Ended` as `Interrupted`, or `AwaitingApproval` -> `Ended` as
-   * `CapReached` or `Interrupted` (RF-432); the end state is set once. Undefined for an unknown run,
+   * `CapReached` or `Interrupted` (RF-432); the end state is set once, with the reason of an `Interrupted` end (P8-111). Undefined for an unknown run,
    * one that has ended and a queued or paused run ended any other way.
    */
   end(
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    counts?: AreaCounts,
+    detail?: RunEndDetail,
   ): Promise<Run | undefined>;
   /**
    * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started and ending the

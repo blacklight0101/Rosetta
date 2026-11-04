@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { endReasonField } from '../../api/end-reason.js';
 
 // RF-1002, data-model.md section 3.9: the payload of each event type the live page reads. Every
 // field is optional or defaulted, because a stream may carry an older or a newer shape: an event
@@ -115,6 +116,8 @@ export const resolvedData = z.looseObject({ url: text.optional(), commitSha: tex
 export const endedData = z.looseObject({
   endState: text,
   errorCode: text.optional(),
+  /** P8-111: why an `Interrupted` run ended. */
+  endReason: endReasonField,
   /** RF-208: areas of a completed run that gave no usable card. */
   failedAreas: count.optional(),
   /** P7-02: planned areas of a capped run that no reader started. */

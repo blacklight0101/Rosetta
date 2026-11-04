@@ -7,7 +7,7 @@ import {
   recordManifestSource,
   type RunManifest,
 } from '../../domain/runs/run-manifest.js';
-import type { RunEndState } from '../../domain/runs/run-states.js';
+import type { RunEndReason, RunEndState } from '../../domain/runs/run-states.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunEventHistory, RunEventSink } from '../ports/run-events.js';
@@ -184,6 +184,8 @@ export interface EndDetail {
   readonly errorCode?: ErrorCode;
   readonly failedAreas?: number;
   readonly unreadAreas?: number;
+  /** P8-111: why an `Interrupted` run ended; recorded on the row and said by `run.ended`. */
+  readonly endReason?: RunEndReason;
 }
 
 function endData(
@@ -199,6 +201,7 @@ function endData(
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
     ...(unreadAreas === undefined ? {} : { unreadAreas }),
+    ...(run.endReason === null ? {} : { endReason: run.endReason }),
   };
 }
 

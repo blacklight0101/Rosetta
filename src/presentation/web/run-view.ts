@@ -16,6 +16,7 @@ export function runView(run: Run): Record<string, unknown> {
     stage: run.stage,
     queueState: run.queueState,
     endState: run.endState,
+    endReason: run.endReason,
     queuedAt: formatInstant(run.queuedAt),
     startedAt: instantOrNull(run.startedAt),
     endedAt: instantOrNull(run.endedAt),

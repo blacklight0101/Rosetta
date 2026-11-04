@@ -4,14 +4,21 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { queuePositions, runsToStart } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
-import type { RunStage } from '../../domain/runs/run-states.js';
+import type { RunEndReason, RunStage } from '../../domain/runs/run-states.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { KeyedQueue } from '../support/keyed-queue.js';
 import type { RunLifecycle, StartedRun } from './run-lifecycle.js';
-import { endDetailOf, failureOf, pausedEnd, stoppedOutcome } from './run-outcomes.js';
+import {
+  endDetailOf,
+  failureOf,
+  cancelReasonOf,
+  interruptReasonOf,
+  pausedEnd,
+  stoppedOutcome,
+} from './run-outcomes.js';
 
 // RF-1108, RF-003, RNF-002, DEC-61, DEC-112: the run queue of this server process (one instance
 // assumed). Queued runs start in queue order while fewer than `maxRunning` run and their user has
@@ -49,6 +56,8 @@ export class RunQueue {
   private readonly controllers = new Map<string, AbortController>();
   /** P8-12: aborted only by the owner's Stop or a shutdown, never by a cap, so a step after a cap can be stopped. */
   private readonly ownerStops = new Map<string, AbortController>();
+  /** P8-111: the runs whose owner pressed Stop, so their `Interrupted` end reads `UserStop`. */
+  private readonly userStops = new Set<string>();
   private readonly inFlight = new Set<Promise<void>>();
   private closing = false;
 
@@ -111,6 +120,7 @@ export class RunQueue {
       if (run.queueState === 'Ended') return err('already-ended');
       const controller = this.controllers.get(run.id);
       if (run.queueState === 'Running' && controller !== undefined) {
+        this.userStops.add(run.id);
         this.ownerStops.get(run.id)?.abort();
         controller.abort();
         return ok({ kind: 'stopping', run });
@@ -119,7 +129,9 @@ export class RunQueue {
       const ended =
         run.queueState === 'AwaitingApproval'
           ? await this.deps.lifecycle.finish(run, 'CapReached', pausedEnd(run))
-          : await this.deps.lifecycle.finish(run, 'Interrupted');
+          : await this.deps.lifecycle.finish(run, 'Interrupted', {
+              endReason: cancelReasonOf(run),
+            });
       return ok({ kind: 'cancelled', run: ended ?? run });
     });
   }
@@ -132,7 +144,8 @@ export class RunQueue {
   recover(): Promise<void> {
     return this.steps.run(STEP, async () => {
       for (const run of await this.deps.runs.listRunning()) {
-        if (!this.controllers.has(run.id)) await this.deps.lifecycle.finish(run, 'Interrupted');
+        if (this.controllers.has(run.id)) continue;
+        await this.deps.lifecycle.finish(run, 'Interrupted', { endReason: 'Restart' });
       }
       await this.startWaiting();
     });
@@ -209,8 +222,12 @@ export class RunQueue {
     const { run } = started;
     const outcome = await this.outcomeOf(started, executor, controller);
     // RF-432, ADR-026: a run stopped at its approved amount waits for its owner, without a slot.
+    const byOwner = this.userStops.delete(run.id);
     const pause = isApprovalPause(controller.signal.reason) && outcome.endState === 'CapReached';
-    if (!pause || !(await this.pauseQuietly(run, outcome))) await this.endQuietly(run, outcome);
+    if (!pause || !(await this.pauseQuietly(run, outcome))) {
+      const stop = { byOwner, byShutdown: this.isClosing && controller.signal.aborted };
+      await this.endQuietly(run, outcome, interruptReasonOf(outcome, stop));
+    }
     this.controllers.delete(run.id);
     this.ownerStops.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
@@ -233,9 +250,9 @@ export class RunQueue {
   }
 
   /** Records the end of a run; a failure is logged, because the run row is the record that counts. */
-  private async endQuietly(run: Run, outcome: RunOutcome): Promise<void> {
+  private async endQuietly(run: Run, outcome: RunOutcome, why?: RunEndReason): Promise<void> {
     try {
-      await this.deps.lifecycle.finish(run, outcome.endState, endDetailOf(outcome));
+      await this.deps.lifecycle.finish(run, outcome.endState, endDetailOf(outcome, why));
     } catch (error) {
       await this.report(run, 'could not end', error);
     }

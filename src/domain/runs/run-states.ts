@@ -10,6 +10,13 @@ export const RUN_END_STATES = ['Completed', 'CapReached', 'Failed', 'Interrupted
 export type RunEndState = (typeof RUN_END_STATES)[number];
 
 /**
+ * P8-111, DEC-217: why a run ended `Interrupted`: its owner stopped it (`UserStop`), the server
+ * restarted or shut down under it (`Restart`), or it was cancelled while queued (`QueueCancel`).
+ */
+export const RUN_END_REASONS = ['UserStop', 'Restart', 'QueueCancel'] as const;
+export type RunEndReason = (typeof RUN_END_REASONS)[number];
+
+/**
  * `Queued` -> `Running` when a slot frees; `Running` -> `Ended`; `Queued` -> `Ended` when cancelled.
  * RF-432, ADR-026: `Running` -> `AwaitingApproval` when the run nears its approved amount; it holds
  * no slot; Continue makes it `Queued` again, Stop ends it `CapReached`.

@@ -1,4 +1,6 @@
-import type { JourneyStep, JourneyView } from './journey-steps.js';
+import type { EndReason } from '../../api/end-reason.js';
+import { interruptedPhrase } from '../interrupted-word.js';
+import type { JourneyStep, JourneyView, StepState } from './journey-steps.js';
 
 // RF-1021, RF-1020, DEC-211 (P8-26): the title of the project page. Before the first run it is
 // "Start a run"; once the project has a run it is the project's name, with the current step of the
@@ -34,9 +36,22 @@ function packageStatus(step: JourneyStep): HeadingStatus {
   return plain('Package ready', 'ok');
 }
 
+const interruptions: Partial<Record<StepState, EndReason>> = {
+  stopped: 'UserStop',
+  restarted: 'Restart',
+  cancelled: 'QueueCancel',
+};
+
+/** P8-111: "stopped by you", "stopped by a restart" or "cancelled while queued"; none for any other step. */
+function interruptedHeading(step: JourneyStep): string | undefined {
+  const reason = interruptions[step.state];
+  return reason === undefined ? undefined : interruptedPhrase(reason);
+}
+
 function understandStatus(step: JourneyStep, view: JourneyView): HeadingStatus {
   if (step.state === 'failed') return plain('Understand stopped', 'danger', step.href);
-  if (step.state === 'stopped') return plain('Understand stopped by you', 'warn', step.href);
+  const interrupted = interruptedHeading(step);
+  if (interrupted !== undefined) return plain(`Understand ${interrupted}`, 'warn', step.href);
   if (step.state === 'capped') return plain('Understand stopped at its cap', 'warn', step.href);
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   if (step.state === 'upcoming' || step.state === 'current') {
@@ -57,7 +72,8 @@ function questionsStatus(view: JourneyView, step: JourneyStep): HeadingStatus {
 
 function planStatus(step: JourneyStep): HeadingStatus {
   if (step.state === 'failed') return plain('Plan failed', 'danger', step.href);
-  if (step.state === 'stopped') return plain('Plan stopped by you', 'warn', step.href);
+  const interrupted = interruptedHeading(step);
+  if (interrupted !== undefined) return plain(`Plan ${interrupted}`, 'warn', step.href);
   if (step.state === 'capped') return plain('Plan stopped at its cap', 'warn', step.href);
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   return plain('Plan running', 'info', step.href);

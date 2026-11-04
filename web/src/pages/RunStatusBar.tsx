@@ -55,7 +55,7 @@ function Badge({
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
   ) : (
-    <RunEndBadge endState={endState} unreadAreas={unreadAreas} />
+    <RunEndBadge endState={endState} unreadAreas={unreadAreas} endReason={phase.endReason} />
   );
 }
 

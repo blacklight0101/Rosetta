@@ -29,7 +29,10 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
   if (run.queueState === 'Ended' && run.endState !== null) {
     return (
       <>
-        <RunEndBadge endState={run.endState} unreadAreas={run.unreadAreas} />
+        <RunEndBadge
+          {...{ endState: run.endState, endReason: run.endReason }}
+          unreadAreas={run.unreadAreas}
+        />
         <FailedAreasNote count={run.failedAreas} />
         {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </>

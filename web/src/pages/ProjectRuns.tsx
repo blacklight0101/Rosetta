@@ -16,7 +16,12 @@ const kindOf = (run: HistoryRun): string => run.stage.charAt(0).toUpperCase() + 
 function State({ run }: { readonly run: HistoryRun }): JSX.Element {
   const ended = stateLists.RunEndState.find((each) => each === run.endState);
   if (run.queueState === 'Ended' && ended !== undefined) {
-    return <RunEndBadge endState={ended} unreadAreas={run.unreadAreas} />;
+    return (
+      <RunEndBadge
+        {...{ endState: ended, endReason: run.endReason }}
+        unreadAreas={run.unreadAreas}
+      />
+    );
   }
   return <StatusBadge list="RunQueueState" value={run.queueState} />;
 }
