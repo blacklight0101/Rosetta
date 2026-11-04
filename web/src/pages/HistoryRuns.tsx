@@ -36,7 +36,10 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
   if (run.queueState === 'Ended' && ended !== undefined) {
     return (
       <>
-        <RunEndBadge endState={ended} unreadAreas={run.unreadAreas} />
+        <RunEndBadge
+          {...{ endState: ended, endReason: run.endReason }}
+          unreadAreas={run.unreadAreas}
+        />
         <FailedAreasNote count={run.failedAreas} />
       </>
     );

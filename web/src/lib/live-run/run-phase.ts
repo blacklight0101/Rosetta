@@ -1,3 +1,4 @@
+import type { EndReason } from '../../api/end-reason.js';
 import type { RunRow } from '../../api/run-schemas.js';
 import type { AwaitingState, RunState } from './run-state.js';
 
@@ -9,14 +10,25 @@ export type RunPhase =
   | { readonly kind: 'running' }
   /** RF-432: paused near the approved amount; `continueAmount` is the N Continue offers. */
   | { readonly kind: 'awaiting'; readonly continueAmount: AwaitingState['continueAmount'] }
-  | { readonly kind: 'ended'; readonly endState: string };
+  /** P8-111: `endReason` says why an `Interrupted` run ended; absent when nothing recorded it. */
+  | {
+      readonly kind: 'ended';
+      readonly endState: string;
+      readonly endReason?: EndReason | null | undefined;
+    };
 
 // RF-1108
 export function phaseOf(row: RunRow, state: RunState): RunPhase {
-  if (state.ended !== undefined) return { kind: 'ended', endState: state.ended.endState };
+  // P8-111: the reason comes from `run.ended`, or from the row for a run whose end event said none.
+  const { ended } = state;
+  if (ended !== undefined) {
+    return { kind: 'ended', endState: ended.endState, endReason: ended.endReason ?? row.endReason };
+  }
   // A run the row calls ended stays ended while its events replay: the page never goes back to the
   // running mode (RF-1015).
-  if (row.queueState === 'Ended') return { kind: 'ended', endState: row.endState ?? 'Interrupted' };
+  if (row.queueState === 'Ended') {
+    return { kind: 'ended', endState: row.endState ?? 'Interrupted', endReason: row.endReason };
+  }
   // RF-432: the event says it paused; a run whose events have not arrived has the row's word.
   if (state.awaiting !== undefined)
     return { kind: 'awaiting', continueAmount: state.awaiting.continueAmount };

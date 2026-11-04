@@ -65,22 +65,37 @@ export function endText(
   return `Failed${code}`;
 }
 
+/** P8-111: a run no restart and no queue cancel ended is "stopped" (by you), as before. */
+function interruptedState(
+  reason: JourneyRunFacts['endReason'],
+): 'stopped' | 'restarted' | 'cancelled' {
+  if (reason === 'Restart') return 'restarted';
+  return reason === 'QueueCancel' ? 'cancelled' : 'stopped';
+}
+
 /**
  * The state and detail of a run that has not completed: working, waiting for approval, stopped by
- * the user (P8-87: "Stopped by you" is the state word, the detail keeps only its code), at its cap
+ * the user (P8-87: "Stopped by you" is the state word, the detail keeps only its code; P8-111: a
+ * restart or a cancel while queued has its own word), at its cap
  * (P8-112, DEC-217: "Stopped at its cap", never "Failed") or failed.
  */
 export function unfinishedStep(
-  run: Pick<JourneyRunFacts, 'queueState' | 'position' | 'endState' | 'errorCode' | 'unreadAreas'>,
+  run: Pick<
+    JourneyRunFacts,
+    'queueState' | 'position' | 'endState' | 'endReason' | 'errorCode' | 'unreadAreas'
+  >,
 ): {
-  readonly state: 'awaiting' | 'upcoming' | 'stopped' | 'capped' | 'failed';
+  readonly state:
+    'awaiting' | 'upcoming' | 'stopped' | 'restarted' | 'cancelled' | 'capped' | 'failed';
   readonly detail: string;
 } {
   if (phaseOf(run) === 'working') {
     const state = run.queueState === 'AwaitingApproval' ? 'awaiting' : 'upcoming';
     return { state, detail: workingText(run) };
   }
-  if (run.endState === 'Interrupted') return { state: 'stopped', detail: run.errorCode ?? '' };
+  if (run.endState === 'Interrupted') {
+    return { state: interruptedState(run.endReason), detail: run.errorCode ?? '' };
+  }
   if (run.endState === 'CapReached') return { state: 'capped', detail: endText(run) };
   return { state: 'failed', detail: endText(run) };
 }

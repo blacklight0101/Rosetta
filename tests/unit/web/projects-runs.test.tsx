@@ -98,7 +98,10 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
   const { calls } = renderProjects({
     [overviewPath]: () => {
       const lastRun = cancelled
-        ? lastRunOf({ id: 'r-9', queueState: 'Ended', endState: 'Interrupted', position: null })
+        ? lastRunOf({
+            ...{ id: 'r-9', queueState: 'Ended', endState: 'Interrupted', position: null },
+            endReason: 'QueueCancel',
+          })
         : queuedRun;
       return json(200, { projects: [overviewRow(demo, { runs: 1, lastRun })], truncated: false });
     },
@@ -120,7 +123,8 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
     csrf: 'csrf-0',
     body: undefined,
   });
-  expect(within(await rowOf('octo/demo')).getByText('Stopped by you')).not.toBeNull();
+  // P8-111: a run cancelled while it waited never reads "Stopped by you".
+  expect(within(await rowOf('octo/demo')).getByText('Cancelled while queued')).not.toBeNull();
   expect(calls.filter((call) => call.path === '/api/projects/overview')).toHaveLength(2);
 });
 

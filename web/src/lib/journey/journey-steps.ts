@@ -33,6 +33,9 @@ export type StepState =
   | 'gaps'
   /** P8-87, RF-006: the user pressed Stop; the run can be resumed, so it is not a failure. */
   | 'stopped'
+  /** P8-111, DEC-217: the server restarted under the run, or it was cancelled while queued; it can be resumed. */
+  | 'restarted'
+  | 'cancelled'
   /** P8-112, DEC-217: the run reached its cap; it is not a failure, and it still offers its next step. */
   | 'capped';
 

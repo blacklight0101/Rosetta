@@ -83,9 +83,10 @@ export function onSourceResolved(state: RunState, event: RunEvent): RunState {
 export function onRunEnded(state: RunState, event: RunEvent): RunState {
   const parsed = endedData.safeParse(event.data);
   if (!parsed.success) return state;
-  const { endState, errorCode, totals, failedAreas, unreadAreas } = parsed.data;
+  const { endState, errorCode, totals, failedAreas, unreadAreas, endReason } = parsed.data;
   const costMicros = totals?.costMicros;
-  return { ...state, ended: { endState, errorCode, costMicros, failedAreas, unreadAreas } };
+  const ended = { endState, errorCode, endReason, costMicros, failedAreas, unreadAreas };
+  return { ...state, ended };
 }
 
 /** RF-432: the run paused near its approved amount; a later `run.started` (Continue) clears it. */

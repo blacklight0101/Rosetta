@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { totalsSchema } from './cost-schemas.js';
+import { endReasonField } from './end-reason.js';
 import { projectSchema } from './project-schemas.js';
 
 // RF-1008, RF-1108, RF-1010: the wire shape of `GET /api/projects/overview` (project-overview-
@@ -13,6 +14,8 @@ const lastRunSchema = z.object({
   stage: z.string(),
   queueState: z.enum(['Queued', 'Running', 'Ended']),
   endState: z.enum(['Completed', 'CapReached', 'Failed', 'Interrupted']).nullable(),
+  /** P8-111: why an `Interrupted` run ended. */
+  endReason: endReasonField,
   queuedAt: z.string(),
   startedAt: z.string().nullable(),
   endedAt: z.string().nullable(),
