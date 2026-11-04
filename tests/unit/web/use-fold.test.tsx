@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { act, fireEvent, render, screen } from '@testing-library/preact';
 import { useState } from 'preact/hooks';
 import { expect, it } from 'vitest';
 import { useFold } from '../../../web/src/pages/use-fold.js';
@@ -41,8 +41,10 @@ const browserFiresToggle = (): void => {
 
 /** The user clicks the summary: the element flips, then the browser fires `toggle`. */
 const userToggles = (open: boolean): void => {
-  fold().open = open;
-  browserFiresToggle();
+  act(() => {
+    fold().open = open;
+    browserFiresToggle();
+  });
 };
 
 const pageAsks = (): void => {
