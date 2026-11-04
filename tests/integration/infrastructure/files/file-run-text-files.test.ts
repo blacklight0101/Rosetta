@@ -47,4 +47,16 @@ describe('FileRunTextFiles', () => {
       expect(await filesOver().read(scope, path)).toBeUndefined();
     },
   );
+
+  it('P8-130 reads a file up to the limit it is given', async () => {
+    await seed('coverage.json', '12345');
+
+    expect(await filesOver().read(scope, 'coverage.json', 5)).toBe('12345');
+  });
+
+  it('P8-130 answers undefined, without reading it, for a file over the limit it is given', async () => {
+    await seed('coverage.json', '123456');
+
+    expect(await filesOver().read(scope, 'coverage.json', 5)).toBeUndefined();
+  });
 });

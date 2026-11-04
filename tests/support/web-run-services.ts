@@ -2,7 +2,6 @@ import { startRunOf } from './journey-lookups.js';
 import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
-import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
@@ -27,12 +26,6 @@ import { ListRunCalls } from '../../src/application/use-cases/list-run-calls.js'
 import { ListRunLogs } from '../../src/application/use-cases/list-run-logs.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../../src/application/use-cases/reopen-question.js';
-import { DeleteProject } from '../../src/application/use-cases/delete-project.js';
-import { DeleteRun } from '../../src/application/use-cases/delete-run.js';
-import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.js';
-import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
-import { ListHistory } from '../../src/application/use-cases/list-history.js';
-import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { continueRunOf } from './continue-run-of.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
@@ -47,10 +40,7 @@ import type { ObservabilityServices } from '../../src/presentation/web/observabi
 import type { ServerOptions } from '../../src/presentation/web/server.js';
 import { MemoryArchiveWriter } from './memory-archive-writer.js';
 import { RecordingLogger } from './recording-logger.js';
-import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
-import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
-import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { MemoryRunFileReader } from './memory-run-file-reader.js';
 import { planOptionsService } from './web-plan-options.js';
 import {
@@ -269,31 +259,5 @@ export function runServices(
       roleKeys,
     }),
     ...route,
-  };
-}
-
-/** RF-1008, RF-1012: the history, deletion, snapshot and Projects page run use cases over the harness's memory adapters. */
-export function historyServices(parts: {
-  readonly runs: RunHarness;
-  readonly projects: MemoryProjectRepository;
-  readonly folders: MemoryWorkspaceFolders;
-  readonly snapshots: MemorySnapshotCache;
-  readonly logger: MemoryLogger;
-  readonly costs: MemoryCostTotals;
-  /** RF-133: the store whose snapshots a deleted project takes with it. */
-  readonly upload: { readonly store: UploadStore };
-}): ServerOptions['history'] {
-  const { projects, folders, snapshots, logger, costs, upload } = parts;
-  const { runs, manifests } = parts.runs;
-  return {
-    listHistory: new ListHistory({ ...{ projects, runs, folders, logger }, manifests }),
-    listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
-    deleteRun: new DeleteRun({ runs, folders, logger }),
-    deleteProject: new DeleteProject({
-      ...{ projects, runs, folders, logger },
-      uploads: upload.store,
-    }),
-    listSnapshots: new ListSnapshots({ snapshots, runs }),
-    deleteSnapshot: new DeleteSnapshot({ snapshots, runs, logger }),
   };
 }
