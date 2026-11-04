@@ -1,10 +1,17 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
 import { openScannedStartPage } from '../support/cost-run.js';
 import { scanAndChooseModels } from '../support/full-run-pages.js';
 import { chooseAreas } from '../support/journey-pages.js';
 import { heldReaderModel, planFailsModel } from '../support/journey-models.js';
+import {
+  gappedPlan,
+  journey,
+  routeJourney,
+  showStepDetails,
+  stepOf,
+} from '../support/journey-strip.js';
 import {
   agentPanel,
   openRunTab,
@@ -27,17 +34,6 @@ import { transitionsDone } from '../support/transitions.js';
 // and the brief as they were and offers "Try the plan again", which opens Plan setup for a new
 // estimate. The strip fits 360 px without a sideways scroll, and axe is clean in both themes.
 
-const journey = (page: Page): Locator =>
-  page.getByRole('region', { name: 'Journey from code to package' });
-
-/** The item of a step, found by its title. */
-const stepOf = (page: Page, title: string): Locator =>
-  journey(page)
-    .getByRole('listitem')
-    .filter({
-      has: page.locator('.rst-road__title', { hasText: new RegExp(`^${title}$`, 'u') }),
-    });
-
 /** Nothing of the page is beside the viewport. */
 async function expectNoSidewaysScroll(page: Page): Promise<void> {
   const sideways = await page.evaluate(
@@ -46,13 +42,11 @@ async function expectNoSidewaysScroll(page: Page): Promise<void> {
   expect(sideways).toBeLessThanOrEqual(0);
 }
 
-/** RF-1020, P8-100: the strip is a compact row; this opens the detail cards. */
-async function showStepDetails(page: Page): Promise<void> {
-  await journey(page).getByRole('button', { name: 'Show step details' }).click();
-  await expect(journey(page).getByRole('button', { name: 'Hide step details' })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  );
+/** The strip fits a 360 px phone without a sideways scroll, then the window goes back to 1280 px. */
+async function expectPhoneFits(page: Page): Promise<void> {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await expectNoSidewaysScroll(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
 }
 
 /** The distinct vertical positions of the seven steps: one means they stand in a single row. */
@@ -88,6 +82,7 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
     await expect(stepOf(page, title)).toContainText('Locked');
     await expect(stepOf(page, title).getByRole('link')).toHaveCount(0);
   }
+  await showStepDetails(page);
   await expect(stepOf(page, 'Brief')).toContainText('Needs a completed run: resume it first');
   await expect(
     page
@@ -103,6 +98,7 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
   await expect(runStatus(page)).toContainText('Running', { timeout: 30_000 });
   // RF-1020: the strip is on every run page, also while the run works.
   await expect(journey(page)).toBeVisible();
+  await showStepDetails(page);
   await expect(stepOf(page, 'Understand')).toContainText('Running now');
 });
 
@@ -122,6 +118,7 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await turn.getByRole('button', { name: 'Set up the plan' }).click();
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
   await expect(journey(page)).toBeVisible();
+  await showStepDetails(page);
   await expect(stepOf(page, 'Brief')).toContainText('Not saved yet');
   await expect(stepOf(page, 'Estimate')).toContainText('Locked');
 
@@ -135,15 +132,14 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await expect(runStatus(page)).toContainText('Failed', { timeout: 90_000 });
 
   await expect(stepOf(page, 'Plan')).toContainText('Failed');
+  await showStepDetails(page);
   await expect(stepOf(page, 'Plan')).toContainText(/RST-180[35]/u);
   await expect(stepOf(page, 'Plan')).toContainText('Current step');
   await expect(stepOf(page, 'Understand')).toContainText('Done');
   await expect(stepOf(page, 'Brief')).toContainText('Brief saved');
   await expect(stepOf(page, 'Package')).toContainText('Locked');
   await expect(stepOf(page, 'Package').getByRole('link')).toHaveCount(0);
-  await page.setViewportSize({ width: 360, height: 780 });
-  await expectNoSidewaysScroll(page);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await expectPhoneFits(page);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 
@@ -161,26 +157,7 @@ test('RF-627 RF-615 a package written with gaps reads "Written with gaps" and li
 }, info) => {
   await signInAs(page.context(), accountFor('replay', info.project.name));
   // The facts of the journey: the recorded run, and a plan run that wrote the package and ended RST-1806.
-  const planId = '00000000-0000-4000-a0ee-0000000000f1';
-  const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
-  await page.route('**/api/projects/*/journey*', async (route) => {
-    await route.fulfill({
-      json: {
-        scanRunId: null,
-        briefSaved: true,
-        source: {
-          ...{ id: replayRunId(info.project.name), runKey: '20261012-100000-understand' },
-          ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
-          ...{ supportedClaims: 4, openQuestions: 0 },
-        },
-        plan: {
-          ...{ id: planId, runKey: '20261012-103000-plan', endState: 'Failed' },
-          ...{ costMicros: 31_000, errorCode: 'RST-1806', ...ended },
-        },
-        handoff: { runId: planId, runKey: '20261012-103000-plan', outOfDate: false, gaps: true },
-      },
-    });
-  });
+  await routeJourney(page, info.project.name, gappedPlan());
 
   await page.goto(`/runs/${replayRunId(info.project.name)}`);
 
@@ -199,9 +176,7 @@ test('RF-627 RF-615 a package written with gaps reads "Written with gaps" and li
   );
   await expect(stepOf(page, 'Plan')).toContainText('RST-1806');
   await expect(journey(page).getByRole('button', { name: 'Try the plan again' })).toBeVisible();
-  await page.setViewportSize({ width: 360, height: 780 });
-  await expectNoSidewaysScroll(page);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await expectPhoneFits(page);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
@@ -234,12 +209,11 @@ test('RF-615 a completed run with no Supported claim locks the questions step li
     await expect(stepOf(page, title)).toContainText('Locked');
     await expect(stepOf(page, title).getByRole('link')).toHaveCount(0);
   }
+  await showStepDetails(page);
   await expect(stepOf(page, 'Questions')).toContainText('Nothing to plan from');
   await expect(stepOf(page, 'Questions')).not.toContainText('No open questions');
   await expect(stepOf(page, 'Brief')).toContainText('Nothing to plan from');
-  await page.setViewportSize({ width: 360, height: 780 });
-  await expectNoSidewaysScroll(page);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await expectPhoneFits(page);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
@@ -248,22 +222,7 @@ test('RF-1020 P8-100 the strip of a run page is one compact row that expands to 
   page,
 }, info) => {
   await signInAs(page.context(), accountFor('replay', info.project.name));
-  const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
-  await page.route('**/api/projects/*/journey*', async (route) => {
-    await route.fulfill({
-      json: {
-        scanRunId: null,
-        briefSaved: false,
-        source: {
-          ...{ id: replayRunId(info.project.name), runKey: '20261012-100000-understand' },
-          ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
-          ...{ supportedClaims: 4, openQuestions: 0 },
-        },
-        plan: null,
-        handoff: null,
-      },
-    });
-  });
+  await routeJourney(page, info.project.name, { plan: null, handoff: null });
 
   await page.goto(`/runs/${replayRunId(info.project.name)}`);
 
@@ -275,9 +234,7 @@ test('RF-1020 P8-100 the strip of a run page is one compact row that expands to 
     expect(await rowsOf(page)).toBe(1);
     await expectNoSidewaysScroll(page);
   }
-  await page.setViewportSize({ width: 360, height: 780 });
-  await expectNoSidewaysScroll(page);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await expectPhoneFits(page);
 
   const collapsedHeight = (await journey(page).boundingBox())?.height ?? 0;
   await showStepDetails(page);
