@@ -66,10 +66,10 @@ it('RF-1003 RF-1010 shows what the run spent against its cap in the top bar, bes
   await waitFor(() => {
     expect(meter().getAttribute('aria-valuenow')).toBe('21');
   });
-  expect(meter().getAttribute('aria-valuetext')).toBe('$0.412 of $2.00 (21%)');
+  expect(meter().getAttribute('aria-valuetext')).toBe('$0.4120 of $2.00 (21%)');
   const group = screen.getByTestId('topbar-run-meter');
   expect(group.textContent).toContain('This run');
-  expect(group.textContent).toContain('$0.412');
+  expect(group.textContent).toContain('$0.4120');
   expect(group.textContent).toContain('$2.00');
   expect(group.textContent).toContain('21%');
   expect(meter().closest('header.rst-header')).not.toBeNull();
@@ -146,7 +146,7 @@ it('P5-07 a cloud understand run shows dollars from the start, whatever the esti
   connection.event(ev(1, 'run.started', started('understand', 'openai')));
 
   const group = await screen.findByTestId('topbar-run-meter');
-  expect(group.textContent).toContain('$0.412 of $2.00');
+  expect(group.textContent).toContain('$0.4120 of $2.00');
 });
 
 it('P5-07 a local understand run shows tokens from the start', async () => {

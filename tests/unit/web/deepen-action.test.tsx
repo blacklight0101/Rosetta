@@ -97,7 +97,7 @@ describe('RF-209 the estimate of a Deepen', () => {
     const plan = screen.getByTestId('deepen-plan').textContent;
     expect(plan).toContain('judges 10 claims');
     expect(plan).toContain('re-reads 40 rejected claims');
-    expect(screen.getByTestId('deepen-first-round').textContent).toBe('First roundlikely $0.40');
+    expect(screen.getByTestId('deepen-first-round').textContent).toBe('First roundlikely $0.4000');
     expect(screen.getByTestId('deepen-all-rounds').textContent).toBe('Up to 3 roundslikely $1.20');
     expect(screen.getByTestId('deepen-stops').textContent).toBe('What stops it$2.00 run cap');
   });

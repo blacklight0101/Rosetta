@@ -2,7 +2,7 @@ import type { JSX } from 'preact';
 import { runDownloadPath } from '../api/runs.js';
 import { Link } from '../components/Link.js';
 import type { JourneyView } from '../lib/journey/journey-steps.js';
-import { costLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
 
 // RF-1021, RF-627, RF-1020, DEC-211 (P8-26, P8Project): the project page once the plan wrote a package:
 // the hand-off package (what wrote it, whether every item is built by a task card, the downloads) and
@@ -92,12 +92,17 @@ function Cost({ view }: { readonly view: JourneyView }): JSX.Element {
     approved === undefined || approved.cap === 0
       ? 0
       : Math.min(100, Math.round((approved.spent / approved.cap) * 100));
-  const costOf = (key: 'understand' | 'plan'): string =>
-    view.steps.find((step) => step.key === key)?.cost ?? '';
+  const costOf = (key: 'understand' | 'plan'): JSX.Element | string => {
+    const step = view.steps.find((each) => each.key === key);
+    if (step?.costMicros === undefined) return step?.cost ?? '';
+    return <MoneyAmount micros={step.costMicros} tabStop />;
+  };
   return (
     <div class="rst-p826-cost">
       <h3>Journey cost</h3>
-      <p class="rst-p826-cost__total">{costLabel(view.totalCostMicros)}</p>
+      <p class="rst-p826-cost__total">
+        <MoneyAmount micros={view.totalCostMicros} tabStop />
+      </p>
       {approved === undefined ? null : (
         <>
           <div
@@ -114,7 +119,10 @@ function Cost({ view }: { readonly view: JourneyView }): JSX.Element {
         </>
       )}
       <p class="rst-settings__note">
-        {`Understand ${costOf('understand')} · Plan ${costOf('plan')}`}
+        {'Understand '}
+        {costOf('understand')}
+        {' · Plan '}
+        {costOf('plan')}
       </p>
       <Link href={`/projects/${view.projectId}/cost`}>See the cost by run</Link>
     </div>

@@ -84,7 +84,7 @@ it('RF-1015 the figures of the run are five and each one is shown once', async (
   expect(await within(facts).findByText('all read')).toBeTruthy();
   const labels = within(facts)
     .getAllByRole('listitem')
-    .map((each) => each.querySelector('span')?.textContent);
+    .map((each) => [...each.children].find((child) => child.tagName === 'SPAN')?.textContent);
   expect(labels).toEqual(['Supported claims', 'Cards', 'Areas', 'Cost', 'Tokens']);
   const supported = within(facts).getByText('Supported claims').closest('li');
   await waitFor(() => {

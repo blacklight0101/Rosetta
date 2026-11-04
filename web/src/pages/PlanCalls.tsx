@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import { callLabel } from '../lib/live-run/plan-calls.js';
 import { ChecksCut } from './ChecksCut.js';
 import { usePackageChecks } from './use-package-checks.js';
@@ -37,7 +38,13 @@ export function PlanCalls(props: {
             <li key={call.agentTaskId}>
               <span>{callLabel(call.call)}</span>{' '}
               <span>{`${tokensLabel(call.inputTokens + call.outputTokens)} tokens`}</span>{' '}
-              <span>{call.costMicros === undefined ? 'no price' : costLabel(call.costMicros)}</span>
+              <span>
+                {call.costMicros === undefined ? (
+                  'no price'
+                ) : (
+                  <MoneyAmount micros={call.costMicros} tabStop />
+                )}
+              </span>
               {call.running ? <span>{' (working)'}</span> : null}
             </li>
           ))}

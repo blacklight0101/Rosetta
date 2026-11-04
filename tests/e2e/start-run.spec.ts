@@ -156,7 +156,7 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
 
     const warning = page.getByTestId('cap-warning');
     await expect(warning).toContainText('run cap');
-    await expect(warning).toContainText('$0.000001');
+    await expect(warning).toContainText('<$0.0001');
     await expect(page.getByRole('button', startButton)).toBeEnabled();
     await transitionsDone(page);
     await expectNoSeriousViolations(page);

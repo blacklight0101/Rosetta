@@ -1,6 +1,5 @@
 import type { JourneyFacts } from '../../api/journey-schemas.js';
-import { microsToCents } from '../usd.js';
-import { tokensLabel } from './format.js';
+import { costLabel, leftLabel, tokensLabel } from './format.js';
 
 // RF-1003, RF-434, DEC-205, DEC-206 (P8-24): the approved amount of a journey as the run page shows
 // it: what is left of it, counted live with the run's spend, in dollars or, for a journey on local
@@ -57,7 +56,7 @@ export function approvedViewOf(
     };
   }
   return {
-    text: `${microsToCents(line.remainingMicros)} left of ${microsToCents(line.approvedMicros)} approved`,
+    text: `${leftLabel(line.remainingMicros)} left of ${costLabel(line.approvedMicros)} approved`,
     spent: line.approvedMicros - line.remainingMicros,
     cap: line.approvedMicros,
     unit: 'micros',

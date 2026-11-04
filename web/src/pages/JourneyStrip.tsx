@@ -4,7 +4,7 @@ import { Button } from '../components/Button.js';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import { interruptedWord } from '../lib/interrupted-word.js';
-import { costLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
 import type {
   JourneyAction,
   JourneyLink,
@@ -136,7 +136,13 @@ function StepItem(props: {
       <span class="rst-road__state">{words[state]}</span>{' '}
       {step.here && state !== 'current' ? <span class="rst-road__here">Current step</span> : null}{' '}
       <span class="rst-road__detail">{step.detail}</span>{' '}
-      <span class="rst-road__cost">{step.cost}</span>
+      <span class="rst-road__cost">
+        {step.costMicros === undefined ? (
+          step.cost
+        ) : (
+          <MoneyAmount micros={step.costMicros} tabStop />
+        )}
+      </span>
       <StepLinks links={step.links} />
       {step.key === 'questions' && rerun !== undefined && rerun.answered > 0 ? (
         <RerunControl rerun={rerun} />
@@ -251,7 +257,10 @@ export function JourneyStrip(props: JourneyStripProps): JSX.Element {
           onResumed={props.onResumed}
           onAnswer={undefined}
         />
-        <p class="rst-road__total">{`Total so far ${costLabel(view.totalCostMicros)}`}</p>
+        <p class="rst-road__total">
+          {'Total so far '}
+          <MoneyAmount micros={view.totalCostMicros} tabStop />
+        </p>
         {view.left === undefined ? null : <p class="rst-road__left">{view.left}</p>}
         <p class="rst-road__more">
           <Link href={`/projects/${view.projectId}/history`}>Past runs</Link>{' '}

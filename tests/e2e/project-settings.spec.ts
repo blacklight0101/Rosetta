@@ -70,7 +70,7 @@ test('RF-002 saves changed settings and shows them again after a reload', async 
   await page.getByLabel('Reader model', { exact: true }).fill('gemma4:e2b');
   await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('1.25');
   // P2-26: the away-from-default warning is on the page while it is checked for accessibility.
-  await expect(page.getByText(/^Differs from the default of \$0\.50\./u)).toBeVisible();
+  await expect(page.getByText(/^Differs from the default of \$0\.5000\./u)).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await page.getByRole('button', { name: 'Save settings' }).click();

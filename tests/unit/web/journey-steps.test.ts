@@ -56,8 +56,8 @@ describe('journeyOf: the seven steps', () => {
     const view = journeyOf(roadSigns['written'] ?? facts(), projectId);
 
     expect(step(view, 'scan').cost).toBe('No model cost');
-    expect(step(view, 'understand').cost).toBe('$0.12');
-    expect(step(view, 'plan').cost).toBe('$0.31');
+    expect(step(view, 'understand').cost).toBe('$0.1200');
+    expect(step(view, 'plan').cost).toBe('$0.3100');
     expect(step(view, 'package').cost).toBe('Included in the plan');
     expect(view.totalCostMicros).toBe(430_000);
   });
