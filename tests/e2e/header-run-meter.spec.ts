@@ -95,6 +95,7 @@ function expectLine(shape: HeaderShape, at: string, width: number): void {
   expect(shape.spread, `${at}: the header line`).toBeLessThanOrEqual(ONE_LINE);
   expect(shape.accountSpread, `${at}: the account links`).toBeLessThanOrEqual(ONE_LINE);
   expect(shape.meterBelow, `${at}: the meter under the wordmark`).toBe(width < 1280);
+  expect(shape.meterAfterWordmark, `${at}: the meter after the wordmark`).toBe(width >= 1280);
 }
 
 /** RF-1010: the figures and the split of the pill stand on one line when no run is active. */

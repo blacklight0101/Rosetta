@@ -33,6 +33,8 @@ const headerShapeSchema = z.object({
   widths: z.array(z.string()),
   /** True when the run meter is on a row of its own under the wordmark. */
   meterBelow: z.boolean(),
+  /** True when the run meter stands on the first row between the wordmark and the totals. */
+  meterAfterWordmark: z.boolean(),
 });
 export type HeaderShape = z.infer<typeof headerShapeSchema>;
 
@@ -77,6 +79,9 @@ export async function headerShape(page: Page): Promise<HeaderShape> {
       serverShown: shown('.rst-p136-pill__server'),
       totalsTitle: totals === null ? '' : totals.getAttribute('title') || '',
       meterBelow: below,
+      meterAfterWordmark: meter !== null && !below
+        && meter.getBoundingClientRect().left >= wordmark.getBoundingClientRect().right
+        && (totals === null || meter.getBoundingClientRect().right <= totals.getBoundingClientRect().left),
       widths: Array.from(header.children).map((el) => (el.className || el.tagName) + ' ' + Math.round(el.getBoundingClientRect().width) + ' ' + Math.round(el.getBoundingClientRect().top)),
     };
   })()`);
