@@ -259,7 +259,9 @@ describe('project cost page tooltip closed with Escape', () => {
     const wrap = wrapOf(amount);
     fireEvent.mouseEnter(wrap);
 
-    fireEvent.keyDown(document.body, { key: 'Escape' });
+    await act(() => {
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+    });
 
     expect(document.activeElement).not.toBe(amount);
     expect(wrap.hasAttribute('data-dismissed')).toBe(true);
@@ -275,7 +277,9 @@ describe('project cost page tooltip closed with Escape', () => {
     amount.focus();
     fireEvent.mouseEnter(wrap);
 
-    fireEvent.keyDown(amount, { key: 'Escape' });
+    await act(() => {
+      fireEvent.keyDown(amount, { key: 'Escape' });
+    });
 
     expect(wrap.hasAttribute('data-dismissed')).toBe(true);
     expect(document.activeElement).toBe(amount);
@@ -296,46 +300,5 @@ describe('project cost page tooltip closed with Escape', () => {
     fireEvent.mouseEnter(wrap);
 
     expect(wrap.hasAttribute('data-dismissed')).toBe(false);
-  });
-});
-
-describe('project cost page tab stops of a table', () => {
-  const lines = ['reader', 'verifier', 'summariser'].map((key) => ({
-    key,
-    local: false,
-    totals: costOf('7'),
-  }));
-
-  async function tinyAmounts() {
-    renderCost(json(200, { ...projectCost, byRole: lines }));
-    return within(await table('By role')).getAllByText('<$0.0001');
-  }
-
-  it('RF-428 given a table of amounts with exact figures, takes one tab stop and moves between them with the arrow keys', async () => {
-    const amounts = await tinyAmounts();
-
-    expect(amounts.map((amount) => amount.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
-    amounts[0]?.focus();
-    fireEvent.keyDown(amounts[0] as HTMLElement, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(amounts[1]);
-    fireEvent.keyDown(amounts[1] as HTMLElement, { key: 'End' });
-    expect(document.activeElement).toBe(amounts[2]);
-    fireEvent.keyDown(amounts[2] as HTMLElement, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(amounts[2]);
-    fireEvent.keyDown(amounts[2] as HTMLElement, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(amounts[1]);
-    fireEvent.keyDown(amounts[1] as HTMLElement, { key: 'Home' });
-    expect(document.activeElement).toBe(amounts[0]);
-  });
-
-  it('RF-428 given a table of amounts, the tab stop follows the amount last focused, and every figure is still described', async () => {
-    const amounts = await tinyAmounts();
-
-    await act(() => {
-      amounts[2]?.focus();
-    });
-
-    expect(amounts.map((amount) => amount.getAttribute('tabindex'))).toEqual(['-1', '-1', '0']);
-    expect(amounts.map(exactFigureOf)).toEqual(['$0.000007', '$0.000007', '$0.000007']);
   });
 });

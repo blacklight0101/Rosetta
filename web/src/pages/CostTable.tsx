@@ -71,14 +71,48 @@ const versionsOf = (rows: readonly CostRow[]): string[] => [
   ...new Set(rows.flatMap((row) => row.totals.priceTableVersions)),
 ];
 
+function Head(props: { readonly firstColumn: string; readonly perRow: boolean }): JSX.Element {
+  return (
+    <thead>
+      <tr>
+        <th scope="col">{props.firstColumn}</th>
+        <th scope="col" class="rst-table__num">
+          Calls
+        </th>
+        <th scope="col" class="rst-table__num">
+          Input tokens
+        </th>
+        <th scope="col" class="rst-table__num">
+          Output tokens
+        </th>
+        <th scope="col" class="rst-table__num">
+          Cached input
+        </th>
+        <th scope="col" class="rst-table__num">
+          Cost
+        </th>
+        {props.perRow ? <th scope="col">Price table</th> : null}
+      </tr>
+    </thead>
+  );
+}
+
+// The one Tab stop of the amounts is the row last reached, the first row until one is.
+function useTabStop(rows: readonly CostRow[]): {
+  readonly stopKey: string | undefined;
+  readonly reach: (key: string) => void;
+} {
+  const [reached, setReached] = useState<string | null>(null);
+  const stopKey = rows.some((row) => row.key === reached) ? reached : rows[0]?.key;
+  return { stopKey: stopKey ?? undefined, reach: setReached };
+}
+
 // RF-428
 export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.Element {
   const versions = versionsOf(rows);
   const [only] = versions;
   const perRow = versions.length > 1;
-  // The one Tab stop of the amounts is the row last reached, the first row until one is.
-  const [reached, setReached] = useState<string | null>(null);
-  const stopKey = rows.some((row) => row.key === reached) ? reached : rows[0]?.key;
+  const { stopKey, reach } = useTabStop(rows);
   const captionId = `rst-cost-${caption.toLowerCase().replaceAll(' ', '-')}`;
   return (
     <ScrollRegion label={`Cost ${caption.toLowerCase()} table`}>
@@ -91,27 +125,7 @@ export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.E
             </span>
           ) : null}
         </caption>
-        <thead>
-          <tr>
-            <th scope="col">{firstColumn}</th>
-            <th scope="col" class="rst-table__num">
-              Calls
-            </th>
-            <th scope="col" class="rst-table__num">
-              Input tokens
-            </th>
-            <th scope="col" class="rst-table__num">
-              Output tokens
-            </th>
-            <th scope="col" class="rst-table__num">
-              Cached input
-            </th>
-            <th scope="col" class="rst-table__num">
-              Cost
-            </th>
-            {perRow ? <th scope="col">Price table</th> : null}
-          </tr>
-        </thead>
+        <Head firstColumn={firstColumn} perRow={perRow} />
         <tbody>
           {rows.map((row) => (
             <Row
@@ -120,7 +134,7 @@ export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.E
               perRow={perRow}
               tabStop={row.key === stopKey}
               onReach={() => {
-                setReached(row.key);
+                reach(row.key);
               }}
             />
           ))}

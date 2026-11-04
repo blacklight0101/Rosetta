@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useId, useState } from 'preact/hooks';
+import { useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { unknownCallsText } from '../lib/cost-text.js';
 import { formatMoney } from '../lib/money.js';
@@ -40,6 +40,45 @@ function moveBetweenAmounts(event: KeyboardEvent): void {
   }
 }
 
+/**
+ * Whether the figure of an amount is closed with Escape, and the four events that open and end it. The
+ * document listener is there from the start and reads refs, so an Escape pressed the moment the figure shows
+ * is never missed.
+ */
+function useDismissal() {
+  const [dismissed, setDismissed] = useState(false);
+  const over = useRef({ hovered: false, focused: false });
+  useLayoutEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && (over.current.hovered || over.current.focused)) {
+        setDismissed(true);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+  return {
+    dismissed,
+    enter: () => {
+      over.current.hovered = true;
+    },
+    leave: () => {
+      over.current.hovered = false;
+      if (!over.current.focused) setDismissed(false);
+    },
+    focus: () => {
+      over.current.focused = true;
+      setDismissed(false);
+    },
+    blur: () => {
+      over.current.focused = false;
+      setDismissed(false);
+    },
+  };
+}
+
 interface AmountProps {
   readonly currency: string;
   readonly micros: string;
@@ -51,20 +90,7 @@ interface AmountProps {
 
 function Amount(props: AmountProps): JSX.Element {
   const tipId = useId();
-  const [dismissed, setDismissed] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const open = hovered || focused;
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setDismissed(true);
-    };
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('keydown', close);
-    };
-  }, [open]);
+  const figure = useDismissal();
   const { text, exact } = formatMoney(props.micros);
   const shown = inCurrency(text, props.currency);
   const full = inCurrency(exact, props.currency);
@@ -72,14 +98,9 @@ function Amount(props: AmountProps): JSX.Element {
   return (
     <span
       class="rst-p136-amount"
-      data-dismissed={dismissed ? '' : undefined}
-      onMouseEnter={() => {
-        setHovered(true);
-      }}
-      onMouseLeave={() => {
-        setHovered(false);
-        if (!focused) setDismissed(false);
-      }}
+      data-dismissed={figure.dismissed ? '' : undefined}
+      onMouseEnter={figure.enter}
+      onMouseLeave={figure.leave}
     >
       <span
         class="rst-p136-amount__value"
@@ -87,14 +108,10 @@ function Amount(props: AmountProps): JSX.Element {
         tabIndex={props.tabStop ? 0 : -1}
         aria-describedby={tipId}
         onFocus={() => {
-          setDismissed(false);
-          setFocused(true);
+          figure.focus();
           props.onReach?.();
         }}
-        onBlur={() => {
-          setDismissed(false);
-          setFocused(false);
-        }}
+        onBlur={figure.blur}
         onKeyDown={moveBetweenAmounts}
       >
         {shown}
