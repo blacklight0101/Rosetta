@@ -196,9 +196,12 @@ component in every state and both themes; the end-to-end suite screenshots it. T
 `/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
 and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
-### 5.1 Tooltip (RF-428, RNF-010, DEC-217, P8-118)
+### 5.1 Tooltip (RF-231, RF-428, RNF-010, DEC-217, P8-118, P8-89)
 
-The one Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
+The Tooltip has two variants with one behaviour: **in flow**, for a short tip that fits beside its trigger, and **overlay**,
+for a tip too long for that. The bullets below describe the in-flow variant, and the last bullet what the overlay changes.
+
+The in-flow Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
 classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
 only when the exact figure differs from the shown amount; otherwise the amount is plain text.
 
@@ -214,6 +217,13 @@ only when the exact figure differs from the shown amount; otherwise the amount i
   again the next time the pointer enters or the focus returns.
 - **Tokens:** `ink-soft`, `ink-muted`, `fs-xs`, `sp-2`, `fw-body` and the mono family; it has no colour of its own, so it
   follows both themes.
+- **Overlay:** the line of measures of a History row's Coverage value (`RunCoverage`, `useOverlayTip` in
+  `web/src/components/overlay-tip.ts`, classes `rst-p889-coverage*` in `web/src/styles/history.css`). Trigger, opening,
+  keyboard and dismissal are the same. The tip is `position: fixed` like the Row menu panel, so opening it moves nothing
+  of the table and a table's scroll region does not clip it. It stands `sp-1` under its trigger, or above when there is
+  no room under it, keeps 8 px from the viewport's edges and follows a scroll or a resize; the pointer can move onto it.
+  It wraps, up to 28rem wide and never wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
+  `radius-md`, `shadow-2`, `z-menu`, `ink-muted`, `fs-xs`, `fw-body`, `sp-2` and `sp-3`.
 
 ## 6. Status badges
 

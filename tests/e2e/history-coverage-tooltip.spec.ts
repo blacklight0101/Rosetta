@@ -81,11 +81,16 @@ async function expectMoreActionsInView(page: Page, row: Locator): Promise<void> 
   expect((box?.x ?? width) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
 }
 
-/** The pointer can leave the value for the tooltip and the tooltip stays (WCAG 1.4.13, hoverable). */
-async function movePointerOntoTip(page: Page, tip: Locator): Promise<void> {
-  const to = await tip.boundingBox();
-  if (to === null) throw new Error('The tooltip has no box.');
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+/**
+ * The pointer can cross the gap from the value straight onto the tooltip and the tooltip stays
+ * (WCAG 1.4.13, hoverable).
+ */
+async function movePointerOntoTip(page: Page, value: Locator, tip: Locator): Promise<void> {
+  const [from, to] = [await value.boundingBox(), await tip.boundingBox()];
+  if (from === null || to === null) throw new Error('The value or its tooltip has no box.');
+  await page.mouse.move(from.x + from.width / 2, to.y + to.height / 2, { steps: 12 });
+  await expect(tip).toBeVisible();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 6 });
   await expect(tip).toBeVisible();
 }
 
@@ -110,7 +115,7 @@ async function expectOverlayOn(page: Page, row: Locator): Promise<void> {
   await expectWholeTip(tip);
   expect(await layoutOf(page, row)).toEqual(rest);
   await expectMoreActionsInView(page, row);
-  await movePointerOntoTip(page, tip);
+  await movePointerOntoTip(page, value, tip);
   await page.mouse.move(0, 0);
   await expect(tip).toBeHidden();
   expect(await layoutOf(page, row)).toEqual(rest);

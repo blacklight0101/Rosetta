@@ -108,6 +108,33 @@ describe('RF-231 the Coverage tooltip of the history', () => {
     fireEvent.blur(value);
     expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
   });
+
+  it('RF-231 RNF-010 opens the tooltip on focus and on hover, and Escape closes it', async () => {
+    renderHistory(answers);
+    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
+    const wrapper = value.parentElement;
+    if (wrapper === null) throw new Error('The Coverage value has no box.');
+    const isOpen = (): boolean => wrapper.hasAttribute('data-open');
+
+    expect(isOpen()).toBe(false);
+    fireEvent.focus(value);
+    await waitFor(() => {
+      expect(isOpen()).toBe(true);
+    });
+    fireEvent.keyDown(value, { key: 'Escape' });
+    await waitFor(() => {
+      expect(isOpen()).toBe(false);
+    });
+    fireEvent.blur(value);
+    fireEvent.mouseEnter(wrapper);
+    await waitFor(() => {
+      expect(isOpen()).toBe(true);
+    });
+    fireEvent.mouseLeave(wrapper);
+    await waitFor(() => {
+      expect(isOpen()).toBe(false);
+    });
+  });
 });
 
 describe('RF-231 the measures beside the last run of a project', () => {
