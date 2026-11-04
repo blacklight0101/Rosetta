@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 112     | 5         | 95         | 12        | 0                  | 81      | 25      | 6      | 28         | 21        |
-| **Total**                    | **602** | **123**   | **431**    | **48**    | **0**              | **307** | **269** | **26** | **290**    | **21**    |
+| P8 Evaluation fixes, round 2 | 119     | 5         | 102        | 12        | 0                  | 88      | 25      | 6      | 35         | 21        |
+| **Total**                    | **609** | **123**   | **438**    | **48**    | **0**              | **314** | **269** | **26** | **297**    | **21**    |
 
 ## Conventions for every card
 
@@ -7860,7 +7860,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (Q-66)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): EV-84 (P8-17 evaluation, item 5 of its follow-ups): the pause-and-ask at the approved amount was never reached in an evaluation, because the approved amount is always well above the spend, Under DEC-206 the approved amount is the lower of the worst case and the run cap, so a project run cap below the spend makes the pause reachable without new behaviour.
 - **Reads**: RF-434, RF-435, DEC-205, DEC-206, the approval control (`web/src/pages/ApprovalControl.tsx`, `web/src/pages/PauseUpdates.tsx`, `web/src/pages/use-pause-updates.ts`), the end-to-end specs of the live run, the fake provider with recorded responses.
 - **Do**: no new behaviour; tests only.
@@ -8948,7 +8948,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-21, P8-103
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-21 verifier round 2, finding 1): the end-to-end harness serves and scans only the .NET demo, so the P8-21 walk "pick C# on .NET on a non-.NET project" runs on the .NET demo, where the .NET offer would show without the feature.
 - **Reads**: `tests/e2e/plan-setup-stack.spec.ts`, the end-to-end seed and accounts, RF-609, DEC-208, ADR-008.
 - **Do**: tests first.
@@ -9011,7 +9011,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-90
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-90 verifier, #1204; DEC-217): the artboard `P8HistoryCost` draws Reader, Verifier, Planner and Summariser columns per run, but `RunLine` in `src/application/budget/cost-breakdown.ts` has only key, runId, firstAt and totals, and `byRole` has no run split.
 - **Reads**: `src/application/budget/cost-breakdown.ts`, the project cost route and its wire schema, `docs/design/board/P8HistoryCost.dc.html`, RF-426, RF-428, ADR-007.
 - **Do**: add the Givens first; red tests first.
@@ -9043,7 +9043,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-90
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-90 verifier rounds 1 and 2, #1204; DEC-217): a zero and an amount below $0.00005 both read `$0.0000`; the exact figure is only a `title`, out of reach by keyboard and touch (`web/src/components/CostFigure.tsx:16`).
 - **Reads**: `web/src/lib/money.ts`, `web/src/components/CostFigure.tsx`, `tests/unit/web/money.test.ts`, the tooltip pattern of `docs/design-system.md`, RF-428, RNF-010, DEC-54.
 - **Do**: add the Givens first; red tests first.
@@ -9084,3 +9084,115 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the page change with web tests and the updated end-to-end specs.
 - **Done when**: a run at its cap never reads "Failed" on the strip; CI green.
 - **Refs**: RF-1020, DEC-217; follow-up of P8-87; GitHub issue #1211
+
+### P8-113 - Follow-up: the project page does not start a scan on every load (P8-106)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-106
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-106 fixer, #1206): the project page posts `{"stage":"scan"}` on every load, even when the project has completed scans, and it hides the start choices for a moment on every visit (`web/src/pages/use-auto-scan.ts:66`).
+- **Reads**: `web/src/pages/use-auto-scan.ts`, `web/src/pages/StartRunForm.tsx`, `web/src/api/history.ts`, `tests/e2e/project-page-states.spec.ts`, RF-160, RF-1001, ADR-027.
+- **Do**:
+  - A failing test first that reproduces it: a project with a completed scan is opened and no `POST` of stage `scan` is sent (an end-to-end check on the request, plus a unit test of the hook); check that it fails on `develop`.
+  - Start the scan only for a project with a source and no scan run in its history, and show the start choices from the first paint for a project that has one.
+- **Delivers**: the failing test, then the fix, with web and end-to-end tests.
+- **Done when**: opening a project with a completed scan sends no scan request and never hides the choices; the test failed before the fix; CI green.
+- **Refs**: RF-160, RF-1001, ADR-027, ADR-008; defect found after the merge of P8-106 (README section 9); GitHub issue #1218
+
+### P8-114 - Follow-up: the page's own fold opening is not read as the user's choice (P8-106)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-106
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-106 fixer, #1206): `useFold.onToggle` in `web/src/pages/StartRunForm.tsx` sets `chosen` on the page's own automatic toggle, so "Replace the source" stays open after a scan instead of following the page state again.
+- **Reads**: `web/src/pages/StartRunForm.tsx`, `web/src/pages/StartChoices.tsx`, `tests/unit/web/`, `tests/e2e/journeys/workbook-project.spec.ts`, RF-1021, ADR-008.
+- **Do**:
+  - Red test first: the fold opens by itself, then a scan ends; "Replace the source" is closed again, while a fold the user opened or closed by hand keeps the user's choice.
+  - Tell the page's own toggle from the user's (for example by comparing the event with the state the page just set) so only a user toggle sets `chosen`.
+- **Delivers**: the hook change with web tests.
+- **Done when**: "Replace the source" no longer stays open after a scan; a user's own choice is kept; CI green.
+- **Refs**: RF-1021, ADR-008; follow-up of P8-106; GitHub issue #1219
+
+### P8-115 - Follow-up: the shop journey recordings cite cards by the new order (P8-94)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-94
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-94 builder, #1216): the recordings `planner-shop.json`, `planner-shop-coverage.json` and the overview text in `understand-shop-journey.json` still cite card ids by the old order; the recordings depend on the order the cards are read in.
+- **Reads**: `tests/recordings/fake/planner-shop.json`, `tests/recordings/fake/planner-shop-coverage.json`, `tests/recordings/fake/understand-shop-journey.json`, the tests and end-to-end specs that replay them, RF-210, DEC-216, ADR-008.
+- **Do**:
+  - Find every card id these recordings cite and re-record or edit them to the order P8-94 produces, so the plan and the overview name the cards the run really wrote.
+  - Add a test that fails when a recording cites a card id the replay does not produce.
+- **Delivers**: the corrected recordings and the test.
+- **Done when**: the three recordings cite the cards of the current order and the new test passes; CI green.
+- **Refs**: RF-210, DEC-216, ADR-008; follow-up of P8-94; GitHub issue #1220
+
+### P8-116 - Follow-up: the cost breakdown tests sum tokens and pin byRole (P8-108)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-108
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-108 verifier, #1213): `tests/unit/application/budget/cost-breakdown.test.ts:150-163` sums cost and calls but not tokens, and no web test pins `byRole` in the wire schema (`web/src/api/cost-schemas.ts:35-45`; P8-109 may add one).
+- **Reads**: `tests/unit/application/budget/cost-breakdown.test.ts`, `web/src/api/cost-schemas.ts`, `tests/unit/web/`, RF-426, RF-428, ADR-007.
+- **Do**:
+  - Add the tokens to the sum check of the role costs per run; check that it fails with one role's tokens left out.
+  - Add a web test that parses a project cost response with `byRole` per run and fails when the schema drops or renames it.
+- **Delivers**: the test changes only.
+- **Done when**: both checks fail on the broken behaviour and pass on `develop`; CI green.
+- **Refs**: RF-426, RF-428, ADR-007, ADR-008; follow-up of P8-108; GitHub issue #1221
+
+### P8-117 - Follow-up: Escape closes the figure under the pointer, one tab stop per row (P8-110)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-110
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-110 verifier, #1214): Escape does not close the exact figure when an unfocused amount is hovered (`web/src/components/CostFigure.tsx:38-40`, WCAG 1.4.13); each amount is its own tab stop, so a six-row page has nine extra stops.
+- **Reads**: `web/src/components/CostFigure.tsx`, `web/src/pages/CostTable.tsx`, `tests/unit/web/`, RF-428, RNF-010, DEC-217.
+- **Do**:
+  - Red tests first: with the pointer over an amount that has no focus, Escape closes its figure; the amounts of a table take fewer tab stops, not one each.
+  - Listen for Escape on the document while a figure is open; reduce the tab stops while keeping every exact figure reachable by keyboard.
+- **Delivers**: the component change with web tests.
+- **Done when**: Escape closes a hovered figure and the extra tab stops are gone; the exact figure stays reachable by keyboard and touch; CI green.
+- **Refs**: RF-428, RNF-010, DEC-217; follow-up of P8-110; GitHub issue #1222
+
+### P8-118 - Follow-up: a documented Tooltip, and table captions that do not wrap at 360 px (P8-110)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-110
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-110 verifier, #1214): `docs/design-system.md` documents no Tooltip component although `CostFigure` builds one; at 360 px table captions wrap one letter per line (present before P8-110).
+- **Reads**: `docs/design-system.md`, `web/src/components/CostFigure.tsx`, `web/src/styles/`, the table caption styles, RNF-010, DEC-217.
+- **Do**:
+  - Document the Tooltip (trigger, keyboard, touch, dismissal, tokens) in `docs/design-system.md` from what `CostFigure` does.
+  - Red end-to-end check at 360x780 that a table caption wraps at word boundaries, then fix the caption styles.
+- **Delivers**: the design-system section, the style fix and the check.
+- **Done when**: design-system.md describes the Tooltip and no table caption wraps one letter per line at 360 px; CI green.
+- **Refs**: RNF-010, DEC-217, ADR-008; follow-up of P8-110; GitHub issue #1223
+
+### P8-119 - Follow-up: the Stack walk also walks the package (P8-104)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-104
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-104 verifier, #1215): the walk of `tests/e2e/plan-setup-stack.spec.ts` stops at the Stack step; the package the plan produces is not walked, so "the package proposes them" is not checked.
+- **Reads**: `tests/e2e/plan-setup-stack.spec.ts`, the end-to-end seed and accounts, RF-609, DEC-208, ADR-008.
+- **Do**:
+  - Continue the C# on .NET walk to the package: after the layers change, the package names ASP.NET Core Razor Pages, SQL Server, Dapper and xUnit.
+  - Check that the new assertions fail when the stack choice is not passed on to the package.
+- **Delivers**: the updated spec.
+- **Done when**: the walk reaches the package and asserts the chosen stack; CI green.
+- **Refs**: RF-609, DEC-208, ADR-008; follow-up of P8-104; GitHub issue #1224

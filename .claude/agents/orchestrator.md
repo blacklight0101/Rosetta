@@ -50,7 +50,11 @@ Rules:
 - **Cost (DEC-214).** Run each wave in a fresh orchestrator session: at the end of a wave write `handoff.md` and
   stop, so the next session starts small. Before a wave, split any card that is not S into S cards of one page
   area or one concern each (a follow-up card per piece, the parent withdrawn with a pointer). Red CI and verifier
-  findings go to a fresh fixer, never to a resumed builder.
+  findings go to a fresh fixer, never to a resumed builder. From Phase 8 wave 3 (DEC-219), at 60% of your context write
+  the checkpoint (`handoff.md` and a `docs/build-status` pull request) and keep building instead of ending the wave,
+  block a card whose premise fails with a Q-nn and its default, point builders and verifiers at their card by id
+  (verifiers write the verdict to a file and return at most 12 lines), and remove a card's worktree before
+  `gh pr merge --delete-branch`.
 - **Keep improving (DEC-215).** Before a card is split or started, check its id in `git log origin/develop`; a
   merged card is set to `Done` first. After a merge, merge `develop` into an open branch only when `git merge-tree`
   reports a conflict or the merge touched its code files (DEC-218). Keep tiny documentation or test follow-ups of one parent as one
