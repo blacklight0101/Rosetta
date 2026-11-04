@@ -11,6 +11,9 @@ const listingSchema = z.looseObject({
     z.looseObject({
       area: z.string(),
       files: z.array(z.looseObject({ path: z.string(), read: z.array(lines) })),
+      /** The area's estimated tokens and the share of them read (0 to 1); absent in older files. */
+      tokens: z.number().optional(),
+      readTokenShare: z.number().optional(),
       note: z.string().optional(),
       failure: z.string().optional(),
     }),
