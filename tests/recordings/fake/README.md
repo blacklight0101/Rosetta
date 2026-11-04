@@ -32,6 +32,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 
 `planner-single-file.json` holds the planner's plan (three task cards across the difficulty bands, one at risk of money) and product requirements document for a seeded run over a single-file application, a bill splitter that is one script. The method end-to-end test plans it with agents building, for Claude Code and for Codex, and reads the package (P6-12, RF-612, RF-639..RF-643).
 
+`understand-python-inventory.json` and `planner-python-inventory.json` are the recordings of the end-to-end server for the Python fixture `tests/fixtures/repos/python-inventory/` (`octo/inventory`, P8-120): one reader task per area (`(root)`, `inventory`, `sql`, `tests`), two `FEAT` cards and an `OQ` card from `main.py`, two `BR` cards and an `INT` card from the stock and database modules, an `ENT` card from `sql/schema.sql` and no card from the test file, every citation a real line of the fixture (`tests/integration/journeys/python-inventory-recordings.test.ts` checks them); the planner file holds the plan, which cites those cards and covers each requirement with a task card. The verifier judges every claim of that run Supported (`verifier-all-supported.json`). Written by hand; no employer text.
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT
