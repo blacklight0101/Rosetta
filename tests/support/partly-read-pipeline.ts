@@ -34,8 +34,8 @@ const result: TaskResult = {
   ]),
 };
 
-/** The coverage of the run: the `src` area read at 30% of its first-party tokens. */
-export const partlyReadCoverage = JSON.stringify({
+/** The default coverage of the run: the `src` area read at 30% of its first-party tokens. */
+const partlyReadCoverage = JSON.stringify({
   schemaVersion: 1,
   areas: [{ area: 'src', files: [], firstPartyShare: 0.3 }],
 });
