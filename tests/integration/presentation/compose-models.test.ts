@@ -21,9 +21,9 @@ it('RF-405 serves the shipped Anthropic and OpenAI lists, priced from the shippe
   const openai = await listModels.execute('openai');
 
   expect(anthropic.models.map((entry) => entry.model)).toEqual([
+    'claude-haiku-5-5',
     'claude-opus-5-5',
     'claude-sonnet-5-5',
-    'claude-haiku-5-5',
     'claude-fable-5-1',
   ]);
   expect(anthropic.models.every((entry) => entry.priced)).toBe(true);
