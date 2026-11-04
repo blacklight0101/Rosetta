@@ -17,11 +17,11 @@ const table = (rows: readonly CostRow[]) => (
   <CostTable caption="By provider" firstColumn="Provider" rows={rows} />
 );
 
-const focusable = (container: HTMLElement): HTMLElement[] => [
+const focusable = (container: Element): HTMLElement[] => [
   ...container.querySelectorAll<HTMLElement>('[data-rst-amount]'),
 ];
 
-const stops = (container: HTMLElement): (string | null)[] =>
+const stops = (container: Element): (string | null)[] =>
   focusable(container).map((amount) => amount.getAttribute('tabindex'));
 
 afterEach(() => {
@@ -47,7 +47,9 @@ describe('cost table tab stop', () => {
     fireEvent.keyDown(second, { key: 'ArrowUp' });
     expect(document.activeElement).toBe(first);
   });
+});
 
+describe('cost table tab stop when the rows change', () => {
   it('RF-428 given a reached row whose amount turns plain, the tab stop goes to the first amount that has a tooltip', async () => {
     const { container, rerender } = render(table([row('a', '7'), row('b', '7'), row('c', '7')]));
     await act(() => {
