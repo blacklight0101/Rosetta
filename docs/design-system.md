@@ -201,16 +201,24 @@ The one Tooltip is the exact figure of a cost amount, built by `CostFigure` (`we
 classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
 only when the exact figure differs from the shown amount; otherwise the amount is plain text.
 
-- **Trigger:** the shown amount, a `span` with `tabindex="0"`, a dotted underline in `ink-soft` and the help cursor. The
+- **Trigger:** the shown amount, a `span` with `tabindex="0"` (or `-1` when another amount of its table holds the table's tab stop), a dotted underline in `ink-soft` and the help cursor. The
   tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the
   trigger points at the tip with `aria-describedby`, so a screen reader reads the exact figure after the amount.
 - **Opening:** pointer hover, keyboard focus (Tab) and touch (a tap focuses the trigger) show the tip. It sits in the
   flow beside the amount, in the mono font at `fs-xs` in `ink-muted`, with `sp-2` of space before it, on one line
-  (`white-space: nowrap`); it is never positioned absolutely or in a layer, so the scroll region of a table cannot clip it.
-- **Keyboard:** Tab reaches the trigger and shows the tip; Escape closes it while the trigger keeps focus, even while the
-  pointer rests on it (WCAG 1.4.13).
-- **Dismissal:** Escape, moving the pointer away when the focus is elsewhere, or moving the focus away. The tip opens
-  again the next time the pointer enters or the focus returns.
+  (`white-space: nowrap`); it is never positioned absolutely or in a layer, so nothing is clipped: in the scroll region
+  of a table the tip can widen its cell instead.
+- **Keyboard:** the amounts of one table take a single tab stop, which follows the amount last focused; Tab reaches it
+  and shows the tip, and the next Tab goes to the next focusable element after the amounts (in a table with links, such
+  as By run, the link of the next row). Only an amount that has a tip takes the stop; a plain amount takes none. ArrowDown
+  and ArrowUp move to the next and previous amount of the table that has a tip, without wrapping at the ends, Home and
+  End to the first and last, and the tip of the amount reached shows. Escape closes the tip of an
+  amount that has focus and of one the pointer rests on without focus: the listener is on the document, because a
+  browser sends no key to an amount that is only hovered (WCAG 1.4.13).
+- **Dismissal:** Escape closes the tip while the pointer rests on the amount or the amount has focus. If the pointer
+  alone rested there, moving it away and back opens the tip again. If the amount has focus, the tip stays closed while
+  the pointer leaves and enters again; it opens again only after the focus leaves the amount and returns to it. Moving
+  the focus away also ends the dismissal.
 - **Tokens:** `ink-soft`, `ink-muted`, `fs-xs`, `sp-2`, `fw-body` and the mono family; it has no colour of its own, so it
   follows both themes.
 

@@ -1,3 +1,4 @@
+import type { BrowserContext, Locator, Page } from '@playwright/test';
 import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
@@ -69,28 +70,53 @@ test('RF-1106 a user sees neither the server month nor the banner', async ({
   await expect(page.getByText('of its monthly cap')).toHaveCount(0);
 });
 
-test('RF-428 a tiny cost keeps its exact figure hidden until keyboard focus, and Escape closes it', async ({
-  context,
-  page,
-}, info) => {
-  await signInAs(context, costAccountFor('cost', info.project.name));
+const tiny = [{ currency: 'USD', costMicros: '7' }];
+const rolesOf = (totals: Record<string, unknown>) =>
+  ['reader', 'verifier', 'summariser'].map((key) => ({
+    key,
+    local: false,
+    totals: { ...totals, cost: tiny },
+  }));
+
+/** The cost answer with a total of 7 micro-dollars, which reads `<$0.0001` and offers its exact figure, and
+ * three role lines of the same cost. */
+async function openCostPageOfTinyCosts(
+  page: Page,
+  context: BrowserContext,
+  account: ReturnType<typeof costAccountFor>,
+): Promise<Locator> {
+  await signInAs(context, account);
   await openStartPage(page);
-  // The cost answer with a total of 7 micro-dollars, which reads `<$0.0001` and offers its exact figure.
   await page.route('**/api/projects/*/cost', async (route) => {
     const response = await route.fetch();
     const body: unknown = await response.json();
-    const totals = z.object({ totals: z.record(z.string(), z.unknown()) }).loose();
-    const cost = [{ currency: 'USD', costMicros: '7' }];
-    const parsed = totals.parse(body);
-    await route.fulfill({ response, json: { ...parsed, totals: { ...parsed.totals, cost } } });
+    const parsed = z
+      .object({ totals: z.record(z.string(), z.unknown()) })
+      .loose()
+      .parse(body);
+    const totals = { ...parsed.totals, cost: tiny };
+    await route.fulfill({
+      response,
+      json: { ...parsed, totals, byRole: rolesOf(totals) },
+    });
   });
-
   await page
     .getByTestId('header-totals')
     .getByRole('link', { name: /Your total/u })
     .click();
+  return page.getByRole('region', { name: 'Project totals' });
+}
 
-  const region = page.getByRole('region', { name: 'Project totals' });
+test('RF-428 a tiny cost keeps its exact figure hidden until keyboard focus, and Escape closes it', async ({
+  context,
+  page,
+}, info) => {
+  const region = await openCostPageOfTinyCosts(
+    page,
+    context,
+    costAccountFor('cost', info.project.name),
+  );
+
   const amount = region.getByText('<$0.0001', { exact: true });
   const exact = region.getByText('$0.000007', { exact: true });
   await expect(amount).toBeVisible();
@@ -100,6 +126,51 @@ test('RF-428 a tiny cost keeps its exact figure hidden until keyboard focus, and
   await page.keyboard.press('Escape');
   await expect(exact).toBeHidden();
   await expect(amount).toBeFocused();
+});
+
+test('RF-428 Escape closes the exact figure of an amount the pointer rests on without focus', async ({
+  context,
+  page,
+}, info) => {
+  const region = await openCostPageOfTinyCosts(
+    page,
+    context,
+    costAccountFor('cost', info.project.name),
+  );
+  const amount = region.getByText('<$0.0001', { exact: true });
+  const exact = region.getByText('$0.000007', { exact: true });
+
+  await amount.hover();
+  await expect(exact).toBeVisible();
+  await expect(amount).not.toBeFocused();
+  await page.keyboard.press('Escape');
+
+  await expect(exact).toBeHidden();
+  await page.mouse.move(0, 0);
+  await amount.hover();
+  await expect(exact).toBeVisible();
+});
+
+test('RF-428 the amounts of a table take one tab stop and the arrow keys reach the others', async ({
+  context,
+  page,
+}, info) => {
+  await openCostPageOfTinyCosts(page, context, costAccountFor('cost', info.project.name));
+  const roles = page.getByRole('table', { name: 'By role' });
+  const amounts = roles.getByText('<$0.0001', { exact: true });
+  await expect(amounts).toHaveCount(3);
+
+  await expect(roles.locator('[tabindex="0"]').filter({ hasText: '<$0.0001' })).toHaveCount(1);
+  await amounts.first().focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(amounts.nth(1)).toBeFocused();
+  await expect(roles.getByText('$0.000007', { exact: true }).nth(1)).toBeVisible();
+  await page.keyboard.press('End');
+  await expect(amounts.nth(2)).toBeFocused();
+  await expect(roles.locator('[tabindex="0"]').filter({ hasText: '<$0.0001' })).toHaveCount(1);
+  await page.keyboard.press('Tab');
+  await expect(amounts.nth(2)).not.toBeFocused();
+  await expect(roles.locator(':focus').filter({ hasText: '<$0.0001' })).toHaveCount(0);
 });
 
 test('RNF-010 a table caption of the cost page wraps at word boundaries at 360 px', async ({
