@@ -165,3 +165,9 @@ dialog.rst-p140-dialog::backdrop {
   font-size: var(--rst-fs-sm);
   color: var(--rst-ink-soft);
 }
+
+/* P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is its centre) */
+
+.rst-p140-run-name {
+  white-space: nowrap;
+}

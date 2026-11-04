@@ -61,9 +61,12 @@ function RunningTime({ run }: { readonly run: HistoryRun }): JSX.Element {
 
 function RunName({ run }: { readonly run: HistoryRun }): JSX.Element {
   return (
-    <Link href={`/runs/${encodeURIComponent(run.id)}`}>
-      <span class="rst-visually-hidden">View run </span>
-      <span class="rst-mono">{run.runId}</span>
+    <Link
+      href={`/runs/${encodeURIComponent(run.id)}`}
+      class="rst-mono rst-p140-run-name"
+      ariaLabel={`View run ${run.runId}`}
+    >
+      {run.runId}
     </Link>
   );
 }

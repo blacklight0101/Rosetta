@@ -95,7 +95,7 @@ describe('history page commit and start (P8-89)', () => {
     renderHistory();
 
     expect(await cellOf(scanKey, 'Started')).toBe('11 Oct, 09:11');
-    expect(await cellOf(scanKey, 'Run')).toBe(`View run ${scanKey}`);
+    expect(await cellOf(scanKey, 'Run')).toBe(scanKey);
     expect(await cellOf(liveKey, 'Tokens')).toBe('196,102');
   });
 });
