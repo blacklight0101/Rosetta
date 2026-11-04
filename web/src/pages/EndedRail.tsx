@@ -9,6 +9,7 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunReport } from './RunReport.js';
 import type { AnswersLoad } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
+import { usePartlyRead } from './use-partly-read.js';
 import { YourTurn } from './YourTurn.js';
 
 // RF-1015, RF-1017: the rail beside the results of an ended run: the Your turn panel and the report
@@ -19,8 +20,6 @@ export interface RailProps {
   readonly stage: string;
   readonly state: RunState;
   readonly costMicros: number;
-  /** P8-93: the areas read below the coverage bar; undefined until the coverage is known. */
-  readonly partlyRead?: number | undefined;
   readonly failed: boolean;
   readonly asks: boolean;
   readonly answers: AnswersLoad;
@@ -35,9 +34,10 @@ export interface RailProps {
 /** The Your turn panel, and the report, the downloads and the calls link, one click away. */
 export function Rail(props: RailProps): JSX.Element {
   const { run, stage } = props;
+  const partlyRead = usePartlyRead(run, stage, props.state);
   return (
     <aside class="rst-p170-rail">
-      <YourTurn {...props} />
+      <YourTurn {...props} partlyRead={partlyRead} />
       <section
         id={packageSectionId}
         class="rst-card rst-p170-downloads"
