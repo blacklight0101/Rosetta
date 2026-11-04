@@ -1,26 +1,21 @@
 import type { JSX } from 'preact';
-import { queueText } from '../lib/live-run/queue-text.js';
 import type { Project } from '../api/project-schemas.js';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
-import { RunEndBadge } from '../components/RunEndBadge.js';
-import { StatusBadge } from '../components/StatusBadge.js';
 import { startedText } from '../lib/run-times.js';
-import { tokensText, totalCostText } from '../lib/cost-text.js';
-import { mayHaveMeasures } from '../lib/understanding/measure-text.js';
+import { totalCostText } from '../lib/cost-text.js';
 import { DeletionNotice } from './DeletionNotice.js';
 import { ProjectDialog } from './history-dialogs.js';
+import { ProjectPosition } from './ProjectPosition.js';
 import { ProjectRowActions } from './ProjectRowActions.js';
-import { RunMeasures } from './RunMeasures.js';
 import { useProjectDelete } from './use-project-delete.js';
 
-// RF-010, RF-1008, RF-1108, RF-1010, RF-1012, design-system.md section 14 (Projects), `P8Projects`
-// artboard: the table of the user's projects with the project name as a link to its page, its source
-// as a badge, the last run with its date and time, its state (with the queue position of a queued
-// run), the runs, tokens and cost of each project, an "Open" link and the row menu (settings, live
-// run, Delete project). The table scrolls inside its own box, so the page never scrolls sideways.
+// RF-010, RF-1008, RF-1108, RF-1010, RF-1012, DEC-222, design-system.md section 14 (Projects),
+// `P8Projects` artboard: the table of the user's projects with the columns the artboard draws: the
+// project name as a link to its page, its source as a badge, where it is in the journey, the date and
+// time of its last run, its cost, an "Open" link and the row menu (settings, live run, Delete
+// project). The table scrolls inside its own box, so the page never scrolls sideways.
 
 const sourceBadge: Readonly<Record<Project['sourceKind'], string>> = {
   github: 'GitHub',
@@ -30,32 +25,8 @@ const sourceBadge: Readonly<Record<Project['sourceKind'], string>> = {
 
 function lastRunText(run: LastRun | null): string {
   if (run === null) return 'No run yet';
-  if (run.queueState === 'Queued') return `${run.stage} · queued`;
-  return `${run.stage} · ${startedText(run.endedAt ?? run.startedAt ?? run.queuedAt)}`;
-}
-
-function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null {
-  if (run === null) return null;
-  if (run.queueState === 'Ended' && run.endState !== null) {
-    return (
-      <>
-        <RunEndBadge
-          {...{ endState: run.endState, endReason: run.endReason }}
-          unreadAreas={run.unreadAreas}
-        />
-        <FailedAreasNote count={run.failedAreas} />
-        {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
-      </>
-    );
-  }
-  return (
-    <>
-      <StatusBadge list="RunQueueState" value={run.queueState} />
-      {run.position === null ? null : (
-        <span class="rst-table__sub rst-p1105-note">{queueText(run.position)}</span>
-      )}
-    </>
-  );
+  if (run.queueState === 'Queued') return 'queued';
+  return startedText(run.endedAt ?? run.startedAt ?? run.queuedAt);
 }
 
 function SourceNote({ project }: { readonly project: Project }): JSX.Element {
@@ -96,16 +67,10 @@ function ProjectRow(props: {
       <td data-label="Source">
         <span class="rst-badge rst-badge--neutral-tint">{sourceBadge[project.sourceKind]}</span>
       </td>
-      <td data-label="State">
-        <RunState run={lastRun} />
+      <td data-label="Where it is">
+        <ProjectPosition run={lastRun} />
       </td>
       <td data-label="Last run">{lastRunText(lastRun)}</td>
-      <td data-label="Runs" class="rst-table__num">
-        {row.runs}
-      </td>
-      <td data-label="Tokens" class="rst-table__num">
-        {tokensText(totals)}
-      </td>
       <td data-label="Cost" class="rst-table__num">
         {totalCostText(totals)}
       </td>
@@ -135,14 +100,8 @@ export function ProjectRunsTable(props: {
             <tr>
               <th scope="col">Project</th>
               <th scope="col">Source</th>
-              <th scope="col">State</th>
+              <th scope="col">Where it is</th>
               <th scope="col">Last run</th>
-              <th scope="col" class="rst-table__num">
-                Runs
-              </th>
-              <th scope="col" class="rst-table__num">
-                Tokens
-              </th>
               <th scope="col" class="rst-table__num">
                 Cost
               </th>

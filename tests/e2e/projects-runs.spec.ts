@@ -37,7 +37,7 @@ async function noSidewaysScroll(page: Page): Promise<void> {
   expect(Number(overflow)).toBeLessThanOrEqual(0);
 }
 
-test('RF-1008 a completed scan shows as the last run with its state and the project counts', async ({
+test('RF-1008 a completed scan shows as its position in the journey, the last run and the cost', async ({
   page,
 }) => {
   await openStartPage(page);
@@ -46,10 +46,11 @@ test('RF-1008 a completed scan shows as the last run with its state and the proj
   await openProjects(page);
 
   const row = projectRow(page);
-  await expect(row).toContainText('scan ·');
-  await expect(row).toContainText('Completed');
-  await expect(row.getByRole('cell').nth(4)).toHaveText('1');
-  await expect(row).toContainText('$0.00');
+  await expect(row.getByRole('cell').nth(2)).toContainText('Scan done');
+  await expect(row).not.toContainText('scan ·');
+  await expect(row).not.toContainText('Completed');
+  await expect(row.getByRole('cell').nth(3)).toHaveText(/^\d{1,2} [A-Z][a-z]{2}, \d{2}:\d{2}$/u);
+  await expect(row.getByRole('cell').nth(4)).toHaveText('$0.00');
   await expect(page.getByTestId('queue-notice')).toHaveCount(0);
   await expectNoSeriousViolations(page);
 });
@@ -67,7 +68,7 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   await expect(notice).toContainText(
     /Your understand run of octo\/webforms is queued, position \d+, (?:no run|\d+ runs?) ahead\./u,
   );
-  await expect(projectRow(page)).toContainText('Queued');
+  await expect(projectRow(page)).toContainText('Understand queued');
   await expect(projectRow(page)).toContainText(/position \d+/u);
   await expectNoSeriousViolations(page);
   await notice.getByRole('button', { name: /Cancel queued run/u }).click();
@@ -81,7 +82,7 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
 });
 
 test(
-  'RF-1008 the Projects page with its run columns never scrolls sideways',
+  'RF-1008 the Projects page with its columns never scrolls sideways',
   { tag: '@phone' },
   async ({ page }) => {
     await openScannedStartPage(page);

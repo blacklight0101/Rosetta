@@ -22,7 +22,7 @@ function menuItems(row: ProjectOverviewRow, onDelete: (projectId: string) => voi
     ...live,
     { label: 'Project settings', href: `/projects/${id}/settings` },
     {
-      ...{ label: 'Delete project', danger: true },
+      ...{ label: 'Delete project…', danger: true },
       ...(active
         ? { disabledReason: activeReason }
         : {

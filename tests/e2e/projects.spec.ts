@@ -97,6 +97,15 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
   await expect(row.locator('.rst-badge', { hasText: 'GitHub' })).toBeVisible();
   await expect(row.getByRole('link', { name: 'Open for octo/demo' })).toBeVisible();
   await expect(page.locator('.rst-table .rst-button--primary')).toHaveCount(0);
+  await expect(page.getByRole('columnheader')).toHaveText([
+    'Project',
+    'Source',
+    'Where it is',
+    'Last run',
+    'Cost',
+    'Actions',
+  ]);
+  await expect(row.getByRole('cell').nth(2)).toContainText('Scan not started');
   // P8-99 screenshots of the list at 1280 px and at 390 px, attached to the test report.
   for (const [name, width, height] of [
     ['projects-list-1280', 1280, 800],
@@ -112,7 +121,7 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
   await page.setViewportSize({ width: 1280, height: 800 });
 
   await page.getByRole('button', { name: 'More actions for octo/demo' }).click();
-  await page.getByRole('menuitem', { name: 'Delete project' }).click();
+  await page.getByRole('menuitem', { name: 'Delete project…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Delete project octo/demo?' });
   await expect(dialog).toContainText('cost ledger');
   await dialog.getByRole('button', { name: 'Delete project' }).click();

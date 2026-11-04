@@ -148,7 +148,7 @@ test(
 test('RNF-010 projects with the run columns and the project settings', visual, async ({ page }) => {
   await page.goto('/projects');
   await expect(page.getByRole('row').filter({ hasText: 'octo/webforms' })).toContainText(
-    'Completed',
+    'Understand done',
   );
   await expectPageInView(page);
 
