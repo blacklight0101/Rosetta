@@ -101,3 +101,27 @@ test('RF-428 a tiny cost keeps its exact figure hidden until keyboard focus, and
   await expect(exact).toBeHidden();
   await expect(amount).toBeFocused();
 });
+
+test('RNF-010 a table caption of the cost page wraps at word boundaries at 360 px', async ({
+  context,
+  page,
+}, info) => {
+  await signInAs(context, costAccountFor('cost', info.project.name));
+  await page.setViewportSize({ width: 360, height: 780 });
+  await openStartPage(page);
+  await page
+    .getByTestId('header-totals')
+    .getByRole('link', { name: /Your total/u })
+    .click();
+
+  const caption = page.getByRole('table', { name: 'By model' }).locator('caption');
+  await expect(caption).toBeVisible();
+  const { height, lineHeight, width } = await caption.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+    width: element.getBoundingClientRect().width,
+  }));
+  // "By model" fits on one line, so one letter per line (the caption shrunk to its narrowest) is far taller.
+  expect(width).toBeGreaterThan(200);
+  expect(height).toBeLessThan(lineHeight * 3);
+});
