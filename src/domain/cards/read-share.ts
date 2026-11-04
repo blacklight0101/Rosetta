@@ -2,7 +2,13 @@ import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
 import { isThirdPartyFile } from '../code-map/third-party.js';
 import type { Citation } from './citation.js';
-import { mergedRanges, tokensRead } from './area-coverage.js';
+import {
+  areaCoverage,
+  mergedRanges,
+  tokensRead,
+  type AreaCoverage,
+  type CoverageArea,
+} from './area-coverage.js';
 
 // Q-50, RF-206, RF-231: how much of the first-party code of an area has been read while its agent
 // still works, and which files it has not touched yet, in the order worth reading them. The share
@@ -47,4 +53,13 @@ export function readShare(files: readonly FileEntry[], reads: readonly Citation[
   const readTokens = own.reduce((sum, file) => sum + tokensRead(file, readOf(file)), 0);
   const unread = own.filter((file) => readOf(file).length === 0).sort(byWorth);
   return { tokens, readTokens, share: tokens === 0 ? 1 : Math.min(1, readTokens / tokens), unread };
+}
+
+// RF-230, RF-231 (P8-93)
+export function areaCoverageWithShare(
+  area: CoverageArea,
+  files: readonly FileEntry[],
+  reads: readonly Citation[],
+): AreaCoverage {
+  return areaCoverage(area, files, reads);
 }
