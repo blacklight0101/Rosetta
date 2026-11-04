@@ -65,6 +65,7 @@
     "tests/e2e/journeys/zip-project.spec.ts",
     "tests/e2e/journeys/language-without-pack.spec.ts",
     "tests/e2e/landing.spec.ts",
+    "tests/e2e/landing-stages.spec.ts",
     "tests/e2e/page-shots.spec.ts",
     "tests/e2e/projects-runs.spec.ts",
     "tests/e2e/report-offline.spec.ts",
