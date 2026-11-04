@@ -130,8 +130,9 @@ select {
   white-space: nowrap;
 }
 
-.rst-header__user > :not(.rst-header__name),
-.rst-header__account > .rst-button {
+/* The selectors are as strong as `.rst-root .rst-button--ghost`, which sets white-space: normal. */
+.rst-root .rst-header__user > :not(.rst-header__name),
+.rst-root .rst-header__account > .rst-button {
   flex: 0 0 auto;
   white-space: nowrap;
 }
