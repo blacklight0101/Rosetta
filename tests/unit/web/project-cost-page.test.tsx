@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/preact';
+import { act, fireEvent, screen, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { ProjectCostPage } from '../../../web/src/pages/ProjectCostPage.js';
 import { projectCost, usageTotals } from './cost-fixtures.js';
@@ -205,7 +205,7 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
   it('RF-428 given a zero and a tiny amount, writes `$0.00` and `<$0.0001` with the exact figure of the tiny one', async () => {
     const lines = (...micros: string[]) =>
       micros.map((each, at) => ({
-        ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false },
+        ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false, byRole: [] },
         totals: costOf(each),
       }));
     renderCost(json(200, { ...projectCost, byRun: lines('0', '7') }));
@@ -229,7 +229,49 @@ describe('project cost page zero, tiny amounts and the tooltip', () => {
     expect(tip?.textContent).toBe('$3.113515');
     amount.focus();
     expect(document.activeElement).toBe(amount);
+  });
+
+  it('RF-428 given an amount with an exact figure, the amount alone is its name and the figure is a sibling', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const tip = document.getElementById(amount.getAttribute('aria-describedby') ?? '');
+
+    expect(amount.textContent).toBe('$3.11');
+    expect(amount.contains(tip)).toBe(false);
+    expect(amount.parentElement?.contains(tip)).toBe(true);
+  });
+
+  it('RF-428 given an amount with an exact figure under the pointer, Escape closes it while the amount keeps focus, and it opens again on the next hover', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const wrap = amount.parentElement as HTMLElement;
+    amount.focus();
+    fireEvent.mouseEnter(wrap);
+
     fireEvent.keyDown(amount, { key: 'Escape' });
-    expect(document.activeElement).not.toBe(amount);
+
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    expect(document.activeElement).toBe(amount);
+    fireEvent.mouseLeave(wrap);
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    act(() => {
+      amount.blur();
+    });
+    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
+  });
+
+  it('RF-428 given an amount closed with Escape under the pointer, leaving the pointer opens it again for the next hover', async () => {
+    renderCost(json(200, { ...projectCost, totals: costOf('3113515') }));
+    const totals = await screen.findByRole('region', { name: 'Project totals' });
+    const amount = within(totals).getByText('$3.11');
+    const wrap = amount.parentElement as HTMLElement;
+    fireEvent.mouseEnter(wrap);
+    fireEvent.keyDown(amount, { key: 'Escape' });
+
+    expect(wrap.hasAttribute('data-dismissed')).toBe(true);
+    fireEvent.mouseLeave(wrap);
+    expect(wrap.hasAttribute('data-dismissed')).toBe(false);
   });
 });
