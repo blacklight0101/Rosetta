@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it } from 'vitest';
 import { HistoryPage } from '../../../web/src/pages/HistoryPage.js';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
@@ -33,6 +33,13 @@ async function rowOf(runKey: string): Promise<HTMLElement> {
   return row;
 }
 
+const tooltipOf = (value: HTMLElement): HTMLElement => {
+  const id = value.getAttribute('aria-describedby') ?? '';
+  const tip = value.ownerDocument.getElementById(id);
+  if (tip === null) throw new Error('The Coverage value has no tooltip.');
+  return tip;
+};
+
 describe('RF-231 the measures beside each run of the history', () => {
   const answers = { [measuresOf('r-1')]: understanding(measures()) };
 
@@ -42,9 +49,11 @@ describe('RF-231 the measures beside each run of the history', () => {
     const cell = await within(await rowOf(doneKey)).findByTestId('run-coverage');
 
     expect(cell.textContent).toBe('42% read');
-    expect(cell.getAttribute('title')).toContain('42% of first-party tokens read');
-    expect(cell.getAttribute('title')).toContain('68 of 118 judged claims supported');
-    expect(cell.getAttribute('title')).toContain('3 not judged');
+    const tip = tooltipOf(cell);
+    expect(tip.textContent).toContain('42% of first-party tokens read');
+    expect(tip.textContent).toContain('68 of 118 judged claims supported');
+    expect(tip.textContent).toContain('3 not judged');
+    expect(cell.hasAttribute('title')).toBe(false);
     expect(cell.textContent).not.toMatch(/complete/iu);
   });
 
@@ -56,6 +65,22 @@ describe('RF-231 the measures beside each run of the history', () => {
 
     expect(cell.textContent).toContain('Well covered');
     expect(cell.querySelector('svg')).not.toBeNull();
+  });
+
+  it('RF-231 RNF-010 gives the coverage value a focusable tooltip that Escape dismisses', async () => {
+    renderHistory(answers);
+    const value = await within(await rowOf(doneKey)).findByTestId('run-coverage');
+    const wrapper = value.parentElement;
+
+    expect(value.tabIndex).toBe(0);
+    expect(tooltipOf(value).getAttribute('role')).toBe('tooltip');
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
+
+    fireEvent.keyDown(value, { key: 'Escape' });
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(true);
+
+    fireEvent.blur(value);
+    expect(wrapper?.hasAttribute('data-dismissed')).toBe(false);
   });
 
   it('RF-231 reads nothing for a scan', async () => {

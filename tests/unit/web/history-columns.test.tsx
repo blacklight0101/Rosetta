@@ -127,4 +127,47 @@ describe('the row menu (P8-89)', () => {
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(button);
   });
+
+  it('RF-1008 P8-89 closes an open menu when its own button is clicked', async () => {
+    renderHistory();
+    await menuItem(doneKey, 'Zip');
+    const button = within(await rowOf(doneKey)).getByRole('button', {
+      name: `More actions for run ${doneKey}`,
+    });
+
+    fireEvent.mouseDown(button);
+    fireEvent.click(button);
+
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it.each(['ArrowDown', 'ArrowUp'])(
+    'RF-1008 P8-89 opens the menu with %s on its button',
+    async (key) => {
+      renderHistory();
+      const button = within(await rowOf(doneKey)).getByRole('button', {
+        name: `More actions for run ${doneKey}`,
+      });
+
+      fireEvent.keyDown(button, { key });
+
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+      const items = await screen.findAllByRole('menuitem');
+      expect(document.activeElement).toBe(key === 'ArrowDown' ? items[0] : items.at(-1));
+    },
+  );
+
+  it('RF-1008 P8-89 moves to the first item with Home and to the last with End', async () => {
+    renderHistory();
+    const item = await menuItem(doneKey, 'Zip');
+    const items = screen.getAllByRole('menuitem');
+    expect(items.length).toBeGreaterThan(1);
+
+    fireEvent.keyDown(item, { key: 'End' });
+    expect(document.activeElement).toBe(items.at(-1));
+
+    fireEvent.keyDown(items.at(-1) ?? item, { key: 'Home' });
+    expect(document.activeElement).toBe(items[0]);
+  });
 });

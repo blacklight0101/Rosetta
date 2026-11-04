@@ -3,12 +3,14 @@ import { ListHistory } from '../../../../src/application/use-cases/list-history.
 import { ListSnapshots } from '../../../../src/application/use-cases/list-snapshots.js';
 import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { MemorySnapshotCache } from '../../../support/memory-snapshot-cache.js';
 import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folders.js';
+import { RecordingLogger } from '../../../support/recording-logger.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { runningRun, sampleManifest, sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
@@ -35,8 +37,9 @@ async function historySetup() {
       ...overrides,
     });
   const manifests = new MemoryRunManifestStore();
-  const listHistory = new ListHistory({ projects, runs, folders, manifests });
-  return { runs, folders, manifests, project, ended, listHistory };
+  const logger = new RecordingLogger();
+  const listHistory = new ListHistory({ projects, runs, folders, manifests, logger });
+  return { projects, runs, folders, manifests, project, ended, listHistory, logger };
 }
 
 describe('ListHistory: Deepen runs (P8-89)', () => {
@@ -69,6 +72,53 @@ describe('ListHistory: Deepen runs (P8-89)', () => {
     if (!result.ok) throw new Error('The history was not listed');
     expect(result.value.runs.map((each) => each.deepenRounds)).toEqual([0, 3, null]);
   });
+});
+
+describe('ListHistory: a manifest that cannot be read (P8-89)', () => {
+  const understand = { stage: 'understand' } as const;
+  const failures = [
+    [
+      'a file read error',
+      Object.assign(new Error('EISDIR: illegal operation'), { code: 'EISDIR' }),
+    ],
+    ['a manifest that is not valid JSON', new RosettaError(ERROR_CODES.runManifestFailed)],
+  ] as const;
+
+  it('RF-1008 P8-89 counts a run without a manifest as no Deepen and logs nothing', async () => {
+    const { runs, project, ended, listHistory, logger } = await historySetup();
+    await runs.insert(ended({ queuedAt: 1_000, ...understand }));
+
+    const result = await listHistory.execute({ actor: userAmy, projectId: project.id });
+
+    if (!result.ok) throw new Error('The history was not listed');
+    expect(result.value.runs.map((each) => each.deepenRounds)).toEqual([null]);
+    expect(logger.records).toEqual([]);
+  });
+
+  it.each(failures)(
+    'RF-1008 P8-89 lists every run and logs one warning when a manifest fails with %s',
+    async (_name, failure) => {
+      const { projects, runs, folders, project, ended, logger } = await historySetup();
+      const bad = ended({ queuedAt: 2_000, ...understand, runKey: '20261003-100000-understand' });
+      const good = ended({ queuedAt: 1_000, ...understand });
+      for (const run of [bad, good]) await runs.insert(run);
+      const manifests = {
+        read: (scope: { readonly id: string }) =>
+          scope.id === bad.id ? Promise.reject(failure) : Promise.resolve(undefined),
+      };
+
+      const result = await new ListHistory({ projects, runs, folders, manifests, logger }).execute({
+        actor: userAmy,
+        projectId: project.id,
+      });
+
+      if (!result.ok) throw new Error('The history was not listed');
+      expect(result.value.runs.map((each) => each.deepenRounds)).toEqual([null, null]);
+      expect(logger.records.map((entry) => [entry.level, entry.logger])).toEqual([
+        ['warn', 'history'],
+      ]);
+    },
+  );
 });
 
 describe('ListHistory: the queue', () => {
