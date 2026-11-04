@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage, startCatalogRun, tokensOf } from './support/cost-run.js';
-import { openStartPage, runStatus } from './support/live-run-page.js';
+import { openStartPage, runStatus, RUN_DONE } from './support/live-run-page.js';
 import { costAccountFor } from './support/seed-cost.js';
 import { signInAs } from './support/sign-in.js';
 
@@ -28,7 +28,7 @@ test('RF-1010 the header totals follow a run live without a reload, with the bre
 
   await startCatalogRun(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
   expect(await page.evaluate(() => Reflect.get(globalThis, 'rstSamePage') === true)).toBe(true);
   await expect(pill).not.toContainText('Server, this month');

@@ -10,6 +10,7 @@ import {
   openStartPage,
   runStatus,
   startUnderstand,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { expectOptions, openPlanSetup, openStep } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
@@ -71,7 +72,7 @@ test(
     await expectPageInView(page);
 
     understandRun = await startUnderstand(page, ['Catalog']);
-    await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+    await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
     await expect(page.getByRole('region', { name: 'Overview of the application' })).toBeVisible();
     await expectPageInView(page);
     await openRunTab(page, 'Your questions');
@@ -161,7 +162,7 @@ test(
   visual,
   async ({ page }) => {
     await page.goto(understandRun);
-    await expect(runStatus(page)).toContainText('Completed');
+    await expect(runStatus(page)).toContainText(RUN_DONE);
     await buildReport(page);
     await expectPageInView(page);
     const report = await linkTarget(page, 'Open the report');

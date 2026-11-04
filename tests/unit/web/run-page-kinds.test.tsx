@@ -74,7 +74,9 @@ it('RF-1015 an understand run that works is titled "Understand, running"', async
 });
 
 it('RF-1015 the figures of the run are five and each one is shown once', async () => {
-  await openEnded({ judged: 'Supported' });
+  const area = { area: 'Catalog', files: [], firstPartyShare: 0.9 };
+  const coverage = { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) };
+  await openEnded({ judged: 'Supported', extra: coverage });
 
   const facts = within(screen.getByRole('region', { name: 'Your turn' })).getByRole('list', {
     name: 'Run facts',

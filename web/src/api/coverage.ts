@@ -11,6 +11,8 @@ const listingSchema = z.looseObject({
     z.looseObject({
       area: z.string(),
       files: z.array(z.looseObject({ path: z.string(), read: z.array(lines) })),
+      /** P8-93: the share of the area's first-party tokens read (0 to 1); absent in older files. */
+      firstPartyShare: z.number().optional(),
       note: z.string().optional(),
       failure: z.string().optional(),
     }),

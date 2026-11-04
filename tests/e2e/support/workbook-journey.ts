@@ -4,7 +4,7 @@ import { expect } from './fixtures.js';
 import { openReplaceSource, showStartChoices } from './start-choices.js';
 import { downloadedRunFiles } from './full-run-pages.js';
 import { chooseAreas, runScan } from './journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from './live-run-page.js';
 import { citationLinksIn, expectCitationOpensEvidence } from './zip-journey.js';
 import { discountsWorkbook, pricingWorkbook } from './workbook-fixtures-journey.js';
 
@@ -76,7 +76,7 @@ export async function scanAndUnderstand(page: Page, areas: readonly string[]): P
   await page.getByRole('link', { name: 'Start page' }).click();
   await chooseAreas(page, areas);
   const path = await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   return path;
 }
 

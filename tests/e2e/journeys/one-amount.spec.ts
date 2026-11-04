@@ -1,6 +1,6 @@
 import { expect, test } from '../support/fixtures.js';
 import { openScannedStartPage } from '../support/cost-run.js';
-import { openRunTab, runStatus, startUnderstand } from '../support/live-run-page.js';
+import { openRunTab, runStatus, startUnderstand, RUN_DONE } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
 
@@ -25,7 +25,7 @@ test('RF-1003 RF-434 RF-209 P8-24 a run of a journey shows one amount, what is l
   await expect(page.getByTestId('topbar-run-meter')).toContainText(left, { timeout: 30_000 });
   await expect(page.getByRole('region', { name: 'Spend for this run' })).toContainText(left);
   await expect(page.getByRole('region', { name: 'Spend for this run' })).not.toContainText('cap');
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await openRunTab(page, 'Evidence');
   const turn = page.getByRole('region', { name: 'Your turn' });
   await turn.getByRole('button', { name: 'Deepen this run' }).click();

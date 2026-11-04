@@ -2,7 +2,13 @@ import type { Locator, Page } from '@playwright/test';
 import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { openHistory, runRow, runsTable } from './support/history-page.js';
-import { openScanRun, openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
+import {
+  openScanRun,
+  openStartPage,
+  RUN_DONE,
+  runStatus,
+  startUnderstand,
+} from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { expectPageInView } from './support/sweep.js';
@@ -181,7 +187,7 @@ test(
     await openStartPage(page);
     await openScanRun(page);
     await startUnderstand(page, ['Catalog']);
-    await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+    await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 
     await openHistory(page);
     const row = runRow(page, '-understand');
