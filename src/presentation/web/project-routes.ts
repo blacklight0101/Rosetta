@@ -217,7 +217,12 @@ function registerSettings(server: FastifyInstance, services: ProjectServices): v
         return reply
           .status(200)
           .header('etag', etagOf(outcome.value.project))
-          .send(projectView(outcome.value.project));
+          .send({
+            ...projectView(outcome.value.project),
+            ...(outcome.value.parallelismChange === undefined
+              ? {}
+              : { parallelismChange: outcome.value.parallelismChange }),
+          });
       }
       const { error } = outcome;
       if (error.code === ERROR_CODES.notFound) throw notFound();

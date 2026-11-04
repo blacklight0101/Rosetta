@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { settingsWith, templateSettings } from '../../../support/project-fixtures.js';
+import { HOSTED_READER_PARALLELISM } from '../../../../src/application/use-cases/update-project-settings.js';
 import { amy, projectHarness } from '../../../support/project-harness.js';
 
 // RF-436 (P8-56): a save that moves the reader from a local provider (Ollama) to a hosted one
@@ -35,7 +36,7 @@ async function save(
 
 describe('UpdateProjectSettings: parallelism follows the reader provider', () => {
   it('RF-436 the template default is 4, the value the rule sets', () => {
-    expect(templateSettings.agents.parallelism).toBe(4);
+    expect(templateSettings.agents.parallelism).toBe(HOSTED_READER_PARALLELISM);
   });
 
   it('RF-436 a project made with an Ollama reader starts with parallelism 1', async () => {
