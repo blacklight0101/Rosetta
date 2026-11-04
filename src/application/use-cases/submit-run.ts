@@ -89,6 +89,8 @@ export class SubmitRun {
         endState: null,
         queuedAt,
         startedAt: null,
+        spanStartedAt: null,
+        activeMs: 0,
         endedAt: null,
         totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
         failedAreas: 0,

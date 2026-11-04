@@ -34,7 +34,7 @@ function Row({ run }: { readonly run: HistoryRun }): JSX.Element {
         <State run={run} />
       </td>
       <td data-label="Started">{startedText(run.startedAt ?? run.queuedAt)}</td>
-      <td data-label="Running time">{runningTimeText(run.startedAt, run.endedAt)}</td>
+      <td data-label="Running time">{runningTimeText(run.runningMs)}</td>
       <td data-label="Cost" class="rst-table__num">
         {run.totals.costMicros === 0 ? 'No cost' : costLabel(run.totals.costMicros)}
       </td>

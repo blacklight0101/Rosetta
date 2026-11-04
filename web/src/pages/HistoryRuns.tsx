@@ -13,6 +13,7 @@ import { isResumable } from '../lib/live-run/resumable.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
 import { mayHaveMeasures } from '../lib/understanding/measure-text.js';
+import { runningTimeText, wallTimeNote } from '../lib/run-times.js';
 import { ResumeButton } from './ResumeButton.js';
 import { RunMeasures } from './RunMeasures.js';
 import { ScrollRegion } from './ScrollRegion.js';
@@ -44,6 +45,17 @@ function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
     <>
       <StatusBadge list="RunQueueState" value={run.queueState} />
       {run.position === null ? null : <div class="rst-table__sub">{queueText(run.position)}</div>}
+    </>
+  );
+}
+
+/** P8-88, History artboard: the running time, and the wall time after it for a run that waited. */
+function RunningTime({ run }: { readonly run: HistoryRun }): JSX.Element {
+  const note = wallTimeNote(run.runningMs, run.wallMs);
+  return (
+    <>
+      {runningTimeText(run.runningMs)}
+      {note === null ? null : <span class="rst-table__sub">{` ${note}`}</span>}
     </>
   );
 }
@@ -151,6 +163,9 @@ function Row(props: {
         <StateBadge run={run} />
         {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </td>
+      <td data-label="Running time">
+        <RunningTime run={run} />
+      </td>
       <td class="rst-table__num" data-label="Tokens">
         {tokensLabel(inputTokens + outputTokens)}
       </td>
@@ -179,6 +194,7 @@ export function HistoryRuns({ runs, onDelete }: HistoryRunsProps): JSX.Element {
             <th scope="col">Stage</th>
             <th scope="col">Commit</th>
             <th scope="col">State</th>
+            <th scope="col">Running time</th>
             <th scope="col" class="rst-table__num">
               Tokens
             </th>

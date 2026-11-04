@@ -77,6 +77,8 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'cached_input_tokens int8',
     'failed_areas int4',
     'unread_areas int4',
+    'span_started_at timestamptz null',
+    'active_ms int8',
   ],
   journeys: [
     'project_id uuid',

@@ -117,9 +117,9 @@ export class MemoryRunIndex implements RunIndex {
   }
 
   // RF-432
-  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
+  pause(runId: string, at: EpochMs, counts: AreaCounts = {}): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, counts)));
+    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, at, counts)));
   }
 
   // RF-432

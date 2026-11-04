@@ -109,7 +109,7 @@ src/
                         has left at run start as a role cost cap, `ScopeSpent`, P5-18; on a resume it adds the run's earlier reader spend;
                         `roomVerdict` and `judgingEstimate` decide whether the readers may start a task or take a turn from the whole run's spend, P5-20, DEC-170, DEC-193),
                         UTC day and month (`utcPeriodsOf`), `isCapStop`
-    runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
+    runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`), the run times (`runTimesOf`: the running time is the sum of a run's spans, the wall time runs from its first start, P8-88)
     sources/            GitHubRepoRef, CommitSha, Permalink
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018); the catalogue
                         rules (`catalogueProblems`, `defaultPrinciples`, RF-606); the options of Plan setup (`buildPlanOptions`: two

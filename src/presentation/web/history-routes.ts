@@ -9,6 +9,7 @@ import type {
 } from '../../application/use-cases/list-history.js';
 import type { ListedSnapshot, ListSnapshots } from '../../application/use-cases/list-snapshots.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { runTimesOf } from '../../domain/runs/run-times.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
 import {
   registerProjectOverviewRoutes,
@@ -40,6 +41,8 @@ function instantOrNull(value: number | null): string | null {
 }
 
 function runRow({ run, sizeBytes, position }: HistoryRun): Record<string, unknown> {
+  // P8-88: the first start, the running time (the sum of the spans) and the wall time of an ended run.
+  const times = runTimesOf(run);
   return {
     id: run.id,
     runId: run.runKey,
@@ -55,6 +58,8 @@ function runRow({ run, sizeBytes, position }: HistoryRun): Record<string, unknow
     unreadAreas: run.unreadAreas,
     position,
     sizeBytes,
+    runningMs: times?.runningMs ?? null,
+    wallMs: times?.wallMs ?? null,
   };
 }
 

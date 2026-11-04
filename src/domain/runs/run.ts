@@ -31,7 +31,12 @@ export interface Run {
   /** Set exactly when `queueState` is `Ended`. */
   readonly endState: RunEndState | null;
   readonly queuedAt: EpochMs;
+  /** P8-88: the first start; a resume or Continue keeps it. Null until the run first starts. */
   readonly startedAt: EpochMs | null;
+  /** P8-88: the start of the span the run is running in; null while it is queued, paused or ended. */
+  readonly spanStartedAt: EpochMs | null;
+  /** P8-88: the milliseconds of the spans the run has finished; its running time once it ended. */
+  readonly activeMs: number;
   readonly endedAt: EpochMs | null;
   readonly totals: RunTotals;
   /** RF-208: the areas of an understand run that gave no usable card; 0 for any other run. */
@@ -53,10 +58,15 @@ export type EndProblem =
 export type PauseProblem = 'not-running';
 export type ContinueProblem = 'not-awaiting-approval';
 
-// RF-1108
+/** P8-88: the run's finished spans with the one it is running in, closed at `at`. */
+function activeAt(run: Run, at: EpochMs): number {
+  return run.activeMs + (run.spanStartedAt === null ? 0 : Math.max(0, at - run.spanStartedAt));
+}
+
+// RF-1108, P8-88
 export function startRun(run: Run, at: EpochMs): Result<Run, StartProblem> {
   if (run.queueState !== 'Queued') return err('not-queued');
-  return ok({ ...run, queueState: 'Running', startedAt: at });
+  return ok({ ...run, queueState: 'Running', startedAt: run.startedAt ?? at, spanStartedAt: at });
 }
 
 // RF-003, RF-1108
@@ -83,6 +93,8 @@ export function endRun(
     queueState: 'Ended',
     endState,
     endedAt: at,
+    spanStartedAt: null,
+    activeMs: activeAt(run, at),
     failedAreas: counts.failedAreas ?? 0,
     unreadAreas: counts.unreadAreas ?? 0,
   });
@@ -93,16 +105,26 @@ export function endRun(
  * keeps its record, its totals and the areas no reader started; it holds no running slot.
  */
 // RF-432
-export function pauseRun(run: Run, counts: AreaCounts = {}): Result<Run, PauseProblem> {
+export function pauseRun(
+  run: Run,
+  at: EpochMs,
+  counts: AreaCounts = {},
+): Result<Run, PauseProblem> {
   if (run.queueState !== 'Running') return err('not-running');
-  return ok({ ...run, queueState: 'AwaitingApproval', unreadAreas: counts.unreadAreas ?? 0 });
+  return ok({
+    ...run,
+    queueState: 'AwaitingApproval',
+    unreadAreas: counts.unreadAreas ?? 0,
+    spanStartedAt: null,
+    activeMs: activeAt(run, at),
+  });
 }
 
 /** RF-432, RF-006: Continue queues the paused run again at the end of the queue, as a resume does. */
 // RF-432
 export function continueRun(run: Run, at: EpochMs): Result<Run, ContinueProblem> {
   if (run.queueState !== 'AwaitingApproval') return err('not-awaiting-approval');
-  return ok({ ...run, queueState: 'Queued', unreadAreas: 0, queuedAt: at, startedAt: null });
+  return ok({ ...run, queueState: 'Queued', unreadAreas: 0, queuedAt: at });
 }
 
 /** RF-006: the end states a resume can start from; a `Completed` run has nothing left to do. */
@@ -131,7 +153,6 @@ export function reopenRun(
     failedAreas: 0,
     unreadAreas: 0,
     queuedAt: at,
-    startedAt: null,
     endedAt: null,
   });
 }

@@ -185,6 +185,8 @@ async function queueRun(setup: Setup, owner: Awaited<ReturnType<typeof uploadPro
     endState: null,
     queuedAt: 1,
     startedAt: null,
+    spanStartedAt: null,
+    activeMs: 0,
     endedAt: null,
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     failedAreas: 0,
