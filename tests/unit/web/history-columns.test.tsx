@@ -127,7 +127,9 @@ describe('the row menu (P8-89)', () => {
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(button);
   });
+});
 
+describe('the row menu button and keys (P8-89)', () => {
   it('RF-1008 P8-89 closes an open menu when its own button is clicked', async () => {
     renderHistory();
     await menuItem(doneKey, 'Zip');

@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 
 // design-system.md section 14 (History, row menu), P8-89: the "More actions" button of a table row and the
 // menu it opens. The button has `aria-haspopup="menu"` and `aria-expanded`; the menu holds links and buttons
-// as `menuitem`; Escape, a click elsewhere, a scroll or leaving the menu with Tab closes it, and the focus
-// returns to the button so that a dialog an item opens gives it back there. An item that cannot be used is
-// `aria-disabled` and says why under its name. The panel is `position: fixed`, so the scrolling box of a
-// table never clips it.
+// as `menuitem`. ArrowDown or ArrowUp on the button opens it (at the first or the last item); the arrows,
+// Home and End move within it. Escape, a click elsewhere, a scroll or leaving the menu with Tab closes it, and
+// the focus returns to the button so that a dialog an item opens gives it back there. An item that cannot be
+// used is `aria-disabled` and says why under its name. The panel is `position: fixed`, so the scrolling box
+// of a table never clips it.
 
 export interface RowMenuItem {
   readonly label: string;
@@ -75,17 +76,38 @@ function Item(props: { readonly item: RowMenuItem; readonly choose: () => void }
   );
 }
 
-function focusStep(menu: HTMLElement | null, step: 1 | -1): void {
-  const items = [...(menu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
-  const at = items.findIndex((item) => item === document.activeElement);
-  items[(at + step + items.length) % items.length]?.focus();
+type Target = 'next' | 'previous' | 'first' | 'last';
+
+function itemsOf(menu: HTMLElement | null): HTMLElement[] {
+  return [...(menu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
 }
+
+function focusItem(menu: HTMLElement | null, target: Target): void {
+  const items = itemsOf(menu);
+  const at = items.findIndex((item) => item === document.activeElement);
+  const index = {
+    first: 0,
+    last: items.length - 1,
+    next: (at + 1) % items.length,
+    previous: (at - 1 + items.length) % items.length,
+  }[target];
+  items[index]?.focus();
+}
+
+const MENU_KEYS: Readonly<Record<string, Target>> = {
+  ArrowDown: 'next',
+  ArrowUp: 'previous',
+  Home: 'first',
+  End: 'last',
+};
 
 interface Popup {
   readonly place: Place | undefined;
   readonly trigger: RefObject<HTMLButtonElement | null>;
   readonly menu: RefObject<HTMLDivElement | null>;
   readonly toggle: () => void;
+  /** Opens the menu and puts the focus on its first or its last item. */
+  readonly openAt: (first: 'first' | 'last') => void;
   readonly closeAndReturn: () => void;
   readonly close: () => void;
 }
@@ -95,15 +117,20 @@ function usePopup(): Popup {
   const [place, setPlace] = useState<Place | undefined>();
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
+  const landing = useRef<'first' | 'last'>('first');
   const open = place !== undefined;
   const close = (): void => {
     setPlace(undefined);
   };
   useEffect(() => {
     if (!open) return undefined;
-    menu.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    focusItem(menu.current, landing.current);
+    // A press on the button itself is left to its click, which toggles; closing here would let the click reopen.
     const outside = (event: Event): void => {
-      if (event.target instanceof Node && !menu.current?.contains(event.target)) close();
+      const { target } = event;
+      const inside = (box: Element | null): boolean =>
+        target instanceof Node && box?.contains(target) === true;
+      if (target instanceof Node && !inside(menu.current) && !inside(trigger.current)) close();
     };
     document.addEventListener('mousedown', outside);
     window.addEventListener('resize', close);
@@ -114,24 +141,26 @@ function usePopup(): Popup {
       window.removeEventListener('scroll', close, true);
     };
   }, [open]);
-  const toggle = (): void => {
-    if (open || trigger.current === null) {
-      close();
-      return;
-    }
+  const openAt = (first: 'first' | 'last'): void => {
+    if (trigger.current === null) return;
+    landing.current = first;
     const box = trigger.current.getBoundingClientRect();
     setPlace({ top: box.bottom + 4, right: Math.max(0, window.innerWidth - box.right) });
+  };
+  const toggle = (): void => {
+    if (open) close();
+    else openAt('first');
   };
   const closeAndReturn = (): void => {
     close();
     trigger.current?.focus();
   };
-  return { place, trigger, menu, toggle, closeAndReturn, close };
+  return { place, trigger, menu, toggle, openAt, closeAndReturn, close };
 }
 
 // RNF-010
 export function RowMenu(props: RowMenuProps): JSX.Element {
-  const { place, trigger, menu, toggle, closeAndReturn, close } = usePopup();
+  const { place, trigger, menu, toggle, openAt, closeAndReturn, close } = usePopup();
   const open = place !== undefined;
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
@@ -139,10 +168,15 @@ export function RowMenu(props: RowMenuProps): JSX.Element {
       closeAndReturn();
     } else if (event.key === 'Tab') {
       close();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    } else if (event.key in MENU_KEYS) {
       event.preventDefault();
-      focusStep(menu.current, event.key === 'ArrowDown' ? 1 : -1);
+      focusItem(menu.current, MENU_KEYS[event.key] ?? 'first');
     }
+  };
+  const onButtonKeyDown = (event: KeyboardEvent): void => {
+    if (open || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return;
+    event.preventDefault();
+    openAt(event.key === 'ArrowDown' ? 'first' : 'last');
   };
   return (
     <span class="rst-menu">
@@ -154,6 +188,7 @@ export function RowMenu(props: RowMenuProps): JSX.Element {
         aria-expanded={open ? 'true' : 'false'}
         aria-label={props.label}
         onClick={toggle}
+        onKeyDown={onButtonKeyDown}
       >
         <span aria-hidden="true">{'⋯'}</span>
       </button>
