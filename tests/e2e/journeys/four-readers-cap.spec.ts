@@ -12,11 +12,13 @@ import { saveHostedReaderWithFourParallelReaders } from '../support/parallel-rea
 
 // RF-422, RF-429, RF-436, P8-132, Q-67: four parallel readers at a cap under two calls at their
 // worst case. The readers' room counts the calls in flight, so one call is made, answered and
-// booked, and the run stops at the administrator's run cap after it ("Cap reached": the three areas
-// were all started, so it is not "Partly read" as with one reader), with the spend in the totals,
-// where the second call used to be refused at once and the call in flight cancelled, so that the
-// run booked nothing. admin-and-cap.spec.ts and server-key-cap.spec.ts keep one reader. The administrator's caps are server-wide: they are saved
-// just before the run and put back to the figures the other specs keep (admin-users.spec.ts).
+// booked, and the run stops at the administrator's run cap after it, with the spend in the totals.
+// It ends as one reader ends it: "Partly read" in the head, as the areas the cap left unread are
+// named (P7-02, journey-context.ts), and RST-1600 in the failure. Before, the second call was
+// refused at once and the call in flight cancelled, so that the run booked nothing.
+// admin-and-cap.spec.ts and server-key-cap.spec.ts keep one reader. The administrator's caps are
+// server-wide: they are saved just before the run and put back to the figures the other specs keep
+// (admin-users.spec.ts).
 
 const keptCaps = { run: '0.5', day: '1', month: '10' } as const;
 const lowRunCap = '0.002';
@@ -79,7 +81,7 @@ test(
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
