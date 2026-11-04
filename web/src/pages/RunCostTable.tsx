@@ -10,8 +10,8 @@ import { ScrollRegion } from './ScrollRegion.js';
 // that made no calls in a run reads a dash, never a cost of zero. The amounts of the table (the roles, the
 // totals and the project total) take one Tab stop together, as in every cost table (P8-117).
 
-export const ROLES = ['reader', 'verifier', 'planner', 'summariser'] as const;
-export type CostRole = (typeof ROLES)[number];
+const ROLES = ['reader', 'verifier', 'planner', 'summariser'] as const;
+type CostRole = (typeof ROLES)[number];
 
 export interface RunCostRow {
   readonly key: string;
