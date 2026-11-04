@@ -38,10 +38,10 @@ async function opened(extra: EndedOptions['extra'] = {}) {
 const posts = (page: Pick<RenderedPage, 'calls'>, suffix: string) =>
   page.calls.filter((call) => call.method === 'POST' && call.path.endsWith(suffix));
 
-/** Waits until the page has folded the events of the run: its facts then show the areas read. */
+/** Waits until the page has folded the events of the run: its facts then count the one area. */
 async function eventsApplied(): Promise<void> {
   await waitFor(() => {
-    expect(turn().textContent).toContain('all read');
+    expect(within(turn()).getByText('Areas').closest('li')?.textContent).toMatch(/^1/u);
   });
 }
 

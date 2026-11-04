@@ -26,7 +26,7 @@ import { ScanResult } from './ScanResult.js';
 import { useQuestionsFocus, type FocusRequest } from './use-focus-first-question.js';
 import { useRunAnswers, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
-import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
+import type { UnderstandingLoad } from './use-understanding.js';
 import { UnderstandingSummary } from './UnderstandingSummary.js';
 import { VerificationNote } from './VerificationNote.js';
 
@@ -48,6 +48,8 @@ export interface EndedBodyProps {
   readonly stage: string;
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
+  /** RF-231, P8-93: the understanding of the run, read once for the head and the overview. */
+  readonly understanding: UnderstandingLoad;
   readonly source: SourceState | undefined;
   /** RF-006: called once the server has queued the run again; the page follows it anew. */
   readonly onResumed: () => void;
@@ -132,7 +134,6 @@ interface PanelsProps extends EndedBodyProps {
   readonly answers: RunAnswersState;
   /** DEC-154: the first question without a saved answer is to take focus. */
   readonly focus: FocusRequest;
-  readonly understanding: UnderstandingLoad;
   readonly built: boolean;
 }
 
@@ -209,7 +210,6 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const report = useReportBuilt(run);
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
-  const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks, stage);
   const open = openQuestions(answers.load);
   const { focus, showQuestions } = useQuestionsFocus(() => {
@@ -230,11 +230,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
               selected={results.tab}
               onSelect={results.select}
             >
-              <Panels
-                {...props}
-                {...{ results, overview, answers, understanding, focus }}
-                built={report.built}
-              />
+              <Panels {...props} {...{ results, overview, answers, focus }} built={report.built} />
             </Tabs>
           </section>
           <Rail

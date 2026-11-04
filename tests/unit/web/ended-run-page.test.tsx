@@ -56,11 +56,22 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
   });
   expect(text('Cards')).toContain('1');
   expect(text('Supported claims')).toContain('of 0 judged');
-  expect(text('Areas')).toContain('all read');
+  // P8-93: "all read" only once the coverage says so; it is not claimed before.
+  expect(text('Areas')).not.toContain('all read');
+});
+
+it('RF-1015 RF-230 the Areas figure says "all read" when the coverage puts every area above the bar', async () => {
+  const area = { area: 'Catalog', files: [], firstPartyShare: 0.9 };
+  await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) } });
+
+  const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });
+  await waitFor(() => {
+    expect(within(facts).getByText('Areas').closest('li')?.textContent).toContain('all read');
+  });
 });
 
 it('RF-230 the Areas figure says partly read for an area the run started but read 16% of', async () => {
-  const area = { area: 'Catalog', files: [], tokens: 52_749, readTokenShare: 0.16 };
+  const area = { area: 'Catalog', files: [], firstPartyShare: 0.16 };
   await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) } });
 
   const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });

@@ -9,6 +9,7 @@ import { overviewEstimateText } from '../lib/live-run/overview-estimate.js';
 import { ResumeButton } from './ResumeButton.js';
 import type { OverviewLoad } from './use-run-overview.js';
 import type { RunState } from '../lib/live-run/run-state.js';
+import type { AreaReading } from '../lib/understanding/area-read.js';
 import { DeepenAction } from './DeepenAction.js';
 import { Fact, RunFacts } from './RunFacts.js';
 import type { AnswersLoad } from './use-run-answers.js';
@@ -24,8 +25,8 @@ type AnswersLoadReady = Extract<AnswersLoad, { readonly status: 'ready' }>;
 export interface YourTurnProps {
   readonly state: RunState;
   readonly costMicros: number;
-  /** P8-93: the areas read below the coverage bar; undefined until the coverage is known. */
-  readonly partlyRead?: number | undefined;
+  /** P8-93: what the run's coverage says of the areas read. */
+  readonly reading?: AreaReading | undefined;
   /** The run ended with an error. */
   readonly failed: boolean;
   /** An understand run is the only one that asks questions. */
@@ -278,12 +279,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
-      <RunFacts
-        facts={facts}
-        costMicros={props.costMicros}
-        state={state}
-        partlyRead={props.partlyRead}
-      />
+      <RunFacts facts={facts} costMicros={props.costMicros} state={state} reading={props.reading} />
     </section>
   );
 }

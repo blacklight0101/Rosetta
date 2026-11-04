@@ -36,9 +36,13 @@ export function countText(count: number): string {
   return number.format(count);
 }
 
-/** A share in whole percent, cut down: 0.7996 is 79%, and a share above zero is never 0%. */
+/**
+ * A share in whole percent, cut down: 0.7996 is 79%, and a share above zero is never 0%. The small
+ * addition keeps a share written with four decimals from losing a percent to float noise (0.29 * 100
+ * is 28.999999999999996).
+ */
 export function percentText(share: number): string {
-  const whole = Math.floor(share * 100);
+  const whole = Math.floor(share * 100 + 1e-6);
   return whole === 0 && share > 0 ? 'less than 1%' : `${String(whole)}%`;
 }
 
