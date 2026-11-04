@@ -28,8 +28,13 @@ async function rowOf(runKey: string): Promise<HTMLElement> {
   return row;
 }
 
-const stateOf = async (runKey: string): Promise<string> =>
-  (await rowOf(runKey)).querySelector('[data-label="State"]')?.textContent ?? '';
+/** The State cell as [badge, line under the badge]: the badge is the word, the line the share. */
+const cellOf = (row: Element | null): [string, string] => {
+  const cell = row?.querySelector('[data-label="State"]');
+  const badge = cell?.querySelector('[data-testid="status-badge"]')?.textContent ?? '';
+  return [badge, cell?.querySelector('.rst-table__sub')?.textContent ?? ''];
+};
+const stateOf = async (runKey: string) => cellOf(await rowOf(runKey));
 
 function renderHistory(body: unknown) {
   return renderPage(
@@ -41,38 +46,36 @@ function renderHistory(body: unknown) {
 }
 
 describe('the History table and a run below the coverage bar', () => {
-  it('RF-1008 RF-230 reads "Partly read: 16% of your code" for a Completed run, and no coverage request is made', async () => {
+  it('RF-1008 RF-230 reads "Partly read" with "16% of your code" under it for a Completed run, and no coverage request is made', async () => {
     const page = renderHistory(withPartly(partly));
 
-    expect(await stateOf(doneKey)).toBe('Partly read: 16% of your code');
+    expect(await stateOf(doneKey)).toEqual(['Partly read', '16% of your code']);
     expect(page.calls.filter((call) => call.path.endsWith('/coverage'))).toEqual([]);
   });
 
   it('RF-1008 RF-230 reads only "Partly read" when the share is not known', async () => {
     renderHistory(withPartly({ partlyReadAreas: 1, readShare: null }));
 
-    expect(await stateOf(doneKey)).toBe('Partly read');
+    expect(await stateOf(doneKey)).toEqual(['Partly read', '']);
   });
 
   it('RF-1008 RF-230 keeps Completed for a run at the bar, and for a scan that has no areas', async () => {
     renderHistory(history);
 
-    expect(await stateOf(doneKey)).toBe('Completed');
-    expect(await stateOf(scanKey)).toBe('Completed');
+    expect(await stateOf(doneKey)).toEqual(['Completed', '']);
+    expect(await stateOf(scanKey)).toEqual(['Completed', '']);
   });
 });
 
 describe('the "Runs of this project" list and a run below the coverage bar', () => {
-  it('RF-1008 RF-230 reads "Partly read: 16% of your code" for a Completed run and keeps the others', () => {
+  it('RF-1008 RF-230 reads "Partly read" with "16% of your code" under it for a Completed run and keeps the others', () => {
     const runs = runHistorySchema.parse(withPartly(partly)).runs;
     render(<ProjectRuns runs={runs} />);
 
     const table = screen.getByRole('table', { name: 'Runs of this project' });
-    const stateAt = (key: string): string =>
-      within(table).getByText(key).closest('tr')?.querySelector('[data-label="State"]')
-        ?.textContent ?? '';
-    expect(stateAt(doneKey)).toBe('Partly read: 16% of your code');
-    expect(stateAt(scanKey)).toBe('Completed');
+    const stateAt = (key: string) => cellOf(within(table).getByText(key).closest('tr'));
+    expect(stateAt(doneKey)).toEqual(['Partly read', '16% of your code']);
+    expect(stateAt(scanKey)).toEqual(['Completed', '']);
   });
 });
 
