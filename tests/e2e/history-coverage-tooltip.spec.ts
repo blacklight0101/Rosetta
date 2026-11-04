@@ -121,6 +121,34 @@ async function expectOverlayOn(page: Page, row: Locator): Promise<void> {
   expect(await layoutOf(page, row)).toEqual(rest);
 }
 
+/**
+ * With the value at the foot of the viewport the tooltip stands above it, whole, and moves nothing. The
+ * pointer is moved by hand: Playwright's hover would scroll the value to the middle of the viewport first.
+ */
+async function expectTipAboveAtFoot(page: Page, row: Locator): Promise<void> {
+  const value = row.getByTestId('run-coverage');
+  const tip = row.getByRole('tooltip');
+  await page.mouse.move(0, 0);
+  await value.blur();
+  await value.evaluate((element) => {
+    const { clientHeight } = document.documentElement;
+    window.scrollBy(0, element.getBoundingClientRect().bottom + 2 - clientHeight);
+  });
+  const rest = await layoutOf(page, row);
+  const anchor = await value.boundingBox();
+  const foot = page.viewportSize()?.height ?? 0;
+  if (anchor === null) throw new Error('The value has no box.');
+  expect(anchor.y + anchor.height).toBeCloseTo(foot - 2, 0);
+
+  await page.mouse.move(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
+  await expectWholeTip(tip);
+  const box = await tip.boundingBox();
+  expect((box?.y ?? foot) + (box?.height ?? 0)).toBeLessThanOrEqual(anchor.y);
+  expect(await layoutOf(page, row)).toEqual(rest);
+  await page.mouse.move(0, 0);
+  await expect(tip).toBeHidden();
+}
+
 /** A scroll of the page leaves the open tooltip beside its value, above or below it. */
 async function expectTipFollowsScroll(page: Page, value: Locator, tip: Locator): Promise<void> {
   await value.focus();
@@ -194,6 +222,7 @@ test(
     });
 
     await expectOverlayOn(page, row);
+    await expectTipAboveAtFoot(page, row);
     await expectTipFollowsScroll(page, value, row.getByRole('tooltip'));
   },
 );
