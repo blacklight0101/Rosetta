@@ -16,6 +16,8 @@ const headerShapeSchema = z.object({
   accountSpread: z.number(),
   /** The page, or the header itself, is wider than the window. */
   sideways: z.boolean(),
+  /** Sign out, the role and the theme toggle cannot be squeezed or broken: no wrap and no shrink. */
+  accountRigid: z.boolean(),
   /** The account group ends past the right edge of the window. */
   accountOutside: z.boolean(),
   /** The user's name is cut: its text is wider than its box. */
@@ -38,9 +40,7 @@ const headerShapeSchema = z.object({
 });
 export type HeaderShape = z.infer<typeof headerShapeSchema>;
 
-/** Reads the header in the page (a string, as the project has no DOM types). */
-export async function headerShape(page: Page): Promise<HeaderShape> {
-  const shape: unknown = await page.evaluate(`(() => {
+const READ_HEADER = `(() => {
     const header = document.querySelector('header.rst-header');
     const leaves = (root) => Array.from(root.querySelectorAll('*')).filter(
       (el) => el.children.length === 0 && el.getBoundingClientRect().width > 0 && !el.hasAttribute('hidden'));
@@ -70,6 +70,10 @@ export async function headerShape(page: Page): Promise<HeaderShape> {
       accountSpread: spread(accountLeaves),
       sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth
         || header.scrollWidth > header.clientWidth,
+      accountRigid: Array.from(account.querySelectorAll('button, .rst-badge')).every((el) => {
+        const style = getComputedStyle(el);
+        return style.whiteSpace === 'nowrap' && style.flexShrink === '0';
+      }),
       accountOutside: account.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5,
       nameCut: name.scrollWidth > name.clientWidth,
       nameText: textOf(name),
@@ -84,7 +88,11 @@ export async function headerShape(page: Page): Promise<HeaderShape> {
         && (totals === null || meter.getBoundingClientRect().right <= totals.getBoundingClientRect().left),
       widths: Array.from(header.children).map((el) => (el.className || el.tagName) + ' ' + Math.round(el.getBoundingClientRect().width) + ' ' + Math.round(el.getBoundingClientRect().top)),
     };
-  })()`);
+  })()`;
+
+/** Reads the header in the page (a string, as the project has no DOM types). */
+export async function headerShape(page: Page): Promise<HeaderShape> {
+  const shape: unknown = await page.evaluate(READ_HEADER);
   return headerShapeSchema.parse(shape);
 }
 

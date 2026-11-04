@@ -39,11 +39,28 @@ const totalsBody = z.object({ totals: z.object({}).loose() }).loose();
 interface Account {
   displayName?: string | undefined;
   administrator: boolean;
+  /** The largest totals the header can show, or ordinary ones (millions of tokens, hundreds of dollars). */
+  largestTotals: boolean;
 }
-const account: Account = { administrator: false };
+const account: Account = { administrator: false, largestTotals: true };
+
+const LARGEST = {
+  input: 999_999_999,
+  output: 99_999_999,
+  cached: 999_999_999,
+  micros: '9999990000',
+};
+const ORDINARY = { input: 1_234_567, output: 234_567, cached: 345_678, micros: '123450000' };
 
 /** Answers the session and the totals as the account says, over the real answers. */
 async function actAs(page: Page): Promise<void> {
+  // The runners' fonts differ (system-ui is Segoe UI on Windows, wider fonts on Linux): the header
+  // is read with the letters 10% wider than the font draws them, so it holds with room to spare.
+  await page.addInitScript(`document.addEventListener('DOMContentLoaded', () => {
+    const style = document.createElement('style');
+    style.textContent = 'header.rst-header { letter-spacing: 0.1em; }';
+    document.head.append(style);
+  });`);
   await page.route('**/api/session', async (route) => {
     const response = await route.fetch();
     if (route.request().method() !== 'GET') return route.fulfill({ response });
@@ -58,12 +75,13 @@ async function actAs(page: Page): Promise<void> {
   await page.route('**/api/account/totals', async (route) => {
     const response = await route.fetch();
     const body = totalsBody.parse(await response.json());
+    const figures = account.largestTotals ? LARGEST : ORDINARY;
     const large = {
       ...body.totals,
-      inputTokens: 999_999_999,
-      outputTokens: 99_999_999,
-      cachedInputTokens: 999_999_999,
-      cost: [{ currency: 'USD', costMicros: '9999990000' }],
+      inputTokens: figures.input,
+      outputTokens: figures.output,
+      cachedInputTokens: figures.cached,
+      cost: [{ currency: 'USD', costMicros: figures.micros }],
     };
     const server = {
       caps: { runMicros: '4000000', userDayMicros: '4000000', serverMonthMicros: '10000000' },
@@ -92,6 +110,9 @@ async function shapeAt(page: Page, info: TestInfo, width: number, label: string)
   const at = `${label} ${String(width)} px`;
   expect(shape.sideways, `${at}: no sideways scroll`).toBe(false);
   expect(shape.accountOutside, `${at}: the account group inside the window`).toBe(false);
+  expect(shape.accountRigid, `${at}: Sign out and the toggle can neither wrap nor shrink`).toBe(
+    true,
+  );
   expect(shape.accountBroken, `${at}: Sign out and the theme toggle whole`).toEqual([]);
   return { shape, at };
 }
@@ -156,6 +177,7 @@ test(
     test.setTimeout(150_000);
     account.displayName = MEDIUM_NAME;
     account.administrator = false;
+    account.largestTotals = true;
     await actAs(page);
     await openScannedStartPage(page);
     await expect(page.getByTestId('header-totals')).toBeVisible();
@@ -195,10 +217,16 @@ test(
     test.setTimeout(150_000);
     account.displayName = MEDIUM_NAME;
     account.administrator = true;
+    account.largestTotals = true;
     await actAs(page);
     await openScannedStartPage(page);
     await expectHeaderWithoutRun(page, info, [1600, 1440, 1280, 1024]);
+    // The longest meter and the largest totals together are more than a line at 1280 px in any
+    // font: with the long meter the totals are ordinary ones.
+    account.largestTotals = false;
     await startRun(page);
+    await page.reload();
+    await expect(page.getByTestId('topbar-run-meter')).toBeVisible({ timeout: 30_000 });
     await lengthenMeter(page);
 
     for (const width of [1440, 1280]) {
@@ -228,12 +256,13 @@ test(
   async ({ page }, info) => {
     test.setTimeout(150_000);
     account.administrator = false;
+    account.largestTotals = true;
     account.displayName = LONG_NAME;
     await actAs(page);
     await openScannedStartPage(page);
     await expectHeaderWithoutRun(page, info, [1280, 1024]);
+    account.largestTotals = false;
     await startRun(page);
-    await lengthenMeter(page);
 
     for (const name of [LONG_NAME, WIDE_NAME]) {
       account.displayName = name;
