@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, within } from '@testing-library/preact';
-import { readFile } from 'node:fs/promises';
 import { expect, it, vi } from 'vitest';
 import type { RunEstimate } from '../../../web/src/api/estimate-schemas.js';
 import { estimateLinesOf } from '../../../web/src/lib/journey-approval.js';
@@ -12,10 +11,9 @@ import { facts, projectId, roadSigns, source } from './journey-fixtures.js';
 import { cloudEstimate } from './start-run-fixtures.js';
 
 // RF-1021, RF-1022, P8-26: the estimate as three short lines, the labelled re-run choice in the
-// Questions step, names that wrap only at separators, the bar that reserves its height and the
-// message that says where its control is.
-
-const css = (name: string): Promise<string> => readFile(`web/src/styles/${name}`, 'utf8');
+// Questions step and the message that says where its control is. That names wrap only at
+// separators and that the summary bar covers no control are checked on the real page
+// (tests/e2e/project-page-states.spec.ts, P8-105).
 
 const journey = {
   basis: 'history',
@@ -81,6 +79,30 @@ it('RF-241 RF-1021 the choice to re-run with answers is a labelled control in th
   expect(step.textContent).toContain('(1 answered)');
 });
 
+it.each([
+  ['an answered count of 0', { answered: 0 }],
+  ['no answered count', {}],
+])(
+  'RF-241 RF-1021 with %s the strip reads "No open questions" and counts no answered question',
+  (_name, extras) => {
+    const view = journeyOf(
+      facts({ source: source({ openQuestions: 0 }) }),
+      projectId,
+      false,
+      extras,
+    );
+    renderPage(<JourneyStrip view={view} onResumed={() => undefined} />, {});
+
+    const step = screen
+      .getAllByRole('listitem')
+      .find((each) => each.querySelector('.rst-road__title')?.textContent === 'Questions');
+    if (step === undefined) throw new Error('No Questions step');
+    expect(step.textContent).toContain('No open questions');
+    expect(step.textContent).not.toMatch(/answered/u);
+    expect(step.textContent).not.toMatch(/waiting for a re-run/u);
+  },
+);
+
 it('RF-1021 the strip counts the same questions: no answered question, no control', () => {
   const view = journeyOf(roadSigns['asking'] ?? facts({ source: source() }), projectId);
   renderPage(
@@ -93,24 +115,6 @@ it('RF-1021 the strip counts the same questions: no answered question, no contro
   );
 
   expect(screen.queryByLabelText(/Re-run with my/u)).toBeNull();
-});
-
-it('RF-1022 model and area names never break inside a name', async () => {
-  const pages = await css('pages.css');
-  const cell = /\.rst-table td\.rst-table__wrap \{[^}]*\}/u.exec(pages)?.[0] ?? '';
-  const area = /\.rst-start__area-name \{[^}]*\}/u.exec(pages)?.[0] ?? '';
-
-  for (const rule of [cell, area]) {
-    expect(rule).not.toContain('overflow-wrap: anywhere');
-    expect(rule).toContain('word-break: keep-all');
-  }
-});
-
-it('RF-1021 the project page reserves the height of the summary bar so no control is covered', async () => {
-  const page = await css('project-page.css');
-
-  expect(page).toMatch(/scroll-padding-block-end:\s*\d/u);
-  expect(page).toMatch(/\.rst-start \{[^}]*padding-block-end/u);
 });
 
 it('RF-1021 a message that points to a notice says where it is and offers to go to it', () => {
