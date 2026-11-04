@@ -200,7 +200,7 @@ test('RF-1001 an address the account already has opens that project and makes no
 }) => {
   const webformsUrl = 'https://github.com/octo/webforms';
   await page.goto('/projects');
-  const webforms = page.getByRole('link', { name: 'Start run for octo/webforms' });
+  const webforms = page.getByRole('link', { name: 'Open for octo/webforms' });
   if ((await webforms.count()) === 0) {
     await page.getByLabel('GitHub repository URL').fill(webformsUrl);
     await page.getByRole('button', { name: 'Create project' }).click();

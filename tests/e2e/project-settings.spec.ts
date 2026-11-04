@@ -16,7 +16,7 @@ test.describe.configure({ mode: 'serial' });
 
 async function openSettings(page: Page): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Settings for octo/demo' });
+  const link = page.getByRole('button', { name: 'More actions for octo/demo' });
   const empty = page.getByText('No projects yet');
   await expect(link.or(empty)).toBeVisible();
   if (await empty.isVisible()) {
@@ -27,6 +27,7 @@ async function openSettings(page: Page): Promise<void> {
     await page.goto('/projects');
   }
   await link.click();
+  await page.getByRole('menuitem', { name: 'Project settings' }).click();
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
   await expect(page.getByLabel('Reader model', { exact: true })).toBeVisible();
 }

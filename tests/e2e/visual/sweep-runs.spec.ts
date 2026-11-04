@@ -9,6 +9,8 @@ import {
   runsTable,
 } from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
+import { openSettingsFromList } from '../support/projects-list.js';
+import { expectRowMenuWorks } from '../support/row-menu.js';
 import {
   agentPanel,
   openRunTab,
@@ -113,6 +115,7 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await expect(row.getByTestId('run-coverage')).toBeVisible();
   await expectPageInView(page);
 
+  await expectRowMenuWorks(page, row.getByRole('button', { name: /^More actions for run / }));
   await (await rowMenuItem(row, 'Delete')).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
@@ -181,11 +184,11 @@ test(
 test('RNF-010 projects with the run columns and the project settings', visual, async ({ page }) => {
   await page.goto('/projects');
   await expect(page.getByRole('row').filter({ hasText: 'octo/webforms' })).toContainText(
-    'Completed',
+    'Understand done',
   );
   await expectPageInView(page);
 
-  await page.getByRole('link', { name: 'Settings for octo/webforms' }).click();
+  await openSettingsFromList(page, 'octo/webforms');
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
 
   await expectPageInView(page);

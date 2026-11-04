@@ -38,7 +38,7 @@ function YourProjects(props: {
           </p>
         ) : null}
         <QueueNotices rows={state.rows} onCancelled={onCancelled} />
-        <ProjectRunsTable rows={state.rows} />
+        <ProjectRunsTable rows={state.rows} onChanged={onCancelled} />
       </>
     );
   }

@@ -36,7 +36,7 @@ afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
-it('RF-010 lists the projects with branch, folder and a link to their settings', async () => {
+it('RF-010 lists the projects with branch, folder and links to their page and settings', async () => {
   renderProjects({
     'GET /api/projects/overview': json(200, {
       projects: [demo, other].map((p) => overviewRow(p)),
@@ -49,12 +49,13 @@ it('RF-010 lists the projects with branch, folder and a link to their settings',
 
   expect(within(row).getByText('main')).not.toBeNull();
   expect(within(row).getByText('src/legacy')).not.toBeNull();
-  expect(
-    within(row).getByRole('link', { name: 'Settings for octo/demo' }).getAttribute('href'),
-  ).toBe('/projects/p-1/settings');
-  expect(
-    within(row).getByRole('link', { name: 'Start run for octo/demo' }).getAttribute('href'),
-  ).toBe('/projects/p-1');
+  expect(within(row).getByRole('link', { name: 'Open for octo/demo' }).getAttribute('href')).toBe(
+    '/projects/p-1',
+  );
+  fireEvent.click(within(row).getByRole('button', { name: 'More actions for octo/demo' }));
+  expect(screen.getByRole('menuitem', { name: 'Project settings' }).getAttribute('href')).toBe(
+    '/projects/p-1/settings',
+  );
   const second = screen.getByText('acme/shop').closest('tr');
   expect(within(second ?? row).getByText('default branch')).not.toBeNull();
   expect(within(second ?? row).getByText('whole repository')).not.toBeNull();

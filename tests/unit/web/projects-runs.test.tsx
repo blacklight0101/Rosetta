@@ -5,7 +5,7 @@ import { failure, json, renderPage, type Answer } from './fake-api.js';
 import { lastRunOf, overviewRow, projectOf } from './project-fixtures.js';
 
 // RF-1008, RF-1108, RF-1010, design-system.md section 14 (Projects, queue notice): each project row
-// shows its last run, state, runs, tokens and cost from GET /api/projects/overview, and a queued
+// shows its position, last run and cost from GET /api/projects/overview, and a queued
 // latest run gets the queue notice with its position and Cancel queued run.
 
 const demo = projectOf('p-1', 'octo/demo');
@@ -44,7 +44,7 @@ async function rowOf(name: string): Promise<HTMLElement> {
   throw new Error(`No row for ${name}.`);
 }
 
-it('RF-1008 shows the last run, its state, the runs, tokens and cost of each project', async () => {
+it('RF-1008 shows the position, the last run and the cost of each project, in the columns of the artboard', async () => {
   renderProjects({
     [overviewPath]: json(200, {
       projects: [
@@ -58,16 +58,16 @@ it('RF-1008 shows the last run, its state, the runs, tokens and cost of each pro
   const row = await rowOf('octo/demo');
   const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent);
 
-  expect(headers).toEqual(
-    expect.arrayContaining(['Repository', 'Last run', 'State', 'Runs', 'Tokens', 'Cost']),
-  );
-  expect(row.textContent).toContain('scan · 2026-10-12');
-  expect(within(row).getByText('Completed')).not.toBeNull();
-  expect(within(row).getByText('6')).not.toBeNull();
-  expect(within(row).getByText('1,284,903')).not.toBeNull();
+  expect(headers).toEqual(['Project', 'Source', 'Where it is', 'Last run', 'Cost', 'Actions']);
+  expect(row.textContent).toContain('12 Oct, 09:31');
+  expect(row.textContent).not.toContain('scan ·');
+  expect(within(row).getByText('Start a run')).not.toBeNull();
+  expect(within(row).queryByText('Completed')).toBeNull();
+  expect(within(row).queryByText('1,284,903')).toBeNull();
   expect(within(row).getByText('$3.47')).not.toBeNull();
   const empty = await rowOf('acme/shop');
   expect(empty.textContent).toContain('No run yet');
+  expect(within(empty).getByText('Scan not started')).not.toBeNull();
   expect(within(empty).getByText('$0.00')).not.toBeNull();
 });
 
@@ -82,7 +82,7 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   const row = await rowOf('octo/demo');
   const notice = screen.getByTestId('queue-notice');
 
-  expect(within(row).getByText('Queued')).not.toBeNull();
+  expect(within(row).getByText('Understand queued')).not.toBeNull();
   expect(row.textContent).toContain('position 2, 1 run ahead');
   expect(notice.textContent).toContain(
     'Your understand run of octo/demo is queued, position 2, 1 run ahead.',

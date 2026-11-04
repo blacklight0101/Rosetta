@@ -17,5 +17,5 @@ test('RF-010 two pages of one account that create the same project end with one 
   await Promise.all([openStartPage(first), openStartPage(second)]);
 
   await first.goto('/projects');
-  await expect(first.getByRole('link', { name: 'Start run for octo/webforms' })).toHaveCount(1);
+  await expect(first.getByRole('link', { name: 'Open for octo/webforms' })).toHaveCount(1);
 });

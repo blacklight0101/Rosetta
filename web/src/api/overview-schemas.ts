@@ -12,7 +12,8 @@ const lastRunSchema = z.object({
   id: z.string(),
   runId: z.string(),
   stage: z.string(),
-  queueState: z.enum(['Queued', 'Running', 'Ended']),
+  /** Every state of the server (`RUN_QUEUE_STATES`): one it did not know would fail the whole list. */
+  queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.enum(['Completed', 'CapReached', 'Failed', 'Interrupted']).nullable(),
   /** P8-111: why an `Interrupted` run ended. */
   endReason: endReasonField,

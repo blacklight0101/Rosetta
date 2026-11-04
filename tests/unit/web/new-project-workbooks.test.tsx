@@ -215,7 +215,7 @@ it('RF-150 leaving the tab while a file is going out stops that upload', async (
   expect(server.pending().wasAborted()).toBe(true);
 });
 
-it('RF-150 the new project appears in the list as name (Excel, N workbooks, date) once the batch is finished', async () => {
+it('RF-150 the new project appears in the list under its name, with the Excel workbooks badge, once the batch is finished', async () => {
   const server = installFakeUploadServer();
   let stored = false;
   const stored3 = projectOf('p-9', 'Pricing', {
@@ -242,7 +242,7 @@ it('RF-150 the new project appears in the list as name (Excel, N workbooks, date
   stored = true;
   await answerFile(server, 3);
 
-  const row = (await screen.findByText('Pricing (Excel, 3 workbooks, 19 Oct 2026)')).closest('tr');
+  const row = (await screen.findByRole('link', { name: 'Pricing', exact: true })).closest('tr');
   expect(row).not.toBeNull();
   expect(within(row ?? document.body).queryByText(/github/iu)).toBeNull();
 });

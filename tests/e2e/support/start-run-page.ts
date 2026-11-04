@@ -13,7 +13,7 @@ const demoUrl = 'https://github.com/octo/demo';
  */
 export async function openStartPage(page: Page, state: StartPageState = 'settled'): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Start run for octo/demo' });
+  const link = page.getByRole('link', { name: 'Open for octo/demo' });
   const empty = page.getByText('No projects yet');
   await expect(link.or(empty)).toBeVisible();
   if (await empty.isVisible()) {

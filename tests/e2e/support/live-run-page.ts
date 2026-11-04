@@ -11,7 +11,7 @@ const startButton = { name: /^Analyse/u } as const;
 
 /** The start link of the project of a repository address on the projects page. */
 function startLinkOf(page: Page, url: string): Locator {
-  return page.getByRole('link', { name: `Start run for ${new URL(url).pathname.slice(1)}` });
+  return page.getByRole('link', { name: `Open for ${new URL(url).pathname.slice(1)}` });
 }
 
 /** The heading of the start page of a project. */
