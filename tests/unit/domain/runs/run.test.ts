@@ -14,7 +14,7 @@ describe('startRun', () => {
 
     expect(started).toEqual({
       ok: true,
-      value: { ...queued, queueState: 'Running', startedAt: 5_000 },
+      value: { ...queued, queueState: 'Running', startedAt: 5_000, spanStartedAt: 5_000 },
     });
   });
 
@@ -31,13 +31,17 @@ describe('startRun', () => {
 
 describe('endRun', () => {
   it.each(RUN_END_STATES)('RF-003 ends a running run as %s with the time it ended', (endState) => {
-    const running = runningRun();
+    const running = runningRun({ startedAt: 5_000, spanStartedAt: 5_000 });
 
     const ended = endRun(running, endState, 9_000);
 
     expect(ended).toEqual({
       ok: true,
-      value: { ...running, queueState: 'Ended', endState, endedAt: 9_000 },
+      value: {
+        ...running,
+        ...{ queueState: 'Ended', endState, endedAt: 9_000 },
+        ...{ spanStartedAt: null, activeMs: 4_000 },
+      },
     });
   });
 

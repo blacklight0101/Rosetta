@@ -16,6 +16,7 @@ function endedRun(endState: 'Completed' | 'CapReached' | 'Failed' | 'Interrupted
     queueState: 'Ended',
     endState,
     startedAt: 5_000,
+    activeMs: endedAt - 5_000,
     endedAt,
     failedAreas: 2,
     totals: { costMicros: 120, inputTokens: 1000, outputTokens: 50, cachedInputTokens: 0 },
@@ -38,7 +39,6 @@ describe('reopenRun', () => {
           queueState: 'Queued',
           endState: null,
           queuedAt: 20_000,
-          startedAt: null,
           endedAt: null,
         },
       });
@@ -67,7 +67,7 @@ describe('reopenRun', () => {
 describe('reopenManifest', () => {
   const caps = { run: { maxCostMicros: 9_000_000, maxTokens: 8_000_000 }, roles: {} };
 
-  it('RF-006 clears the start and the end and takes the caps now in force, keeping the rest', () => {
+  it('RF-006 clears the end, keeps the first start and takes the caps now in force, keeping the rest', () => {
     const ended = endManifest(
       sampleManifest({
         startedAt: '2026-10-12T10:00:00.000Z',
@@ -92,7 +92,7 @@ describe('reopenManifest', () => {
 
     expect(reopened).toEqual({
       ok: true,
-      value: { ...ended.value, startedAt: null, endedAt: null, endState: null, caps },
+      value: { ...ended.value, endedAt: null, endState: null, caps },
     });
   });
 

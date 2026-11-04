@@ -27,7 +27,7 @@ import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-
 const SELECT = 'SELECT ' + RUN_COLUMNS + ' FROM runs';
 const RETURNING = ' RETURNING ' + RUN_COLUMNS;
 const INSERT =
-  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
+  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const LIST = SELECT + ' WHERE user_id = $1 AND project_id = $2 ORDER BY queued_at DESC, id';
 // RF-1008: the newest run of each asked project (DISTINCT ON keeps the first row of each project in
@@ -38,22 +38,31 @@ const PROJECT_SUMMARIES =
   ', (count(*) OVER (PARTITION BY project_id))::int AS run_count FROM runs WHERE user_id = $1 AND project_id = ANY($2::uuid[]) ORDER BY project_id, queued_at DESC, id';
 const LIST_QUEUED = SELECT + " WHERE queue_state = 'Queued' ORDER BY queued_at, id";
 const LIST_RUNNING = SELECT + " WHERE queue_state = 'Running' ORDER BY started_at, id";
+// P8-88: `started_at` is the first start and a resume keeps it; `span_started_at` and `active_ms`
+// carry the running time, so a stopped or paused run does not count the wait.
 const START =
-  "UPDATE runs SET queue_state = 'Running', started_at = $2 WHERE id = $1 AND queue_state = 'Queued'" +
+  "UPDATE runs SET queue_state = 'Running', started_at = COALESCE(started_at, $2), span_started_at = $2 WHERE id = $1 AND queue_state = 'Queued'" +
   RETURNING;
+// P8-88: the milliseconds of the span that ends at $3; 0 for a run that is not in a span.
+const SPAN_MS =
+  'COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM ($3::timestamptz - span_started_at)) * 1000)::bigint), 0)';
 const END =
-  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted') OR (queue_state = 'AwaitingApproval' AND $2::text IN ('CapReached', 'Interrupted')))" +
+  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5, span_started_at = NULL, active_ms = active_ms + " +
+  SPAN_MS +
+  " WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted') OR (queue_state = 'AwaitingApproval' AND $2::text IN ('CapReached', 'Interrupted')))" +
   RETURNING;
 // RF-432: a running run pauses near its approved amount; Continue queues the owner's paused run again.
 const PAUSE =
-  "UPDATE runs SET queue_state = 'AwaitingApproval', unread_areas = $2 WHERE id = $1 AND queue_state = 'Running'" +
+  "UPDATE runs SET queue_state = 'AwaitingApproval', unread_areas = $2, span_started_at = NULL, active_ms = active_ms + " +
+  SPAN_MS +
+  " WHERE id = $1 AND queue_state = 'Running'" +
   RETURNING;
 const CONTINUE =
-  "UPDATE runs SET queue_state = 'Queued', unread_areas = 0, queued_at = $3, started_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'AwaitingApproval'" +
+  "UPDATE runs SET queue_state = 'Queued', unread_areas = 0, queued_at = $3 WHERE user_id = $1 AND id = $2 AND queue_state = 'AwaitingApproval'" +
   RETURNING;
 // RF-006: one conditional UPDATE, so two parallel resumes queue the run once.
 const REOPEN =
-  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, unread_areas = 0, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
+  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, unread_areas = 0, queued_at = $3, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
   RETURNING;
 const RECORD_SOURCE =
   "UPDATE runs SET commit_sha = $2, snapshot_key = $3 WHERE id = $1 AND queue_state <> 'Ended'" +
@@ -103,6 +112,8 @@ export class PgRunIndex implements RunIndex {
       run.totals.cachedInputTokens,
       run.failedAreas,
       run.unreadAreas,
+      run.spanStartedAt === null ? null : new Date(run.spanStartedAt),
+      run.activeMs,
     ]);
     return inserted.rowCount === 1 ? ok(run) : err('run-key-taken');
   }
@@ -150,8 +161,8 @@ export class PgRunIndex implements RunIndex {
     return this.change(runId, END, [endState, new Date(at), failedAreas, unreadAreas]);
   }
 
-  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
-    return this.change(runId, PAUSE, [counts.unreadAreas ?? 0]);
+  pause(runId: string, at: EpochMs, counts: AreaCounts = {}): Promise<Run | undefined> {
+    return this.change(runId, PAUSE, [counts.unreadAreas ?? 0, new Date(at)]);
   }
 
   async continueAwaiting(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {

@@ -29,6 +29,10 @@ const historyRunSchema = z.object({
   unreadAreas: count.default(0),
   /** EV-80: the place of a queued run in the server's queue, counted from 1. */
   position: z.number().int().positive().nullable().default(null),
+  /** P8-88: the sum of the spans the run was running in; null until it ends. */
+  runningMs: count.nullable().default(null),
+  /** P8-88: from the first start to the end; null until the run ends. */
+  wallMs: count.nullable().default(null),
 });
 
 export type HistoryRun = z.output<typeof historyRunSchema>;

@@ -32,12 +32,14 @@ export const history = {
       ...{ id: 'r-4', runId: liveKey, stage: 'understand', queueState: 'Running', endState: null },
       ...{ commitSha: sha, queuedAt: '2026-10-11T09:12:03.000Z', endedAt: null },
       ...{ startedAt: '2026-10-11T09:12:04.000Z', totals: totals(410_000, 150_000, 46_102) },
+      ...{ runningMs: null, wallMs: null },
       sizeBytes: 900_000,
     },
     {
       ...{ id: 'r-3', runId: scanKey, stage: 'scan', queueState: 'Ended', endState: 'Completed' },
       ...{ commitSha: sha, queuedAt: '2026-10-11T09:11:49.000Z', totals: totals(0, 0, 0) },
       ...{ startedAt: '2026-10-11T09:11:50.000Z', endedAt: '2026-10-11T09:11:58.000Z' },
+      ...{ runningMs: 8_000, wallMs: 8_000 },
       sizeBytes: 1200,
     },
     {
@@ -46,6 +48,7 @@ export const history = {
       ...{ totals: totals(2_160_000, 600_000, 93_410) },
       ...{ queuedAt: '2026-10-10T20:15:30.000Z', startedAt: '2026-10-10T20:15:33.000Z' },
       ...{ endedAt: '2026-10-10T20:40:00.000Z', sizeBytes: 3_700_000 },
+      ...{ runningMs: 1_467_000, wallMs: 1_467_000 },
     },
     {
       ...{ id: 'r-1', runId: doneKey, stage: 'understand', queueState: 'Ended' },
@@ -53,6 +56,7 @@ export const history = {
       ...{ totals: totals(1_310_000, 380_000, 32_606) },
       ...{ queuedAt: '2026-10-09T18:40:10.000Z', startedAt: '2026-10-09T18:40:12.000Z' },
       ...{ endedAt: '2026-10-09T19:02:00.000Z', sizeBytes: 3_200_000 },
+      ...{ runningMs: 1_308_000, wallMs: 1_308_000 },
     },
   ],
 };

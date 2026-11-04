@@ -53,7 +53,10 @@ export interface RunIndex {
   listQueued(): Promise<readonly Run[]>;
   /** Every running run of every user, oldest start first. */
   listRunning(): Promise<readonly Run[]>;
-  /** `Queued` -> `Running`; undefined for an unknown run and for one that is not queued. */
+  /**
+   * `Queued` -> `Running`, a new span; the first start is kept by a run that started before
+   * (P8-88). Undefined for an unknown run and for one that is not queued.
+   */
   start(runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
    * `Running` -> `Ended`, `Queued` -> `Ended` as `Interrupted`, or `AwaitingApproval` -> `Ended` as
@@ -67,10 +70,11 @@ export interface RunIndex {
     counts?: AreaCounts,
   ): Promise<Run | undefined>;
   /**
-   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started; undefined for an
-   * unknown run and one that is not running.
+   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started and ending the
+   * span the run was running in at `at` (P8-88); undefined for an unknown run and one that is not
+   * running.
    */
-  pause(runId: string, counts?: AreaCounts): Promise<Run | undefined>;
+  pause(runId: string, at: EpochMs, counts?: AreaCounts): Promise<Run | undefined>;
   /**
    * RF-432: `AwaitingApproval` -> `Queued` for the user's paused run, at the end of the queue;
    * undefined for an unknown id, another user's run and a run that is not paused.

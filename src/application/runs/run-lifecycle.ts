@@ -122,7 +122,7 @@ export class RunLifecycle {
   // RF-432
   async pause(run: Run, detail: Pick<EndDetail, 'unreadAreas'> = {}): Promise<Run | undefined> {
     const counts = detail.unreadAreas === undefined ? {} : { unreadAreas: detail.unreadAreas };
-    const paused = await this.deps.runs.pause(run.id, counts);
+    const paused = await this.deps.runs.pause(run.id, this.deps.clock.now().getTime(), counts);
     if (paused === undefined) return undefined;
     await this.attempt(paused, 'run.awaitingApproval', async () => {
       const stored = await this.deps.manifests.read(scopeOf(paused));

@@ -9,7 +9,7 @@ import type { Run } from '../../domain/runs/run.js';
 
 /** Every column, in table order, with ids and counters as text. */
 export const RUN_COLUMNS =
-  'id::text AS id, project_id::text AS project_id, user_id::text AS user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros::text AS cost_micros, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, failed_areas, unread_areas';
+  'id::text AS id, project_id::text AS project_id, user_id::text AS user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros::text AS cost_micros, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms::text AS active_ms';
 
 const instant = z.date().transform((date) => date.getTime());
 const counter = z.string().regex(/^\d+$/).transform(Number);
@@ -33,6 +33,8 @@ const runRowSchema = z.object({
   cached_input_tokens: counter,
   failed_areas: z.number().int().nonnegative(),
   unread_areas: z.number().int().nonnegative(),
+  span_started_at: instant.nullable(),
+  active_ms: counter,
 });
 
 const snapshotUsageRow = z.object({
@@ -76,6 +78,8 @@ export function toRun(row: unknown): Run {
     endState: parsed.end_state,
     queuedAt: parsed.queued_at,
     startedAt: parsed.started_at,
+    spanStartedAt: parsed.span_started_at,
+    activeMs: parsed.active_ms,
     endedAt: parsed.ended_at,
     totals: {
       costMicros: parsed.cost_micros,

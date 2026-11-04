@@ -77,7 +77,7 @@ export class ContinueRun {
   }
 }
 
-/** RF-432: the manifest with the approved amount raised by N and the start cleared, as a resume. */
+/** RF-432: the manifest with the approved amount raised by N, its first start kept, as a resume. */
 function raisedManifest(manifest: RunManifest, extra: Amount | undefined): RunManifest {
   const { approvedAmount } = readUnderstandOptions(manifest.options);
   const options =
@@ -88,5 +88,5 @@ function raisedManifest(manifest: RunManifest, extra: Amount | undefined): RunMa
           // RF-432: N is at most the offered one; the sum stays within the ceilings.
           approvedAmount: continuedAmount(approvedAmount, extra),
         };
-  return { ...manifest, startedAt: null, options };
+  return { ...manifest, options };
 }
