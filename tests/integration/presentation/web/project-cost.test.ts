@@ -60,6 +60,14 @@ async function fixtureLedger(): Promise<{ amy: Signed; projectId: string }> {
   return { amy, projectId };
 }
 
+interface RunView {
+  readonly totals: { readonly cost: unknown };
+  readonly byRole: readonly {
+    readonly key: string;
+    readonly totals: { readonly cost: unknown };
+  }[];
+}
+
 const paidTotals = {
   calls: 1,
   inputTokens: 1000,
@@ -102,6 +110,50 @@ describe('GET /api/projects/:id/cost', () => {
       expect.objectContaining({ key: 'ollama', local: true }),
       { key: 'openai', local: false, totals: paidTotals },
     ]);
+  });
+});
+
+describe('GET /api/projects/:id/cost by role within a run', () => {
+  it('RF-428 carries the cost per role on each run line, adding up to the run total', async () => {
+    const { amy, projectId } = await fixtureLedger();
+    test.costs.add(
+      costEntry(amy.id, { projectId, role: 'verifier', stage: 'verify', costMicros: 300n }),
+    );
+
+    const response = await amy.browser.request({
+      method: 'GET',
+      url: `/api/projects/${projectId}/cost`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const byRun = response.json<{ byRun: RunView[] }>().byRun;
+    const first = byRun[0];
+    expect(first?.byRole.map((line) => line.key)).toEqual(['reader', 'verifier']);
+    expect(first?.byRole.map((line) => line.totals.cost)).toEqual([
+      [{ currency: 'USD', costMicros: '700' }],
+      [{ currency: 'USD', costMicros: '300' }],
+    ]);
+    expect(first?.totals.cost).toEqual([{ currency: 'USD', costMicros: '1000' }]);
+    expect(byRun[1]?.byRole.map((line) => line.key)).toEqual(['verifier']);
+  });
+
+  it('RF-428 leaves another user role costs out of the run lines and answers 404 for their project', async () => {
+    const { amy, projectId } = await fixtureLedger();
+    const ben = await signedIn('ben');
+    test.costs.add(costEntry(ben.id, { projectId, role: 'planner', costMicros: 9_999n }));
+
+    const own = await amy.browser.request({
+      method: 'GET',
+      url: `/api/projects/${projectId}/cost`,
+    });
+    const other = await ben.browser.request({
+      method: 'GET',
+      url: `/api/projects/${projectId}/cost`,
+    });
+
+    const roles = own.json<{ byRun: RunView[] }>().byRun.flatMap((run) => run.byRole);
+    expect(roles.map((line) => line.key)).not.toContain('planner');
+    expect(other.statusCode).toBe(404);
   });
 });
 

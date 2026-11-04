@@ -41,6 +41,7 @@ export const projectCost: ProjectCost = {
       firstAt: '2026-10-12T10:00:00.000Z',
       local: false,
       totals: usageTotals({ calls: 2 }),
+      byRole: [{ key: 'reader', local: false, totals: usageTotals({ calls: 2 }) }],
     },
   ],
   byStage: [{ key: 'understand', local: false, totals: usageTotals() }],
