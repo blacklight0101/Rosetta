@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { LlmProvider, LlmRequest } from '../../../../src/application/ports/llm-provider.js';
 import type { RoleProvider } from '../../../../src/application/providers/provider-set.js';
+import { RunEventPublisher } from '../../../../src/application/runs/run-event-publisher.js';
 import { withRoom } from '../../../../src/application/understand/reader-room.js';
 import type { Spend } from '../../../../src/domain/budget/claim-room.js';
+import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-event-sink.js';
 import { contractRequest } from '../../../contracts/llm-provider.contract.js';
 import { fakeResponse } from '../../../support/fake-recordings.js';
+import { FixedClock } from '../../../support/fixed-clock.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
+import { scopeFor } from '../../../support/run-event-fixtures.js';
 import { hold, settle, type Hold } from '../../../support/parallel-judgement.js';
 
 // RF-429, P8-132: the room of a run is made from the reader's provider, and the worst case that
@@ -38,8 +42,15 @@ function readerOf(worstCaseOf: RoleProvider['worstCaseOf']): RoleProvider {
 
 /** The tasks that reached the provider when four readers of a run built by withRoom call together. */
 async function startedByFourReaders(role: RoleProvider): Promise<string[]> {
+  const sink = new MemoryEventSink();
+  const events = await RunEventPublisher.open({
+    scope: scopeFor('20261104-100000-understand'),
+    sink,
+    history: sink,
+    clock: new FixedClock('2026-11-04T10:00:00.000Z'),
+  });
   const room = withRoom(
-    { events: { emit: () => Promise.resolve(undefined) }, stop: () => undefined },
+    { events, stop: () => undefined },
     { settings: sampleProject().settings, role },
     {
       roleSpend: () => nothing,
