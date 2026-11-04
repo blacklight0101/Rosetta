@@ -196,6 +196,26 @@ const boxesSchema = z.tuple([n, n, n, n, n, n, n, n, n]);
 const longName =
   'octo/customer-onboarding-service-pipelines-and-deployment-templates-for-regional-releases';
 
+const longArea =
+  'Services/CustomerOnboarding/RegionalReleases/DeploymentTemplates/PipelineOrchestration';
+const longModel = 'experimental-reasoning-model-with-a-very-long-release-name-20261103-preview';
+const estimateBody = z.looseObject({ areas: z.array(z.unknown()), roles: z.array(z.unknown()) });
+
+/** The real estimate with one long area name and long model names, so both wrap at their separators. */
+async function longEstimate(page: Page): Promise<void> {
+  await page.route('**/api/projects/*/estimate', async (route) => {
+    const response = await route.fetch({ method: 'GET', postData: '' });
+    if (!response.ok()) return route.fulfill({ response });
+    const body = estimateBody.parse(await response.json());
+    const area = { name: longArea, files: 3, thirdParty: false, estimatedTokens: 1000 };
+    const roles = body.roles.map((role) => ({
+      ...z.looseObject({}).parse(role),
+      model: longModel,
+    }));
+    await route.fulfill({ response, json: { ...body, areas: [area], roles } });
+  });
+}
+
 const sizes = [
   { name: '1280x800', size: { width: 1280, height: 800 } },
   { name: '360x780', size: { width: 360, height: 780 } },
@@ -226,7 +246,7 @@ for (const { name, size } of sizes) {
     ).toBe(false);
   });
 
-  test(`RF-1022 at ${name} a long project name and the area names do not break inside a word`, async ({
+  test(`RF-1022 at ${name} a long project name, area name and model name do not break inside a word`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
@@ -235,14 +255,21 @@ for (const { name, size } of sizes) {
       const real = z.record(z.string(), z.unknown()).parse(await (await route.fetch()).json());
       await route.fulfill({ json: { ...real, name: longName } });
     });
+    await longEstimate(page);
     await showFacts(page, written(), writtenRuns);
     await showStartChoices(page);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(longName);
+    // The check must never pass on zero elements: the picker and the table are there before it runs.
+    const wrapped = page.locator('.rst-start__area-name, td.rst-table__wrap');
+    await expect(wrapped.first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('.rst-start__area-name')).toHaveCount(1);
+    await expect(page.locator('td.rst-table__wrap').first()).toBeVisible();
 
     const title: unknown = await page.evaluate(brokenWordsIn('h1'));
     const areas: unknown = await page.evaluate(
       brokenWordsIn('.rst-start__area-name, td.rst-table__wrap'),
     );
+    expect(await wrapped.count()).toBeGreaterThanOrEqual(2);
 
     expect(title).toEqual([]);
     expect(areas).toEqual([]);

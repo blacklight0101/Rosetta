@@ -7,7 +7,7 @@ html {
   scroll-padding-block-end: 8rem;
 }
 
-/* P8-105: at phone width the summary bar wraps to about 9.5rem, taller than the 8rem reserve. */
+/* P8-105: at phone width the summary bar wraps to about 9.4rem, taller than the 8rem reserve. */
 @media (max-width: 40rem) {
   html {
     scroll-padding-block-end: 12rem;
