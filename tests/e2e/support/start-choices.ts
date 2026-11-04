@@ -27,32 +27,32 @@ async function openFold(fold: Locator): Promise<void> {
 }
 
 /**
- * Leaves the choices shown the way a person finds them. The page scans the project by itself when it
- * loads (RF-160) and shows only the Scan section until the scan ends, then the folds again as they
- * were left (RF-1021). So the fold is opened, and the state is accepted only when no scan runs and no
- * fold is closed, still so a second later (the page decides on its scan within a fraction of a
- * second); otherwise everything is tried again. A fold that was not there yet is no fold to open
- * (P8-106, RF-157).
+ * Leaves the choices shown the way a person finds them. The page scans the project when it has no
+ * scan in its history, when its source was replaced and when the user presses "Scan again"; a project
+ * whose scan has completed is not scanned on a load (P8-106, RF-160). While a scan runs the page shows
+ * only the Scan section, and it shows the areas once its estimate is read (RF-1021). So the fold is
+ * opened, and the state is accepted when no scan runs, no fold is closed and the areas are listed,
+ * which the page does only after the scan, if there is one, has ended. There is no fixed wait: a
+ * state the page has not reached shows as a missing area, and everything is tried again (P8-106,
+ * P8-121, RF-157).
  */
 async function openSettled(page: Page, fold: Locator): Promise<void> {
   const running = page.getByTestId('scan-running');
   const closed = page.locator('[data-testid="start-another"]:not([open])');
-  const settled = async (): Promise<void> => {
-    await expect(running).toHaveCount(0, { timeout: 3_000 });
-    await expect(closed).toHaveCount(0, { timeout: 3_000 });
-  };
+  const areas = page.getByRole('group', { name: 'Areas from the code map' }).locator('label');
   await expect(async () => {
     await openFold(fold);
-    await settled();
-    await page.waitForTimeout(1_000);
-    await settled();
+    await expect(running).toHaveCount(0, { timeout: 3_000 });
+    await expect(closed).toHaveCount(0, { timeout: 3_000 });
+    await expect(areas.first()).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 90_000 });
 }
 
 /**
  * What a caller wants of the project page after it loaded: `settled` is the page a person works on
  * (the scan, if the page starts one, has ended and "Start another run" is open); `scanning` is the
- * page while the scan that starts by itself (RF-160) is still the only thing it shows.
+ * page while a scan the page started (no scan in the history, a replaced source) is still the only
+ * thing it shows (RF-160).
  */
 export type StartPageState = 'settled' | 'scanning';
 
@@ -99,9 +99,9 @@ export async function openReplaceSource(page: Page): Promise<void> {
 
 /**
  * Waits for the areas of the code map (a scan may still be running) and opens them when folded. The
- * page hides the choices while it scans, which is on every load and after a source is replaced, and
- * shows them again afterwards in the fold as it was left; a fold that came back closed is opened
- * again until the areas are listed (P8-106).
+ * page hides the choices while it scans, which it does when the history holds no scan, after a source
+ * is replaced and after "Scan again" (not on every load), and shows them again afterwards in the fold
+ * as it was left; a fold that came back closed is opened again until the areas are listed (P8-106).
  */
 export async function revealAreas(page: Page): Promise<void> {
   const fold = page.getByTestId('start-another');
