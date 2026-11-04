@@ -20,6 +20,10 @@ test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('live-controls', info.project.name));
 });
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 /** A line holds centres a few pixels apart (a bar, a badge and text of different heights). */
 const ONE_LINE = 8;
 /** The header with the pill on one line, as before P8-101 (66.3 px), and no more. */
