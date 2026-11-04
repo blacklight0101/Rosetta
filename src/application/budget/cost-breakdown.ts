@@ -28,6 +28,8 @@ interface RunLine extends BreakdownLine {
   /** Null for the provider tests, which belong to no run. */
   readonly runId: string | null;
   readonly firstAt: Date;
+  /** The run's cost per role, one line per role that made calls in the run (RF-428, P8-108). */
+  readonly byRole: readonly BreakdownLine[];
 }
 
 interface ModelLine extends BreakdownLine {
@@ -120,6 +122,7 @@ function runLines(groups: readonly LedgerGroup[]): RunLine[] {
       ...lineOf(key, members),
       runId: members[0]?.runId ?? null,
       firstAt: new Date(firstOf(members)),
+      byRole: linesBy(members, (group) => group.role),
     }))
     .sort(
       (left, right) =>

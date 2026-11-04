@@ -74,6 +74,7 @@ describe('project cost page plan setup', () => {
       runId: null,
       firstAt: '2026-10-12T11:00:00.000Z',
       local: false,
+      byRole: [],
       totals: projectCost.byRun[0]?.totals ?? projectCost.totals,
     };
     renderCost(json(200, { ...projectCost, byRun: [...projectCost.byRun, options] }));
@@ -180,7 +181,7 @@ describe('project cost page money', () => {
   it('RF-428 given any money amount, writes it by DEC-54 with the exact figure in a tooltip', async () => {
     const lines = (...micros: string[]) =>
       micros.map((each, at) => ({
-        ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false },
+        ...{ key: `n-${String(at)}`, runId: null, firstAt: '', local: false, byRole: [] },
         totals: costOf(each),
       }));
     renderCost(json(200, { ...projectCost, byRun: lines('3113515', '237000') }));
