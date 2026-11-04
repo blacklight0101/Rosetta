@@ -37,7 +37,7 @@ import { runPool } from './task-pool.js';
 // RF-301, RF-302, RF-1004, ADR-005: the judgement step of an understand run. Every claim still
 // `Proposed` after the citation check (step 1) is judged by the `verifier` role, at most
 // `agents.parallelism` at a time; a claim whose judgement sends a call publishes `verify.claim.started`
-// when the call begins (P8-58); each verdict is published as `verify.claim.judged` the moment it
+// when the call begins and `verify.claim.callEnded` when its calls are over (P8-58); each verdict is published as `verify.claim.judged` the moment it
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
 // and claim order. A claim is never removed; one the run stopped before judging keeps its status,
 // unless a cap stopped the judgement: then it is `Unverified`, so a later run can judge it (RF-304).
