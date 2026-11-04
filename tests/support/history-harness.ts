@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { actorOf } from '../../src/domain/accounts/actor.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { addUser, signedInBrowser, type TestBrowser } from './test-browser.js';
-import { createTestServer, type TestServer } from './web-server.js';
+import { createTestServer, type TestServer, type TestServerOptions } from './web-server.js';
 
 // RF-1008, RF-1012, RF-1105: a server with amy's project (octo/webforms) holding one scan that
 // completed, with a commit and a folder, and one run that goes on after it; bob and an
@@ -10,6 +10,8 @@ import { createTestServer, type TestServer } from './web-server.js';
 
 export const completedCommit = 'a'.repeat(40);
 export const completedSnapshot = `octo__webforms@${completedCommit}`;
+
+type HarnessOptions = Pick<TestServerOptions, 'partlyRead'>;
 
 export interface HistoryHarness {
   readonly test: TestServer;
@@ -25,8 +27,8 @@ export interface HistoryHarness {
 }
 
 // RF-1012
-export async function createHistoryHarness(): Promise<HistoryHarness> {
-  const test = createTestServer();
+export async function createHistoryHarness(options: HarnessOptions = {}): Promise<HistoryHarness> {
+  const test = createTestServer(options);
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
   const rootUser = await addUser(test, { userName: 'root', role: 'admin' });

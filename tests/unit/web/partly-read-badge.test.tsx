@@ -51,3 +51,23 @@ it('RF-230 a run that failed keeps Failed whatever the coverage says', () => {
 
   expect(screen.getByTestId('status-badge').textContent).toBe('Failed');
 });
+
+// RF-230, RF-1008 (P8-130): in a table the badge is the word and the share is the line under it, so the
+// State column keeps the width of its other states.
+
+it('RF-1008 a table badge says Partly read and puts the share on the line under it', () => {
+  const { container } = render(
+    <RunEndBadge endState="Completed" partlyReadAreas={2} readShare={0.16} shareBelow />,
+  );
+
+  expect(screen.getByTestId('status-badge').textContent).toBe('Partly read');
+  expect(container.querySelector('.rst-table__sub')?.textContent).toBe('16% of your code');
+});
+
+it('RF-1008 a table badge has no line under it while the share is not known', () => {
+  const { container } = render(
+    <RunEndBadge endState="Completed" partlyReadAreas={2} readShare={null} shareBelow />,
+  );
+
+  expect(container.querySelector('.rst-table__sub')).toBeNull();
+});

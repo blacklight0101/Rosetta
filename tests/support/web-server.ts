@@ -47,11 +47,12 @@ import { answerStore, observabilityStore } from './observability-store.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
-import { FakeUploadStore } from './fake-upload-store.js';
-import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
-import { projectServices, type UploadParts } from './project-services.js';
-import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
+import { projectServices } from './project-services.js';
+import { uploadPartsOf } from './upload-parts-of.js';
+import type { PartlyReadReader } from './partly-read-doubles.js';
+import { historyServices } from './web-history-services.js';
+import { runServices, type RunOutputGiven } from './web-run-services.js';
 import {
   keyParts,
   memoryStores,
@@ -68,8 +69,6 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 export const testVersion = '1.2.3-test';
 
 /** RF-129: the upload limit of a test server that does not set one. */
-const DEFAULT_TEST_UPLOAD_MB = 5;
-const BYTES_PER_MB = 1024 * 1024;
 
 /** The public URL of the test servers; state-changing requests send it as their Origin. */
 export const testPublicUrl = 'http://127.0.0.1:8080';
@@ -141,6 +140,8 @@ export interface TestServerOptions
   readonly logDir?: string;
   /** EV-70: what GitHub says about the ref of a new project; none by default. */
   readonly refCheck?: GitHubRefCheck;
+  /** P8-130: what the history reads of each run's coverage; no run is partly read by default. */
+  readonly partlyRead?: PartlyReadReader;
 }
 
 interface AuthParts {
@@ -231,16 +232,10 @@ function fileDoubles(parts: {
   return { files, keys: keyParts(), stores: { ...parts, ...files } };
 }
 
-/** RF-128, RF-129: the store uploads go to (a fake by default) and the limit it is given. */
-function uploadPartsOf(options: TestServerOptions): UploadParts {
-  const { uploads = new FakeUploadStore(), uploadMaxMb = DEFAULT_TEST_UPLOAD_MB } = options;
-  const { workbookStaging = new FakeWorkbookStaging() } = options;
-  const limitBytes = uploadMaxMb * BYTES_PER_MB;
-  const { refCheck } = options;
-  return {
-    ...{ store: uploads, staging: workbookStaging, limitBytes },
-    ...(refCheck === undefined ? {} : { refCheck }),
-  };
+/** The options of a test server that do not depend on its stores. */
+function serverBase(logger: MemoryLogger, health: FakeDatabaseHealth) {
+  const [version, publicUrl] = [testVersion, testPublicUrl];
+  return { logger, databaseHealth: health, version, publicUrl, trustProxy: 0 };
 }
 
 /**
@@ -277,18 +272,17 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const upload = uploadPartsOf(options);
   const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
   const server = buildServer({
-    logger,
-    databaseHealth: health,
-    version: testVersion,
-    publicUrl: testPublicUrl,
-    trustProxy: 0,
+    ...serverBase(logger, health),
     auth: authServices({
       ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
     projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs, upload),
     runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
-    history: historyServices({ runs, projects, folders, snapshots, logger, costs, upload }),
+    history: historyServices({
+      ...{ runs, projects, folders, snapshots, logger, costs },
+      ...{ upload, options },
+    }),
     ...{ models: modelServices(), onRoute: recorder.onRoute },
     ...overrides,
   });

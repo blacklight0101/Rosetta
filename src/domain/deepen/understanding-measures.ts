@@ -9,6 +9,7 @@ import {
 } from '../cards/area-coverage.js';
 import type { Card, Claim } from '../cards/card.js';
 import { readsByPath } from '../cards/coverage-union.js';
+import { COVERAGE_BAR } from '../cards/partly-read.js';
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
 import { isThirdPartyFile, isThirdPartyPath } from '../code-map/third-party.js';
@@ -64,9 +65,6 @@ export interface MeasureInput {
   readonly coverage: readonly AreaCoverage[];
   readonly files: readonly FileEntry[];
 }
-
-/** RF-231, Q-K: the first-party share of tokens read from which a run may be called well covered. */
-const WELL_COVERED_SHARE = 0.8;
 
 interface FileRead {
   readonly path: string;
@@ -180,7 +178,7 @@ export function understandingMeasures(input: MeasureInput): UnderstandingMeasure
     ...coverage,
     ...judged,
     thirdParty: { ...coverage.thirdParty, claims: claims.length - own.length },
-    wellCovered: share !== null && share >= WELL_COVERED_SHARE && judged.notJudged === 0,
+    wellCovered: share !== null && share >= COVERAGE_BAR && judged.notJudged === 0,
   };
 }
 
