@@ -132,9 +132,12 @@ flowchart TB
 **The header during a run (P8-101, RF-1003, RF-1010).** The run meter stands after the wordmark, as the artboard
 `P8Projects` draws it, and reserves no width for its figures. From 1280 px the header is one line. From 1024 px to
 1279 px the meter takes a line of its own under the wordmark, and the totals, the user, Sign out and the theme toggle
-stay on the first line. From 1024 px the totals pill stacks its figures over the input, output and cached split. The
-user, Sign out and the theme toggle are one group that never breaks over two lines from 640 px; on a phone the header
-wraps and no page scrolls sideways, with or without the meter.
+stay on the first line. The totals pill is one line, as before: the figures and the input, output and cached split.
+While a run is active, from 1024 px, the pill keeps the figures and the split moves to its tooltip, and the
+administrator's server figure leaves the header below 1600 px (it stays on the users and caps page and in the cap
+banner). The user's name is cut with an ellipsis, its full text the tooltip; the name, Sign out and the theme toggle
+are one group in which only the name gives way, so Sign out and the toggle never break inside a word. On a phone the
+header wraps and no page scrolls sideways, with or without the meter.
 
 **One side navigation on every signed-in page (P1-175).** The navigation always has the same groups in the same
 order: the main pages (Projects, Settings and keys), the project group, and Administration for the administrator
