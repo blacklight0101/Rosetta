@@ -109,9 +109,9 @@ test('RF-405 lists the priced Anthropic models, keeps the choice and passes axe'
 
   expect(await optionTexts(model)).toEqual([
     'Choose a model',
+    'Claude Haiku 5.5',
     'Claude Opus 5.5',
     'Claude Sonnet 5.5',
-    'Claude Haiku 5.5',
     'Claude Fable 5.1',
     'Other model...',
   ]);

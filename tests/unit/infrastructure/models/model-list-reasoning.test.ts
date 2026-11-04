@@ -49,10 +49,11 @@ describe('the shipped model list: reasoning models', () => {
     const reasoning = list.models.filter((entry) => entry.reasoning === true);
 
     expect(reasoning.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
+      'anthropic/claude-haiku-5-5',
       'anthropic/claude-opus-5-5',
       'anthropic/claude-sonnet-5-5',
-      'anthropic/claude-haiku-5-5',
       'anthropic/claude-fable-5-1',
+      'openai/gpt-5-nano',
       'openai/gpt-6-astra',
       'openai/gpt-6.1-sol',
       'openai/gpt-6-sol',
@@ -65,7 +66,6 @@ describe('the shipped model list: reasoning models', () => {
       'openai/gpt-5.4-mini',
       'openai/gpt-5.4-nano',
       'openai/gpt-5-mini',
-      'openai/gpt-5-nano',
       'openai/gpt-5-nano-2025-08-07',
     ]);
   });
@@ -76,10 +76,10 @@ describe('the shipped model list: reasoning models', () => {
     const routed = list.models.filter((entry) => entry.responsesApi === true);
 
     expect(routed.map((entry) => `${entry.provider}/${entry.model}`)).toEqual([
+      'openai/gpt-5-nano',
       'openai/gpt-6-astra',
       'openai/gpt-6.1-sol',
       'openai/gpt-5-mini',
-      'openai/gpt-5-nano',
       'openai/gpt-5-nano-2025-08-07',
     ]);
     expect(routed.every((entry) => entry.reasoning === true)).toBe(true);
