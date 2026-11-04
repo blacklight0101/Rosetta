@@ -4,11 +4,13 @@ import { DeleteRun } from '../application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../application/use-cases/delete-snapshot.js';
 import { ListHistory } from '../application/use-cases/list-history.js';
 import { ListProjectOverview } from '../application/use-cases/list-project-overview.js';
+import { ReadRunPartlyRead } from '../application/use-cases/read-run-partly-read.js';
 import { ListSnapshots } from '../application/use-cases/list-snapshots.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
+import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
 import { FileSnapshotCache } from '../infrastructure/files/file-snapshot-cache.js';
 import { NodeWorkspaceFolders } from '../infrastructure/files/node-workspace-folders.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
@@ -37,12 +39,14 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
   const runs = new PgRunIndex(pool);
   const folders = new NodeWorkspaceFolders(dataDir);
   const snapshots = new FileSnapshotCache(dataDir);
-  const manifests = new FileRunManifestStore({
-    writer: new NodeOutputWriter({ dataDir, logger }),
-    masker,
+  const writer = new NodeOutputWriter({ dataDir, logger });
+  const manifests = new FileRunManifestStore({ writer, masker });
+  const partlyRead = new ReadRunPartlyRead({
+    files: new FileRunTextFiles(writer),
+    share: () => Promise.resolve(null),
   });
   return {
-    listHistory: new ListHistory({ projects, runs, folders, manifests, logger }),
+    listHistory: new ListHistory({ projects, runs, folders, manifests, logger, partlyRead }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({

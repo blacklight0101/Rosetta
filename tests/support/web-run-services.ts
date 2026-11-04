@@ -31,6 +31,7 @@ import { DeleteProject } from '../../src/application/use-cases/delete-project.js
 import { DeleteRun } from '../../src/application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.js';
 import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
+import { noPartlyRead as partlyRead } from './partly-read-doubles.js';
 import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { continueRunOf } from './continue-run-of.js';
@@ -286,7 +287,7 @@ export function historyServices(parts: {
   const { projects, folders, snapshots, logger, costs, upload } = parts;
   const { runs, manifests } = parts.runs;
   return {
-    listHistory: new ListHistory({ ...{ projects, runs, folders, logger }, manifests }),
+    listHistory: new ListHistory({ ...{ projects, runs, folders, logger, manifests, partlyRead } }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({

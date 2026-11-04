@@ -3,6 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
+import type { PartlyRead, ReadRunPartlyRead } from './read-run-partly-read.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -27,6 +28,8 @@ export interface HistoryRun {
    * that is not a Deepen. Read from the manifest; a manifest that cannot be read counts as none.
    */
   readonly deepenRounds: number | null;
+  /** P8-130: the areas below the coverage bar and the share of the code read, for the State badge. */
+  readonly partlyRead: PartlyRead;
 }
 
 export interface RunHistory {
@@ -42,6 +45,7 @@ export interface ListHistoryDependencies {
   readonly folders: WorkspaceFolders;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly logger: Logger;
+  readonly partlyRead: Pick<ReadRunPartlyRead, 'execute'>;
 }
 
 /**
@@ -91,7 +95,14 @@ export class ListHistory {
     for (const run of await runs.list(userId, project.id)) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
       const position = positions.get(run.id) ?? null;
-      listed.push({ run, sizeBytes, position, deepenRounds: await deepenRoundsOf(this.deps, run) });
+      const deepenRounds = await deepenRoundsOf(this.deps, run);
+      listed.push({
+        run,
+        sizeBytes,
+        position,
+        deepenRounds,
+        partlyRead: { areas: 0, share: null },
+      });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

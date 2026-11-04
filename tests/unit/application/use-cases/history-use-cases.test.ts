@@ -8,6 +8,7 @@ import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { noPartlyRead } from '../../../support/partly-read-doubles.js';
 import { MemorySnapshotCache } from '../../../support/memory-snapshot-cache.js';
 import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folders.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
@@ -38,7 +39,10 @@ async function historySetup() {
     });
   const manifests = new MemoryRunManifestStore();
   const logger = new RecordingLogger();
-  const listHistory = new ListHistory({ projects, runs, folders, manifests, logger });
+  const listHistory = new ListHistory({
+    ...{ projects, runs, folders, manifests, logger },
+    partlyRead: noPartlyRead,
+  });
   return { projects, runs, folders, manifests, project, ended, listHistory, logger };
 }
 
@@ -107,7 +111,10 @@ describe('ListHistory: a manifest that cannot be read (P8-89)', () => {
           scope.id === bad.id ? Promise.reject(failure) : Promise.resolve(undefined),
       };
 
-      const result = await new ListHistory({ projects, runs, folders, manifests, logger }).execute({
+      const result = await new ListHistory({
+        ...{ projects, runs, folders, manifests, logger },
+        partlyRead: noPartlyRead,
+      }).execute({
         actor: userAmy,
         projectId: project.id,
       });
