@@ -26,7 +26,7 @@ export type UpdateSettingsRefusal =
     };
 
 /** RF-436: the answer of a save that raised the parallel readers because the reader went hosted. */
-export interface ParallelismChange {
+interface ParallelismChange {
   readonly from: number;
   readonly to: number;
 }
