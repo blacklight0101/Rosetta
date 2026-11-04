@@ -136,8 +136,9 @@ export function useAutoScan(project: Project, unscanned: boolean, onScanned: () 
   const [seen, setSeen] = useState(sourceKey);
   const replaced = seen !== '' && sourceKey !== '' && seen !== sourceKey;
   useEffect(() => {
-    if (!replaced) return;
+    // Kept current on every change: a project that held no source at load has '' here until its first upload.
     setSeen(sourceKey);
+    if (!replaced) return;
     setState(waiting);
     scanAgain();
   }, [replaced, sourceKey]);
