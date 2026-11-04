@@ -133,7 +133,8 @@ flowchart TB
 `P8Projects` draws it, and reserves no width for its figures. From 1280 px the header is one line. From 1024 px to
 1279 px the meter takes a line of its own under the wordmark, and the totals, the user, Sign out and the theme toggle
 stay on the first line. From 1024 px the totals pill stacks its figures over the input, output and cached split. The
-user, Sign out and the theme toggle are one group that never breaks over two lines, at any width.
+user, Sign out and the theme toggle are one group that never breaks over two lines from 640 px; on a phone the header
+wraps and no page scrolls sideways, with or without the meter.
 
 **One side navigation on every signed-in page (P1-175).** The navigation always has the same groups in the same
 order: the main pages (Projects, Settings and keys), the project group, and Administration for the administrator

@@ -5,10 +5,8 @@ import { ThemeToggle } from './ThemeToggle.js';
 import { Wordmark } from './Wordmark.js';
 
 // design-system.md section 3: the signed-in header carries the wordmark, the project's repository
-// when a project is open, the run meter while a run is active (after the wordmark, as the artboard
-// P8Projects draws it, so figures growing on the right never move it, P8-101), the totals pill
-// (RF-1010, a slot filled by its own card), the user with the role and the theme toggle; the user
-// and the toggle are one group, so they never part onto two lines.
+// when a project is open, the totals pill (RF-1010, a slot filled by its own card), the user with
+// the role and the theme toggle.
 
 interface HeaderUser {
   readonly displayName: string;
@@ -18,7 +16,7 @@ interface HeaderUser {
 export interface HeaderProps {
   readonly user: HeaderUser;
   readonly repository?: string;
-  /** The "This run" meter, after the wordmark while a run is active (RF-1003, P8-101). */
+  /** The "This run" meter, beside the totals while a run is active (RF-1003). */
   readonly runMeter?: ComponentChildren;
   /** The totals pill: always on screen once a card fills it. */
   readonly totals?: ComponentChildren;
@@ -38,21 +36,19 @@ export function Header(props: HeaderProps): JSX.Element {
           {props.repository}
         </span>
       )}
-      {props.runMeter}
       <span class="rst-header__spacer" />
+      {props.runMeter}
       {props.totals === undefined ? null : (
         <div class="rst-header__totals" data-testid="header-totals">
           {props.totals}
         </div>
       )}
-      <div class="rst-header__account">
-        <div class="rst-header__user" data-testid="header-user">
-          <span>{props.user.displayName}</span>
-          <StatusBadge list="Role" value={props.user.role} />
-          {props.actions}
-        </div>
-        <ThemeToggle theme={props.theme} onTheme={props.onTheme} />
+      <div class="rst-header__user" data-testid="header-user">
+        <span>{props.user.displayName}</span>
+        <StatusBadge list="Role" value={props.user.role} />
+        {props.actions}
       </div>
+      <ThemeToggle theme={props.theme} onTheme={props.onTheme} />
     </header>
   );
 }
