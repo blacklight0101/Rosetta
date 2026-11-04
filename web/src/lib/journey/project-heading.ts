@@ -37,6 +37,7 @@ function packageStatus(step: JourneyStep): HeadingStatus {
 function understandStatus(step: JourneyStep, view: JourneyView): HeadingStatus {
   if (step.state === 'failed') return plain('Understand stopped', 'danger', step.href);
   if (step.state === 'stopped') return plain('Understand stopped by you', 'warn', step.href);
+  if (step.state === 'capped') return plain('Understand stopped at its cap', 'warn', step.href);
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   if (step.state === 'upcoming' || step.state === 'current') {
     return plain('Understand running', 'info', step.href);
@@ -57,6 +58,7 @@ function questionsStatus(view: JourneyView, step: JourneyStep): HeadingStatus {
 function planStatus(step: JourneyStep): HeadingStatus {
   if (step.state === 'failed') return plain('Plan failed', 'danger', step.href);
   if (step.state === 'stopped') return plain('Plan stopped by you', 'warn', step.href);
+  if (step.state === 'capped') return plain('Plan stopped at its cap', 'warn', step.href);
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   return plain('Plan running', 'info', step.href);
 }

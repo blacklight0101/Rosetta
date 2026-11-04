@@ -57,6 +57,17 @@ it('RF-1020 a run the user stopped is titled "stopped by you", not failed', () =
   );
 });
 
+it('RF-1020 P8-112 a run at its cap is titled "stopped at its cap" in the warn tone, not failed', () => {
+  expect(headingOf('OrderDesk', viewOf('capped')).status).toMatchObject({
+    text: 'Understand stopped at its cap',
+    tone: 'warn',
+  });
+  expect(headingOf('OrderDesk', viewOf('planCapped')).status).toMatchObject({
+    text: 'Plan stopped at its cap',
+    tone: 'warn',
+  });
+});
+
 it('RF-1020 a running Deepen makes the Questions step and the title link to its run', () => {
   const deepening = facts({
     source: source({ openQuestions: 2, deepening: true }),

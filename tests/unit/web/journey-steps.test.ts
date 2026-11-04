@@ -133,17 +133,17 @@ describe('journeyOf: the understand run (2)', () => {
 
 describe('journeyOf: an understand run that stopped', () => {
   it.each([
-    ['CapReached', 'RST-1403', 'Stopped at its cap (RST-1403)'],
-    ['Failed', 'RST-1203', 'Failed (RST-1203)'],
+    ['CapReached', 'RST-1403', 'capped', 'RST-1403'],
+    ['Failed', 'RST-1203', 'failed', 'Failed (RST-1203)'],
   ] as const)(
-    'RF-615 RF-006 a run that ended %s fails the step and offers Resume',
-    (end, code, text) => {
+    'RF-615 RF-1020 RF-006 a run that ended %s with %s is a %s step and offers Resume',
+    (end, code, state, detail) => {
       const view = journeyOf(
         facts({ source: source({ endState: end, errorCode: code, supportedClaims: 0 }) }),
         projectId,
       );
 
-      expect(step(view, 'understand')).toMatchObject({ state: 'failed', detail: text, here: true });
+      expect(step(view, 'understand')).toMatchObject({ state, detail, here: true });
       expect(view.action).toEqual({ kind: 'resume', label: 'Resume this run', runId: sourceId });
     },
   );
