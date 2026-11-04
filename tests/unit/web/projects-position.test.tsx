@@ -32,52 +32,53 @@ async function positionOf(lastRun: Record<string, unknown> | null): Promise<stri
   return whereCell(await screen.findByRole('link', { name: 'octo/demo', exact: true })).textContent;
 }
 
+const positions = [
+  ['no run', null, 'Scan not started'],
+  ['a running scan', ended('scan', { queueState: 'Running', endState: null }), 'Scan running'],
+  ['a finished scan', ended('scan'), 'Scan done'],
+  [
+    'a queued understand run',
+    ended('understand', { queueState: 'Queued', endState: null }),
+    'Understand queued',
+  ],
+  [
+    'a running understand run',
+    ended('understand', { queueState: 'Running', endState: null }),
+    'Understand running',
+  ],
+  ['a finished understand run', ended('understand'), 'Understand done'],
+  ['a running plan run', ended('plan', { queueState: 'Running', endState: null }), 'Plan running'],
+  ['a finished plan run', ended('plan'), 'Package ready'],
+  ['a failed plan run', ended('plan', { endState: 'Failed' }), 'Plan failed'],
+  [
+    'an understand run at its cap',
+    ended('understand', { endState: 'CapReached' }),
+    'Understand stopped at its cap',
+  ],
+  [
+    'a run stopped by the user',
+    ended('understand', { endState: 'Interrupted', endReason: 'UserStop' }),
+    'Stopped by you',
+  ],
+  [
+    'a run stopped by a restart',
+    ended('understand', { endState: 'Interrupted', endReason: 'Restart' }),
+    'Stopped by a restart',
+  ],
+  [
+    'a run cancelled while queued',
+    ended('scan', { endState: 'Interrupted', endReason: 'QueueCancel' }),
+    'Cancelled while queued',
+  ],
+] as const;
+
 describe('RF-010 where it is: the position of the project in the journey', () => {
-  it.each([
-    ['no run', null, 'Scan not started'],
-    ['a running scan', ended('scan', { queueState: 'Running', endState: null }), 'Scan running'],
-    ['a finished scan', ended('scan'), 'Scan done'],
-    [
-      'a queued understand run',
-      ended('understand', { queueState: 'Queued', endState: null }),
-      'Understand queued',
-    ],
-    [
-      'a running understand run',
-      ended('understand', { queueState: 'Running', endState: null }),
-      'Understand running',
-    ],
-    ['a finished understand run', ended('understand'), 'Understand done'],
-    [
-      'a running plan run',
-      ended('plan', { queueState: 'Running', endState: null }),
-      'Plan running',
-    ],
-    ['a finished plan run', ended('plan'), 'Package ready'],
-    ['a failed plan run', ended('plan', { endState: 'Failed' }), 'Plan failed'],
-    [
-      'an understand run at its cap',
-      ended('understand', { endState: 'CapReached' }),
-      'Understand stopped at its cap',
-    ],
-    [
-      'a run stopped by the user',
-      ended('understand', { endState: 'Interrupted', endReason: 'UserStop' }),
-      'Stopped by you',
-    ],
-    [
-      'a run stopped by a restart',
-      ended('understand', { endState: 'Interrupted', endReason: 'Restart' }),
-      'Stopped by a restart',
-    ],
-    [
-      'a run cancelled while queued',
-      ended('scan', { endState: 'Interrupted', endReason: 'QueueCancel' }),
-      'Cancelled while queued',
-    ],
-  ] as const)('RF-010 where it is reads the position of %s', async (_name, lastRun, text) => {
-    expect(await positionOf(lastRun)).toContain(text);
-  });
+  it.each(positions)(
+    'RF-010 where it is reads the position of %s',
+    async (_name, lastRun, text) => {
+      expect(await positionOf(lastRun)).toContain(text);
+    },
+  );
 
   it('RF-010 the position is not the badge of the last run', async () => {
     const text = await positionOf(ended('plan'));
@@ -119,7 +120,9 @@ describe('RF-010 the columns of the projects list', () => {
     expect(row?.querySelector('td[data-label="Tokens"]')).toBeNull();
     expect(row?.querySelector('td[data-label="State"]')).toBeNull();
   });
+});
 
+describe('RF-010 the position comes with the overview', () => {
   it('RF-010 the position comes with the one overview read: no request per row', async () => {
     const rows = [1, 2, 3].map((n) =>
       overviewRow(projectOf(`p-${String(n)}`, `octo/p${String(n)}`), {
