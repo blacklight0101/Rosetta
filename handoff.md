@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: phase 6 (P6-01), the owner check of P2-53 and the follow-up cards P2-55 and P2-56. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 stopped on the owner's order with its work merged into `develop` and nothing released. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,57 @@ _Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-05, Phase 8 wave 3 stopped on the owner's order; start a fresh orchestrator session).** The owner said on 2026-11-04 to finish what was running and start nothing new, and to write this handoff when it had merged. All of it has: 38 cards are merged into `develop` and none is released. No card pull request is open and no agent is running.
+
+Merged: P8-50 #1254, P8-56 #1251, P8-57 #1263, P8-58 #1255, P8-62 #1264, P8-72 #1269, P8-88 #1217, P8-89 #1229, P8-91 #1253, P8-93 #1244, P8-94 #1216, P8-99 #1270, P8-100 #1272, P8-101 #1274, P8-102 #1273, P8-104 #1215, P8-105 #1228, P8-106 #1206, P8-107 #1227, P8-108 #1213, P8-109 #1252, P8-110 #1214, P8-111 #1234, P8-112 #1226, P8-114 #1235, P8-115 #1231, P8-116 #1230, P8-117 #1233, P8-118 #1232, P8-119 #1265, P8-120 #1249, P8-121 #1268, P8-122 #1245, P8-123 #1262, P8-124 #1250, P8-130 #1271, P8-131 #1266, P8-132 #1267. Withdrawn: P8-33, P8-53, P8-113. Blocked: P8-51 on the owner.
+
+**Before the next release into `main`, read which deploy cards are on `develop`:** P8-62 is, and a release carries its workflow changes even if the owner has not provisioned the scheduler.
+
+Test stack: compose project `rosetta-wave3` on <http://127.0.0.1:18096>, image `rosetta:wave3`, worktree `Rosetta-wt/test-wave3`, local tag `test/wave3` at `bb6292e6b`. It is older than these cards: it has none of P8-72, P8-99, P8-100, P8-101, P8-102, P8-58, P8-121, P8-130, P8-131 or P8-132, so what they change must not be judged there. The first sign-in is in a file outside the repository. Keep it until the owner has finished with it. No model run has been made on it.
+
+Next, when the owner says to build again, in this order: P8-59, then P8-60 and P8-61 (its counting rule is corrected in the card: a set of claim ids, RF-1002); P8-73..P8-76, then P8-135; P8-77..P8-83; P8-84..P8-86; P8-95..P8-98; P8-63..P8-71 as far as they need no live setup (read each trigger first: P8-63 pushes an image); follow-ups P8-125..P8-129, P8-133, P8-134, P8-136, P8-137, P8-138; CI cards P8-52, P8-54 and P8-55 last. New cards from this wave: P8-134 Rename (#1275), P8-135 Roles table (#1276), P8-136 History table at 1024 px (#1277), P8-137 full position in the overview (#1278), P8-138 wave minors (#1279). P8-46..P8-49 stay the owner's. Counts are in the [tasks.md totals](docs/orchestration/tasks.md). Weekly window at the stop: 82%, against the 85% stop for new cards (DEC-220).
+
+Owner agenda from this wave:
+
+- **Choose:** the administrator's "Server, this month" figure now shows in the header only from 1600 px, run or not. That number is the builder's, not yours. On most laptops (1280, 1366, 1440, 1536 px) the figure is then only on the users and caps page and in the cap banner from 80%. Default: keep. Alternatives the verifier names: always show it in the banner, a second header line for the administrator, or a popover on the pill.
+- **Choose:** the journey strip wraps to four and three steps at 1024 px with the side navigation open (726 px of room against 780 px needed). With the glyph above the name all seven would fit one row. Default: keep.
+- **Choose:** "Partly read: 83%" can sit beside "Well covered: 83%" when one area is below the bar (P8-93). Default: keep.
+- **Choose:** with local models the run page reads "$0.00 left of $0.00 approved". Default: keep; say if the wording should change.
+- **Choose:** the Kind column reads "-" for a deleted run and for the Plan setup options row (P8-109), and $0.0020 gets the tooltip $0.002. Default: keep.
+- **Q-67:** should a call in flight finish and be booked at a tiny cap? Default: no.
+- **ADR-028 is Proposed:** accept the Container Apps job or a Logic App as the scheduler; a fine-grained token as the job's secret, 90 days, rotated by hand; the GitHub schedule stays as the backup until two mornings run on time. P8-63..P8-71 need this for their live parts.
+- **CI:** 10 of 19 `develop` runs were cancelled by the next merge, so merge rule 3 (the `develop` run after a merge goes green) cannot be checked for those commits; the next finished run covers their tree. The P8-50 picks need you: dropping the Windows coverage-merge job (saves 2.5 min) and the merge queue (needs an organisation-owned repository, P8-51). The `Staging` workflow also reads skipped on `develop` pushes; this was seen and not investigated, so check it before relying on staging.
+- **Migration 0023** clears a reason on a run with no end state; none should exist. Say if you want that checked on production data before the release.
+- **Try by hand:** P8-110 tap on a real phone and a screen-reader read-out; P8-88 History on a stopped and resumed run after the migration; P8-112 dark and 360 px views; P8-93 an ended understand run of a small app.
+- **P8-46..P8-49:** the evaluation re-run spends money and stays yours.
+
+Method notes from this wave, not rule changes yet: every builder brief asked for the Givens in the spec first, after that gap cost P8-92 and P8-90 a FAIL round each in wave 2 (the effect was not measured), and several cards were green locally and red on CI because the local font is narrower than the Linux runner's (P8-101) or a test depended on order (P8-72). Agents handed back while their own work still ran until the brief said not to. If you want these as rules, they become a DEC and go to the blueprint skill and its repository.
+
+Cost since the checkpoint below, in the harness's subagent tokens and tool calls (no USD figures were computed). "Fixes" sums every fix or CI-fix run, "Verifiers" every verifier round. A dash means no such run; "?" means the figure was not recorded, so the total is what is known. Resumed agents report tokens across their runs, so the P8-101 fix figures are the last reading and the call counts are added by hand.
+
+| Card   | Builder                             | Fixes                     | Verifiers     | Total known  |
+| ------ | ----------------------------------- | ------------------------- | ------------- | ------------ |
+| P8-50  | 137.3k, 33                          | 92.6k, 20                 | 212.6k, 42    | 442.5k, 95   |
+| P8-57  | 130.1k, 40                          | 95.4k, 27                 | ? + 89.9k, 17 | 315.4k, 84   |
+| P8-58  | 135.9k, 45                          | 312.2k, 108               | 471.1k, 189   | 919.2k, 342  |
+| P8-62  | 105.3k, 19                          | -                         | ?             | 105.3k, 19   |
+| P8-72  | 187.2k, 69                          | 98.9k, 28                 | 266.0k, 93    | 552.1k, 190  |
+| P8-91  | 194.3k, 90                          | 259.5k, 122               | 368.5k, 131   | 822.3k, 343  |
+| P8-93  | 405.3k, 137 with its first verifier | 335.7k, 215 + merge fix ? | 181.4k, 58    | 922.4k, 410  |
+| P8-99  | 216.6k, 87                          | 615.0k, 305               | 550.0k, 221   | 1381.6k, 613 |
+| P8-100 | 151.3k, 57                          | 160.8k, 54                | 359.0k, 126   | 671.1k, 237  |
+| P8-101 | 236.9k, 85 with its first fix       | 238.4k, 104               | 411.0k, 127   | 886.3k, 316  |
+| P8-102 | 132.0k, 52                          | -                         | 118.6k, 43    | 250.6k, 95   |
+| P8-119 | 230.5k, 88 with a stopped run       | -                         | 109.3k, 28    | 339.8k, 116  |
+| P8-120 | 226.4k, 90                          | 119.2k, 40                | 242.4k, 72    | 588.0k, 202  |
+| P8-121 | 148.9k, 54                          | -                         | 133.2k, 48    | 282.1k, 102  |
+| P8-123 | 112.2k, 42                          | -                         | 114.5k, 38    | 226.7k, 80   |
+| P8-130 | 255.9k, 122                         | 318.4k, 167               | 394.6k, 160   | 968.9k, 449  |
+| P8-131 | 107.4k, 31                          | -                         | 102.3k, 30    | 209.7k, 61   |
+| P8-132 | 276.8k, 145                         | 248.4k, 95                | 287.3k, 124   | 812.5k, 364  |
+
+Those 18 cards cost at least 10,696.5k, about 594k per card; all 38 of the wave cost at least 18,190.6k, about 479k per card, against about 304k per card in wave 2. The four with no fix round and all figures known (P8-102, P8-121, P8-123, P8-131) cost about 242k on average, the same as the earlier cards with no fix round, so the rise is again fix rounds, above all on P8-99, P8-130, P8-93 and P8-58. These fixes found real defects (a parse crash on the Projects list at `AwaitingApproval`, row menu bugs, a header that wrapped on the Linux runner), and several of the verdicts turned on an artboard or a spec line that had not been settled first.
 
 **Resume (2026-11-04, Phase 8 wave 3, second checkpoint at 60% of context; the session keeps building).** Twenty cards are merged into `develop` and none is released: P8-88 #1217, P8-89 #1229, P8-94 #1216, P8-104 #1215, P8-105 #1228, P8-106 #1206, P8-107 #1227, P8-108 #1213, P8-109 #1252, P8-110 #1214, P8-111 #1234, P8-112 #1226, P8-114 #1235, P8-115 #1231, P8-116 #1230, P8-117 #1233, P8-118 #1232, P8-122 #1245, P8-124 #1250 and P8-56 #1251. Withdrawn: P8-33 (DEC-220, Q-66), P8-113 (not reproducible), P8-53 (already in `ci.yml`). Blocked: P8-119 on P8-120, P8-51 on the owner. Open: P8-91 #1253, P8-93 #1244 (round 2), P8-120 #1249 (round 2), P8-50 #1254, P8-58 #1255; building: P8-57, P8-123.
 
@@ -317,6 +368,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-11-05 (Phase 8 wave 3 stopped)** - docs pull request `docs/build-status-wave3-final`: the owner stopped new cards; 38 cards of the wave are merged into `develop` and none is released. DEC-223 (Q-68 answered) and DEC-224 recorded, follow-up cards P8-134..P8-138 appended, Status lines and totals updated, the P8-60 counting rule and the row menu's scroll rule corrected. Owner agenda, next cards and costs are in the first entry of the resume point.
 - **2026-10-30 (owner decisions, Phase 7 merges)** - docs pull request `docs/owner-decisions-2026-10-30` (`needs-owner`): DEC-199..DEC-202 applied to `CLAUDE.md`, the orchestration README, the spec (RF-639, RF-641, RF-645) and `tasks.md` (Status lines of the merged Phase 7 cards, new cards P7-23 and P7-24, totals and waves); production deployed Phase 6 at 06:14 Madrid after a manual start of Scheduled release.
 - **2026-10-27 (release flow)** - docs and workflows pull request `docs/develop-staging-release` (`needs-owner`): the owner decided DEC-175 (ADR-025 Accepted): `develop` becomes the integration and default branch, every push to it deploys to a staging app (`staging.yml`) that shares the Azure environment, storage account and PostgreSQL server, a release is a pull request `develop` -> `main` merged by the owner with a merge commit, and production deploys at 06:00 Europe/Madrid (`scheduled-release.yml`), refusing a tree that did not pass staging. Owner and switch-over steps: agenda item 47.
 - **2026-10-25 (status)** - docs-only status pull request `docs/build-status-2026-10-25`: P2-34 Done (first live evaluation, figures in the resume point), P3-132 appended as Done (#924), totals recounted (P3 132 cards, total 401, 394 Done).
