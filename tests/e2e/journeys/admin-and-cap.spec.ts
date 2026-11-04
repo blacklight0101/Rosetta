@@ -10,6 +10,7 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
+import { saveHostedReaderWithOneParallelReader } from '../support/parallel-readers.js';
 
 // RF-1102, RF-1106, RF-1104, RF-422, RF-1010, RF-428, RNF-010, P1-46: the administrator creates a
 // user and saves the caps (the same figures as admin-users.spec.ts, so the server's month stays
@@ -59,10 +60,11 @@ async function userPicksPricedReader(page: Page): Promise<void> {
   // DEC-117: the threshold to confirm a run is at most the run cap, so both are set together.
   await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.002');
   await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.001');
-  // One reader at a time, so the first calls are answered and metered before one is refused.
-  await page.getByLabel('Parallel readers', { exact: true }).fill('1');
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  await expect(page.getByText('Settings saved.')).toBeVisible();
+  // One reader at a time, so the first calls are answered and metered before one is refused. With
+  // four readers the run's calls start together, the second is refused at once and the call in
+  // flight is cancelled before it is answered (RF-422, P8-56). The save that moves the reader to
+  // OpenAI makes it four (RF-436), so one reader is saved after it.
+  await saveHostedReaderWithOneParallelReader(page);
   await page.getByRole('link', { name: 'Start a run' }).click();
 }
 
