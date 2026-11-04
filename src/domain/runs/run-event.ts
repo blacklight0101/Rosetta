@@ -21,6 +21,8 @@ export type RunEventType =
   | 'agent.ended'
   | 'verify.citation.checked'
   | 'verify.judgement.started'
+  | 'verify.claim.started'
+  | 'verify.claim.callEnded'
   | 'verify.claim.judged'
   | 'verify.judgement.ended'
   | 'usage.recorded'
