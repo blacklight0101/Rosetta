@@ -732,8 +732,21 @@ a.brand img {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  /* RF-1200, P8-102: the six stages lay out 6, 3 + 3, or one column (600 px and below), never 5 + 1. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px 16px;
+}
+
+@media (min-width: 1168px) {
+  .rail {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1167px) {
+  .step:nth-child(3n)::before {
+    right: 0;
+  }
 }
 
 .step {
