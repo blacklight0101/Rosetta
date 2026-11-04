@@ -10,6 +10,7 @@ import {
   openPlanSetup,
   openStep,
   recorded,
+  saveBrief,
   stepPill,
   understandCatalog,
   writeButton,
@@ -134,12 +135,7 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-  );
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  expect((await saved).ok()).toBe(true);
+  await saveBrief(page, page.getByRole('button', { name: 'Save', exact: true }));
   release();
 
   await expect(recorded(page)).toContainText('Parallel Change');
@@ -149,6 +145,9 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
     'Agents will build with Claude Code. Models: smallest haiku, middle sonnet, largest opus',
   );
   await expect(recorded(page).getByText('(default)').first()).toBeVisible();
+  // P8-107: the held request was let through, so the options reach the page that asked for them.
+  await openStep(page, 'Architecture');
+  await expectOptions(page);
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('will be hosted');
