@@ -91,7 +91,7 @@ dialog.rst-p140-dialog::backdrop {
   gap: var(--rst-sp-3);
 }
 
-/* P8-89: the row menu ("More actions") and the cell that holds it, History artboard */
+/* P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History artboard. The flex is on a box inside the cell, never on the td, which would leave the table layout and lose the row separator. */
 
 .rst-p140-row-actions {
   display: flex;
@@ -170,4 +170,24 @@ dialog.rst-p140-dialog::backdrop {
 
 .rst-p140-run-name {
   white-space: nowrap;
+}
+
+/* P8-89: the Coverage value and its tooltip line, shown on hover and focus like the cost figures (cost.css) */
+
+.rst-p889-coverage__value {
+  border-block-end: 1px dotted var(--rst-ink-soft);
+  cursor: help;
+}
+
+.rst-p889-coverage__line {
+  display: none;
+  margin-block-start: var(--rst-sp-1);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-body);
+}
+
+.rst-p889-coverage:not([data-dismissed]):hover .rst-p889-coverage__line,
+.rst-p889-coverage:not([data-dismissed]):focus-within .rst-p889-coverage__line {
+  display: block;
 }

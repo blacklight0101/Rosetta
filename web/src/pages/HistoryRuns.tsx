@@ -146,12 +146,14 @@ function Row(props: {
       <td class="rst-table__num" data-label="Cost">
         {costLabel(costMicros)}
       </td>
-      <td class="rst-p140-row-actions">
-        <Resume run={run} />
-        <RowMenu
-          label={`More actions for run ${run.runId}`}
-          items={rowMenuItems(run, props.onDelete)}
-        />
+      <td>
+        <div class="rst-p140-row-actions">
+          <Resume run={run} />
+          <RowMenu
+            label={`More actions for run ${run.runId}`}
+            items={rowMenuItems(run, props.onDelete)}
+          />
+        </div>
       </td>
     </tr>
   );
