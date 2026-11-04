@@ -147,3 +147,10 @@
   background: var(--rst-surface-2);
   font-weight: var(--rst-fw-head);
 }
+
+/* At 360 px the empty cells of the project total row, which keep its total under its column, take no room. */
+@media (max-width: 40rem) {
+  .rst-p136-table .rst-p136-projecttotal td:empty {
+    display: none;
+  }
+}

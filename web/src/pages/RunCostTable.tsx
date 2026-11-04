@@ -141,9 +141,11 @@ export function RunCostTable(props: {
             <Row key={row.key} row={row} stops={stops} perRow={perRow} />
           ))}
           <tr class="rst-p136-projecttotal">
-            <th scope="row" colSpan={2 + ROLES.length}>
-              Project total
-            </th>
+            <th scope="row">Project total</th>
+            {/* Empty cells keep the total under its column, which a stacked table at 360 px needs. */}
+            {Array.from({ length: 1 + ROLES.length }, (_, at) => (
+              <td key={at} />
+            ))}
             <td data-label="Total" class="rst-table__num rst-p136-total">
               <Amount cell={PROJECT_TOTAL} totals={total} stops={stops} />
             </td>

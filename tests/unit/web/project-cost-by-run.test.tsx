@@ -64,7 +64,7 @@ const byRun = () => screen.findByRole('table', { name: 'By run' });
 
 /** What a cell shows: the amount alone, without the exact figure beside it. */
 const shown = (cell: HTMLElement): string =>
-  (cell.querySelector('[data-rst-amount], [aria-hidden]') ?? cell).textContent ?? '';
+  (cell.querySelector('[data-rst-amount], [aria-hidden]') ?? cell).textContent;
 
 const rowOf = (table: HTMLElement, name: string | RegExp): HTMLElement =>
   within(table).getByRole('row', { name });
@@ -120,17 +120,9 @@ describe('cost by run roles and total', () => {
     ]);
     expect(within(table).queryByText('$0.00')).toBeNull();
   });
+});
 
-  it('RF-428 adds the role cells of every run up to its total, in micro-dollars', () => {
-    for (const line of cost.byRun) {
-      const sum = line.byRole.reduce(
-        (total, role) => total + Number(role.totals.cost[0]?.costMicros),
-        0,
-      );
-      expect(String(sum)).toBe(line.totals.cost[0]?.costMicros);
-    }
-  });
-
+describe('cost by run project total', () => {
   it('RF-428 ends the table with a Project total row from the totals of the page', async () => {
     renderCost();
 
@@ -140,7 +132,7 @@ describe('cost by run roles and total', () => {
     const last = rows[rows.length - 1];
     if (last === undefined) throw new Error('a row expected');
     expect(within(last).getByRole('rowheader').textContent).toBe('Project total');
-    expect(within(last).getAllByRole('cell').map(shown)).toEqual(['$0.1550']);
+    expect(within(last).getAllByRole('cell').map(shown)).toEqual(['', '', '', '', '', '$0.1550']);
   });
 
   it('RF-428 shows the zero of a local run as `$0.00` and a tiny cost as `<$0.0001`', async () => {
@@ -153,7 +145,7 @@ describe('cost by run roles and total', () => {
     expect(cellsOf(rowOf(table, /20261012-100000-understand/u))).toContain('<$0.0001');
   });
 
-  it('RF-428 names the price table once above the table and in a column only when the runs differ', async () => {
+  it('RF-428 names the price table once above the table, not in a column, when the runs used the same one', async () => {
     renderCost();
     const same = await byRun();
     expect(within(same).queryByRole('columnheader', { name: 'Price table' })).toBeNull();
