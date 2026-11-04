@@ -8,7 +8,8 @@ import { Wordmark } from './Wordmark.js';
 // when a project is open, the run meter while a run is active (after the wordmark, as the artboard
 // P8Projects draws it, so figures growing on the right never move it, P8-101), the totals pill
 // (RF-1010, a slot filled by its own card), the user with the role and the theme toggle; the user
-// and the toggle are one group, so they never part onto two lines.
+// and the toggle are one group, so they never part onto two lines; a long name is cut with an
+// ellipsis, its full text the tooltip.
 
 interface HeaderUser {
   readonly displayName: string;
@@ -31,7 +32,10 @@ export interface HeaderProps {
 // RF-1010, RNF-010
 export function Header(props: HeaderProps): JSX.Element {
   return (
-    <header class="rst-header" role="banner">
+    <header
+      class={props.runMeter === undefined ? 'rst-header' : 'rst-header rst-header--run'}
+      role="banner"
+    >
       <Wordmark />
       {props.repository === undefined ? null : (
         <span class="rst-mono rst-header__repository" data-testid="header-repository">
@@ -47,7 +51,9 @@ export function Header(props: HeaderProps): JSX.Element {
       )}
       <div class="rst-header__account">
         <div class="rst-header__user" data-testid="header-user">
-          <span>{props.user.displayName}</span>
+          <span class="rst-header__name" title={props.user.displayName}>
+            {props.user.displayName}
+          </span>
           <StatusBadge list="Role" value={props.user.role} />
           {props.actions}
         </div>
