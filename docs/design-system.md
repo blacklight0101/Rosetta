@@ -205,7 +205,10 @@ The in-flow Tooltip is the exact figure of a cost amount, built by `CostFigure` 
 classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
 only when the exact figure differs from the shown amount; otherwise the amount is plain text.
 Every other page writes its amounts by the same formatter (`formatMoney`, `moneyText` in `web/src/lib/money.ts`); an amount in a table
-there is a `MoneyAmount` (`web/src/components/MoneyAmount.tsx`), which keeps one tab stop per table (P8-91).
+there is a `MoneyAmount` (`web/src/components/MoneyAmount.tsx`), and so is one that stands alone (a figure of the live run, the journey, the header); the amounts of a table
+keep one tab stop that follows the amount last focused (`useAmountTabStop`, the same logic as the cost tables; P8-91). An amount inside a sentence is text, rounded by the same
+rule without a tooltip, and an amount left of the approved amount rounds down (`formatMoney` with `down`), so it never exceeds what is left. An amount inside a link
+(the header total, which links to the cost page) carries its exact figure as the link's `title`, not as a focusable tip, so it is not read twice and adds no tab stop.
 
 - **Trigger:** the shown amount, a `span` with `tabindex="0"` (or `-1` when another amount of its table holds the table's tab stop), a dotted underline in `ink-soft` and the help cursor. The
   tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the
@@ -299,7 +302,7 @@ arrow, warning triangle, play, step back, step forward.
 
 English only (DEC-45). Sentence case for titles, labels and buttons. Buttons start with a verb ("Start run",
 "Delete run"). Numbers with thousands separators; costs in USD with `$`, four decimals below $1 and two above
-(DEC-54; DEC-217: exactly zero reads `$0.00`, a non-zero amount below $0.00005 reads `<$0.0001`); an amount whose exact figure differs carries it in a tooltip that opens on hover, on keyboard focus and on tap, is read with the amount and closes with Escape; tokens abbreviated with `k` and `M` only in compact places, exact in tables. Times in 24-hour format, local
+(DEC-54; DEC-217: exactly zero reads `$0.00`, a non-zero amount below $0.00005 reads `<$0.0001`; a project's runs list reads `No cost` for a run of exactly zero, as the P8Project artboard draws it; a sentence that compares two limits writes an amount in all its digits, as `$1.004`, when rounding would hide the difference); an amount whose exact figure differs carries it in a tooltip that opens on hover, on keyboard focus and on tap, is read with the amount and closes with Escape; tokens abbreviated with `k` and `M` only in compact places, exact in tables. Times in 24-hour format, local
 time zone in the UI, UTC in files. Ids, paths and model names in the mono font, never translated or shortened in
 the middle. Errors say what happened, what to do, and the code.
 
