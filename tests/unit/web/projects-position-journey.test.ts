@@ -34,7 +34,7 @@ describe('RF-010 where it is agrees with the project page', () => {
 
     expect(headingOf('octo/demo', view).title).toBe(text);
     expect(step(view, 'scan').detail).toContain(text);
-    expect(step(view, 'scan').state).toBe('upcoming');
+    expect(step(view, 'scan').state).toBe('current');
   });
 
   it.each([
