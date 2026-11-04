@@ -130,17 +130,59 @@
   display: none;
 }
 
-/* P8-100: the compact row of the artboards (P8Project, P8Run): glyph, name and state of each step, one
-   row at 1280 px and 1024 px, wrapping to fewer columns below 720 px. */
+/* P8-100: the compact row of the artboards (P8Project, P8Run): glyph, name and state of each step. The
+   columns follow the width of the strip itself (its container), not the window, because the navigation
+   narrows it: seven columns when they fit, then 4 + 3, then two, and never so narrow that a name breaks
+   inside a word (the narrowest column, 7.5rem, holds "Understand" at the design system's size). The
+   state word and the glyph keep the tone of the state (the same tokens as the pill of the cards). */
+.rst-road--compact {
+  container-type: inline-size;
+}
+
 .rst-road--compact .rst-road__steps {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--rst-sp-1);
 }
 
+@container (min-width: 33rem) {
+  .rst-road--compact .rst-road__steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 56rem) {
+  .rst-road--compact .rst-road__steps {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
 .rst-road--compact .rst-road__step {
+  --rst-road-tone: var(--rst-neutral-ink);
   padding: var(--rst-sp-2);
   border-color: transparent;
   background: transparent;
+}
+
+.rst-road--compact .rst-road__step--done {
+  --rst-road-tone: var(--rst-ok-ink);
+}
+
+.rst-road--compact .rst-road__step--current {
+  --rst-road-tone: var(--rst-info-ink);
+}
+
+.rst-road--compact .rst-road__step--failed {
+  --rst-road-tone: var(--rst-danger-ink);
+}
+
+.rst-road--compact .rst-road__step--awaiting,
+.rst-road--compact .rst-road__step--stopped,
+.rst-road--compact .rst-road__step--restarted,
+.rst-road--compact .rst-road__step--cancelled,
+.rst-road--compact .rst-road__step--capped,
+.rst-road--compact .rst-road__step--out-of-date,
+.rst-road--compact .rst-road__step--gaps {
+  --rst-road-tone: var(--rst-warn-ink);
 }
 
 .rst-road--compact .rst-road__step[aria-current='step'] {
@@ -150,10 +192,14 @@
   background: var(--rst-brand-tint);
 }
 
-.rst-road--compact .rst-road__state {
+.rst-road--compact .rst-road__step .rst-road__state {
   padding: 0;
   background: transparent;
-  color: var(--rst-ink-soft);
+  color: var(--rst-road-tone);
+}
+
+.rst-road--compact .rst-road__step .rst-road__mark {
+  color: var(--rst-road-tone);
 }
 
 .rst-road__links {
@@ -192,15 +238,8 @@
   font-size: var(--rst-fs-sm);
 }
 
-@media (max-width: 720px) {
-  .rst-road--compact .rst-road__steps {
-    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  }
-}
-
 @media (max-width: 480px) {
-  .rst-road__steps,
-  .rst-road--compact .rst-road__steps {
+  .rst-road__steps {
     grid-template-columns: minmax(0, 1fr);
   }
 }

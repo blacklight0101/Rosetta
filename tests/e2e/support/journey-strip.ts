@@ -61,3 +61,11 @@ export const gappedPlan = (): { readonly plan: object; readonly handoff: object 
     handoff: { runId: planId, runKey: '20261012-103000-plan', outOfDate: false, gaps: true },
   };
 };
+
+/** The distinct vertical positions of the seven steps: one means they stand in a single row. */
+export async function rowsOf(page: Page): Promise<number> {
+  const tops = await journey(page)
+    .getByRole('listitem')
+    .evaluateAll((items) => items.map((each) => Math.round(each.getBoundingClientRect().top)));
+  return new Set(tops).size;
+}

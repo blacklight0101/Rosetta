@@ -1,7 +1,13 @@
 import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
-import { gappedPlan, journey, routeJourney, showStepDetails } from '../support/journey-strip.js';
+import {
+  gappedPlan,
+  journey,
+  rowsOf,
+  routeJourney,
+  showStepDetails,
+} from '../support/journey-strip.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
 import { replayRunId } from '../support/seed-replay.js';
@@ -107,4 +113,19 @@ test('RF-1020 P8-100 no title or state word of the strip breaks inside a word fr
     await page.setViewportSize({ width, height: 800 });
     expect(await brokenWords(page), `open at ${String(width)} px`).toEqual([]);
   }
+});
+
+test('RF-1020 P8-100 at 360 px the compact row is two columns of four rows, not seven stacked rows', async ({
+  page,
+}, info) => {
+  await signInAs(page.context(), accountFor('replay', info.project.name));
+  await routeJourney(page, info.project.name, gappedPlan());
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+  await expect(journey(page).getByRole('listitem')).toHaveCount(7);
+
+  await page.setViewportSize({ width: 360, height: 780 });
+
+  expect(await rowsOf(page)).toBe(4);
+  const strip = await journey(page).locator('.rst-road__steps').boundingBox();
+  expect(strip?.height ?? Infinity).toBeLessThan(400);
 });

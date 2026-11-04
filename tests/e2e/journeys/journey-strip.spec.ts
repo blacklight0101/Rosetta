@@ -8,6 +8,7 @@ import { heldReaderModel, planFailsModel } from '../support/journey-models.js';
 import {
   gappedPlan,
   journey,
+  rowsOf,
   routeJourney,
   showStepDetails,
   stepOf,
@@ -47,14 +48,6 @@ async function expectPhoneFits(page: Page): Promise<void> {
   await page.setViewportSize({ width: 360, height: 780 });
   await expectNoSidewaysScroll(page);
   await page.setViewportSize({ width: 1280, height: 800 });
-}
-
-/** The distinct vertical positions of the seven steps: one means they stand in a single row. */
-async function rowsOf(page: Page): Promise<number> {
-  const tops = await journey(page)
-    .getByRole('listitem')
-    .evaluateAll((items) => items.map((each) => Math.round(each.getBoundingClientRect().top)));
-  return new Set(tops).size;
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -229,9 +222,13 @@ test('RF-1020 P8-100 the strip of a run page is one compact row that expands to 
   await expect(journey(page).getByRole('listitem')).toHaveCount(7);
   await expect(stepOf(page, 'Understand')).toContainText('Done');
   await expect(journey(page).locator('.rst-road__detail').first()).toBeHidden();
-  for (const width of [1280, 1024]) {
+  // One row of seven where they fit; where the navigation narrows the strip, 4 + 3 rather than a broken word.
+  for (const [width, rows] of [
+    [1280, 1],
+    [1024, 2],
+  ] as const) {
     await page.setViewportSize({ width, height: 800 });
-    expect(await rowsOf(page)).toBe(1);
+    expect(await rowsOf(page)).toBe(rows);
     await expectNoSidewaysScroll(page);
   }
   await expectPhoneFits(page);
