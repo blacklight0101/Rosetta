@@ -83,6 +83,7 @@
     "tests/e2e/projects-workbooks-progress.spec.ts",
     "tests/e2e/projects-zip-workbooks-progress.spec.ts",
     "tests/e2e/plan-setup-stack.spec.ts",
-    "tests/e2e/plan-setup-stack-defaults.spec.ts"
+    "tests/e2e/plan-setup-stack-defaults.spec.ts",
+    "tests/e2e/python-project-plan.spec.ts"
   ]
 }

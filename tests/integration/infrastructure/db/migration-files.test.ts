@@ -67,6 +67,7 @@ describe('release migrations', () => {
       '0020_journeys.sql',
       '0021_runs_running_time.sql',
       '0022_runs_end_reason.sql',
+      '0023_runs_end_reason_needs_state.sql',
     ]);
   });
 

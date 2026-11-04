@@ -98,7 +98,8 @@ export type E2eAccountKind =
   | 'sweep-admin'
   | 'sweep-force'
   | 'plan'
-  | 'plan-non-dotnet';
+  | 'plan-non-dotnet'
+  | 'plan-python';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -136,6 +137,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'sweep-force',
   'plan',
   'plan-non-dotnet',
+  'plan-python',
 ];
 
 const adminKinds: ReadonlySet<E2eAccountKind> = new Set([

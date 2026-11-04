@@ -30,6 +30,50 @@ _Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-
 
 ## Resume point
 
+**Resume (2026-11-04, Phase 8 wave 3, second checkpoint at 60% of context; the session keeps building).** Twenty cards are merged into `develop` and none is released: P8-88 #1217, P8-89 #1229, P8-94 #1216, P8-104 #1215, P8-105 #1228, P8-106 #1206, P8-107 #1227, P8-108 #1213, P8-109 #1252, P8-110 #1214, P8-111 #1234, P8-112 #1226, P8-114 #1235, P8-115 #1231, P8-116 #1230, P8-117 #1233, P8-118 #1232, P8-122 #1245, P8-124 #1250 and P8-56 #1251. Withdrawn: P8-33 (DEC-220, Q-66), P8-113 (not reproducible), P8-53 (already in `ci.yml`). Blocked: P8-119 on P8-120, P8-51 on the owner. Open: P8-91 #1253, P8-93 #1244 (round 2), P8-120 #1249 (round 2), P8-50 #1254, P8-58 #1255; building: P8-57, P8-123.
+
+The owner answered in chat (DEC-220, DEC-221): the wait on P8-49 is dropped, so P8-50..P8-61, P8-72..P8-86 and P8-95..P8-98 run before the evaluation; the parallelism rule is confirmed; the deploy cards P8-62..P8-71 are built as far as they need no live setup, with ADR-028 left Proposed; three builders until 85% of the weekly window. **Before the next release into `main`, read which deploy cards are on `develop`: a release carries their workflow changes even if the owner has not yet provisioned the scheduler.**
+
+Next, in order: P8-59 after P8-58; P8-99..P8-102 after P8-91; P8-119 after P8-120; P8-60, P8-61; P8-72..P8-76; P8-77..P8-83; P8-84..P8-86; P8-95..P8-98; P8-62..P8-71 as above; follow-ups P8-121, P8-125..P8-133; CI cards P8-52, P8-54 and P8-55 last, because the P8-50 note shows they save little without the merge queue.
+
+Owner agenda from this wave:
+
+- Try by hand: P8-110 tap on a real phone and a screen-reader read-out; P8-88 History on a stopped and resumed run after the migration; P8-112 dark and 360 px views; P8-93 an ended understand run of a small app (badge, tile, Read step and Areas figure agree).
+- Q-67: should a call in flight finish and be booked at a tiny cap? Default: no, and P8-132 lets a tiny cap read one area.
+- P8-91 (if it merges as built): "remaining" lines now round half up, so they can show a rounding step more than is left.
+- P8-109: Kind reads "-" for a deleted run and for the Plan setup options row.
+- P8-50 picks that need you: dropping the Windows coverage-merge job (saves 2.5 min) and the merge queue (needs an organisation-owned repository). 10 of 19 `develop` runs were cancelled by the next merge, so those commits have no finished `develop` run.
+- P8-89: a pointer leaving the tooltip diagonally closes it (P8-129 fixes it; the verdict comment on #1229 calls this owner-accepted, but the owner did not rule on it).
+
+Incident: Docker Desktop's CLI hung from at least 22:23 on 2026-11-03 with the containers still serving. On the owner's word it was restarted: stop all Docker processes, `wsl --shutdown`, delete the five run sockets through `wsl -d docker-desktop -- rm -f`, `wsl --shutdown`, then `Start-Process` of `Docker Desktop.exe`. `docker desktop restart` hung, and `Stop-Job` on a job running `docker desktop start` re-orphaned a socket. All 8 containers came back healthy. Never choose "Reset to factory defaults".
+
+Cost of wave 3 so far, in the harness's subagent tokens and tool calls (no USD figures were computed). "Fixes" sums every fix or CI-fix run, "Verifiers" every verifier round.
+
+| Card   | Builder     | Fixes       | Verifiers   | Total        |
+| ------ | ----------- | ----------- | ----------- | ------------ |
+| P8-108 | 113.7k, 33  | -           | 94.8k, 19   | 208.5k, 52   |
+| P8-104 | 107.8k, 28  | -           | 109.7k, 25  | 217.5k, 53   |
+| P8-110 | 137.6k, 62  | 111.2k, 44  | 242.3k, 62  | 491.1k, 168  |
+| P8-88  | 220.3k, 113 | -           | 159.1k, 66  | 379.4k, 179  |
+| P8-94  | 334.3k, 222 | 92.8k, 36   | 152.4k, 50  | 579.5k, 308  |
+| P8-112 | 114.9k, 31  | -           | 122.9k, 29  | 237.8k, 60   |
+| P8-107 | 99.1k, 22   | -           | 107.4k, 32  | 206.5k, 54   |
+| P8-116 | 84.0k, 15   | -           | 86.0k, 12   | 170.0k, 27   |
+| P8-115 | 183.4k, 51  | -           | 93.1k, 21   | 276.5k, 72   |
+| P8-118 | 106.7k, 34  | -           | 106.1k, 25  | 212.8k, 59   |
+| P8-106 | -           | 391.1k, 166 | 219.4k, 45  | 610.5k, 211  |
+| P8-105 | 125.2k, 46  | 98.1k, 18   | 203.2k, 49  | 426.5k, 113  |
+| P8-111 | 276.1k, 140 | 83.5k, 11   | 202.8k, 107 | 562.4k, 258  |
+| P8-114 | 119.7k, 49  | -           | 93.9k, 18   | 213.6k, 67   |
+| P8-117 | 116.8k, 36  | 180.8k, 35  | 195.4k, 40  | 493.0k, 111  |
+| P8-89  | 233.7k, 101 | 342.9k, 126 | 464.0k, 161 | 1040.8k, 388 |
+| P8-124 | 103.6k, 27  | -           | 96.9k, 22   | 200.5k, 49   |
+| P8-122 | 137.4k, 63  | -           | 104.1k, 29  | 241.5k, 92   |
+| P8-109 | 174.0k, 56  | -           | 167.9k, 78  | 341.9k, 134  |
+| P8-56  | 119.9k, 47  | 145.6k, 46  | 118.3k, 40  | 383.8k, 133  |
+
+Those 20 merged cards cost 7,494.1k, about 375k per card, against about 304k per card in wave 2. The 12 cards with no fix round cost about 242k on average (2,906.5k), so the rise comes from fix rounds: P8-89 alone took three verifier rounds and an opus fixer. Cards that stopped without merging: P8-33 126.3k, 26; P8-113 124.3k, 33; P8-119 110.3k, 32. Open so far: P8-93 741.0k, 352 (its fix round 335.7k, 215 is the costliest fix of the wave); P8-120 493.4k, 181; P8-91 194.3k, 90; P8-50 137.3k, 33; P8-58 135.9k, 45.
+
 **Resume (2026-11-04, Phase 8 wave 3 checkpoint; the wave continues in the same session).** Merged into `develop`: P8-108 #1213 (the cost route splits each run by role), P8-104 #1215 (the C# on .NET walk runs on the non-.NET project) and P8-110 #1214 (exact zero and tiny amounts; the verifier failed round 1 because Escape did not close a figure under the pointer, round 2 passed). Not released. In flight: P8-106 #1206 (a fixer is on the two 60x repeat sets), P8-94 #1216 (builder done, CI fixer done; recordings depend on the order cards are read in), P8-88 #1217 (builder done), and P8-107, P8-112 and P8-105 (started, see the pull requests on GitHub). P8-33 is `Blocked (Q-66)`: its premise does not hold on `develop` (a project run cap does not lower the approvable figure, and a pause is reachable only by writing the `journeys` row), so Q-66 asks the owner and its default withdraws the card in favour of `approval-pause.spec.ts`. The owner approved the Docker restart and asked in chat to keep working through the night without being asked; DEC-219 records the method change (checkpoint at 60% of context and keep building, a failed premise is blocked with a Q-nn, cards read by id, verdicts in a file, worktree removed before the merge). Next, in this order: P8-89 after P8-88 merges; then P8-91 (after P8-89, P8-110 is merged) and P8-109 (after P8-89, P8-108 is merged); P8-111 after P8-88 and P8-112 (run-lifecycle and journey-context files); P8-105 after P8-112 (journey-steps tests); then the follow-ups P8-113 (a defect: the project page posts a scan on every load; failing test first), P8-114, P8-115, P8-116, P8-117, P8-118 and P8-119, filed in the docs pull request that carries this entry (issues #1218..#1224). Owner checks: P8-110, tap an amount on a real phone (iOS Safari and Android Chrome) and listen to a screen reader read an amount. Owner agenda question (P8-94, default keep): in a two-workbook project the `(root)` area with `dependencies.md` is read last under DEC-216, while RF-231 says it is read; say if the order or the text should change. Docker incident: the Docker Desktop CLI hung from at least 22:23 on 2026-11-03 (its backend log stopped at 21:35) while the containers kept serving, and `docker desktop restart` hung too, as did stopping a job that ran `docker desktop start`, which killed its backend and orphaned `sailor-ingest.sock` again. What worked, on the owner's word: stop everything, `wsl --shutdown`, remove the five orphaned run sockets (`dockerInference`, `userAnalyticsOtlpHttp.sock`, `sailor-ingest.sock`, `dockerEthernetVfkit`, `docker-secrets-engine/engine.sock`) with `wsl -d docker-desktop -- rm -f`, `wsl --shutdown` again, then start `Docker Desktop.exe` detached. All eight `rosetta-*` containers came back healthy; never click "Reset to factory defaults" in the dialog.
 
 Cost of wave 3 so far, in the harness's subagent tokens and tool calls (no USD figures were computed; a dash means no such run). Open cards show what they cost until now.
