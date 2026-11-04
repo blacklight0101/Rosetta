@@ -204,6 +204,8 @@ for a tip too long for that. The bullets below describe the in-flow variant, and
 The in-flow Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
 classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
 only when the exact figure differs from the shown amount; otherwise the amount is plain text.
+Every other page writes its amounts by the same formatter (`formatMoney`, `moneyText` in `web/src/lib/money.ts`); an amount in a table
+there is a `MoneyAmount` (`web/src/components/MoneyAmount.tsx`), which keeps one tab stop per table (P8-91).
 
 - **Trigger:** the shown amount, a `span` with `tabindex="0"` (or `-1` when another amount of its table holds the table's tab stop), a dotted underline in `ink-soft` and the help cursor. The
   tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the

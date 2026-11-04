@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import type { AccountTotals } from '../api/cost-schemas.js';
 import { tokenSplitText, tokensText, totalCostText } from '../lib/cost-text.js';
-import { microsToDollars } from '../lib/usd.js';
+import { moneyText } from '../lib/money.js';
 import { serverMonthOf } from '../pages/admin-month.js';
 import { Link } from './Link.js';
 
@@ -41,12 +41,12 @@ function Own({
 
 function Server({ server }: { readonly server: NonNullable<AccountTotals['server']> }) {
   const month = serverMonthOf(server.serverMonthToDate, BigInt(server.caps.serverMonthMicros));
-  const used = microsToDollars(month.usedMicros.toString());
-  const cap = microsToDollars(server.caps.serverMonthMicros);
+  const used = moneyText(month.usedMicros);
+  const cap = moneyText(server.caps.serverMonthMicros);
   return (
     <span class="rst-p136-pill__server" data-testid="header-server-month">
       <span class="rst-p136-pill__label">Server, this month</span>{' '}
-      <span class={month.warn ? 'rst-p136-pill__warn' : undefined}>{`$${used} of $${cap}`}</span>
+      <span class={month.warn ? 'rst-p136-pill__warn' : undefined}>{`${used} of ${cap}`}</span>
     </span>
   );
 }

@@ -5,7 +5,7 @@ import { capTokensNote, tokenFiguresOf } from '../lib/live-run/cap-tokens.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import type { CapsState, RunState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf, shareOf, type RoleTotals } from '../lib/live-run/run-summary.js';
-import { microsToDollars } from '../lib/usd.js';
+import { moneyText } from '../lib/money.js';
 import { ApprovedViewContext } from './approved-view-context.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
@@ -83,7 +83,7 @@ function Bars(props: {
 
 type Point = RunEstimate['total']['likely'];
 
-const dollars = (micros: string): string => `$${microsToDollars(micros)}`;
+const dollars = (micros: string): string => moneyText(micros);
 const tokensOf = (point: Point): number => point.inputTokens + point.outputTokens;
 
 /** The range in tokens, and in dollars when the models have a price: free models show 0 to 0. */

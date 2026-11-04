@@ -34,6 +34,11 @@ export function formatMoney(micros: string): Money {
   return { text: `$${dollars}.${(cents % 100n).toString().padStart(2, '0')}`, exact };
 }
 
+/** The amount as shown, for micro-dollars as a number (rounded to a micro-dollar), a bigint or a decimal string. */
+export function moneyText(micros: number | bigint | string): string {
+  return formatMoney(typeof micros === 'number' ? String(Math.round(micros)) : String(micros)).text;
+}
+
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const versionPattern = /^(\d{4})-(\d{2})-(\d{2})$/u;
 

@@ -1,10 +1,10 @@
 import type { JSX } from 'preact';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { Link } from '../components/Link.js';
+import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
-import { costLabel } from '../lib/live-run/format.js';
 import { runningTimeText, startedText } from '../lib/run-times.js';
 
 // RF-1008, RF-1021, DEC-211 (P8-26, P8Project): the runs of the project on its page, newest first, each
@@ -26,7 +26,13 @@ function State({ run }: { readonly run: HistoryRun }): JSX.Element {
   return <StatusBadge list="RunQueueState" value={run.queueState} />;
 }
 
-function Row({ run }: { readonly run: HistoryRun }): JSX.Element {
+function Row({
+  run,
+  tabStop,
+}: {
+  readonly run: HistoryRun;
+  readonly tabStop: boolean;
+}): JSX.Element {
   return (
     <tr>
       <td data-label="Run">
@@ -41,7 +47,11 @@ function Row({ run }: { readonly run: HistoryRun }): JSX.Element {
       <td data-label="Started">{startedText(run.startedAt ?? run.queuedAt)}</td>
       <td data-label="Running time">{runningTimeText(run.runningMs)}</td>
       <td data-label="Cost" class="rst-table__num">
-        {run.totals.costMicros === 0 ? 'No cost' : costLabel(run.totals.costMicros)}
+        {run.totals.costMicros === 0 ? (
+          'No cost'
+        ) : (
+          <MoneyAmount micros={run.totals.costMicros} tabStop={tabStop} />
+        )}
       </td>
     </tr>
   );
@@ -54,6 +64,7 @@ export function ProjectRuns({
   readonly runs: readonly HistoryRun[];
 }): JSX.Element | null {
   if (runs.length === 0) return null;
+  const stop = firstExactAt(runs.map((run) => run.totals.costMicros));
   return (
     <section class="rst-card rst-p826-runs" aria-labelledby="runs-heading">
       <h2 id="runs-heading" class="rst-settings__heading">
@@ -75,8 +86,8 @@ export function ProjectRuns({
             </tr>
           </thead>
           <tbody>
-            {runs.map((run) => (
-              <Row key={run.id} run={run} />
+            {runs.map((run, at) => (
+              <Row key={run.id} run={run} tabStop={at === stop} />
             ))}
           </tbody>
         </table>

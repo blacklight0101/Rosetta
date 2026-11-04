@@ -1,8 +1,9 @@
 import type { JSX } from 'preact';
 import type { ListedAccount } from '../api/admin-schemas.js';
 import { Button } from '../components/Button.js';
+import { firstExactAt, MoneyAmount } from '../components/MoneyAmount.js';
 import { StatusBadge } from '../components/StatusBadge.js';
-import { costText, signInText } from './admin-format.js';
+import { signInText } from './admin-format.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1102, RF-1104, RF-1105, design-system.md section 14 (administration: users): every account
@@ -57,7 +58,28 @@ function RowActions(props: RowProps): JSX.Element | null {
   );
 }
 
-function AccountRow(props: RowProps): JSX.Element {
+function MonthCost(props: {
+  readonly money: ListedAccount['monthToDate'];
+  readonly tabStop: boolean;
+}): JSX.Element {
+  if (props.money.length === 0) return <>$0.00</>;
+  const stop = firstExactAt(props.money.map(({ costMicros }) => costMicros));
+  return (
+    <>
+      {props.money.flatMap(({ currency, costMicros }, at) => [
+        at === 0 ? null : ' + ',
+        <MoneyAmount
+          key={currency}
+          micros={costMicros}
+          currency={currency}
+          tabStop={props.tabStop && at === stop}
+        />,
+      ])}
+    </>
+  );
+}
+
+function AccountRow(props: RowProps & { readonly tabStop: boolean }): JSX.Element {
   const { user } = props;
   return (
     <tr>
@@ -76,7 +98,7 @@ function AccountRow(props: RowProps): JSX.Element {
         {user.projects}
       </td>
       <td class="rst-table__num" data-label="Month to date">
-        {costText(user.monthToDate)}
+        <MonthCost money={user.monthToDate} tabStop={props.tabStop} />
       </td>
       <td data-label="Server keys">{user.serverKeysAllowed ? 'allowed' : 'not allowed'}</td>
       <td>
@@ -88,6 +110,9 @@ function AccountRow(props: RowProps): JSX.Element {
 
 // RF-1102
 export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Element {
+  const stop = users.findIndex(
+    ({ monthToDate }) => firstExactAt(monthToDate.map(({ costMicros }) => costMicros)) >= 0,
+  );
   return (
     <ScrollRegion label="Accounts table">
       <table class="rst-table rst-table--stack">
@@ -111,8 +136,8 @@ export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Eleme
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => (
-            <AccountRow key={user.id} user={user} {...rest} />
+          {users.map((user, at) => (
+            <AccountRow key={user.id} user={user} tabStop={at === stop} {...rest} />
           ))}
         </tbody>
       </table>
