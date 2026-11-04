@@ -1,9 +1,9 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { queuePositions } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
+import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -41,21 +41,32 @@ export interface ListHistoryDependencies {
   readonly runs: RunIndex;
   readonly folders: WorkspaceFolders;
   readonly manifests: Pick<RunManifestStore, 'read'>;
+  readonly logger: Logger;
 }
 
-/** P8-89: the rounds of a Deepen run from its manifest (the record, or the options of a queued one). */
+/**
+ * P8-89: the rounds of a Deepen run from its manifest (the record, or the options of a queued one). A
+ * manifest that is missing, not valid JSON or cannot be read at all (a directory, no permission) counts as
+ * none, so one bad run folder never hides the others; the unreadable ones are logged.
+ */
 async function deepenRoundsOf(
-  manifests: Pick<RunManifestStore, 'read'>,
+  deps: Pick<ListHistoryDependencies, 'manifests' | 'logger'>,
   run: Run,
 ): Promise<number | null> {
   if (run.stage !== 'understand') return null;
   try {
-    const manifest = await manifests.read(scopeOf(run));
+    const manifest = await deps.manifests.read(scopeOf(run));
     if (manifest?.deepen !== undefined) return manifest.deepen.roundsDone;
     return manifest !== undefined && 'deepen' in manifest.options ? 0 : null;
   } catch (error) {
-    if (error instanceof RosettaError) return null;
-    throw error;
+    await deps.logger.log({
+      level: 'warn',
+      logger: 'history',
+      message: `The manifest of run ${run.runKey} cannot be read; it is listed as not a Deepen.`,
+      ...{ userId: run.userId, runId: run.runKey },
+      data: { reason: error instanceof Error ? error.message : 'unknown' },
+    });
+    return null;
   }
 }
 
@@ -71,7 +82,7 @@ export class ListHistory {
     readonly actor: Actor;
     readonly projectId: string;
   }): Promise<Result<RunHistory, typeof ERROR_CODES.notFound>> {
-    const { projects, runs, folders, manifests } = this.deps;
+    const { projects, runs, folders } = this.deps;
     const { userId } = request.actor;
     const project = await projects.find(userId, request.projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
@@ -80,7 +91,7 @@ export class ListHistory {
     for (const run of await runs.list(userId, project.id)) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
       const position = positions.get(run.id) ?? null;
-      listed.push({ run, sizeBytes, position, deepenRounds: await deepenRoundsOf(manifests, run) });
+      listed.push({ run, sizeBytes, position, deepenRounds: await deepenRoundsOf(this.deps, run) });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

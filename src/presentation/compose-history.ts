@@ -42,7 +42,7 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
     masker,
   });
   return {
-    listHistory: new ListHistory({ projects, runs, folders, manifests }),
+    listHistory: new ListHistory({ projects, runs, folders, manifests, logger }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({
