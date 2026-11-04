@@ -1,5 +1,5 @@
 import { finishedDrafts } from '../cards/finished-drafts.js';
-import { areaCoverage } from '../../domain/cards/area-coverage.js';
+import { areaCoverageWithShare } from '../../domain/cards/read-share.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { TaskCards } from '../../domain/cards/card-ids.js';
 import type { TaskResult } from '../ports/task-results.js';
@@ -96,7 +96,7 @@ export function taskResultOfRound(
   cards: readonly Card[],
 ): TaskResult {
   const { task, outcome, reads } = ended;
-  const coverage = areaCoverage(task.area, parts.scanned.codeMap.files, reads.all());
+  const coverage = areaCoverageWithShare(task.area, parts.scanned.codeMap.files, reads.all());
   const failure = areaFailureOf(outcome);
   const note = coverageNoteOf(outcome.areaRead, false);
   // A re-read that finds nothing to say about a rejected claim writes nothing: that is no gap.

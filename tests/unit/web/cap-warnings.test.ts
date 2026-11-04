@@ -58,8 +58,8 @@ it('RF-1001 a likely server-key cost above what is left of the user day warns an
 
   expect(rest).toEqual([]);
   expect(warning?.id).toBe('user-day');
-  expect(warning?.text).toContain('$0.20 left');
-  expect(warning?.text).toContain('$0.19');
+  expect(warning?.text).toContain('$0.2000 left');
+  expect(warning?.text).toContain('$0.1900');
   expect(warning?.text).toContain('Start stays available');
 });
 
@@ -71,7 +71,7 @@ it('RF-1106 a likely server-key cost above what is left of the server month warn
   });
 
   expect(warning?.id).toBe('server-month');
-  expect(warning?.text).toContain('$0.10 left');
+  expect(warning?.text).toContain('$0.1000 left');
 });
 
 it('DEC-107 a likely cost on the own key above what is left of the own daily cap warns', () => {
@@ -82,8 +82,8 @@ it('DEC-107 a likely cost on the own key above what is left of the own daily cap
   });
 
   expect(warning?.id).toBe('own-day');
-  expect(warning?.text).toContain('$0.30 left');
-  expect(warning?.text).toContain('$0.09');
+  expect(warning?.text).toContain('$0.3000 left');
+  expect(warning?.text).toContain('$0.0900');
 });
 
 it('RF-1106 the server caps do not apply to a run on the own key, and the own cap not to the server key', () => {

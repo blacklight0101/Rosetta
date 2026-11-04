@@ -1,11 +1,13 @@
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
+import { plainFile, writeAndDownload } from './support/handoff-journey.js';
 import { openStartPage } from './support/live-run-page.js';
 import {
   openPlanSetup,
   openStep,
   understandCatalog,
   understandInventory,
+  writeButton,
 } from './support/plan-setup-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -49,6 +51,20 @@ test('RF-609 DEC-208 picking C# on .NET on a non-.NET project offers ASP.NET Cor
     await expect(group.getByRole('radio', { name: title })).toBeVisible();
   }
   await expectNoSeriousViolations(page);
+
+  // P8-119: the owner takes the four recommended layers and starts the plan; the package names them,
+  // so the choice reaches the plan. The recordings of the Python project name none of these technologies.
+  for (const [layer, title] of Object.entries(offered)) {
+    await page.getByRole('radiogroup', { name: layer }).getByRole('radio', { name: title }).check();
+  }
+  await page.getByRole('button', { name: 'Use the defaults for the rest' }).click();
+  await expect(writeButton(page)).toBeEnabled();
+  const files = await writeAndDownload(page);
+  const trd = plainFile(files, 'trd.md');
+  for (const technology of ['ASP.NET Core Razor Pages', 'SQL Server', 'Dapper', 'xUnit']) {
+    expect(trd).toContain(technology);
+  }
+  expect(trd).toContain('C# on .NET');
 });
 
 test('RF-609 DEC-208 the stack layers follow a language that is not the legacy one', async ({

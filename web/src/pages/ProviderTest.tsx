@@ -7,7 +7,7 @@ import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Glyph } from '../components/Glyph.js';
-import { microsToDollars } from '../lib/usd.js';
+import { moneyText } from '../lib/money.js';
 
 // RF-407, design-system.md section 14 (settings and keys): the Test button. The server makes one
 // tiny call per role of a new project through the same guards as a run and answers each role as
@@ -78,7 +78,7 @@ function ResultRow({ result }: { readonly result: RoleTest }): JSX.Element {
           {result.provider} · {result.model}
         </span>
         <Outcome result={result} />
-        <span class="rst-provider-test__cost">Cost ${microsToDollars(result.costMicros)}</span>
+        <span class="rst-provider-test__cost">Cost {moneyText(result.costMicros)}</span>
       </div>
       {result.code === undefined ? null : (
         <p class="rst-provider-test__error">

@@ -2,10 +2,12 @@ import type { JSX } from 'preact';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
 import { areaLabel } from '../lib/live-run/area-label.js';
 import { cardsText, type Tile, type TileState } from '../lib/live-run/code-map-tiles.js';
+import { percentText } from '../lib/understanding/measure-text.js';
 
 // RF-1016, DEC-137, design-system.md section 5 (living code map): the areas of the code as tiles
 // sized by their estimated tokens. A tile says its state in words and a glyph: waiting, being read
 // (a moving highlight, still under reduced motion), read with one mark per card, not covered, or
+// partly read (below the coverage bar, with its share, P8-93), not covered, or
 // library code left out (hatched). A tile opens its agent and cards. Names come from the repository
 // and are shown as text: the part after the last "/" (`#1` reads "part 1"), the full name over the
 // tile on hover and focus, in the title and in the name a screen reader says. The sub-line wraps.
@@ -20,6 +22,7 @@ const glyphOf: Readonly<Record<TileState, GlyphName>> = {
   waiting: 'dashed-circle',
   reading: 'live-dot',
   done: 'check',
+  partly: 'square',
   gap: 'exclamation',
   library: 'brackets',
 };
@@ -27,6 +30,7 @@ const glyphOf: Readonly<Record<TileState, GlyphName>> = {
 const legend: readonly (readonly [TileState, string])[] = [
   ['reading', 'being read'],
   ['done', 'read'],
+  ['partly', 'partly read'],
   ['waiting', 'waiting'],
   ['gap', 'not covered'],
   ['library', 'library, left out'],
@@ -52,6 +56,8 @@ function metaOf(tile: Tile): string {
       return `being read · ${files}${cards}`;
     case 'done':
       return `read · ${files}${cards}`;
+    case 'partly':
+      return `partly read (${percentText(tile.readShare ?? 0)}) · ${files}${cards}`;
   }
 }
 

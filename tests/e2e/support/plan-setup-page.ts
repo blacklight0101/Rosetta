@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { startCatalogRun, openScannedStartPage } from './cost-run.js';
 import { expect } from './fixtures.js';
-import { openStartOf, pressStart, runStatus } from './live-run-page.js';
+import { openStartOf, pressStart, RUN_DONE, runStatus } from './live-run-page.js';
 import { revealAreas, showStartChoices } from './start-choices.js';
 
 // RF-605, RF-608, RF-609, RF-613: what the Plan setup specs do on the project's pages, so the specs
@@ -14,7 +14,7 @@ const inventoryUrl = 'https://github.com/octo/inventory';
 export async function understandCatalog(page: Page): Promise<void> {
   await openScannedStartPage(page);
   await startCatalogRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 }
 
 /**
@@ -29,7 +29,7 @@ export async function understandInventory(page: Page): Promise<void> {
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
   await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
   await pressStart(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await page.goto('/projects');
   await openStartOf(page, inventoryUrl);
   await showStartChoices(page);

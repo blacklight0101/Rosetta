@@ -36,7 +36,7 @@ it('RF-1021 says what is left of the approved amount under the next step', () =>
 
   renderPage(<JourneyStrip view={view} onResumed={() => undefined} />, {});
 
-  expect(region().textContent).toContain('$0.60 left of $1.00 approved');
+  expect(region().textContent).toContain('$0.6000 left of $1.00 approved');
 });
 
 it('RF-1021 says nothing about an amount when the project has no journey record', () => {
@@ -108,7 +108,7 @@ it('RF-1020 RF-1021 a project page journey reads the facts of the project and dr
 
   await screen.findByRole('region', { name: 'Journey from code to package' });
 
-  expect(region().textContent).toContain('$0.60 left of $1.00 approved');
+  expect(region().textContent).toContain('$0.6000 left of $1.00 approved');
 });
 
 it('RF-1020 the strip is also on the page of an understand run that is still working', async () => {
@@ -134,7 +134,7 @@ it('RF-1020 the project page shows the journey strip with the amount left, and n
 
   await screen.findByRole('region', { name: 'Journey from code to package' });
 
-  expect(region().textContent).toContain('$0.60 left of $1.00 approved');
+  expect(region().textContent).toContain('$0.6000 left of $1.00 approved');
   expect(within(region()).queryByRole('button', { name: 'Start a run' })).toBeNull();
 });
 

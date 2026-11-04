@@ -1,7 +1,8 @@
 import type { JSX } from 'preact';
 import { waitsForAnswer } from '../api/answers.js';
 import { Button } from '../components/Button.js';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
 import { PlanNext, type CapLeft } from './PlanNext.js';
 import { PlanTurn } from './PlanTurn.js';
@@ -9,6 +10,7 @@ import { overviewEstimateText } from '../lib/live-run/overview-estimate.js';
 import { ResumeButton } from './ResumeButton.js';
 import type { OverviewLoad } from './use-run-overview.js';
 import type { RunState } from '../lib/live-run/run-state.js';
+import type { AreaReading } from '../lib/understanding/area-read.js';
 import { DeepenAction } from './DeepenAction.js';
 import { Fact, RunFacts } from './RunFacts.js';
 import type { AnswersLoad } from './use-run-answers.js';
@@ -24,6 +26,8 @@ type AnswersLoadReady = Extract<AnswersLoad, { readonly status: 'ready' }>;
 export interface YourTurnProps {
   readonly state: RunState;
   readonly costMicros: number;
+  /** P8-93: what the run's coverage says of the areas read. */
+  readonly reading?: AreaReading | undefined;
   /** The run ended with an error. */
   readonly failed: boolean;
   /** An understand run is the only one that asks questions. */
@@ -206,7 +210,7 @@ function PlanTurnPanel(props: YourTurnProps): JSX.Element {
         sourceRunId={props.run.sourceRunId}
       />
       <ul class="rst-p170-facts" aria-label="Run facts">
-        <Fact label="Cost" value={costLabel(props.costMicros)} />
+        <Fact label="Cost" value={<MoneyAmount micros={props.costMicros} tabStop />} />
         <Fact label="Tokens" value={tokensLabel(facts.tokens)} />
       </ul>
     </section>
@@ -276,7 +280,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
           writeOverview={writeOverviewOf(props, facts)}
         />
       ) : null}
-      <RunFacts facts={facts} costMicros={props.costMicros} state={state} />
+      <RunFacts facts={facts} costMicros={props.costMicros} state={state} reading={props.reading} />
     </section>
   );
 }

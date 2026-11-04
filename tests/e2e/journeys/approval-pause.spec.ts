@@ -4,7 +4,7 @@ import { expect, test } from '../support/fixtures.js';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { chooseAreas } from '../support/journey-pages.js';
 import { approveJourneyAt, projectOf, spentTokensOf } from '../support/journey-amount.js';
-import { pressStart, runStatus } from '../support/live-run-page.js';
+import { pressStart, runStatus, RUN_DONE } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { e2eOrigin } from '../support/server-config.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -32,7 +32,7 @@ async function analyse(page: Page): Promise<string> {
   });
   await chooseAreas(page, ['Catalog']);
   await pressStart(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 120_000 });
   return runUuidOf(page.url());
 }
 
@@ -62,7 +62,7 @@ async function pausedSecondStep(page: Page): Promise<void> {
   expect(await approveJourneyAt(first, { tokens: firstSpent * 20, costMicros: 5_000_000 })).toBe(1);
   const measuredRun = await startStep(page, projectId);
   await page.goto(`/runs/${measuredRun}`);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 180_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 180_000 });
   const stepSpent = await spentTokensOf(measuredRun);
   expect(stepSpent).toBeGreaterThan(0);
 
@@ -97,11 +97,11 @@ test('RF-432 RF-435 a step approved near the real spend pauses at the line and C
     await page.getByRole('button', { name: /^Continue/u }).click();
     await expect(question).toHaveCount(0, { timeout: 60_000 });
     const asksAgain = async (): Promise<boolean> =>
-      (await question.count()) > 0 || (await status.innerText()).includes('Completed');
+      (await question.count()) > 0 || RUN_DONE.test(await status.innerText());
     await expect.poll(asksAgain, { timeout: 180_000 }).toBe(true);
   }
   expect(answers).toBeGreaterThan(0);
-  await expect(status).toContainText('Completed');
+  await expect(status).toContainText(RUN_DONE);
 });
 
 test('RF-432 RF-435 Stop here ends a paused step at its cap', async ({ page }, info) => {

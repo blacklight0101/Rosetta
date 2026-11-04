@@ -1,8 +1,7 @@
 import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
-import { costLabel } from '../live-run/format.js';
-import { microsToCents } from '../usd.js';
 import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
+import { NO_COST, leftText, stepCostsOf } from './journey-costs.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
@@ -52,6 +51,8 @@ export interface JourneyStep {
   /** The reason a step is locked, the code a step failed with, or what the step did. */
   readonly detail: string;
   readonly cost: string;
+  /** The micro-dollars behind `cost` when it is an amount, so the page can give the exact figure. */
+  readonly costMicros: number | undefined;
   /** The page of the step; none for a step the user may not open. */
   readonly href: string | undefined;
   /** Files and downloads of the step, apart from its page; none for most steps. */
@@ -85,7 +86,6 @@ type Part = Pick<Draft, 'state' | 'detail'> & {
   readonly links?: readonly StepLink[];
 };
 
-const NO_COST = 'No cost';
 const plural = (count: number, one: string): string =>
   `${String(count)} ${one}${count === 1 ? '' : 's'}`;
 const runPage = (run: { readonly id: string }): string => `/runs/${run.id}`;
@@ -233,16 +233,6 @@ function packagePart(c: Context): Part {
   return { state: 'done', detail: earlier ? 'An earlier package is kept' : 'Ready to open', href };
 }
 
-function costsOf(c: Context): Readonly<Record<string, string>> {
-  const { source, plan } = c;
-  return {
-    scan: 'No model cost',
-    understand: source === null ? NO_COST : costLabel(source.costMicros),
-    plan: plan === null ? 'No cost yet' : costLabel(plan.costMicros),
-    package: 'Included in the plan',
-  };
-}
-
 const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['scan', 'Scan', scanPart],
   ['understand', 'Understand', understandPart],
@@ -252,13 +242,6 @@ const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['plan', 'Plan', planPart],
   ['package', 'Package', packagePart],
 ];
-
-/** RF-1021: "$0.60 left of $1.00 approved". */
-function leftText(facts: JourneyFacts): string | undefined {
-  const { budget } = facts;
-  if (budget === null || budget === undefined) return undefined;
-  return `${microsToCents(budget.remainingMicros)} left of ${microsToCents(budget.approvedMicros)} approved`;
-}
 
 /** A step that is open and holds the next action is the current one. */
 const stateOf = (part: Part, here: boolean): StepState =>
@@ -276,13 +259,14 @@ export function journeyOf(
   const setUp = source === null ? undefined : `/projects/${projectId}/plan-setup?run=${source.id}`;
   const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen, ...extras };
   const next = nextOf(context);
-  const costs = costsOf(context);
+  const costs = stepCostsOf(context.source, context.plan);
   const steps = parts.map(([key, title, partOf]): JourneyStep => {
     const part = partOf(context);
     const here = key === next.here;
     return {
       ...{ key, title, detail: part.detail, href: part.href, here },
-      ...{ state: stateOf(part, here), cost: costs[key] ?? NO_COST },
+      ...{ state: stateOf(part, here), cost: costs[key]?.text ?? NO_COST },
+      costMicros: costs[key]?.micros,
       links: part.links ?? [],
     };
   });

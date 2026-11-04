@@ -1,8 +1,5 @@
-import {
-  areaCoverage,
-  surfaceCoverage,
-  type AreaCoverage,
-} from '../../domain/cards/area-coverage.js';
+import { surfaceCoverage, type AreaCoverage } from '../../domain/cards/area-coverage.js';
+import { areaCoverageWithShare } from '../../domain/cards/read-share.js';
 import type { Card } from '../../domain/cards/card.js';
 import { objectCoverageIn, type ObjectCoverage } from '../../domain/cards/database-objects.js';
 import type { CardType } from '../../domain/cards/card-vocabulary.js';
@@ -77,7 +74,7 @@ export class RunCoverage {
     codeMap: Pick<CodeMap, 'files' | 'symbols'>,
     end: TaskCoverageEnd,
   ): void {
-    const coverage = areaCoverage(task.area, codeMap.files, end.reads.all());
+    const coverage = areaCoverageWithShare(task.area, codeMap.files, end.reads.all());
     const failure = end.failure === undefined ? {} : { failure: end.failure };
     const marks = marksOf(task.area, codeMap);
     const surface = end.cards === undefined ? {} : { surface: surfaceCoverage(marks, end.cards) };
@@ -87,7 +84,7 @@ export class RunCoverage {
 
   /** P7-02: a planned area no reader started: every file listed, none read, noted `not read`. */
   recordNotRead(task: ReaderTask, codeMap: Pick<CodeMap, 'files' | 'symbols'>): void {
-    const coverage = areaCoverage(task.area, codeMap.files, []);
+    const coverage = areaCoverageWithShare(task.area, codeMap.files, []);
     this.ended.set(task.agentTaskId, { ...coverage, note: NOT_READ });
   }
 

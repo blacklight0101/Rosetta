@@ -5,7 +5,7 @@ import { buildZip, type ZipItem } from '../../support/zip-fixtures.js';
 import { expect } from './fixtures.js';
 import { openReplaceSource, showStartChoices } from './start-choices.js';
 import { chooseAreas, runScan } from './journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from './live-run-page.js';
 import { chooseModel } from './choose-model.js';
 
 // RF-128, RF-130, RF-131, P3-42: the steps of the journey of a project analysed from a zip. The zip
@@ -85,7 +85,7 @@ export async function scanAndUnderstandCatalog(page: Page): Promise<string> {
   await page.getByRole('link', { name: 'Start page' }).click();
   await chooseAreas(page, ['Catalog']);
   const path = await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   return path;
 }
 

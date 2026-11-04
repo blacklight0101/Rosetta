@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 128     | 5         | 111        | 12        | 0                  | 97      | 25      | 6      | 44         | 23        |
-| **Total**                    | **618** | **123**   | **447**    | **48**    | **0**              | **323** | **269** | **26** | **306**    | **23**    |
+| P8 Evaluation fixes, round 2 | 133     | 5         | 116        | 12        | 0                  | 102     | 25      | 6      | 49         | 24        |
+| **Total**                    | **623** | **123**   | **452**    | **48**    | **0**              | **328** | **269** | **26** | **311**    | **24**    |
 
 ## Conventions for every card
 
@@ -8126,7 +8126,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-50
 - **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
-- **Status**: Todo
+- **Status**: Blocked (the owner keeps the merge queue and branch protection, DEC-221)
 - **Evidence** (2026-11-02, Phase 8): about 5 merges took over 3 hours. One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock because jobs waited for runners: each push to an open PR starts a full run, superseded runs held runners, and the orchestrator's merge script updated each PR from develop and waited for a fresh full run before merging (the rulesets do not require an up-to-date branch), so merges were strictly serial (~30 min each). On 2026-11-02 the script switched to merging a PR at once when GitHub reports it clean.
 - **Reads**: `.github/workflows/ci.yml` (the `changes` job), `tests/integration/tooling/workflows.test.ts`, `tests/integration/tooling/workflow-jobs.test.ts`, `docs/runbooks/`.
 - **Do**: tests first, then:
@@ -8156,7 +8156,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-52
 - **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
-- **Status**: Todo
+- **Status**: Blocked (withdrawn 2026-11-04 - cancel-in-progress is already in ci.yml, see P8-50)
 - **Evidence** (2026-11-02, Phase 8): each push to an open PR starts a full run, superseded runs held runners.
 - **Reads**: `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/scheduled-release.yml`, `.github/workflows/staging.yml`, `.github/workflows/azure-provision.yml`, `tests/integration/tooling/workflows.test.ts`, `docs/runbooks/`.
 - **Do**: tests first, then:
@@ -8202,7 +8202,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-49
 - **Gate**: owner (asked for on 2026-11-02; the owner confirms the rule of part 2)
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-02, P8-17 evaluation): (2) `src/application/projects/default-settings.ts` (line 50) sets `agents.parallelism` to 1 when the server's default reader is Ollama. A project made that way and then switched to Haiku keeps 1, so cloud runs read one area at a time. All three P8-17 evaluation projects had parallelism 1
 - **Reads**: `src/application/projects/default-settings.ts`, `src/application/use-cases/update-project-settings.ts` (where a provider change is saved, called by `PUT /api/projects/:id/settings` in `src/presentation/web/project-routes.ts`), RF-436.
 - **Do**: add the Givens to RF-436 first; red tests first.
@@ -8715,7 +8715,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-26, P8-88
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-06, UX-17, UX-19, EV-93, EV-94: History lists a Deepen with stage "understand" and Commit "none" for a zip project, with the coverage line running under the Tokens column and a red Delete on every row.
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/HistoryPage.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/pages/ProjectRunsTable.tsx`, RF-428, RF-1012.
 - **Do**: add the Givens first; red tests first.
@@ -9027,7 +9027,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-108, P8-89
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-03, P8-90 verifier, #1204; DEC-217): the artboard `P8HistoryCost` draws Cost by run with Kind ("Deepen, 3 rounds"), the four role columns and a Project total row; P8-90 built none of them.
 - **Reads**: `docs/design/board/P8HistoryCost.dc.html`, `web/src/pages/ProjectCostPage.tsx`, `web/src/pages/CostTable.tsx`, the History kind wording of P8-89, RF-428, DEC-211.
 - **Do**: add the Givens first; red tests first.
@@ -9236,7 +9236,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-111
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-88 verifier #1217, P8-111 verifier #1234): orphan recovery counts the time the server was down as running (`src/application/runs/run-queue.ts:132`). A Stop during the end write leaves a stale `userStops` entry (`run-queue.ts:123`, reproduced by the verifier).
 - **Reads**: `src/application/runs/run-queue.ts`, the unit tests of the queue, `docs/data-model.md` on the running time, the cards P8-88 and P8-111.
 - **Do**: red tests first.
@@ -9269,7 +9269,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-94
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Evidence** (2026-11-04, P8-94 verifier #1216): the priority of a rerun subset is untested (`task-plan.ts:65-66`); `surfaceOf` costs areas times files (`reading-priority.ts:25-33`); `planTasks` without `scanned` has no priority (`task-plan.ts:29-35`).
 - **Reads**: `task-plan.ts` and `reading-priority.ts`, their tests, DEC-216, RF-231.
 - **Do**: red tests first.
@@ -9344,3 +9344,84 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the tests and, if it reproduces, the fix.
 - **Done when**: the mutation fails a test; CI green.
 - **Refs**: RF-1021; follow-up of P8-114; GitHub issue #1247
+
+### P8-129 - Follow-up: the History tooltip closes with Escape on hover (P8-89)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-89, P8-117
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-89 round 3 verifier, #1229): Escape is handled only by keydown on the value (`web/src/components/overlay-tip.ts:95-103`, `web/src/pages/RunCoverage.tsx:39`), so a tip open by hover alone does not close, against `docs/design-system.md` section 5.1 and WCAG 1.4.13. The overlay paragraph of section 5.1 says dismissal is "the same", which is not true yet. A pointer leaving the value diagonally before it reaches the tip closes it.
+- **Reads**: `web/src/components/overlay-tip.ts`, `web/src/pages/RunCoverage.tsx`, `web/src/components/CostFigure.tsx` (how P8-117 did it), `docs/design-system.md` section 5.1, RF-231.
+- **Do**: red test first.
+  - A document keydown listener while the tip is open closes it on Escape, also when the value has no focus, as P8-117 did.
+  - The tip survives a diagonal move from the value onto it, with a short close delay if needed.
+- **Delivers**: the fix and its tests.
+- **Done when**: Escape closes a hover-only tip; section 5.1 is true; CI green.
+- **Refs**: RF-231, DEC-220; follow-up of P8-89; GitHub issue #1256
+
+### P8-130 - Follow-up: run lists agree with the run page on Partly read (P8-93)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-93
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-93 fix round, #1244): `ProjectRuns` and `HistoryRuns` still show a green "Completed" for an understand run the run page calls "Partly read: 16% of your code", because the lists do not read the coverage.
+- **Reads**: `web/src/pages/ProjectRuns.tsx`, `web/src/pages/HistoryRuns.tsx`, `web/src/components/RunEndBadge.tsx`, `docs/design/board/P8HistoryCost.dc.html`, RF-230.
+- **Do**: red test first.
+  - A run below the bar reads the same state in the lists as on its page, without one coverage request per row: the run history carries what the lists need.
+- **Delivers**: the server field if needed, the page change and tests.
+- **Done when**: a run below the bar does not read Completed in a list; CI green.
+- **Refs**: RF-230, DEC-220; follow-up of P8-93; GitHub issue #1257
+
+### P8-131 - Follow-up: recovery when the run log's last line is torn (P8-122)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P8-122
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-122 verifier, #1245): the usual crash case, a torn last line, makes `lastSeq` throw, so recovery counts the open span as 0 (`src/application/runs/run-lifecycle.ts:164-170`, read from the code and not run); `read(last-1)` streams the whole log; no test covers the fallback, and no recovery test covers a resumed run with earlier running time (`run-recovery.test.ts:53-76`). A long silent call loses its time (`run-lifecycle.ts:162-169`), so the value is a lower bound.
+- **Reads**: `src/application/runs/run-lifecycle.ts`, the run log reader, `tests/**/run-recovery.test.ts`, `docs/data-model.md` on `active_ms`.
+- **Do**: red tests first.
+  - A torn last line is skipped and the last whole event still gives the time; a log that cannot be read at all keeps the fallback and is tested.
+  - A recovery test of a resumed run keeps its earlier running time.
+  - `data-model.md` says the value is a lower bound, not the exact running time.
+- **Delivers**: the fix, the tests and the note.
+- **Done when**: a torn last line does not lose the running time; CI green.
+- **Refs**: follow-up of P8-122; GitHub issue #1258
+
+### P8-132 - Follow-up: the readers' room counts calls in flight at four readers (P8-56)
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P8-56
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, P8-56 verifier, #1251, reproduced): with four readers and a cap under about two worst-case calls, the run ends "Cap reached" with zero areas read and no spend booked, because the readers' room counts booked spend and not reservations in flight. With one reader it read "Partly read". No journey proves the cap at four readers; `admin-and-cap` and `server-key-cap` now pin one reader. Default caps are not affected. The owner is also asked whether a call in flight should finish and be booked rather than be cancelled (Q-67).
+- **Reads**: `reader-room.ts`, RF-422, RF-429, `tests/e2e/journeys/admin-and-cap.spec.ts`, `tests/e2e/support/parallel-readers.ts`.
+- **Do**: red test first.
+  - The room counts reservations in flight, so four readers at a tiny cap start only as many as the cap can pay for, and the first area is read and booked.
+  - A journey variant at four readers proves the cap.
+- **Delivers**: the fix, its unit tests and the journey.
+- **Done when**: at four readers a tiny cap reads at least one area and books its spend, or RF-422 says why not; CI green.
+- **Refs**: RF-422, RF-429, RF-436; follow-up of P8-56; GitHub issue #1259
+
+### P8-133 - Follow-up: small gaps from P8-109 and P8-124
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P8-109, P8-124
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-04, verifiers of #1252 and #1250): the RF-428 Given "role cells add up to Total" holds on exact amounts, while shown four-decimal figures can differ by $0.0001 (`docs/spec/requirements.md:1076`); `screensOf` still calls `surfaceOf` per area (`src/application/estimate/estimate-areas.ts:14`); the card P8-124 cites RF-231 where the reading order is RF-210, and the RF-210 trace row lacks P8-124.
+- **Reads**: the files named in the evidence.
+- **Do**: red test where one applies.
+  - The Given says exact amounts, with a test on the exact amounts.
+  - `screensOf` builds `surfaceReaderOf(codeMap)` once and maps the areas.
+  - The RF-210 trace row names P8-124.
+- **Delivers**: the wording, the small change and its tests.
+- **Done when**: all three are closed; CI green.
+- **Refs**: RF-210, RF-428; follow-up of P8-109 and P8-124; GitHub issue #1260

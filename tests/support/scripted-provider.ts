@@ -25,7 +25,15 @@ export interface ScriptedOptions {
   readonly hold?: string;
   /** When set, only the calls made with this model are held, so a journey can opt out of the hold. */
   readonly holdModel?: string;
+  /**
+   * Per area, a file the first message must list for this script to take the call, so an area name
+   * another project shares (a root, a `tests` folder) is left to the other scripts. An area not
+   * named here is taken by its name alone. Defaults to the C# fixture's root file.
+   */
+  readonly listing?: Readonly<Record<string, string>>;
 }
+
+const WEBFORMS_LISTING: Readonly<Record<string, string>> = { '(root)': 'Default.aspx.cs' };
 
 const AREA_LINE = /\narea: (.+)\n/u;
 
@@ -42,14 +50,13 @@ export class ScriptedProvider implements LlmProvider {
     this.options = options;
   }
 
-  /** True for a call of an area this script knows; the root area is told by its file list. */
+  /** True for a call of an area this script knows; an area with a listed file is told by its file list. */
   handles(request: LlmRequest): boolean {
     const area = areaOf(request);
     if (area === undefined || this.options.script[area] === undefined) return false;
+    const file = (this.options.listing ?? WEBFORMS_LISTING)[area];
     const first = request.messages[0];
-    return (
-      area !== '(root)' || (first?.role === 'user' && first.content.includes('Default.aspx.cs'))
-    );
+    return file === undefined || (first?.role === 'user' && first.content.includes(file));
   }
 
   async complete(request: LlmRequest): Promise<LlmResponse> {

@@ -15,6 +15,7 @@ import {
   runStatus,
   startAndOpenLiveRun,
   valueOf,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { expectDeepenRunPage } from '../support/run-page-figures.js';
@@ -146,7 +147,7 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await page.getByText('Start another run').click();
   await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 120_000 });
   await expect(page.getByText('1 of 1 agents done')).toBeVisible();
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, '(root)')).toContainText('Done');
@@ -232,7 +233,7 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
   await expect(progress).toContainText('Started from');
   // The stop is the last of the Deepen events; the status of the page can lag the new run at first.
   await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible({ timeout: 120_000 });
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 30_000 });
   await expectDeepenRunPage(page);
   await expect(page.getByTestId('change-coverage')).toBeVisible();
   // P3-62: the round lines read in plain words, the log counts from the start and names no micro-dollars.

@@ -105,3 +105,79 @@ describe('docs/environments-and-delivery.md and the threat model (DEC-175)', () 
     expect(risks).toContain('rosetta_app');
   });
 });
+
+describe('ADR-028, the on-time start of the production deploy (DEC-207)', () => {
+  const adr028 = 'docs/adr/ADR-028-on-time-release-start-from-a-container-apps-job.md';
+
+  it('DEC-207 ADR-028 is Proposed, weighs the options, names the token limits and its rotation, and never names an employer', async () => {
+    const text = await read(adr028);
+
+    expect(text).toMatch(/^# ADR-028: /u);
+    expect(text).toContain('**Status**: Proposed');
+    for (const fact of [
+      'Container Apps job',
+      'Logic App',
+      'managed identity',
+      '04:00 and 05:00 UTC',
+      'Europe/Madrid',
+      'workflow_dispatch',
+      'fine-grained',
+      'Actions',
+      'secret of the job',
+      'rotation',
+      'Do nothing',
+      'DEC-207',
+      'Q-63',
+      'ADR-024',
+      'ADR-025',
+    ]) {
+      expect(text).toContain(fact);
+    }
+    expect(text).not.toMatch(/mission\s*foods/iu);
+  });
+
+  it('DEC-207 the ADR index lists ADR-028 as Proposed and the Totals line counts it', async () => {
+    const index = await read('docs/adr/README.md');
+    const row = index.split('\n').find((line) => line.startsWith('| [ADR-028]'));
+
+    expect(row).toContain('Proposed');
+    expect(row).toContain('2026-11-04');
+    expect(index).toMatch(/\*\*Totals\*\*: 28 in total/u);
+    expect(index).toMatch(/ADR-028 \(Proposed\)/u);
+  });
+});
+
+describe('the 06:00 start in ADR-025 and RF-1304 (DEC-207)', () => {
+  it('DEC-207 ADR-025 stays Amended and carries a dated note for 06:00 Madrid with the checks before it', async () => {
+    const text = await read('docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md');
+    const note = text.slice(text.indexOf('**Amended 2026-11-04'));
+
+    expect(text).toContain('**Status**: Amended');
+    expect(note).toContain('06:00');
+    expect(note).toContain('Europe/Madrid');
+    expect(note).toContain('before');
+    expect(note).toContain('ADR-028');
+    expect(note).toContain('DEC-207');
+  });
+
+  it('DEC-207 RF-1304 has the Given/When/Then for the checks before 06:00 and for the 06:00 start', async () => {
+    const requirements = await read('docs/spec/requirements.md');
+    const start = requirements.indexOf('**RF-1304 Hosted deployment**');
+    const block = requirements.slice(start, requirements.indexOf('**RF-1305', start));
+
+    for (const fact of [
+      'pushed to `main`',
+      'builds, scans and pushes the image',
+      'ZAP baseline',
+      'staging check',
+      '06:00 Europe/Madrid',
+      'restore point',
+      'smoke test',
+      'all of its checks passed',
+      '"Production deploys"',
+      'nothing deploys',
+    ]) {
+      expect(block).toContain(fact);
+    }
+  });
+});

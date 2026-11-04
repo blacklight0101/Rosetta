@@ -189,7 +189,7 @@ function ParallelReaders({ editor, errorFor, kindOf }: SectionProps): JSX.Elemen
         id="agents-parallelism"
         label="Parallel readers"
         path="agents.parallelism"
-        help="Reader tasks that run at the same time."
+        help="Reader tasks that run at the same time. A local reader defaults to 1; switching to a hosted provider while it is still 1 makes it 4; a value other than 1 is never changed."
         errorFor={errorFor}
         range={ranges.parallelism}
         unit="count"
