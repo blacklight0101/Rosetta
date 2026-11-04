@@ -289,7 +289,13 @@
   resize: vertical;
 }
 
+/*
+ * The box is the containing block of the table's visually hidden text (an "Actions" header is
+ * absolutely placed): without it that text sits at the table's far edge, outside the box, and the
+ * page scrolls sideways when the table is wider than its box (P8-130, 1024 px).
+ */
 .rst-table-scroll {
+  position: relative;
   overflow-x: auto;
 }
 
