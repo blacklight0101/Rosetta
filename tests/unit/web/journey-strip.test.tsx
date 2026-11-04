@@ -159,7 +159,12 @@ it('RF-615 the next action of a failed plan is Try the plan again, which opens P
 it('RF-615 a running plan offers no action', () => {
   strip('planning');
 
-  expect(within(journey()).queryByRole('button')).toBeNull();
+  // The only button is the one of the compact row (P8-100).
+  expect(
+    within(journey())
+      .getAllByRole('button')
+      .map((each) => each.textContent),
+  ).toEqual(['Show step details']);
 });
 
 it('RF-615 Answer questions calls the page when it can show them, else opens the run', () => {

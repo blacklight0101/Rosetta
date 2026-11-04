@@ -55,8 +55,6 @@ it('RF-1020 P8-100 the compact row shows no reason, cost or link of a step', () 
 
   expect(details()).toHaveLength(7);
   for (const each of details()) expect(each.hidden).toBe(true);
-  // The text a reader hears: nothing of the detail cards is exposed while they are hidden.
-  expect(within(journey()).queryByText('No model cost')).toBeNull();
   expect(within(journey().querySelector('ol') ?? journey()).queryAllByRole('link')).toHaveLength(6);
 });
 

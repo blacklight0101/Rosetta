@@ -46,6 +46,23 @@ async function expectNoSidewaysScroll(page: Page): Promise<void> {
   expect(sideways).toBeLessThanOrEqual(0);
 }
 
+/** RF-1020, P8-100: the strip is a compact row; this opens the detail cards. */
+async function showStepDetails(page: Page): Promise<void> {
+  await journey(page).getByRole('button', { name: 'Show step details' }).click();
+  await expect(journey(page).getByRole('button', { name: 'Hide step details' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+}
+
+/** The distinct vertical positions of the seven steps: one means they stand in a single row. */
+async function rowsOf(page: Page): Promise<number> {
+  const tops = await journey(page)
+    .getByRole('listitem')
+    .evaluateAll((items) => items.map((each) => Math.round(each.getBoundingClientRect().top)));
+  return new Set(tops).size;
+}
+
 test.describe.configure({ mode: 'serial' });
 
 test('RF-615 RF-006 an understand run that was stopped locks the plan steps and offers Resume, which runs it again', async ({
@@ -167,6 +184,7 @@ test('RF-627 RF-615 a package written with gaps reads "Written with gaps" and li
 
   await page.goto(`/runs/${replayRunId(info.project.name)}`);
 
+  await showStepDetails(page);
   const written = stepOf(page, 'Package');
   await expect(written).toContainText('With gaps');
   await expect(written).toContainText('Written with gaps');
@@ -222,6 +240,51 @@ test('RF-615 a completed run with no Supported claim locks the questions step li
   await page.setViewportSize({ width: 360, height: 780 });
   await expectNoSidewaysScroll(page);
   await page.setViewportSize({ width: 1280, height: 800 });
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-1020 P8-100 the strip of a run page is one compact row that expands to the detail cards on request', async ({
+  page,
+}, info) => {
+  await signInAs(page.context(), accountFor('replay', info.project.name));
+  const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
+  await page.route('**/api/projects/*/journey*', async (route) => {
+    await route.fulfill({
+      json: {
+        scanRunId: null,
+        briefSaved: false,
+        source: {
+          ...{ id: replayRunId(info.project.name), runKey: '20261012-100000-understand' },
+          ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
+          ...{ supportedClaims: 4, openQuestions: 0 },
+        },
+        plan: null,
+        handoff: null,
+      },
+    });
+  });
+
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+
+  await expect(journey(page).getByRole('listitem')).toHaveCount(7);
+  await expect(stepOf(page, 'Understand')).toContainText('Done');
+  await expect(journey(page).locator('.rst-road__detail').first()).toBeHidden();
+  for (const width of [1280, 1024]) {
+    await page.setViewportSize({ width, height: 800 });
+    expect(await rowsOf(page)).toBe(1);
+    await expectNoSidewaysScroll(page);
+  }
+  await page.setViewportSize({ width: 360, height: 780 });
+  await expectNoSidewaysScroll(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  const collapsedHeight = (await journey(page).boundingBox())?.height ?? 0;
+  await showStepDetails(page);
+  await expect(journey(page).locator('.rst-road__detail').first()).toBeVisible();
+  expect((await journey(page).boundingBox())?.height ?? 0).toBeGreaterThan(collapsedHeight);
+  await journey(page).getByRole('button', { name: 'Hide step details' }).click();
+  await expect(journey(page).locator('.rst-road__detail').first()).toBeHidden();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
