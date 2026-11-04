@@ -7,7 +7,11 @@ import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { fakeResponse } from '../../support/fake-recordings.js';
 import { cardsOfTexts, hold, settle } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  verifierHarness,
+  verifierRecording,
+  verdictEvents,
+} from '../../support/verifier-harness.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 
 // P5-15, RF-301, EV-06: the first calls of parallel judgements leave in claim order, a repeated
@@ -117,6 +121,6 @@ describe('P5-15 a failing claim', () => {
       'Supported',
       'Supported',
     ]);
-    expect(h.events).toHaveLength(5);
+    expect(verdictEvents(h.events)).toHaveLength(5);
   });
 });

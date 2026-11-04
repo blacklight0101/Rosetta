@@ -177,9 +177,13 @@ async function ask(
   }
 }
 
-/** P8-58: tells the step the claim's first call begins, unless the step has ended and none is sent. */
-async function announceCall(parts: ClaimJudgeParts, claim: JudgedClaim): Promise<void> {
-  if (parts.halted?.() === undefined) await parts.onCallStarted?.(claim);
+/**
+ * P8-58: tells the step the claim's first call begins, unless the step has ended and none is sent.
+ * The event is queued at once and the caller awaits it after sending, so its write holds no call back.
+ */
+function announceCall(parts: ClaimJudgeParts, claim: JudgedClaim): Promise<void> {
+  if (parts.halted?.() !== undefined) return Promise.resolve();
+  return parts.onCallStarted?.(claim) ?? Promise.resolve();
 }
 
 /** P5-34, P3-122, P5-31: the claims the cited lines settle by a rule cost no call. */
@@ -232,8 +236,9 @@ export async function judgeClaim(
   ];
   // P5-15: the first call of each claim is sent in claim order.
   await parts.turn?.wait();
-  await announceCall(parts, claim);
+  const announced = announceCall(parts, claim);
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
+  await announced;
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);
   const reask = (messages: readonly LlmMessage[]) =>

@@ -42,6 +42,11 @@ async function fixtureReader(): Promise<MemoryRepositoryReader> {
   return new MemoryRepositoryReader(Object.fromEntries(entries));
 }
 
+/** P8-58: the verdict events of a step; `verify.claim.started` events come with the calls. */
+export function verdictEvents(events: readonly RunEvent[]): RunEvent[] {
+  return events.filter((event) => event.type === 'verify.claim.judged');
+}
+
 export function verifierRecording(name: string): Promise<Recording> {
   return loadRecording(join('tests', 'recordings', 'fake', name));
 }

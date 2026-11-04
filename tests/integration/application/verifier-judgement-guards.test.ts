@@ -9,7 +9,11 @@ import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { footerOf, OTHER_TAG } from '../../support/data-block-tags.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  verifierHarness,
+  verifierRecording,
+  verdictEvents,
+} from '../../support/verifier-harness.js';
 
 // RF-301, ADR-013, DEC-57: the guards of the judgement step. A failed call, a stop, evidence that
 // cannot be read and hostile text in the claim or the code never give a `Supported` claim, and
@@ -198,7 +202,7 @@ describe('verifier judgement guards: caps', () => {
     expect(unverified.map((claim) => claim.verdict?.reason)).toEqual(
       Array.from({ length: 4 }, () => CAP_REASON),
     );
-    expect(h.events.map((event) => event.data['status'])).toEqual([
+    expect(verdictEvents(h.events).map((event) => event.data['status'])).toEqual([
       'Supported',
       ...Array.from({ length: 4 }, () => 'Unverified'),
     ]);

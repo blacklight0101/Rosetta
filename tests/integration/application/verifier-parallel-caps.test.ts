@@ -9,7 +9,7 @@ import { draftOf } from '../../support/card-fixtures.js';
 import { fakeResponse, recordingOf } from '../../support/fake-recordings.js';
 import { budgetedVerifier, hold, settle } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness } from '../../support/verifier-harness.js';
+import { verifierHarness, verdictEvents } from '../../support/verifier-harness.js';
 
 // P5-15, RF-304, DEC-13, DEC-112: a cap ends the queued judgements at once, and the parallel
 // judgements together never reserve past a cap.
@@ -51,7 +51,9 @@ describe('P5-15 a cap ends the queued judgements at once', () => {
     expect(calls).toBe(4);
     const claims = cards.flatMap((card) => card.claims);
     expect(claims.map((claim) => claim.status)).toEqual(Array(claims.length).fill('Unverified'));
-    expect(h.events.map((event) => event.data['claimId'])).toEqual(claims.map((c) => c.claimId));
+    expect(verdictEvents(h.events).map((event) => event.data['claimId'])).toEqual(
+      claims.map((c) => c.claimId),
+    );
   });
 
   it('RF-304 queued claims get no call once the run cap has refused one, and the step ends at once', async () => {
