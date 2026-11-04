@@ -103,3 +103,45 @@ describe('the reason of a run that was stopped twice or stopped by itself', () =
     });
   });
 });
+
+describe('the owner stop of a run that ends before the Stop is acted on', () => {
+  it('P8-122 forgets a Stop that came while the run was being ended, so a later run of it is not blamed on the owner', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    const run = await h.start(userAmy);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const end = h.runs.end.bind(h.runs);
+    const reached = vi.fn();
+    vi.spyOn(h.runs, 'end').mockImplementation(async (...args) => {
+      reached();
+      await gate;
+      return end(...args);
+    });
+
+    h.executor.settle(run.id, { endState: 'Failed' });
+    await vi.waitFor(() => {
+      expect(reached).toHaveBeenCalled();
+    });
+    expect(await h.queue.stop(userAmy.userId, run.id)).toMatchObject({ ok: true });
+    release();
+    await h.ended(run);
+    vi.restoreAllMocks();
+    await vi.waitFor(async () => {
+      expect(await h.queue.positionOf(run.id)).toBeUndefined();
+    });
+
+    await h.runs.reopen(userAmy.userId, run.id, h.clock.now().getTime());
+    await h.queue.dispatch();
+    await vi.waitFor(() => {
+      expect(h.executor.started).toHaveLength(2);
+    });
+    h.executor.settle(run.id, { endState: 'Interrupted' });
+    await vi.waitFor(async () => {
+      expect((await h.runs.find(userAmy.userId, run.id))?.queueState).toBe('Ended');
+    });
+
+    expect((await h.runs.find(userAmy.userId, run.id))?.endReason).toBeNull();
+  });
+});

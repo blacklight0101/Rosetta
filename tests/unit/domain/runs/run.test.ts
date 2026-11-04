@@ -29,6 +29,27 @@ describe('startRun', () => {
   });
 });
 
+describe('endRun and the last sign of life', () => {
+  it('P8-122 counts the open span only up to the instant the run was last alive', () => {
+    const running = runningRun({ startedAt: 5_000, spanStartedAt: 5_000, activeMs: 1_000 });
+
+    const ended = endRun(running, 'Interrupted', 9_000, { activeUntil: 6_500 });
+
+    expect(ended).toMatchObject({
+      ok: true,
+      value: { endedAt: 9_000, spanStartedAt: null, activeMs: 2_500 },
+    });
+  });
+
+  it('P8-122 never counts a negative span when the last sign of life is before the span began', () => {
+    const running = runningRun({ startedAt: 5_000, spanStartedAt: 5_000, activeMs: 1_000 });
+
+    const ended = endRun(running, 'Interrupted', 9_000, { activeUntil: 4_000 });
+
+    expect(ended).toMatchObject({ ok: true, value: { activeMs: 1_000 } });
+  });
+});
+
 describe('endRun', () => {
   it.each(RUN_END_STATES)('RF-003 ends a running run as %s with the time it ended', (endState) => {
     const running = runningRun({ startedAt: 5_000, spanStartedAt: 5_000 });
