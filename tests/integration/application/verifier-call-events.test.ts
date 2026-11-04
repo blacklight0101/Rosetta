@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { LlmProvider, LlmResponse } from '../../../src/application/ports/llm-provider.js';
 import { judgeClaims } from '../../../src/application/understand/claim-judgement.js';
-import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
+import { judgeClaim, type ClaimJudgeParts } from '../../../src/application/verifier/judge-claim.js';
 import type { Card } from '../../../src/domain/cards/card.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { fakeResponse, recordingOf } from '../../support/fake-recordings.js';
 import { cardsOfTexts, hold, settle } from '../../support/parallel-judgement.js';
-import { callEvents, callsInFlight, verifierHarness } from '../../support/verifier-harness.js';
+import {
+  callEvents,
+  callsInFlight,
+  verifierHarness,
+  type VerifierHarness,
+} from '../../support/verifier-harness.js';
 
 // RF-1002, RF-1015, RF-301, P8-58: the verifier pairs `verify.claim.started` with
 // `verify.claim.callEnded` (same claim id), so a consumer counts the calls really in flight from the
@@ -55,6 +60,30 @@ function slowFirst(slow: { readonly opened: Promise<void> }) {
     }
   };
   return { real, provider: answering(complete) };
+}
+
+/** One claim judged on its own; `whileWaiting` runs during its wait for the first call's turn. */
+async function judgedAfterWait(
+  h: Pick<VerifierHarness, 'parts'>,
+  step: Pick<ClaimJudgeParts, 'halted'>,
+  whileWaiting: () => void,
+) {
+  const cited = [{ path: 'Default.aspx.cs', startLine: 8, endLine: 12 }];
+  const claim = { claimId: 'BR-001.c1', text: 'The page loads item 1.', citations: cited };
+  const told: string[] = [];
+  const tell = (word: string) => (each: { readonly claimId: string }) => {
+    told.push(`${word} ${each.claimId}`);
+    return Promise.resolve();
+  };
+  const wait = (): Promise<void> => {
+    whileWaiting();
+    return Promise.resolve();
+  };
+  const turn = { wait, pass: () => undefined };
+  const onCall = { onCallStarted: tell('start'), onCallEnded: tell('end') };
+  const parts = { ...h.parts, ...step, turn, ...onCall };
+  const judgement = await judgeClaim(parts, claim, '0123456789abf001');
+  return { judgement, told };
 }
 
 describe('P8-58 the calls in flight, counted from the log', () => {
@@ -166,30 +195,39 @@ describe('P8-58 which claims have a call event', () => {
     expect(callEvents(h.events)).toHaveLength(4);
     expect(callsInFlight(h.events)).toMatchObject({ min: 0, final: 0 });
   });
+});
 
+describe('P8-58 a claim that waits for its turn', () => {
   it('RF-423 a claim the step halted while it waited for its turn sends no call and publishes no start', async () => {
     const h = await verifierHarness({ recording: recordingOf() });
-    const cited = [{ path: 'Default.aspx.cs', startLine: 8, endLine: 12 }];
-    const claim = { claimId: 'BR-001.c1', text: 'The page loads item 1.', citations: cited };
-    const told: string[] = [];
-    const tell = (word: string) => (each: { readonly claimId: string }) => {
-      told.push(`${word} ${each.claimId}`);
-      return Promise.resolve();
-    };
     let halted: 'capped' | undefined;
     // The cap refuses another claim's call while this one waits for its turn.
-    const wait = (): Promise<void> => {
+    const whileWaiting = (): void => {
       halted = 'capped';
-      return Promise.resolve();
     };
-    const turn = { wait, pass: () => undefined };
-    const onCall = { onCallStarted: tell('start'), onCallEnded: tell('end') };
-    const parts = { ...h.parts, halted: () => halted, turn, ...onCall };
 
-    const judgement = await judgeClaim(parts, claim, '0123456789abf001');
+    const { judgement, told } = await judgedAfterWait(h, { halted: () => halted }, whileWaiting);
 
     expect(judgement).toEqual({ kind: 'capped' });
     expect(told).toEqual([]);
     expect(h.requests()).toEqual([]);
   });
+
+  it.each([
+    ['a stop', undefined, 'stopped'],
+    ['a cap', new RosettaError(ERROR_CODES.budgetCapReached), 'capped'],
+  ])(
+    'RF-1002 %s of the run while a claim waits for its turn: no request, no start and no end',
+    async (_, reason, kind) => {
+      const h = await verifierHarness({ recording: recordingOf() });
+
+      const { judgement, told } = await judgedAfterWait(h, {}, () => {
+        h.abort(reason);
+      });
+
+      expect(judgement).toEqual({ kind });
+      expect(told).toEqual([]);
+      expect(h.requests()).toEqual([]);
+    },
+  );
 });
