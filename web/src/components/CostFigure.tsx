@@ -18,6 +18,23 @@ import { formatMoney } from '../lib/money.js';
 const inCurrency = (money: string, currency: string): string =>
   currency === 'USD' ? money : `${money.replace('$', '')} ${currency}`;
 
+/** The amount as shown and as exact, in its currency; they differ when the amount carries a tooltip. */
+function writtenAmount(currency: string, micros: string): { shown: string; full: string } {
+  const { text, exact } = formatMoney(micros);
+  return { shown: inCurrency(text, currency), full: inCurrency(exact, currency) };
+}
+
+const knownCosts = (totals: UsageTotals): UsageTotals['cost'] =>
+  totals.cost.length === 0 ? [{ currency: 'USD', costMicros: '0' }] : totals.cost;
+
+/** Whether an amount of the totals carries a tooltip, so it can take focus. */
+export function hasExactFigure(totals: UsageTotals): boolean {
+  return knownCosts(totals).some(({ currency, costMicros }) => {
+    const { shown, full } = writtenAmount(currency, costMicros);
+    return shown !== full;
+  });
+}
+
 const AMOUNT_ATTRIBUTE = 'data-rst-amount';
 
 /** The amount the key moves to among those of the table, or `null` for a key that moves nowhere. */
@@ -42,8 +59,8 @@ function moveBetweenAmounts(event: KeyboardEvent): void {
 
 /**
  * Whether the figure of an amount is closed with Escape, and the four events that open and end it. The
- * document listener is there from the start and reads refs, so an Escape pressed the moment the figure shows
- * is never missed.
+ * document listener is there from the start of an amount with a tooltip and reads refs, so an Escape pressed
+ * the moment the figure shows is never missed.
  */
 function useDismissal() {
   const [dismissed, setDismissed] = useState(false);
@@ -88,13 +105,9 @@ interface AmountProps {
   readonly onReach?: (() => void) | undefined;
 }
 
-function Amount(props: AmountProps): JSX.Element {
+function ExactAmount(props: AmountProps & { readonly shown: string; readonly full: string }) {
   const tipId = useId();
   const figure = useDismissal();
-  const { text, exact } = formatMoney(props.micros);
-  const shown = inCurrency(text, props.currency);
-  const full = inCurrency(exact, props.currency);
-  if (full === shown) return <span>{shown}</span>;
   return (
     <span
       class="rst-p136-amount"
@@ -114,13 +127,19 @@ function Amount(props: AmountProps): JSX.Element {
         onBlur={figure.blur}
         onKeyDown={moveBetweenAmounts}
       >
-        {shown}
+        {props.shown}
       </span>
       <span id={tipId} role="tooltip" class="rst-p136-amount__exact">
-        {full}
+        {props.full}
       </span>
     </span>
   );
+}
+
+function Amount(props: AmountProps): JSX.Element {
+  const { shown, full } = writtenAmount(props.currency, props.micros);
+  if (full === shown) return <span>{shown}</span>;
+  return <ExactAmount {...props} shown={shown} full={full} />;
 }
 
 export interface CostFigureProps {
@@ -131,8 +150,7 @@ export interface CostFigureProps {
 }
 
 export function CostFigure({ totals, tabStop = true, onReach }: CostFigureProps): JSX.Element {
-  const known = totals.cost.length === 0 ? [{ currency: 'USD', costMicros: '0' }] : totals.cost;
-  const parts: ComponentChildren[] = known.flatMap(({ currency, costMicros }, at) => [
+  const parts: ComponentChildren[] = knownCosts(totals).flatMap(({ currency, costMicros }, at) => [
     at === 0 ? null : ' + ',
     <Amount
       key={currency}

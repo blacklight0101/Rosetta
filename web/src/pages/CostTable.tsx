@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { tokensLabel } from '../lib/live-run/format.js';
 import { priceTableText } from '../lib/money.js';
-import { CostFigure } from '../components/CostFigure.js';
+import { CostFigure, hasExactFigure } from '../components/CostFigure.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-428, design-system.md section 5 (table): one breakdown of a project's cost page. Each line
@@ -97,13 +97,16 @@ function Head(props: { readonly firstColumn: string; readonly perRow: boolean })
   );
 }
 
-// The one Tab stop of the amounts is the row last reached, the first row until one is.
+// The one Tab stop of the amounts is the row last reached, the first row until one is, among the rows whose
+// amount carries a tooltip (a plain amount cannot take focus). A row that is gone or turned plain hands the
+// stop back to the first of those rows.
 function useTabStop(rows: readonly CostRow[]): {
   readonly stopKey: string | undefined;
   readonly reach: (key: string) => void;
 } {
   const [reached, setReached] = useState<string | null>(null);
-  const stopKey = rows.some((row) => row.key === reached) ? reached : rows[0]?.key;
+  const stops = rows.filter((row) => hasExactFigure(row.totals));
+  const stopKey = stops.some((row) => row.key === reached) ? reached : stops[0]?.key;
   return { stopKey: stopKey ?? undefined, reach: setReached };
 }
 
