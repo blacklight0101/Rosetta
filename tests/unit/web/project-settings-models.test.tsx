@@ -103,7 +103,7 @@ it('RF-405 a saved model that is not installed stays selected under Other model.
   expect(screen.getByLabelText<HTMLInputElement>('Reader other model').value).toBe('phi4:14b');
 });
 
-it('RF-405 changing the provider of a role resets its model and lists the new provider', async () => {
+it('RF-405 changing the provider of a role lists the new provider and picks its first model (P8-72)', async () => {
   const { calls } = renderSettings({ [`PUT ${settingsRoute}`]: json(200, demo) });
   await loaded();
   await waitFor(() => selectOf('Planner model'));
@@ -114,7 +114,9 @@ it('RF-405 changing the provider of a role resets its model and lists the new pr
     expect(optionTexts(found)).toContain('GPT-5 future (no price)');
     return found;
   });
-  expect(select.value).toBe('');
+  await waitFor(() => {
+    expect(select.value).toBe('gpt-5-nano');
+  });
   fireEvent.change(select, { target: { value: 'gpt-5-nano' } });
   save();
 

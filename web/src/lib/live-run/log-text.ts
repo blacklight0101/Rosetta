@@ -59,6 +59,8 @@ const writers: Readonly<Record<string, Writer>> = {
   'verify.citation.checked': (data) =>
     `${field(data, 'claimId')} ${data['ok'] === true ? 'ok' : `citation invalid · ${field(data, 'reason')}`}`,
   'verify.judgement.started': (data) => `${field(data, 'claims')} claims to judge`,
+  'verify.claim.started': (data) => `${field(data, 'claimId')} sent to the verifier`,
+  'verify.claim.callEnded': (data) => `${field(data, 'claimId')} verifier call ended`,
   'verify.claim.judged': (data) =>
     `${field(data, 'claimId')} ${field(data, 'status')} · ${field(data, 'reason')}`,
   'verify.judgement.ended': (data) =>

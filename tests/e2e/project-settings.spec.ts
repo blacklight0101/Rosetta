@@ -91,7 +91,8 @@ test('RF-405 chooses the Reader model from the Anthropic list, then from Other m
   await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
   const model = page.getByLabel('Reader model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
-  await expect(model).toHaveValue('');
+  // RF-436, P8-72: choosing the provider selected its recommended model, not "Choose a model".
+  await expect(model).not.toHaveValue('');
 
   await model.selectOption('claude-haiku-5-5');
   await page.getByRole('button', { name: 'Save settings' }).click();
