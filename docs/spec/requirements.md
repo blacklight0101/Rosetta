@@ -2090,7 +2090,10 @@ As the product owner I want Rosetta running on a server so that my teachers can 
 - Given a new image version, when it is deployed, then migrations run first (RF-1302) and the previous image tag stays available for rollback.
 - Given the deployment, when it is live, then `docs/runbooks/deploy.md` describes how to deploy, roll back, back up and restore it.
 - Given a production deploy, when its smoke test has passed, then the release workflow adds a comment to the open issue "Production deploys" (creating it when there is none) that mentions the owner and names the image tag, the commit, the public URL and the run, so GitHub emails the owner; a failure to comment never fails a deploy that is already live.
-  Verification: manual deployment; smoke test on the public URL (health, landing page, sign-in); `tests/integration/tooling/release-notify.test.ts` (the notification step).
+- Given a commit pushed to `main` (the release merge), when it lands, then a checks workflow builds, scans and pushes the image of that commit, the ZAP baseline and the staging check are confirmed, and the result is recorded on that commit; a check that fails comments on the open issue "Production deploys" so that the owner is told before the release hour, and nothing deploys.
+- Given 06:00 Europe/Madrid in summer or winter time, when the scheduler of ADR-028 starts Release on `main`, then Release takes the restore point, migrates, switches the image and runs the smoke test for the head commit only if all of its checks passed; otherwise it does nothing and names the check that is missing or failed.
+- Given any other hour in Europe/Madrid, when the scheduler wakes at 04:00 or 05:00 UTC, then it starts nothing; the scheduler uses a token limited to this repository with Actions write, stored as a secret of the job, and reads no other secret.
+  Verification: manual deployment; smoke test on the public URL (health, landing page, sign-in); `tests/integration/tooling/release-notify.test.ts` (the notification step); `tests/integration/docs/release-flow.test.ts` (the wording of the 06:00 start).
 
 **RF-1305 Configuration from the environment** - R1 (M1) - Must - Source DEC-61 - ADR-014
 
