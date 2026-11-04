@@ -75,15 +75,12 @@ describe('P8-132 the readers room counts the calls in flight', () => {
     expect(s.started).toEqual(['reader-001']);
     expect(s.room.reason).toBeUndefined();
     s.spent.run = { tokens: 100n, micros: 100n };
-    s.gates[0]?.open();
-    await settle();
-    s.gates.forEach((gate) => {
-      gate.open();
-    });
-    await settle();
-    s.gates.forEach((gate) => {
-      gate.open();
-    });
+    for (let round = 0; round < 6; round += 1) {
+      s.gates.forEach((gate) => {
+        gate.open();
+      });
+      await settle();
+    }
     await Promise.all(calls);
   });
 

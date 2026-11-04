@@ -1,5 +1,6 @@
 import type { KeySource } from '../../domain/budget/price-table.js';
-import type { AgentRole, LlmProvider, ProviderKind } from '../ports/llm-provider.js';
+import type { Spend } from '../../domain/budget/claim-room.js';
+import type { AgentRole, LlmProvider, LlmRequest, ProviderKind } from '../ports/llm-provider.js';
 
 // RF-405, ADR-003: what the provider factory gives a run for one role: the guarded provider, the
 // model and limits the role is set to, and whose key pays. It holds no key.
@@ -26,6 +27,11 @@ export interface RoleProvider {
     /** P8-03, RF-432: the run cap is the amount its owner approved, so the run pauses at it. */
     readonly approved?: boolean;
   };
+  /**
+   * P8-132, RF-429: the most the call can use and cost, as the budget guard reserves it (the prompt
+   * estimated, plus the output limit, priced). The readers' room counts the calls in flight with it.
+   */
+  readonly worstCaseOf?: (request: LlmRequest) => Spend;
 }
 
 /** The roles a run asked for, each with its provider. */
