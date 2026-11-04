@@ -16,6 +16,7 @@ import {
   type EvidenceLimits,
   type SkipLookup,
 } from './cited-lines.js';
+import { withCallEvents, type CallEventHooks } from './call-events.js';
 import { restatedAnswerReason, type OwnerAnswer } from './answer-restated-claim.js';
 import { earlierClaimReason } from './earlier-claim.js';
 import { maskedSourceReason } from './masked-source-claim.js';
@@ -57,7 +58,7 @@ interface JudgementCall {
   readonly signal: AbortSignal;
 }
 
-export interface ClaimJudgeParts {
+export interface ClaimJudgeParts extends CallEventHooks {
   /** The guarded provider of the `verifier` role and its settings. */
   readonly role: Pick<RoleProvider, 'provider' | 'model' | 'maxOutputTokens' | 'temperature'>;
   readonly prompts: VerifierPrompts;
@@ -225,6 +226,20 @@ export async function judgeClaim(
   ];
   // P5-15: the first call of each claim is sent in claim order.
   await parts.turn?.wait();
+  // P8-58: a stop or a cap that came during the wait leaves the claim with no call and no start.
+  const late = endedBefore(parts);
+  if (late !== undefined) return late;
+  // P8-58: the claim's calls sit between its start and its end in the run log.
+  return withCallEvents(parts, claim, () => judgeByModel(parts, claim, parentSpanId, asked));
+}
+
+/** The claim's calls: the first, and the one retry or re-ask its answer may need (RF-301). */
+async function judgeByModel(
+  parts: ClaimJudgeParts,
+  claim: JudgedClaim,
+  parentSpanId: string,
+  asked: readonly LlmMessage[],
+): Promise<Judgement> {
   const first = await ask(parts, requestOf(parts, claim, parentSpanId, asked));
   if (!first.ok) return first.error;
   const verdict = parseVerdictAnswer(first.value);

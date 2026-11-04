@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { judgeClaims } from '../../../src/application/understand/claim-judgement.js';
 import { heldProvider, settle, slowReader, type Hold } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  verdictEvents,
+  verifierHarness,
+  verifierRecording,
+} from '../../support/verifier-harness.js';
 
 // P5-15, RF-301, RF-1004, DEC-13, DEC-112: the verifier's judgements run in parallel within the
 // caps, and what they give does not depend on the order in which the calls end.
@@ -11,6 +15,7 @@ import { verifierHarness, verifierRecording } from '../../support/verifier-harne
 interface Outcome {
   readonly cards: string;
   readonly events: string;
+  readonly starts: string;
   readonly calls: string;
 }
 
@@ -52,7 +57,11 @@ async function recordedRun(parallelism: number, scrambled: boolean): Promise<Out
   const cards = await running;
   return {
     cards: JSON.stringify(cards),
-    events: JSON.stringify(h.events.map((e) => [e.type, e.agentTaskId, e.data])),
+    // P8-58: the verdicts leave in claim order; a start leaves with its call, so it may come earlier.
+    events: JSON.stringify(verdictEvents(h.events).map((e) => [e.type, e.agentTaskId, e.data])),
+    starts: JSON.stringify(
+      h.events.filter((e) => e.type === 'verify.claim.started').map((e) => [e.agentTaskId, e.data]),
+    ),
     calls: JSON.stringify(
       h
         .requests()
@@ -69,6 +78,7 @@ describe('P5-15 verifier judgements in parallel', () => {
 
     expect(four.cards).toBe(one.cards);
     expect(four.events).toBe(one.events);
+    expect(four.starts).toBe(one.starts);
     expect(four.calls).toBe(one.calls);
   });
 

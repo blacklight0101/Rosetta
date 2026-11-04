@@ -9,7 +9,12 @@ import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { footerOf, OTHER_TAG } from '../../support/data-block-tags.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  callEvents,
+  verifierHarness,
+  verifierRecording,
+  verdictEvents,
+} from '../../support/verifier-harness.js';
 
 // RF-301, ADR-013, DEC-57: the guards of the judgement step. A failed call, a stop, evidence that
 // cannot be read and hostile text in the claim or the code never give a `Supported` claim, and
@@ -198,9 +203,14 @@ describe('verifier judgement guards: caps', () => {
     expect(unverified.map((claim) => claim.verdict?.reason)).toEqual(
       Array.from({ length: 4 }, () => CAP_REASON),
     );
-    expect(h.events.map((event) => event.data['status'])).toEqual([
+    expect(verdictEvents(h.events).map((event) => event.data['status'])).toEqual([
       'Supported',
       ...Array.from({ length: 4 }, () => 'Unverified'),
+    ]);
+    // P8-58: the first call and the refused one each start and end; the four claims after it, halted, none.
+    expect(callEvents(h.events)).toEqual([
+      ...['start FEAT-001.c1', 'end FEAT-001.c1'],
+      ...['start OQ-001.c1', 'end OQ-001.c1'],
     ]);
   });
 
@@ -215,6 +225,7 @@ describe('verifier judgement guards: caps', () => {
     expect(cards[0]?.claims[0]).toMatchObject({ status: 'Unverified' });
     expect(cards[0]?.claims[0]?.verdict?.reason).toBe(CAP_REASON);
     expect(h.events.map((event) => event.type)).toEqual(['verify.claim.judged']);
+    expect(callEvents(h.events)).toEqual([]);
     expect(h.requests()).toEqual([]);
   });
 });
