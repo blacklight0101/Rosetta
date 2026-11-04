@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage, startCatalogRun, tokensOf } from './support/cost-run.js';
@@ -66,4 +67,37 @@ test('RF-1106 a user sees neither the server month nor the banner', async ({
   await expect(page.getByTestId('header-totals')).toContainText('Your total');
   await expect(page.getByTestId('header-totals')).not.toContainText('Server, this month');
   await expect(page.getByText('of its monthly cap')).toHaveCount(0);
+});
+
+test('RF-428 a tiny cost keeps its exact figure hidden until keyboard focus, and Escape closes it', async ({
+  context,
+  page,
+}, info) => {
+  await signInAs(context, costAccountFor('cost', info.project.name));
+  await openStartPage(page);
+  // The cost answer with a total of 7 micro-dollars, which reads `<$0.0001` and offers its exact figure.
+  await page.route('**/api/projects/*/cost', async (route) => {
+    const response = await route.fetch();
+    const body: unknown = await response.json();
+    const totals = z.object({ totals: z.record(z.string(), z.unknown()) }).loose();
+    const cost = [{ currency: 'USD', costMicros: '7' }];
+    const parsed = totals.parse(body);
+    await route.fulfill({ response, json: { ...parsed, totals: { ...parsed.totals, cost } } });
+  });
+
+  await page
+    .getByTestId('header-totals')
+    .getByRole('link', { name: /Your total/u })
+    .click();
+
+  const region = page.getByRole('region', { name: 'Project totals' });
+  const amount = region.getByText('<$0.0001', { exact: true });
+  const exact = region.getByText('$0.000007', { exact: true });
+  await expect(amount).toBeVisible();
+  await expect(exact).toBeHidden();
+  await amount.focus();
+  await expect(exact).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(exact).toBeHidden();
+  await expect(amount).toBeFocused();
 });
