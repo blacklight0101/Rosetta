@@ -49,8 +49,18 @@ async function openSettled(page: Page, fold: Locator): Promise<void> {
   }).toPass({ timeout: 90_000 });
 }
 
-/** Waits for the project page to read its journey and opens "Start another run" when it is folded. */
-export async function showStartChoices(page: Page): Promise<void> {
+/**
+ * What a caller wants of the project page after it loaded: `settled` is the page a person works on
+ * (the scan, if the page starts one, has ended and "Start another run" is open); `scanning` is the
+ * page while the scan that starts by itself (RF-160) is still the only thing it shows.
+ */
+export type StartPageState = 'settled' | 'scanning';
+
+/**
+ * Waits for the project page to read its journey and for its first section: the fold, the areas, or
+ * the Scan section. Returns the fold, which does not exist on a project without a run.
+ */
+async function waitForStartPage(page: Page): Promise<Locator> {
   await expect(page.locator('.rst-start[data-journey="read"]')).toBeVisible({ timeout: 30_000 });
   const fold = page.getByTestId('start-another');
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
@@ -60,7 +70,23 @@ export async function showStartChoices(page: Page): Promise<void> {
       .or(page.getByRole('region', { name: 'Scan' }))
       .first(),
   ).toBeAttached({ timeout: 90_000 });
-  await openSettled(page, fold);
+  return fold;
+}
+
+/**
+ * Leaves the project page in the state the caller asks for. `scanning` stops once the page has read
+ * its journey and shows its Scan section: the caller asserts what the scan shows (`scan-running`),
+ * which `settled` waits past, so the two states must not be mixed up (P8-106, RF-160). `settled` is
+ * what `showStartChoices` does.
+ */
+export async function showStartPage(page: Page, state: StartPageState): Promise<void> {
+  const fold = await waitForStartPage(page);
+  if (state === 'settled') await openSettled(page, fold);
+}
+
+/** Waits for the project page to read its journey and opens "Start another run" when it is folded. */
+export async function showStartChoices(page: Page): Promise<void> {
+  await showStartPage(page, 'settled');
 }
 
 /** Opens "Replace the source" when the project page folds the upload form there. */

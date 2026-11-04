@@ -32,7 +32,7 @@ test('RF-160 a project with no code map starts its scan by itself and passes axe
   page.on('console', (message) => {
     if (message.type() === 'error') logged.push(message.text());
   });
-  await openStartPage(page);
+  await openStartPage(page, 'scanning');
 
   await expect(page.getByTestId('scan-running')).toBeVisible();
   // P3-68: no estimate is asked for before a scan, so the browser logs no 409.
