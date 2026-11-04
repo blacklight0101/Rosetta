@@ -105,6 +105,7 @@ function ProjectJourney(props: {
       refresh={form.scan.state.kind}
       pagePath={`/projects/${form.project.id}`}
       deepenInPlace
+      alwaysExpanded
       onView={props.onView}
       liveRunId={props.liveRunId}
       rerun={{
