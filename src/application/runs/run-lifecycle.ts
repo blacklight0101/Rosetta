@@ -1,3 +1,4 @@
+import type { EpochMs } from '../../domain/accounts/user.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -115,6 +116,16 @@ export class RunLifecycle {
   }
 
   /**
+   * P8-122: ends a run an earlier process left `Running` as `Interrupted` by a restart. The server
+   * was down since its last sign of life, so the open span counts only up to it.
+   */
+  // RNF-002
+  async endOrphan(run: Run): Promise<Run | undefined> {
+    const activeUntil = await this.lastSignOfLife(run);
+    return this.finish(run, 'Interrupted', { endReason: 'Restart', activeUntil });
+  }
+
+  /**
    * RF-432, ADR-026: `Running` -> `AwaitingApproval` once, then `run.awaitingApproval` with the
    * approved amount and the N that Continue offers. Undefined when the run was not running. The
    * manifest keeps no end: its tasks already ended `StoppedByCap` and saved their work.
@@ -141,6 +152,21 @@ export class RunLifecycle {
       });
     });
     return paused;
+  }
+
+  /**
+   * P8-122: the last instant a run left `Running` by an earlier process is known to have been
+   * alive: the time of the last event it recorded (there is no heartbeat). Without a readable event
+   * it is the start of the span, which proves no running time past it.
+   */
+  private async lastSignOfLife(run: Run): Promise<EpochMs> {
+    const { history } = this.deps;
+    const seen = await this.attempt(run, 'the last event', async () => {
+      const last = await history.lastSeq(scopeOf(run));
+      const [event] = last === 0 ? [] : await history.read(scopeOf(run), last - 1);
+      return event === undefined ? Number.NaN : Date.parse(event.at);
+    });
+    return seen === undefined || Number.isNaN(seen) ? (run.spanStartedAt ?? 0) : seen;
   }
 
   private eventParts(): Pick<RunLifecycleDependencies, 'sink' | 'history' | 'clock'> {
@@ -186,6 +212,8 @@ export interface EndDetail {
   readonly unreadAreas?: number;
   /** P8-111: why an `Interrupted` run ended; recorded on the row and said by `run.ended`. */
   readonly endReason?: RunEndReason;
+  /** P8-122: the instant up to which the span the run ends in counts as running time. */
+  readonly activeUntil?: EpochMs;
 }
 
 function endData(
