@@ -30,6 +30,14 @@ export interface ReadUnderstandingDependencies {
   readonly manifests: Pick<RunManifestStore, 'read'>;
 }
 
+/** P8-130: what a list of runs reads of their measures, the scan they read opened once. */
+export interface ListingMeasures {
+  /** The names of the areas the code map calls third-party; none without a scan. */
+  libraryAreas(): Promise<ReadonlySet<string>>;
+  /** The first-party coverage of the run's measures; null when they cannot be worked out. */
+  firstPartyShare(run: Run): Promise<number | null>;
+}
+
 export class ReadUnderstanding {
   private readonly deps: ReadUnderstandingDependencies;
 
@@ -47,6 +55,15 @@ export class ReadUnderstanding {
     const deepen = manifest?.deepen ?? null;
     if (run.stage !== 'understand' || run.endState === null) return ok({ measures: null, deepen });
     return ok({ measures: await this.measuresOf(run, manifest?.codemapHash ?? null), deepen });
+  }
+
+  // RF-231, P8-130
+  forListing(runs: readonly Run[]): ListingMeasures {
+    if (runs.length < 0) throw new Error('skeleton');
+    return {
+      libraryAreas: () => Promise.resolve(new Set<string>()),
+      firstPartyShare: () => Promise.resolve(null),
+    };
   }
 
   private async measuresOf(

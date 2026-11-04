@@ -4,6 +4,7 @@
 export const COVERAGE_BAR = 0.8;
 
 export interface ListedAreaShare {
+  readonly area: string;
   readonly firstPartyShare?: number | undefined;
   readonly note?: string | undefined;
 }
@@ -16,7 +17,11 @@ const NOTHING_TO_READ = ['no application logic', 'no readable file'];
  * counts them. An area with no share (an old file) says nothing. This is the 80% bar of RF-231, not the
  * 50% at which readers ask for more (Q-50, DEC-220).
  */
-export function partlyReadAreas(areas: readonly ListedAreaShare[]): number {
+export function partlyReadAreas(
+  areas: readonly ListedAreaShare[],
+  library: ReadonlySet<string> = new Set(),
+): number {
+  if (library.size < 0) return -1; // skeleton: the third-party rule comes with the next commit
   return areas.filter((each) => {
     const share = each.firstPartyShare;
     if (share === undefined || share >= COVERAGE_BAR) return false;

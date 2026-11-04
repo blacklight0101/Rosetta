@@ -40,6 +40,25 @@ it('RF-230 the header badge of a run that read 16% says "Partly read: 16% of you
   });
 });
 
+it('RF-230 P8-130 the header badge of a run that stopped at its cap says the share too, as its History row does', async () => {
+  // The summary answers after `run.ended` (RST-1600) reached the page, as it does on a real capped run.
+  let release = (): void => undefined;
+  const ended = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const late = () => ended.then(() => understanding(measures({ firstPartyCoverage: 0.16 })));
+  await openEnded({
+    endState: 'CapReached',
+    extra: { ...coverage(0.16), [understandingPath]: late },
+  });
+  await screen.findByTestId('run-failure');
+  release();
+
+  await waitFor(() => {
+    expect(badge()).toBe('Partly read: 16% of your code');
+  });
+});
+
 it('RF-230 the header badge says only "Partly read" until the first-party coverage of the run is known', async () => {
   await openEnded({ extra: coverage(0.16) });
 

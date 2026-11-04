@@ -5,6 +5,7 @@ import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-ind
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folders.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
+import { partlyReadOf } from '../../../support/partly-read-doubles.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
@@ -13,7 +14,7 @@ import { userAmy } from '../../../support/run-harness.js';
 // read "Partly read" as its page does, so the lists ask for no coverage per row.
 
 describe('ListHistory: partly read runs (P8-130)', () => {
-  it('RF-1008 RF-230 gives each run the partly read figures its reader worked out, one call per run', async () => {
+  it('RF-1008 RF-230 gives each run the partly read figures its reader worked out, with the whole list handed over once', async () => {
     const projects = new MemoryProjectRepository();
     const runs = new MemoryRunIndex();
     const project = sampleProject({ userId: userAmy.userId });
@@ -26,17 +27,13 @@ describe('ListHistory: partly read runs (P8-130)', () => {
     const partly = make('20261003-100000-understand', 2_000);
     const whole = make('20261002-100000-understand', 1_000);
     for (const run of [partly, whole]) await runs.insert(run);
-    const asked: string[] = [];
+    const partlyRead = partlyReadOf((run) =>
+      run.id === partly.id ? { areas: 2, share: 0.16 } : { areas: 0, share: null },
+    );
     const history = new ListHistory({
       ...{ projects, runs, logger: new RecordingLogger() },
       ...{ folders: new MemoryWorkspaceFolders(), manifests: new MemoryRunManifestStore() },
-      partlyRead: {
-        execute: ({ run }) => {
-          asked.push(run.id);
-          const read = run.id === partly.id ? { areas: 2, share: 0.16 } : { areas: 0, share: null };
-          return Promise.resolve(read);
-        },
-      },
+      partlyRead,
     });
 
     const result = await history.execute({ actor: userAmy, projectId: project.id });
@@ -46,6 +43,6 @@ describe('ListHistory: partly read runs (P8-130)', () => {
       ['20261003-100000-understand', { areas: 2, share: 0.16 }],
       ['20261002-100000-understand', { areas: 0, share: null }],
     ]);
-    expect(asked).toEqual([partly.id, whole.id]);
+    expect(partlyRead.listings).toEqual([[partly, whole]]);
   });
 });

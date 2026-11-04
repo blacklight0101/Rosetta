@@ -5,6 +5,7 @@ import { ReadRunPartlyRead } from '../../../src/application/use-cases/read-run-p
 import { ReadRunCoverage } from '../../../src/application/use-cases/read-run-coverage.js';
 import { MemoryRunIndex } from '../../../src/infrastructure/db/memory-run-index.js';
 import { readingOf } from '../../../web/src/lib/understanding/area-read.js';
+import { RecordingLogger } from '../../support/recording-logger.js';
 import { MapRunTextFiles } from '../../support/report-doubles.js';
 import { replayDemoRunKey } from '../../support/replay-fixture.js';
 import { sampleRun } from '../../support/run-fixtures.js';
@@ -71,8 +72,16 @@ describe('the run lists on the C# fixture: partly read areas', () => {
     const files = new MapRunTextFiles({
       'coverage.json': await readFile(join(folder, 'coverage.json'), 'utf8'),
     });
-    const reader = new ReadRunPartlyRead({ files, share: () => Promise.resolve(0.16) });
+    const reader = new ReadRunPartlyRead({
+      ...{ files, logger: new RecordingLogger() },
+      understanding: {
+        forListing: () => ({
+          libraryAreas: () => Promise.resolve(new Set<string>()),
+          firstPartyShare: () => Promise.resolve(0.16),
+        }),
+      },
+    });
 
-    expect(await reader.execute({ actor: userAmy, run })).toEqual({ areas: 3, share: 0.16 });
+    expect(await reader.forListing([run]).of(run)).toEqual({ areas: 3, share: 0.16 });
   });
 });

@@ -45,7 +45,7 @@ export interface ListHistoryDependencies {
   readonly folders: WorkspaceFolders;
   readonly manifests: Pick<RunManifestStore, 'read'>;
   readonly logger: Logger;
-  readonly partlyRead: Pick<ReadRunPartlyRead, 'execute'>;
+  readonly partlyRead: Pick<ReadRunPartlyRead, 'forListing'>;
 }
 
 /**
@@ -92,12 +92,13 @@ export class ListHistory {
     if (project === undefined) return err(ERROR_CODES.notFound);
     const positions = queuePositions(await runs.listQueued());
     const listed: HistoryRun[] = [];
-    for (const run of await runs.list(userId, project.id)) {
+    const all = await runs.list(userId, project.id);
+    const partlyRead = this.deps.partlyRead.forListing(all);
+    for (const run of all) {
       const sizeBytes = await folders.size({ userId, projectId: project.id, runKey: run.runKey });
       const position = positions.get(run.id) ?? null;
       const deepenRounds = await deepenRoundsOf(this.deps, run);
-      const partlyRead = await this.deps.partlyRead.execute({ actor: request.actor, run });
-      listed.push({ run, sizeBytes, position, deepenRounds, partlyRead });
+      listed.push({ run, sizeBytes, position, deepenRounds, partlyRead: await partlyRead.of(run) });
     }
     const sizeBytes = await folders.size({ userId, projectId: project.id });
     return ok({ project, runs: listed, sizeBytes });

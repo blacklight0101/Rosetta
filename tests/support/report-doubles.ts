@@ -49,8 +49,10 @@ export class MapRunTextFiles implements RunTextFiles {
     this.files = files;
   }
 
-  read(_scope: RunScope, path: string): Promise<string | undefined> {
-    return Promise.resolve(this.files[path]);
+  read(_scope: RunScope, path: string, maxBytes?: number): Promise<string | undefined> {
+    const text = this.files[path];
+    const tooLarge = maxBytes !== undefined && Buffer.byteLength(text ?? '') > maxBytes;
+    return Promise.resolve(tooLarge ? undefined : text);
   }
 }
 

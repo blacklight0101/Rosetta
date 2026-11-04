@@ -14,7 +14,8 @@ export class FileRunTextFiles implements RunTextFiles {
   }
 
   // RF-504
-  async read(scope: RunScope, path: string): Promise<string | undefined> {
+  async read(scope: RunScope, path: string, maxBytes?: number): Promise<string | undefined> {
+    if (maxBytes !== undefined && maxBytes < 0) return undefined; // skeleton
     const folder = runPath(scope.projectId, scope.runKey);
     const read = await this.writer.readText({ userId: scope.userId, path: `${folder}/${path}` });
     return read.ok ? read.value : undefined;

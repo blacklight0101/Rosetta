@@ -70,6 +70,12 @@ const finishedEvents = [
   runEnded(8, 'Completed'),
 ];
 
+/** The code a run that ended so carries: a failure its own, a cap RST-1600 (a real capped run has it). */
+function errorCodeOf(endState: string): string | undefined {
+  if (endState === 'Failed') return 'RST-2006';
+  return endState === 'CapReached' ? 'RST-1600' : undefined;
+}
+
 /** The same events, for a run of this stage that ended as it did. */
 function eventsOf(
   options: Pick<EndedOptions, 'stage' | 'endState' | 'judged'>,
@@ -83,7 +89,7 @@ function eventsOf(
     ev(1, 'run.started', { ...startedData, stage }),
     ...finishedEvents.slice(1, -1),
     ...judged,
-    runEnded(9, endState, endState === 'Failed' ? 'RST-2006' : undefined),
+    runEnded(9, endState, errorCodeOf(endState)),
   ];
 }
 
