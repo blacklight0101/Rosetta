@@ -17,6 +17,16 @@ export interface PrivateCode {
   readonly switchToOllama: SwitchToOllama;
 }
 
+/** RF-132: the project's code is the user's own (an uploaded zip or workbooks, never GitHub). */
+export function sendsPrivateCode(project: Pick<Project, 'sourceKind'>): boolean {
+  return project.sourceKind === 'upload' || project.sourceKind === 'workbook';
+}
+
+/** RF-157: the data is Excel workbooks (a workbook project, or a zip that holds some). */
+export function holdsWorkbooks(project: Pick<Project, 'sourceKind' | 'source'>): boolean {
+  return project.sourceKind === 'workbook' || (project.source?.workbooks ?? 0) > 0;
+}
+
 // RF-132
 export function usePrivateCode(
   project: Project,
@@ -24,9 +34,8 @@ export function usePrivateCode(
   onSwitched: (project: Project) => void,
 ): PrivateCode {
   const [checked, set] = useState(false);
-  const sent = project.sourceKind === 'upload' || project.sourceKind === 'workbook';
-  const needed = sent && cloudRoles;
-  const workbooks = project.sourceKind === 'workbook' || (project.source?.workbooks ?? 0) > 0;
+  const needed = sendsPrivateCode(project) && cloudRoles;
+  const workbooks = holdsWorkbooks(project);
   const switchToOllama = useSwitchToOllama(project.id, onSwitched);
   return { needed, workbooks, checked, set, confirmed: needed && checked, switchToOllama };
 }

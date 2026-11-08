@@ -91,6 +91,55 @@ dialog.rst-p140-dialog::backdrop {
   gap: var(--rst-sp-3);
 }
 
+/*
+ * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide) the
+ * table fits its box with every column of the History artboard (with the wider fonts of Linux too). The cells sit closer together, and a
+ * heading, the run name (at its hyphens, as one block that is all link), the kind, the start, the
+ * running time, the share under a Partly read badge, a state badge ("Stopped by a restart") and the Resume
+ * button wrap instead of widening the table, and the Resume button stands above the row menu, so the
+ * widest row (Well covered, stopped by a restart, with Resume) fits; the commit, the coverage value and
+ * the figures stay on one line. They wrap only
+ * between words: the content column's `anywhere` would break inside them. From 1280 px the table is as
+ * before; on a phone it stacks (pages.css).
+ */
+@media (width > 40rem) and (width < 80rem) {
+  .rst-p140-runs th,
+  .rst-p140-runs td {
+    padding-inline: var(--rst-sp-1);
+  }
+
+  .rst-p140-runs th,
+  .rst-p140-runs td[data-label='Kind'],
+  .rst-p140-runs td[data-label='Started'],
+  .rst-p140-runs td[data-label='Running time'],
+  .rst-p140-runs .rst-table__sub--share,
+  .rst-p140-runs .rst-p140-run-name {
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  .rst-p140-runs .rst-p140-run-name {
+    display: inline-block;
+  }
+
+  .rst-p140-runs .rst-badge {
+    white-space: normal;
+    border-radius: var(--rst-radius-md);
+    padding-block: var(--rst-sp-1);
+  }
+
+  .rst-p140-runs td .rst-button {
+    padding-inline: var(--rst-sp-2);
+    white-space: normal;
+  }
+
+  .rst-p140-runs .rst-p140-row-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--rst-sp-1);
+  }
+}
+
 /* P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History artboard. The flex is on a box inside the cell, never on the td, which would leave the table layout and lose the row separator. */
 
 .rst-p140-row-actions {
@@ -166,7 +215,7 @@ dialog.rst-p140-dialog::backdrop {
   color: var(--rst-ink-soft);
 }
 
-/* P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is its centre) */
+/* P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is its centre); below 1280 px it wraps as one inline block, whose whole box is the link (P8-136) */
 
 .rst-p140-run-name {
   white-space: nowrap;
