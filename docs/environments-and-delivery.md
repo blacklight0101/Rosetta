@@ -250,7 +250,7 @@ jobs that need it do not run and the required checks stay missing, so the pull r
 default; `changes`, the `deploy` job of `release.yml` and the `checks` job of `release-checks.yml` fetch a merge
 commit and its parents (`fetch-depth: 2`; the staging check reads `HEAD^2` and its tree); `gitleaks` fetches the
 pull request's commits plus the merge commit and the parent of the first one (the range gitleaks-action scans), or
-one commit for a push of one commit (every squash merge to `develop`), and the whole history for a push of several (a
+the commit and its parent for a push of one commit (every squash merge to `develop`; at one commit the pushed commit would be a shallow root and the scan would read the whole tree), and the whole history for a push of several (a
 release merge to `main`: its range `<first pushed>^..<head>` walks `main`'s first parents back to where `develop` was
 cut); the release `image` job fetches one commit,
 and the whole history only for a `vX.Y.Z` tag, whose check that the tag is on `main` (`scripts/release-tags.sh`,

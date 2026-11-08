@@ -544,14 +544,15 @@ jobs:
     steps:
       # gitleaks-action scans <first commit of the pull request>^..<its last commit> on a pull request
       # (in the merge commit checked out: the pull request's commits plus the merge and that parent),
-      # and on a push of one commit (every squash merge to develop) that commit alone (DEC-227).
+      # and on a push of one commit (every squash merge to develop) that commit alone (DEC-227); it
+      # fetches its parent too, or the commit is a shallow root and `git log -p -1` adds the whole tree.
       - name: History the scan reads
         id: history
         run: |
           if [ "$EVENT" = pull_request ]; then
             depth=$((PR_COMMITS + 2))
           elif [ -z "$SECOND_PUSHED" ]; then
-            depth=1
+            depth=2
           else
             depth=0
           fi

@@ -79,7 +79,7 @@ describe('DEC-227 fetch-depth: what each job fetches', () => {
   it.each([
     [{ EVENT: 'pull_request', PR_COMMITS: '4', SECOND_PUSHED: '' }, 'depth=6'],
     [{ EVENT: 'pull_request', PR_COMMITS: '1', SECOND_PUSHED: '' }, 'depth=3'],
-    [{ EVENT: 'push', PR_COMMITS: '', SECOND_PUSHED: '' }, 'depth=1'],
+    [{ EVENT: 'push', PR_COMMITS: '', SECOND_PUSHED: '' }, 'depth=2'],
     [{ EVENT: 'push', PR_COMMITS: '', SECOND_PUSHED: 'abc123' }, 'depth=0'],
   ] as const)('DEC-227 the gitleaks history step for %j prints %s', async (env, expected) => {
     const script = stepScript(await workflowDocument('ci.yml'), 'gitleaks', 'History');
@@ -165,5 +165,24 @@ describe('DEC-227 fetch-depth: the history is in a clone of that depth', () => {
     expect(await git(clone, 'rev-parse', `${second}^{tree}`)).toBe(
       await git(clone, 'rev-parse', 'HEAD^{tree}'),
     );
+  });
+});
+
+describe('DEC-227 fetch-depth: a push of one commit', () => {
+  const repo = useTempRoot('rosetta-push-');
+
+  it('DEC-227 gitleaks: a push of one commit at depth 2 shows only that commit, not the whole tree', async () => {
+    const path = await origin(repo.path);
+    await commit(path, 'old');
+    await commit(path, 'new');
+    await git(path, 'branch', 'push');
+    // gitleaks-action scans `git log -p -1` on a push of one commit. At depth 1 that commit is a
+    // shallow root, so its patch adds every file of the tree; at depth 2 it is only its own change.
+    const patch = ['log', '-p', '-1', '--format=', '--name-only'];
+    const shallow = await shallowClone(repo.path, 'main', 1);
+    const clone = await shallowClone(repo.path, 'push', 2);
+
+    expect((await git(shallow, ...patch)).split(String.fromCharCode(10))).toContain('old');
+    expect((await git(clone, ...patch)).split(String.fromCharCode(10))).toEqual(['new']);
   });
 });
