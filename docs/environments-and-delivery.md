@@ -238,10 +238,14 @@ list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reope
 **Deployment workflows** (DEC-175, ADR-025). Besides `ci.yml`, `codeql.yml` (also on pushes to `main` and
 `develop`) and `pages.yml`: `staging.yml` deploys every push to `develop` to staging (job `deploy (staging)`), and
 `scheduled-release.yml` starts `release.yml` on `main` at 06:07 Europe/Madrid, with backups until 07:59 (section 8).
-`release-checks.yml` (DEC-207, P8-63) runs on every push to `main`, the owner's release merge, and builds, scans and
-pushes the image of that commit before the release hour with the steps of the `image` job of `release.yml`; its one
-job holds `contents: read`, `packages: write`, `statuses: write` and `issues: write` of the workflow token and reads
-no secret, no variable and no other token. All of them follow the hardening below; `scheduled-release.yml` uses no
+`release-checks.yml` (DEC-207, P8-63, P8-64) runs on every push to `main`, the owner's release merge, and builds, scans and
+pushes the image of that commit before the release hour with the steps of the `image` job of `release.yml`; then it
+waits up to 40 minutes for the `zap-baseline` check of CI on that commit, confirms the ZAP baseline and the staging
+check with the two steps of the `deploy` job of `release.yml`, word for word (the staging check reads the repository
+variable `ROSETTA_STAGING_ENABLED`, as there), and last, in every case, sets the commit status `release/ready` on that
+commit: `success` only when every check passed, otherwise `failure` with a description naming what failed or did not
+run. Its one job holds `contents: read`, `packages: write`, `statuses: write` and `issues: write` of the workflow token
+and reads no secret and no other token. All of them follow the hardening below; `scheduled-release.yml` uses no
 action and only `contents: read` and `actions: write`.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
@@ -337,7 +341,8 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   is `true`. `scheduled-release.yml` runs at 04:07, 05:07, 05:37 and 06:07 UTC (the first slot is 06:07 Madrid, backups until 07:59), goes on only in the 06 and 07 hours of Europe/Madrid, or for a slot started after 07:59 when the head commit of `main` was merged before 06:00 that day (P7-28, ADR-025), and
   starts Release on `main` by `workflow_dispatch` once per head commit of `main` (nothing when a Release run of it is
   queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`; the step summary names the slot that started it). The release merge already has its
-  image: `release-checks.yml` builds, scans and pushes `sha-<short>` of every push to `main` (DEC-207, P8-63). Release
+  image: `release-checks.yml` builds, scans and pushes `sha-<short>` of every push to `main` (DEC-207, P8-63), confirms
+  the ZAP baseline and the staging check and records the commit status `release/ready` on it (P8-64). Release
   still rebuilds the image from the merge commit (the same tag, scanned again) until it changes to deploy only a
   checked commit (DEC-207), and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
   whose second parent did not pass `deploy (staging)`; the `workflow_dispatch` input `skip-staging-check` skips that
@@ -378,7 +383,8 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
    (RF-801, RF-1301); the owner may also try the batch on the staging URL.
 3. The owner says the batch is ready; the orchestrator opens the release pull request `develop` -> `main`; the owner
    merges it with a merge commit (and tags it for a version). Nothing deploys on the merge; `release-checks.yml`
-   builds, scans and pushes the image of the merge commit (`sha-<short>`) within minutes (DEC-207).
+   builds, scans and pushes the image of the merge commit (`sha-<short>`) within minutes, confirms the ZAP baseline
+   and the staging check, and sets the commit status `release/ready` on it within the hour (DEC-207).
 4. Hosted, at 06:07 Europe/Madrid the next morning (backups until 07:59) (`scheduled-release.yml`, or at once by running Release on `main`
    by hand): the release job builds and pushes the image; the deploy job checks that the ZAP baseline passed on the
    commit (threat model section 5) and that the tree passed staging, records the restore point (the host's
