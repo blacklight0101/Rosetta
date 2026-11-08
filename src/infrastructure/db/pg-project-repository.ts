@@ -147,6 +147,10 @@ export class PgProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : toProject(row);
   }
 
+  rename(): Promise<Project | undefined> {
+    return Promise.resolve(undefined);
+  }
+
   async remove(
     userId: string,
     projectId: string,

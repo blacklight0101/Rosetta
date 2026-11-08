@@ -7,6 +7,7 @@ import {
   projectOwners,
   projectRepositoryContract,
 } from '../../../contracts/project-repository.contract.js';
+import { projectRenameContract } from '../../../contracts/project-rename.contract.js';
 import { projectUploadSourceContract } from '../../../contracts/project-upload-source.contract.js';
 import {
   serverCapsContract,
@@ -31,6 +32,7 @@ describe.skipIf(!hasTestDatabase)('PgProjectRepository', () => {
   };
   projectRepositoryContract('PgProjectRepository', fresh);
   projectUploadSourceContract('PgProjectRepository', fresh);
+  projectRenameContract('PgProjectRepository', fresh);
 
   it('RF-010 the stored settings are parsed again on every read', async () => {
     const { pool } = await database.createSchema({ migrate: true });

@@ -27,6 +27,7 @@ import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.
 import { StoreUpload } from '../application/use-cases/store-upload.js';
 import { WorkbookRendererCheck } from '../application/use-cases/workbook-renderer-check.js';
 import { WorkbookBatches } from '../application/use-cases/workbook-batches.js';
+import { RenameProject } from '../application/use-cases/rename-project.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
 import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
@@ -236,6 +237,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: parts.models }),
+    renameProject: new RenameProject({ projects, clock }),
     openWorkspace: new OpenWorkspace({
       projects,
       users: new PgUserRepository(pool),

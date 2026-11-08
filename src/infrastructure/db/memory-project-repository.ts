@@ -93,6 +93,10 @@ export class MemoryProjectRepository implements ProjectRepository {
     return this.withLastRun(updated);
   }
 
+  rename(): Promise<Project | undefined> {
+    return Promise.resolve(undefined);
+  }
+
   async remove(
     userId: string,
     projectId: string,

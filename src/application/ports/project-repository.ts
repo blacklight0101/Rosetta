@@ -33,6 +33,14 @@ export interface UploadAttachment {
   readonly updatedAt: EpochMs;
 }
 
+/** RF-010, P8-134: a new name for a project; the name is checked by the use case. */
+export interface NameChange {
+  readonly userId: string;
+  readonly projectId: string;
+  readonly name: string;
+  readonly updatedAt: EpochMs;
+}
+
 export interface ProjectRepository {
   /** Stores the project, or returns the owner's existing project with the same source. */
   insertOrFind(project: Project): Promise<StoredProject>;
@@ -53,6 +61,11 @@ export interface ProjectRepository {
    * project, and then nothing is written.
    */
   attachUpload(change: UploadAttachment): Promise<Project | undefined>;
+  /**
+   * Stores the new name and update time of the owner's project and changes nothing else (RF-010,
+   * P8-134). Undefined for an unknown id and for another user's project, and then nothing is written.
+   */
+  rename(change: NameChange): Promise<Project | undefined>;
   /**
    * Removes the project (RF-1012); false for an unknown id and for another user's project, and
    * then `afterRowsGone` is not called. PostgreSQL also refuses (false) while a run of the project

@@ -7,7 +7,8 @@ import { lastRunOf, overviewRow, projectOf } from './project-fixtures.js';
 
 // RF-010, RF-1012, P8-99, design-system.md section 14 (Projects), `P8Projects` artboard: the row of
 // the projects list names the project as a link, shows its source as a badge, offers a secondary
-// "Open" and a "More actions" menu with the project settings, the live run and Delete project.
+// "Open" and a "More actions" menu with Rename (tests/unit/web/projects-rename.test.tsx), the project
+// settings, the live run and Delete project.
 
 const overviewPath = 'GET /api/projects/overview';
 const zip = projectOf('p-2', 'Asset Manager', {
@@ -227,7 +228,7 @@ it('RF-010 the last run shows only its date and time, a queued run says queued a
   expect(lastRunCell(await rowOf('Invoice Generator'))).toBe('No run yet');
 });
 
-it('RF-010 the row menu reads "Delete project…" with the artboard ellipsis and has no Rename', async () => {
+it('RF-010 the row menu reads Rename, Project settings and "Delete project…" in the order the artboard draws them', async () => {
   renderProjects({
     [overviewPath]: rows([overviewRow(github, { runs: 1, lastRun: lastRunOf() })]),
   });
@@ -235,8 +236,7 @@ it('RF-010 the row menu reads "Delete project…" with the artboard ellipsis and
   fireEvent.click(menuButton(await rowOf('octo/webforms'), 'octo/webforms'));
 
   const items = screen.getAllByRole('menuitem').map((item) => item.textContent);
-  expect(items).toEqual(['Project settings', 'Delete project…']);
-  expect(screen.queryByRole('menuitem', { name: /Rename/u })).toBeNull();
+  expect(items).toEqual(['Rename', 'Project settings', 'Delete project…']);
 });
 
 it('RF-1012 Escape on the project confirmation closes it, deletes nothing and returns the focus to the menu button', async () => {

@@ -9,6 +9,7 @@ import type { StoreUpload } from '../../application/use-cases/store-upload.js';
 import type { WorkbookRendererCheck } from '../../application/use-cases/workbook-renderer-check.js';
 import type { WorkbookBatches } from '../../application/use-cases/workbook-batches.js';
 import type { OpenWorkspace } from '../../application/use-cases/open-workspace.js';
+import type { RenameProject } from '../../application/use-cases/rename-project.js';
 import type { UpdateProjectSettings } from '../../application/use-cases/update-project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { FieldProblemsError } from '../../domain/errors/field-problems.js';
@@ -59,6 +60,8 @@ export interface ProjectServices
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
   readonly updateProjectSettings: UpdateProjectSettings;
+  /** RF-010, P8-134: the new name of a project, from the row menu of the projects list. */
+  readonly renameProject: RenameProject;
   readonly openWorkspace: OpenWorkspace;
   /** RF-128: the zip of an upload project (source-upload-routes.ts). */
   readonly storeUpload: StoreUpload;

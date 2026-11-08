@@ -6,6 +6,7 @@ import { settingsWith } from './project-fixtures.js';
 import { modelRows } from './access-model-rows.js';
 import { planRows } from './access-plan-rows.js';
 import { uploadRows, workbookRows } from './access-upload-rows.js';
+import { renameRows } from './access-rename-rows.js';
 import { deepenRows } from './access-deepen-rows.js';
 import { fixtureKey } from './provider-key-fixtures.js';
 import type { TestUser } from './test-browser.js';
@@ -282,7 +283,7 @@ const pageRows: Rows = {
 /** Every area of the matrix; each route is in exactly one. */
 export const matrixAreas = {
   public: publicRows,
-  projects: projectRows,
+  projects: { ...projectRows, ...renameRows },
   plan: planRows,
   upload: uploadRows,
   workbook: workbookRows,
