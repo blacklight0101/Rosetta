@@ -1,10 +1,5 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
-import type {
-  ProjectRunSummary,
-  RunIndex,
-  RunSource,
-  SnapshotUsage,
-} from '../../application/ports/run-index.js';
+import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -17,7 +12,7 @@ import {
 } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 import type { DatabasePool } from './pool.js';
-import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-rows.js';
+import { RUN_COLUMNS, toRun, toSnapshotUsage } from './run-rows.js';
 
 // Architecture section 7, ADR-016, RF-1108, RF-1105: the run rows in PostgreSQL with parameterised
 // SQL only. User-triggered reads filter on `user_id`; every transition is one conditional UPDATE,
@@ -31,12 +26,10 @@ const INSERT =
   'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms, end_reason, deepen_parent_id, plan_source_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const LIST = SELECT + ' WHERE user_id = $1 AND project_id = $2 ORDER BY queued_at DESC, id';
-// RF-1008: the newest run of each asked project (DISTINCT ON keeps the first row of each project in
-// the order of LIST) with the project's run count, from one scan of the user's runs.
-const PROJECT_SUMMARIES =
-  'SELECT DISTINCT ON (project_id) ' +
-  RUN_COLUMNS +
-  ', (count(*) OVER (PARTITION BY project_id))::int AS run_count FROM runs WHERE user_id = $1 AND project_id = ANY($2::uuid[]) ORDER BY project_id, queued_at DESC, id';
+// RF-1008, P8-137: every run of the asked projects, newest first within a project, in one statement.
+const LIST_OF_PROJECTS =
+  SELECT +
+  ' WHERE user_id = $1 AND project_id = ANY($2::uuid[]) ORDER BY project_id, queued_at DESC, id';
 const LIST_QUEUED = SELECT + " WHERE queue_state = 'Queued' ORDER BY queued_at, id";
 const LIST_RUNNING = SELECT + " WHERE queue_state = 'Running' ORDER BY started_at, id";
 // P8-88: `started_at` is the first start and a resume keeps it; `span_started_at` and `active_ms`
@@ -138,13 +131,10 @@ export class PgRunIndex implements RunIndex {
   }
 
   // RF-1008
-  async projectSummaries(
-    userId: string,
-    projectIds: readonly string[],
-  ): Promise<readonly ProjectRunSummary[]> {
+  async listOfProjects(userId: string, projectIds: readonly string[]): Promise<readonly Run[]> {
     const ids = projectIds.filter((id) => UUID.test(id));
     if (!UUID.test(userId) || ids.length === 0) return [];
-    return (await this.run(PROJECT_SUMMARIES, [userId, ids])).rows.map(toProjectRunSummary);
+    return (await this.run(LIST_OF_PROJECTS, [userId, ids])).rows.map(toRun);
   }
 
   async listQueued(): Promise<readonly Run[]> {

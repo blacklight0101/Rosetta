@@ -54,7 +54,7 @@ function SourceNote({ project }: { readonly project: Project }): JSX.Element {
 
 function ProjectRow(props: { readonly row: ProjectOverviewRow } & RowActionHandlers): JSX.Element {
   const { row } = props;
-  const { project, lastRun, totals } = row;
+  const { project, lastRun, totals, journey } = row;
   return (
     <tr>
       <td data-label="Project">
@@ -67,7 +67,7 @@ function ProjectRow(props: { readonly row: ProjectOverviewRow } & RowActionHandl
         <span class="rst-badge rst-badge--neutral-tint">{sourceBadge[project.sourceKind]}</span>
       </td>
       <td data-label="Where it is">
-        <ProjectPosition run={lastRun} />
+        <ProjectPosition projectId={project.id} run={lastRun} journey={journey} />
       </td>
       <td data-label="Last run">{lastRunText(lastRun)}</td>
       <td data-label="Cost" class="rst-table__num">
