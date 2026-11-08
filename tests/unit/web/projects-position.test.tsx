@@ -46,7 +46,11 @@ const journeyRow = (name: string, lastRun: Record<string, unknown>) =>
 
 const positions = [
   ['no run', [null, null], 'Scan not started'],
-  ['a running scan', [ended('scan', { queueState: 'Running', endState: null }), null], 'Scan running'],
+  [
+    'a running scan',
+    [ended('scan', { queueState: 'Running', endState: null }), null],
+    'Scan running',
+  ],
   ['a project with only a finished scan', [ended('scan'), null], 'Start a run'],
   [
     'a scan cancelled while queued',
@@ -66,9 +70,21 @@ const positions = [
     ],
     'Paused for approval',
   ],
-  ['a finished understand run with open questions', journeyRow('asking', ended('understand')), 'Questions waiting'],
-  ['a finished understand run with no brief', journeyRow('noBrief', ended('understand')), 'Plan setup waiting'],
-  ['a running plan run', journeyRow('planning', ended('plan', { queueState: 'Running', endState: null })), 'Plan running'],
+  [
+    'a finished understand run with open questions',
+    journeyRow('asking', ended('understand')),
+    'Questions waiting',
+  ],
+  [
+    'a finished understand run with no brief',
+    journeyRow('noBrief', ended('understand')),
+    'Plan setup waiting',
+  ],
+  [
+    'a running plan run',
+    journeyRow('planning', ended('plan', { queueState: 'Running', endState: null })),
+    'Plan running',
+  ],
   ['a finished plan run', journeyRow('written', ended('plan')), 'Package ready'],
   ['a package out of date', journeyRow('stale', ended('plan')), 'Package out of date'],
   ['a failed plan run', journeyRow('failed', ended('plan', { endState: 'Failed' })), 'Plan failed'],
@@ -79,7 +95,10 @@ const positions = [
   ],
   [
     'an understand run stopped by the user',
-    journeyRow('stoppedByYou', ended('understand', { endState: 'Interrupted', endReason: 'UserStop' })),
+    journeyRow(
+      'stoppedByYou',
+      ended('understand', { endState: 'Interrupted', endReason: 'UserStop' }),
+    ),
     'Understand stopped by you',
   ],
 ] as const;
