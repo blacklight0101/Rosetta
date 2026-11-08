@@ -85,6 +85,11 @@ function QueuePlace({ phase }: { readonly phase: RunPhase }): JSX.Element | null
   );
 }
 
+/** P8-138: the end state of an ended run, for tests; no user sees it. */
+function endStateOf(phase: RunStatusBarProps['phase']): string | undefined {
+  return phase.kind === 'ended' ? phase.endState : undefined;
+}
+
 // RF-1003, RF-1108
 export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
   const { phase, stopping } = props;
@@ -99,7 +104,7 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
         <span
           role="status"
           data-testid="run-status"
-          data-end-state={phase.kind === 'ended' ? phase.endState : undefined}
+          data-end-state={endStateOf(phase)}
           class="rst-live-head__state"
         >
           <Badge phase={phase} unreadAreas={props.unreadAreas} partlyRead={props.partlyRead} />
