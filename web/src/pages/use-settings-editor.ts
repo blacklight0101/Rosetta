@@ -114,7 +114,7 @@ function bannerOf(refusal: Refusal | undefined, draft: SettingsDraft): ApiFailur
 }
 
 /** RF-436: the plain line for a save that raised the parallel readers because the reader went hosted. */
-function noticeOf(change: ParallelismChange | undefined): string {
+export function noticeOf(change: ParallelismChange | undefined): string {
   return change === undefined
     ? ''
     : `Parallel readers set from ${String(change.from)} to ${String(change.to)}, because the reader is no longer a local model.`;

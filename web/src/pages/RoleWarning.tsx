@@ -14,6 +14,8 @@ interface RoleWarningProps {
   readonly facts: RoleWarningFacts;
   readonly lists: Readonly<Record<string, ModelListState>>;
   readonly onApply: (provider: string, model: string) => void;
+  /** P8-75: a line before the control, shown with it, that says what Apply does on this page. */
+  readonly note?: string;
 }
 
 function Closing({ usable }: { readonly usable: string | undefined }): JSX.Element {
@@ -27,7 +29,7 @@ function Closing({ usable }: { readonly usable: string | undefined }): JSX.Eleme
 }
 
 // RF-436
-export function RoleWarning({ facts, lists, onApply }: RoleWarningProps): JSX.Element {
+export function RoleWarning({ facts, lists, onApply, note }: RoleWarningProps): JSX.Element {
   return (
     <div class="rst-callout rst-callout--warn" role="alert">
       <div class="rst-callout__row">
@@ -44,6 +46,7 @@ export function RoleWarning({ facts, lists, onApply }: RoleWarningProps): JSX.El
             );
           })}
           <Closing usable={facts.usable} />
+          {note === undefined || facts.usable === undefined ? null : <p>{note}</p>}
           <EveryRoleControl providers={facts.providers} lists={lists} onApply={onApply} />
         </div>
       </div>

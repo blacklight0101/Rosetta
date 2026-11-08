@@ -14,6 +14,7 @@ import { ProjectRuns } from './ProjectRuns.js';
 import { RepositorySection } from './RepositorySection.js';
 import { ScanSection } from './ScanSection.js';
 import { StartChoices } from './StartChoices.js';
+import { StartRoleWarning } from './StartRoleWarning.js';
 import { UploadSourceSection } from './UploadSourceSection.js';
 import { useFold, type Fold } from './use-fold.js';
 import { useHistory } from './use-history.js';
@@ -172,6 +173,13 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
   return (
     <div class="rst-start" ref={ref} data-journey={read === undefined ? 'pending' : 'read'}>
       <ProjectHeading heading={heading} project={form.project} started={started} />
+      <StartRoleWarning
+        project={form.project}
+        onSaved={(saved) => {
+          form.setProject(saved);
+          form.choice.reestimate();
+        }}
+      />
       {started ? null : <p class="rst-settings__lead">{leads[form.project.sourceKind]}</p>}
       <ProjectJourney form={form} liveRunId={liveRunOf(runs)} onView={onView} />
       {view !== undefined && started ? <AfterJourney view={view} runs={runs} /> : null}

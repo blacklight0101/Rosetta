@@ -225,7 +225,7 @@ function budgetOf(
 }
 
 /** The project's providers plus a default entry for each provider a role now names. */
-function providersOf(
+export function providersOf(
   base: ProjectSettings['providers'],
   roles: ProjectSettings['roles'],
 ): ProjectSettings['providers'] {
