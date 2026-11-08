@@ -199,7 +199,8 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
    For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
    The merge is a push to `main`, so `release-checks.yml` builds the image of the merge commit, scans it with the
    Trivy gate of Release and pushes `ghcr.io/blacklight0101/rosetta:sha-<short>` at once, with the workflow token only
-   (DEC-207, P8-63). A failed run there means the image of that commit did not pass the scan: read its log.
+   (DEC-207, P8-63). A failed run there means that commit has no checked image (the build, the scan or the push failed): read its
+   log.
 4. At 06:07 Europe/Madrid the next morning (backups until 07:59), `scheduled-release.yml` starts Release on `main` (once per head commit
    of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). A slot GitHub starts after 07:59 still starts Release when the
    head commit of `main` was merged before 06:00 that day (P7-28, ADR-025); its step summary names the slot and its delay. A Release of that commit that failed or was cancelled is started again
