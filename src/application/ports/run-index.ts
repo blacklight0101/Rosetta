@@ -27,13 +27,6 @@ export interface SnapshotUsage {
   readonly lastUsedAt: EpochMs;
 }
 
-/** RF-1008: how many runs a project has and its newest one. */
-export interface ProjectRunSummary {
-  readonly projectId: string;
-  readonly runs: number;
-  readonly latest: Run;
-}
-
 export interface RunIndex {
   /** Stores a new run; refuses a run key the project already has. */
   insert(run: Run): Promise<Result<Run, 'run-key-taken'>>;
@@ -42,13 +35,11 @@ export interface RunIndex {
   /** The project's runs of that user, newest first. */
   list(userId: string, projectId: string): Promise<readonly Run[]>;
   /**
-   * RF-1008: the run count and the newest run of each asked project of that user, in one read
-   * however many projects are asked. A project without runs, and one of another user, has none.
+   * RF-1008, P8-137: every run of each asked project of that user, newest first within a project,
+   * in one read however many projects are asked, so the overview counts them and makes each
+   * journey (DEC-226). Another user's project and one that was not asked for have none.
    */
-  projectSummaries(
-    userId: string,
-    projectIds: readonly string[],
-  ): Promise<readonly ProjectRunSummary[]>;
+  listOfProjects(userId: string, projectIds: readonly string[]): Promise<readonly Run[]>;
   /** Every queued run of every user, in queue order. */
   listQueued(): Promise<readonly Run[]>;
   /** Every running run of every user, oldest start first. */

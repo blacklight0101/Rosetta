@@ -68,13 +68,14 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   await expect(notice).toContainText(
     /Your understand run of octo\/webforms is queued, position \d+, (?:no run|\d+ runs?) ahead\./u,
   );
-  await expect(projectRow(page)).toContainText('Understand queued');
+  // P8-137: the row says what the project page says beside its title; the place in the queue is under it.
+  await expect(projectRow(page)).toContainText('Understand running');
   await expect(projectRow(page)).toContainText(/position \d+/u);
   await expectNoSeriousViolations(page);
   await notice.getByRole('button', { name: /Cancel queued run/u }).click();
   await expect(notice).toHaveCount(0);
   // P8-111: a run cancelled while it waited never reads "Stopped by you".
-  await expect(projectRow(page)).toContainText('Cancelled while queued');
+  await expect(projectRow(page)).toContainText('Understand cancelled while queued');
   await expect(projectRow(page)).not.toContainText('Stopped by you');
   await page.goto(held);
   await page.getByRole('button', { name: 'Stop run' }).click();
