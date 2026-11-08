@@ -72,6 +72,7 @@ import { composeScanResults } from './compose-understand.js';
 import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
 import { keptRunCards, keptPriorCards } from './kept-card-readers.js';
+import { PgJourneyFacts } from '../infrastructure/db/pg-journey-facts.js';
 
 // Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
 // use cases behind the projects API. The default settings come from `templates/` and are checked
@@ -247,7 +248,10 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     }),
     // RF-605: the planning brief of Plan setup.
     getPlanningBrief: new GetPlanningBrief({ projects, runs, briefs, catalogue }),
-    savePlanningBrief: new SavePlanningBrief({ projects, runs, briefs, catalogue, clock }),
+    savePlanningBrief: new SavePlanningBrief({
+      ...{ projects, runs, briefs, catalogue, clock },
+      facts: new PgJourneyFacts(pool),
+    }),
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, clock, usage },
       ...{ priceTable: parts.priceTable, models: parts.models },

@@ -28,7 +28,7 @@ import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-
 const SELECT = 'SELECT ' + RUN_COLUMNS + ' FROM runs';
 const RETURNING = ' RETURNING ' + RUN_COLUMNS;
 const INSERT =
-  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms, end_reason) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
+  'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms, end_reason, deepen_parent_id, plan_source_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const LIST = SELECT + ' WHERE user_id = $1 AND project_id = $2 ORDER BY queued_at DESC, id';
 // RF-1008: the newest run of each asked project (DISTINCT ON keeps the first row of each project in
@@ -119,6 +119,9 @@ export class PgRunIndex implements RunIndex {
       run.spanStartedAt === null ? null : new Date(run.spanStartedAt),
       run.activeMs,
       run.endReason,
+      // RF-1108, DEC-226: a Deepen and a plan run keep the run they come from from the start.
+      run.deepenParentId ?? null,
+      run.planSourceKey ?? null,
     ]);
     return inserted.rowCount === 1 ? ok(run) : err('run-key-taken');
   }

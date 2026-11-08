@@ -14,6 +14,7 @@ import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folder
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
+import { noQuestionCounts } from '../../../support/recording-journey-facts.js';
 
 // RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
 const uploads = new FakeUploadStore();
@@ -151,7 +152,10 @@ describe('DeleteRun marks the folder first', () => {
   it('P2-41 marks the run folder before it is removed and before the row goes', async () => {
     const { runs, folders, logger, run } = await setup();
 
-    await new DeleteRun({ runs, folders, logger }).execute({ actor: userAmy, runId: run.id });
+    await new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }).execute({
+      actor: userAmy,
+      runId: run.id,
+    });
 
     expect(folders.markedAtRemoval).toEqual([true]);
   });
@@ -160,7 +164,7 @@ describe('DeleteRun marks the folder first', () => {
     const { runs, folders, logger, run, runTarget } = await setup();
     folders.refuseRemoval = true;
 
-    const failed = new DeleteRun({ runs, folders, logger }).execute({
+    const failed = new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }).execute({
       actor: userAmy,
       runId: run.id,
     });
@@ -174,7 +178,7 @@ describe('DeleteRun marks the folder first', () => {
     const { runs, folders, logger, run, runTarget } = await setup();
     folders.refuseMark = true;
 
-    const failed = new DeleteRun({ runs, folders, logger }).execute({
+    const failed = new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }).execute({
       actor: userAmy,
       runId: run.id,
     });

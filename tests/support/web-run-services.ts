@@ -1,3 +1,4 @@
+import type { GetJourney } from '../../src/application/use-cases/get-journey.js';
 import { startRunOf } from './journey-lookups.js';
 import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
@@ -17,7 +18,7 @@ import { BuildReport } from '../../src/application/use-cases/build-report.js';
 import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
-import { GetJourney } from '../../src/application/use-cases/get-journey.js';
+import { journeyFromFiles } from './journey-from-files.js';
 import { CountAnsweredQuestions } from '../../src/application/use-cases/count-answered-questions.js';
 import type { Logger } from '../../src/application/ports/logger.js';
 import type { PriorCards, QuestionReopener } from '../../src/application/ports/prior-cards.js';
@@ -52,6 +53,7 @@ import {
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
 import { deepenServices } from './web-deepen-services.js';
+import { noQuestionCounts } from './recording-journey-facts.js';
 
 /** RF-008, RF-504, RF-506: where the run folder is read from, zipped and reported on. */
 export interface RunOutputs {
@@ -158,8 +160,14 @@ function answerServices(
   const { projects, answers, priorCards: cards, logger } = stores;
   return {
     listAnswers: new ListAnswers({ runs: runs.runs, answers, cards }),
-    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards }),
-    reopenQuestion: new ReopenQuestion({ runs: runs.runs, answers, cards, logger }),
+    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards, counts: noQuestionCounts }),
+    reopenQuestion: new ReopenQuestion({
+      runs: runs.runs,
+      answers,
+      cards,
+      logger,
+      counts: noQuestionCounts,
+    }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
   };
 }
@@ -194,7 +202,7 @@ function journeyOf(
   runs: RunHarness,
   stores: AnswerStores & ObservedFiles & { readonly answerFiles: MemoryOutputWriter },
 ): GetJourney {
-  return new GetJourney({
+  return journeyFromFiles({
     ...{ projects: stores.projects, runs: runs.runs, manifests: runs.manifests },
     ...{ history: runs.events, briefs: stores.briefs, answers: stores.answers },
     cards: new FileRunCards(stores.answerFiles),

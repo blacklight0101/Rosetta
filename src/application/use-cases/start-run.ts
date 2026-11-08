@@ -5,6 +5,7 @@ import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { Run } from '../../domain/runs/run.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
@@ -153,8 +154,8 @@ export class StartRun {
     if (brief === undefined) return err(ERROR_CODES.planBriefMissing);
     // RF-614, RST-1802, RF-1105: a named source run is checked before any run exists.
     const { actor, sourceRunId } = request;
-    const problem = await this.sourceProblemOf(request, project);
-    if (problem !== undefined) return err(problem);
+    const named = await this.namedSourceOf(owner, sourceRunId);
+    if (!named.ok) return err(named.error);
     const cloudConsent = request.cloudConsent === true;
     const roles: readonly AgentRole[] = ['planner'];
     if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
@@ -173,19 +174,17 @@ export class StartRun {
       ...(sourceRunId === undefined ? {} : { sourceRunId }),
       ...planLine.value,
     };
-    return this.submit({ actor, project, stage: 'plan', options });
+    return this.submit({ actor, project, stage: 'plan', options, facts: named.value });
   }
 
-  /** RF-614, RST-1802: why the named source run of a plan cannot be used; undefined when it can. */
-  private async sourceProblemOf(
-    request: StartRunRequest,
-    project: Project,
-  ): Promise<StartRunProblem | undefined> {
-    const { sourceRunId } = request;
-    if (sourceRunId === undefined) return undefined;
-    const owner = { userId: request.actor.userId, projectId: project.id };
+  /** RF-614, RST-1802, RF-1108, DEC-226: what the row keeps of a named source, or why it cannot be used. */
+  private async namedSourceOf(
+    owner: { readonly userId: string; readonly projectId: string },
+    sourceRunId: string | undefined,
+  ): Promise<Result<Pick<Run, 'planSourceKey'>, StartRunProblem>> {
+    if (sourceRunId === undefined) return ok({});
     const found = await planSourceRun(this.deps.runs, owner, sourceRunId);
-    return found.ok ? undefined : found.error;
+    return found.ok ? ok({ planSourceKey: found.value.runKey }) : found;
   }
 
   /**

@@ -124,6 +124,8 @@ export class StartDeepen {
       project,
       stage: 'understand',
       options: { ...options },
+      // RF-1108, DEC-226: the row keeps the run the Deepen improves from the start.
+      facts: { deepenParentId: run.id },
     });
   }
 

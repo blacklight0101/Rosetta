@@ -4,8 +4,8 @@ import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import type { ParseBudget } from '../infrastructure/scan/packs/parse-budget.js';
-import { RunLifecycle } from '../application/runs/run-lifecycle.js';
-import { StartParallelism } from '../application/runs/run-start-parallelism.js';
+import type { OpenQuestionCounts } from '../application/journey/open-question-counts.js';
+import { composeLifecycle } from './compose-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
@@ -32,7 +32,6 @@ import { composeEstimateRun } from './compose-estimate.js';
 import { PgJourneyRecords } from '../infrastructure/db/pg-journey-records.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
-import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
 import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
@@ -47,7 +46,6 @@ import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-reg
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { KeySourceLookup } from '../application/ports/key-source-lookup.js';
-import { composeStartCaps } from './compose-start-caps.js';
 import { composeScan } from './compose-scan.js';
 import type { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
 import type { StreamRegistry } from './web/event-stream.js';
@@ -56,7 +54,13 @@ import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
 import { withPrivateCodeRecheck } from './compose-recheck.js';
-import { composeJourney } from './compose-journey.js';
+import {
+  composeJourney,
+  composeJourneyBackfill,
+  composeQuestionCounts,
+  composeRunEndFacts,
+} from './compose-journey.js';
+import type { ScheduledJob } from '../application/ports/scheduler.js';
 import { composeBuildReport } from './compose-report.js';
 import { composePlanOptions } from './compose-plan-options.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
@@ -118,6 +122,10 @@ export interface RunComposition {
   discardPartialSnapshots(): Promise<void>;
   /** Ends the runs the earlier process left running and starts what can start (RF-1108). */
   recover(): Promise<void>;
+  /** DEC-226: fills the journey facts of the rows from before they were stored (P8-139). */
+  readonly journeyFactsBackfill: ScheduledJob;
+  /** DEC-226: the one store of the open questions, which the history's run deletion shares (P8-139). */
+  readonly questionCounts: OpenQuestionCounts;
 }
 
 function keepAliveScheduler(logger: Logger): IntervalScheduler {
@@ -143,6 +151,8 @@ interface ServiceParts {
   readonly scans: ReturnType<typeof composeScanResults>;
   readonly answers: FileAnswersFile;
   readonly observability: ObservabilityServices;
+  /** P8-139, DEC-226: an answer saved or a question reopened stores the open questions again. */
+  readonly counts: OpenQuestionCounts;
 }
 
 /** RF-1108, RF-432: Stop (also Stop here of a paused run) and Continue (+N). */
@@ -158,7 +168,7 @@ function answerServices(
  */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
-  const { writer, manifests, observability } = service;
+  const { writer, manifests, observability, counts } = service;
   const cards = keptPriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   // RF-431: every start path checks the roles' keys before a run is queued.
@@ -173,7 +183,7 @@ function runServices(service: ServiceParts): RunServices {
     }),
     estimateRun,
     getRun: new GetRun({ runs, queue, manifests, files: new FileRunTextFiles(writer) }),
-    getJourney: composeJourney({ ...service, priorCards: cards }),
+    getJourney: composeJourney({ projects, runs, pool: parts.pool }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     ...answerServices({ runs, manifests, queue, clock: parts.clock }),
     resumeRun: composeResume({
@@ -192,9 +202,9 @@ function runServices(service: ServiceParts): RunServices {
       ...{ writer, runs, manifests, history: log, scans, answers, dataDir: parts.dataDir },
     }),
     listAnswers: new ListAnswers({ runs, answers, cards, manifests }),
-    recordAnswers: new RecordAnswers({ runs, answers, cards, manifests }),
+    recordAnswers: new RecordAnswers({ runs, answers, cards, manifests, counts }),
     reopenQuestion: new ReopenQuestion({
-      ...{ runs, answers, cards, manifests, logger: parts.logger },
+      ...{ runs, answers, cards, manifests, logger: parts.logger, counts },
     }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     ...composeRunReads(runs, writer),
@@ -248,16 +258,10 @@ export function composeRuns(parts: RunParts): RunComposition {
   const broadcaster = new SseBroadcaster(masker);
   const manifests = new FileRunManifestStore({ writer, masker });
   const projects = new PgProjectRepository(pool);
-  const lifecycle = new RunLifecycle({
-    runs,
-    manifests,
-    sink: new FanOutSink([log, broadcaster]),
-    history: log,
-    clock,
-    logger,
-    startCaps: composeStartCaps(pool, projects, parts.keySources, ollamaHostOf(parts.ollamaUrl)),
-    parallelism: new StartParallelism({ projects }),
-  });
+  const files = { pool, writer, masker, runs, logger };
+  const stores = { runs, manifests, log, broadcaster, projects };
+  const counts = composeQuestionCounts(files);
+  const lifecycle = composeLifecycle(parts, stores, composeRunEndFacts(files, counts));
   const scan = composeScan({ ...parts, writer, manifests, projects });
   const answers = new FileAnswersFile({ writer, masker });
   const stage = { ...parts, writer, manifests, projects, runs, ids, answers };
@@ -281,11 +285,14 @@ export function composeRuns(parts: RunParts): RunComposition {
     queue,
     services: runServices({
       ...{ parts, writer, manifests, runs, log, broadcaster, projects, submitRun, queue, answers },
+      counts,
       observability: composeObservability({ runs, manifests, writer, masker, clock, dataDir }),
       scans: composeScanResults({ dataDir, writer, manifests, logger, packs: parts.packs }),
     }),
     submitRun,
     discardPartialSnapshots: () => discardPartialSnapshots(scan.fetcher, logger),
     recover: () => queue.recover(),
+    journeyFactsBackfill: composeJourneyBackfill({ ...files, history: log }),
+    questionCounts: counts,
   };
 }

@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
+import type { JourneyFactsStore } from '../../src/application/ports/journey-facts-store.js';
+import { noEndFacts, noJourneyFacts } from './recording-journey-facts.js';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import type { ScanResults } from '../../src/application/ports/scan-results.js';
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
@@ -104,6 +106,8 @@ export interface PlanHarnessOptions {
   readonly scans?: ScanResults;
   /** Runs before the planner call reaches the fake. */
   readonly beforeCall?: (harness: PlanHarness) => Promise<void>;
+  /** P8-139, DEC-226: where the planner stores the source it chose; nowhere if absent. */
+  readonly journeyFacts?: Pick<JourneyFactsStore, 'recordPlanSource'>;
 }
 
 /** Scan results whose output is gone, as when a project has no readable scan. */
@@ -116,6 +120,7 @@ export function planExecutor(
   s: Stores,
   providers: UnderstandProviders,
   scans: ScanResults,
+  journeyFacts: Pick<JourneyFactsStore, 'recordPlanSource'> = noJourneyFacts,
 ): BuildPlan {
   const { writer, masker, logger, manifests, runs, projects } = s;
   return new BuildPlan({
@@ -149,19 +154,26 @@ export function planExecutor(
     secretLines: new MaskedLineFinder(masker),
     ids: new SequenceIdGenerator(),
     scans,
+    journeyFacts,
   });
 }
 
-function queueOf(s: Stores, providers: UnderstandProviders, scans: ScanResults): RunQueue {
+function queueOf(
+  s: Stores,
+  providers: UnderstandProviders,
+  scans: ScanResults,
+  options: PlanHarnessOptions,
+): RunQueue {
   const { runs, manifests, log, clock, logger } = s;
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
     sink: new FanOutSink([log]),
     history: log,
+    endFacts: noEndFacts,
   });
   return new RunQueue({
     ...{ runs, lifecycle, clock, logger },
-    executors: { plan: planExecutor(s, providers, scans) },
+    executors: { plan: planExecutor(s, providers, scans, options.journeyFacts) },
     maxRunning: 1,
   });
 }
@@ -268,6 +280,12 @@ export async function createPlanHarness(
     },
   });
   const scans = options.scans ?? goneScans;
-  made.harness = harnessOf({ s, dataDir, project, providers, queue: queueOf(s, providers, scans) });
+  made.harness = harnessOf({
+    s,
+    dataDir,
+    project,
+    providers,
+    queue: queueOf(s, providers, scans, options),
+  });
   return made.harness;
 }

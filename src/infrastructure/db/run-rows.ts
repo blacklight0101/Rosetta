@@ -14,7 +14,7 @@ import type { Run } from '../../domain/runs/run.js';
 
 /** Every column, in table order, with ids and counters as text. */
 export const RUN_COLUMNS =
-  'id::text AS id, project_id::text AS project_id, user_id::text AS user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros::text AS cost_micros, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms::text AS active_ms, end_reason';
+  'id::text AS id, project_id::text AS project_id, user_id::text AS user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros::text AS cost_micros, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, failed_areas, unread_areas, span_started_at, active_ms::text AS active_ms, end_reason, deepen_parent_id::text AS deepen_parent_id, plan_source_key, end_code, supported_claims, open_questions';
 
 const instant = z.date().transform((date) => date.getTime());
 const counter = z.string().regex(/^\d+$/).transform(Number);
@@ -41,7 +41,25 @@ const runRowSchema = z.object({
   span_started_at: instant.nullable(),
   active_ms: counter,
   end_reason: z.enum(RUN_END_REASONS).nullable(),
+  deepen_parent_id: z.string().nullable(),
+  plan_source_key: z.string().nullable(),
+  end_code: z.string().nullable(),
+  supported_claims: z.number().int().nonnegative().nullable(),
+  open_questions: z.number().int().nonnegative().nullable(),
 });
+
+type RunRow = z.infer<typeof runRowSchema>;
+
+/** P8-139, DEC-226: the journey facts a writer stored; a null is a fact nobody stored and is left out. */
+function journeyFactsOf(row: RunRow): Partial<Run> {
+  return {
+    ...(row.deepen_parent_id === null ? {} : { deepenParentId: row.deepen_parent_id }),
+    ...(row.plan_source_key === null ? {} : { planSourceKey: row.plan_source_key }),
+    ...(row.end_code === null ? {} : { endCode: row.end_code }),
+    ...(row.supported_claims === null ? {} : { supportedClaims: row.supported_claims }),
+    ...(row.open_questions === null ? {} : { openQuestions: row.open_questions }),
+  };
+}
 
 const snapshotUsageRow = z.object({
   snapshot_key: z.string(),
@@ -96,5 +114,6 @@ export function toRun(row: unknown): Run {
     failedAreas: parsed.failed_areas,
     unreadAreas: parsed.unread_areas,
     endReason: parsed.end_reason,
+    ...journeyFactsOf(parsed),
   };
 }

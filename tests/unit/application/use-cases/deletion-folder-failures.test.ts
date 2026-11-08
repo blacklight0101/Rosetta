@@ -14,6 +14,7 @@ import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folder
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
+import { noQuestionCounts } from '../../../support/recording-journey-facts.js';
 
 // RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
 const uploads = new FakeUploadStore();
@@ -77,7 +78,7 @@ describe('DeleteProject when the folder cannot be removed', () => {
 describe('DeleteRun when the folder cannot be removed', () => {
   it('RF-1012 logs the folder with RST-1115, keeps the run, and a retry cleans it up', async () => {
     const { runs, folders, logger, project, target, run } = await setup();
-    const deleteRun = new DeleteRun({ runs, folders, logger });
+    const deleteRun = new DeleteRun({ runs, folders, logger, counts: noQuestionCounts });
     const runTarget = { ...target, runKey: run.runKey };
     folders.refuseRemoval = true;
 

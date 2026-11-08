@@ -1,6 +1,7 @@
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -44,24 +45,23 @@ async function parentIdOf(
   run: Run,
 ): Promise<string | undefined> {
   try {
-    const manifest = await manifests.read(scopeOf(run));
-    return manifest?.deepen?.parentRunId ?? optionParent(manifest?.options['deepen']);
+    return parentNamedIn(await manifests.read(scopeOf(run)));
   } catch (error) {
     if (error instanceof RosettaError) return undefined;
     throw error;
   }
 }
 
-// RF-646
-export async function familyOf(deps: FamilyDependencies, run: Run): Promise<RunFamily> {
-  const understand = (await deps.runs.list(run.userId, run.projectId)).filter(
-    (each) => each.stage === 'understand',
-  );
-  const parents = new Map<string, string | undefined>(
-    await Promise.all(
-      understand.map(async (each) => [each.id, await parentIdOf(deps.manifests, each)] as const),
-    ),
-  );
+/**
+ * RF-646, P8-139: the family of the run among the project's understand runs, from the run each one
+ * improves (`parents`, by id). The journey gives the parents stored on the rows, `familyOf` the ones
+ * the manifests name, so the two place a run the same way.
+ */
+export function familyIn(
+  understand: readonly Run[],
+  parents: ReadonlyMap<string, string | undefined>,
+  run: Run,
+): RunFamily {
   const rootOf = (id: string): string => {
     const seen = new Set<string>();
     let current = id;
@@ -84,4 +84,22 @@ export async function familyOf(deps: FamilyDependencies, run: Run): Promise<RunF
     isDeepen: root !== run.id,
     deepening: runs.some((each) => each.id !== root && each.queueState !== 'Ended'),
   };
+}
+
+/** P8-139: the run a Deepen improves, as its manifest names it; undefined for any other run. */
+export function parentNamedIn(manifest: RunManifest | undefined): string | undefined {
+  return manifest?.deepen?.parentRunId ?? optionParent(manifest?.options['deepen']);
+}
+
+// RF-646
+export async function familyOf(deps: FamilyDependencies, run: Run): Promise<RunFamily> {
+  const understand = (await deps.runs.list(run.userId, run.projectId)).filter(
+    (each) => each.stage === 'understand',
+  );
+  const parents = new Map<string, string | undefined>(
+    await Promise.all(
+      understand.map(async (each) => [each.id, await parentIdOf(deps.manifests, each)] as const),
+    ),
+  );
+  return familyIn(understand, parents, run);
 }

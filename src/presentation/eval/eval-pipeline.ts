@@ -181,6 +181,9 @@ function evalRoleKeys(s: Stores, parts: PipelineParts): RoleKeyDependencies {
   };
 }
 
+/** P8-139: an evaluation keeps its runs in memory and has no journey strip, so it stores no fact. */
+const NO_END_FACTS = { record: (): Promise<void> => Promise.resolve() };
+
 export function composePipeline(parts: PipelineParts): Pipeline {
   const { clock, logger, masker, ids } = parts;
   const s = storesOf(parts);
@@ -190,7 +193,7 @@ export function composePipeline(parts: PipelineParts): Pipeline {
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
     sink: new FanOutSink([log, watcher]),
-    ...{ history: log, parallelism: new StartParallelism({ projects }) },
+    ...{ history: log, parallelism: new StartParallelism({ projects }), endFacts: NO_END_FACTS },
   });
   const pipeline = new SnapshotScanPipeline({ writer, masker, logger, packs: parts.packs });
   const fetcher = parts.fetcher;

@@ -41,6 +41,7 @@ import {
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { keptRunCards, keptPriorCards } from './kept-card-readers.js';
+import { PgJourneyFacts } from '../infrastructure/db/pg-journey-facts.js';
 
 // Architecture section 2 (composition root), RF-604, ADR-003, ADR-018: the executor of the `plan`
 // stage. The planner's provider comes only from the provider factory; the brief, the cards of the
@@ -92,6 +93,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
       egressLog: new JsonlEgressLog({ writer, masker, scope }),
     }),
     ledger: new PgCostLedger(pool),
+    journeyFacts: new PgJourneyFacts(pool),
     costTotals: new PgCostTotals(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     handoff: packageHandoffWriter(writer),
