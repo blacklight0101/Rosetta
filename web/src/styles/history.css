@@ -95,8 +95,10 @@ dialog.rst-p140-dialog::backdrop {
  * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide) the
  * table fits its box with every column of the History artboard. The cells sit closer together, and a
  * heading, the run name (at its hyphens, as one block that is all link), the kind, the start, the
- * running time, the share under a Partly read badge and the row actions wrap instead of widening the
- * table; the commit, the badges, the coverage value and the figures stay on one line. They wrap only
+ * running time, the share under a Partly read badge, a state badge ("Stopped by a restart") and the Resume
+ * button wrap instead of widening the table, and the Resume button stands above the row menu, so the
+ * widest row (Well covered, stopped by a restart, with Resume) fits; the commit, the coverage value and
+ * the figures stay on one line. They wrap only
  * between words: the content column's `anywhere` would break inside them. From 1280 px the table is as
  * before; on a phone it stacks (pages.css).
  */
@@ -120,8 +122,21 @@ dialog.rst-p140-dialog::backdrop {
     display: inline-block;
   }
 
+  .rst-p140-runs .rst-badge {
+    white-space: normal;
+    border-radius: var(--rst-radius-md);
+    padding-block: var(--rst-sp-1);
+  }
+
+  .rst-p140-runs td .rst-button {
+    padding-inline: var(--rst-sp-2);
+    white-space: normal;
+  }
+
   .rst-p140-runs .rst-p140-row-actions {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--rst-sp-1);
   }
 }
 
