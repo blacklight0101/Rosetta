@@ -1,9 +1,9 @@
 import type { ProjectSettings } from '../api/project-schemas.js';
 import type { KeyAccess } from '../api/schemas.js';
-import { keyedProviders } from './every-role.js';
 import type { ModelListState } from './model-lists.js';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
 import { kindOfProvider, providerLabel, providerOptions } from './provider-choices.js';
+import { roleStates, type RoleState } from './role-state.js';
 
 // RF-436, P8-74: the rule behind the warning at the top of the project settings page. A role whose
 // provider the user cannot use now is named: an Ollama that answered that it could not be reached,
@@ -17,20 +17,15 @@ export interface RoleProblem {
   readonly roles: readonly RoleName[];
 }
 
-const keyKinds: readonly string[] = ['anthropic', 'openai', 'openai-compatible'];
-
 /** Ollama answered that it could not be asked: a list came back with the reason why. */
 function ollamaUnreachable(list: ModelListState | undefined): boolean {
   return list?.status === 'ready' && list.reason !== undefined;
 }
 
-function reasonOf(
-  kind: string | undefined,
-  usable: boolean,
-  unreachable: boolean,
-): RoleProblem['reason'] | undefined {
-  if (kind === 'ollama') return unreachable ? 'unreachable' : undefined;
-  return kind !== undefined && keyKinds.includes(kind) && !usable ? 'no-key' : undefined;
+/** P8-135: the warning and the State column of the Roles table read one rule (role-state.ts). */
+function reasonOf(state: RoleState | undefined): RoleProblem['reason'] | undefined {
+  if (state === 'not-reachable') return 'unreachable';
+  return state === 'no-key' ? 'no-key' : undefined;
 }
 
 // RF-436
@@ -40,17 +35,11 @@ export function unusableRoles(
   access: readonly KeyAccess[] | undefined,
   ollama: ModelListState | undefined,
 ): readonly RoleProblem[] {
-  const kindOf = kindOfProvider(settings);
-  const keyed = access === undefined ? undefined : keyedProviders(settings, access);
-  const unreachable = ollamaUnreachable(ollama);
+  const states = roleStates(settings, roles, access, ollama);
   const problems = new Map<string, RoleProblem>();
   for (const role of ROLE_NAMES) {
     const { provider } = roles[role];
-    const kind = kindOf(provider);
-    const known = kind === 'ollama' || keyed !== undefined;
-    const reason = known
-      ? reasonOf(kind, keyed?.includes(provider) ?? false, unreachable)
-      : undefined;
+    const reason = reasonOf(states[role]);
     if (reason === undefined) continue;
     const before = problems.get(provider);
     problems.set(provider, { provider, reason, roles: [...(before?.roles ?? []), role] });

@@ -5,7 +5,7 @@ import { Field } from '../components/Field.js';
 import type { ModelListState } from './model-lists.js';
 
 // RF-436, DEC-225, P8-73, design-system.md section 7: the every-role control of the
-// `P8ProjectSettings` artboard, at the top of the Models per role section. It lists only the
+// `P8ProjectSettings` artboard, at the top of the Roles section. It lists only the
 // providers the user can use; Apply hands the provider, and the model when one was chosen, to the
 // form, which changes the four roles in its draft. Save settings stays the only save.
 

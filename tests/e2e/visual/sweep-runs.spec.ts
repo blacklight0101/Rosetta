@@ -30,7 +30,8 @@ import { expectNoMidWordBreak, expectPageInView } from '../support/sweep.js';
 // architecture.md section 17: the visual sweep of the pages of a project and its runs, in all four
 // projects (@visual). The `sweep` account of the project makes `octo/webforms` (the C# fixture whose
 // recorded run the test server replays), scans it and understands the Catalog area, so every page
-// shows real data: projects, start, live run, API calls and logs, history, cost, Plan setup, project settings,
+// shows real data: projects, start, live run, API calls and logs, history, cost, Plan setup, project settings
+// (with its Roles table, P8-135),
 // the run with its report built, the report and the replay with and without its script. Each page
 // follows the colour scheme, passes axe and never scrolls sideways, at 360 px either (verdict on
 // #268). The steps run in order because they share the project and its runs.
@@ -226,6 +227,16 @@ test('RNF-010 projects with the run columns and the project settings', visual, a
 
   await openSettingsFromList(page, 'octo/webforms');
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
+  // RF-436, P8-135: the roles are the artboard's table, which stacks its rows on a phone.
+  const roles = page.getByRole('table', { name: 'Roles' });
+  await expect(roles.getByRole('columnheader')).toHaveText(['Role', 'Provider', 'Model', 'State']);
+  await expect(roles.getByRole('rowheader')).toHaveText([
+    'Reader',
+    'Verifier',
+    'Planner',
+    'Summariser',
+  ]);
+  await expect(roles.getByLabel('Reader model', { exact: true })).toBeVisible();
 
   await expectPageInView(page);
 });
