@@ -15,10 +15,11 @@ accepted decision is followed by a provisioning step that the owner runs.
 
 ## Options Considered
 
-1. **A Container Apps job** in the existing environment (ADR-024), with one cron schedule that fires at 04:00 and
-   05:00 UTC. The job goes on only when the hour in Europe/Madrid is 06 (cron is in UTC, and summer and winter time
-   differ by one hour) and starts Release on `main` by `workflow_dispatch`. It uses a fine-grained token limited to this
-   repository with Actions write, stored as a secret of the job. It has no other access and reads no other secret.
+1. **A Container Apps job** in the existing environment (ADR-024), with one cron schedule that fires at
+   04:00 and 05:00 UTC. The job goes on only when the hour in Europe/Madrid is 06 (cron is in UTC, and summer and
+   winter time differ by one hour) and starts Release on `main` by `workflow_dispatch`. It uses a fine-grained token
+   limited to this repository with Actions write, stored as a secret of the job. It has no other access and reads no
+   other secret.
 2. **A Logic App** with a recurrence trigger set to the Madrid time zone and an HTTP action that dispatches Release
    with the same token.
 3. **Deploying from Azure with a managed identity**: the 06:00 job runs the restore point, migration, image switch and
