@@ -9,6 +9,7 @@ import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import type { RunEndFacts } from '../../src/application/journey/run-end-facts.js';
 import type { StartCaps } from '../../src/application/runs/run-start-caps.js';
+import type { StartParallelism } from '../../src/application/runs/run-start-parallelism.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import { StopRun } from '../../src/application/use-cases/stop-run.js';
@@ -107,6 +108,8 @@ export interface RunHarnessOptions {
   readonly wrapExecutor?: (inner: RunExecutor, stage: RunStage) => RunExecutor;
   /** The start caps `run.started` records (RF-1106); none when left out, as in a test without a project. */
   readonly startCaps?: Pick<StartCaps, 'of'>;
+  /** The parallelism `run.started` records (RF-1002, P8-59); none when left out. */
+  readonly parallelism?: Pick<StartParallelism, 'of'>;
   /** P8-139: what records the journey facts of a run's end; none when left out. */
   readonly endFacts?: Pick<RunEndFacts, 'record'>;
 }
@@ -142,6 +145,7 @@ function createStores(options: RunHarnessOptions): Stores {
     clock,
     logger,
     ...(options.startCaps === undefined ? {} : { startCaps: options.startCaps }),
+    ...(options.parallelism === undefined ? {} : { parallelism: options.parallelism }),
     ...(options.endFacts === undefined ? {} : { endFacts: options.endFacts }),
   });
   return { clock, logger, runs, manifests, events, broadcaster, lifecycle };

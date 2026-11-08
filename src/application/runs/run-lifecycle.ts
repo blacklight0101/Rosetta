@@ -21,6 +21,7 @@ import type { RunEndFacts } from '../journey/run-end-facts.js';
 import { RunEventPublisher } from './run-event-publisher.js';
 import { scopeOf } from './run-scope.js';
 import { startCapsDataOf, type StartCaps } from './run-start-caps.js';
+import type { StartParallelism } from './run-start-parallelism.js';
 import type { RunStartCaps } from '../../domain/budget/budget.js';
 import type { ManifestCaps } from '../../domain/runs/run-manifest.js';
 
@@ -47,6 +48,11 @@ export interface RunLifecycleDependencies {
    * records the caps of its manifest only (a test without a project).
    */
   readonly startCaps?: Pick<StartCaps, 'of'>;
+  /**
+   * The parallelism the run uses (RF-1002, P8-59), recorded on `run.started` as the limit the page
+   * shows; a run without it records none (an older log, a test without a project).
+   */
+  readonly parallelism?: Pick<StartParallelism, 'of'>;
   /** P8-139, DEC-226: stores the journey facts the end knows; none in a run without a journey. */
   readonly endFacts?: Pick<RunEndFacts, 'record'>;
 }
@@ -79,6 +85,7 @@ export class RunLifecycle {
     const manifest = markManifestStarted(stored, now.toISOString());
     await manifests.write(scope, manifest);
     const effective = await this.deps.startCaps?.of(started, manifest);
+    const parallelism = await this.deps.parallelism?.of(started);
     const events = await RunEventPublisher.open({ scope, ...this.eventParts() });
     await events.emit('run.started', {
       stage: started.stage,
@@ -86,6 +93,7 @@ export class RunLifecycle {
       roles: manifest.roles,
       caps: effective === undefined ? manifest.caps : effectiveCapsOf(manifest.caps, effective),
       ...(effective === undefined ? {} : { effectiveCaps: startCapsDataOf(effective) }),
+      ...(parallelism === undefined ? {} : { parallelism }),
     });
     return { run: started, manifest, events };
   }
