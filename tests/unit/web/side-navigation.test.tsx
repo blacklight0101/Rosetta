@@ -41,9 +41,8 @@ const projectIdOf = (url: string): string | undefined => {
 
 function appAt(path: string, setup: Setup = {}) {
   window.history.pushState({}, '', path);
-  const fetchFn: typeof fetch = (input) => {
+  const answer: typeof fetch = (input) => {
     const url = urlOf(input);
-    setup.calls?.push(url);
     if (url === '/api/session') return Promise.resolve(json(200, session(setup.role ?? 'user')));
     const id = projectIdOf(url);
     const name = id === undefined ? undefined : setup.projects?.[id];
@@ -52,6 +51,11 @@ function appAt(path: string, setup: Setup = {}) {
     }
     const status = setup.otherwise ?? 404;
     return Promise.resolve(failure(status, status === 404 ? 'RST-2003' : 'RST-2006'));
+  };
+  const calls = setup.calls ?? [];
+  const fetchFn: typeof fetch = (input) => {
+    calls.push(urlOf(input));
+    return answer(input);
   };
   return render(
     <App client={createApiClient({ fetch: fetchFn })} routes={routes} assign={vi.fn()} />,
