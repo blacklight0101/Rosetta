@@ -2,11 +2,14 @@ import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { expect, test } from '../support/fixtures.js';
 import {
+  colourOf,
   gappedPlan,
   journey,
   rowsOf,
   routeJourney,
   showStepDetails,
+  stepOf,
+  tokenColour,
 } from '../support/journey-strip.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
@@ -18,30 +21,6 @@ import { transitionsDone } from '../support/transitions.js';
 // state word of a step breaks inside a word at any width: the columns give way before the text does.
 
 const widths = [1920, 1280, 1024, 900, 760, 720, 600, 360, 320] as const;
-
-/** What the tokens of the colour scheme compute to, read through an element that uses them. */
-async function toneColours(page: Page): Promise<Record<'ok' | 'warn' | 'danger', string>> {
-  return page.evaluate(() => {
-    const probe = document.createElement('span');
-    document.body.append(probe);
-    const colour = (token: string): string => {
-      probe.style.color = `var(--rst-${token}-ink)`;
-      return getComputedStyle(probe).color;
-    };
-    const read = { ok: colour('ok'), warn: colour('warn'), danger: colour('danger') };
-    probe.remove();
-    return read;
-  });
-}
-
-/** The colour the state word of a step computes to. */
-async function stateColour(page: Page, title: string): Promise<string> {
-  return journey(page)
-    .getByRole('listitem')
-    .filter({ has: page.locator('.rst-road__title', { hasText: new RegExp(`^${title}$`, 'u') }) })
-    .locator('.rst-road__state')
-    .evaluate((word) => getComputedStyle(word).color);
-}
 
 /** Each word of the titles and state words that a line break splits: an empty list when none does. */
 async function brokenWords(page: Page): Promise<string[]> {
@@ -84,16 +63,40 @@ test('RF-1020 P8-100 the compact row keeps the tone of Done, With gaps and Faile
 
   await expect(journey(page).getByRole('listitem')).toHaveCount(7);
   await expect(journey(page).locator('.rst-road__detail').first()).toBeHidden();
-  const tones = await toneColours(page);
-  const done = await stateColour(page, 'Understand');
-  const failed = await stateColour(page, 'Plan');
-  const gaps = await stateColour(page, 'Package');
-  expect(done).toBe(tones.ok);
-  expect(failed).toBe(tones.danger);
-  expect(gaps).toBe(tones.warn);
+  const done = (await colourOf(page, 'Understand')).color;
+  const failed = (await colourOf(page, 'Plan')).color;
+  const gaps = (await colourOf(page, 'Package')).color;
+  expect(done).toBe(await tokenColour(page, 'ok-ink'));
+  expect(failed).toBe(await tokenColour(page, 'danger-ink'));
+  expect(gaps).toBe(await tokenColour(page, 'warn-ink'));
   expect(new Set([done, failed, gaps]).size).toBe(3);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
+});
+
+// RF-1020, DEC-217, P8-125: the step of a run at its cap is in the warn tone, never the danger tone of a
+// failed step: its state word and glyph in the compact row, and its pill when the details are shown.
+test('RF-1020 P8-125 a run at its cap is in the warn tone, folded and open, never the danger tone', async ({
+  page,
+}, info) => {
+  await signInAs(page.context(), accountFor('replay', info.project.name));
+  const cap = { endState: 'CapReached', errorCode: 'RST-1600', unreadAreas: 2 };
+  await routeJourney(page, info.project.name, { plan: null, handoff: null }, cap);
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+
+  await expect(stepOf(page, 'Understand')).toHaveAttribute('data-state', 'capped');
+  await expect(stepOf(page, 'Understand').locator('.rst-road__state')).toHaveText(
+    'Stopped at its cap',
+  );
+  const warn = await tokenColour(page, 'warn-ink');
+  expect(warn).not.toBe(await tokenColour(page, 'danger-ink'));
+  expect((await colourOf(page, 'Understand')).color).toBe(warn);
+  expect((await colourOf(page, 'Understand', '.rst-road__mark')).color).toBe(warn);
+  await showStepDetails(page);
+  expect(await colourOf(page, 'Understand')).toEqual({
+    color: warn,
+    background: await tokenColour(page, 'warn-bg'),
+  });
 });
 
 test('RF-1020 P8-100 no title or state word of the strip breaks inside a word from 320 to 1920 px, folded or open', async ({

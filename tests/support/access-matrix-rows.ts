@@ -3,6 +3,7 @@ import { fixturePassword } from './account-fixtures.js';
 import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
+import { keyAccessRows } from './access-key-access-rows.js';
 import { modelRows } from './access-model-rows.js';
 import { planRows } from './access-plan-rows.js';
 import { uploadRows, workbookRows } from './access-upload-rows.js';
@@ -23,7 +24,6 @@ const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] =>
   userName: user?.account.userName ?? 'nobody',
   password: user?.password ?? fixturePassword('Anonymous'),
 });
-
 const unknownUser = '00000000-0000-4000-9000-00000000ffff';
 const projectUrl = (suffix: string) => (context: Context) =>
   `/api/projects/${context.projectId}${suffix}`;
@@ -288,7 +288,7 @@ export const matrixAreas = {
   upload: uploadRows,
   workbook: workbookRows,
   deepen: deepenRows,
-  account: { ...accountRows, ...modelRows },
+  account: { ...accountRows, ...modelRows, ...keyAccessRows },
   admin: adminRows,
   pages: pageRows,
   budget: budgetRoutes,

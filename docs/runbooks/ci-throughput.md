@@ -91,3 +91,24 @@ picks 5 and 6 as they are or small. Pick 4 is no longer "leave it": until pick 2
 
 After each change run the same query on the next 50 runs and compare with section 2: wall, excess, and the share of
 cancelled `develop` runs. A merge queue changes what a `develop` run is, so count queue runs separately.
+
+## 6. Changes made
+
+### P8-54: retry a flaky e2e test once and report it (pick 5)
+
+The `e2e-shard` jobs set `ROSETTA_E2E_RETRIES=1`, and `playwright.config.ts` then retries a failed test once (0
+retries anywhere else, so a flake stays red on a developer's machine). A test that passes on the retry is flaky: the
+shard stays green, Playwright's list counts it as flaky, and `tests/e2e/support/flaky-reporter.ts` writes one summary
+line, "Flaky e2e tests: N passed only on retry.", with the tests by project, file and title to the log, as a
+`::warning` annotation per test and to the job summary. The `e2e` check name and its rule (green only when every
+shard passed) are unchanged, so no ruleset changes.
+
+- **Saves**: one full rerun per flake, 96 job minutes and a 15.9 min median wall (plus its wait for runners). Over the
+  50 measured runs that is at most 1 rerun (the one candidate flake, about 2% of the 4179 job minutes); on the
+  evidence of 2026-11-02 (`live-run-controls.spec.ts`, about five extra full runs) it would have saved about 480 job
+  minutes and 80 min of wall.
+- **Costs**: nothing on a passed run. A real failure runs each failing test once more, so a red shard takes that
+  test's time again, up to its timeout (Playwright's 30 s by default, 90 s to 7 min for the 66 tests that set their
+  own; the 1.1 min per project of section 4). A test that fails on the retry too still fails the shard.
+- **Re-measure**: count the "Flaky e2e tests" lines in the job summaries of the next 50 runs; each one is a full run
+  saved, and each named test is a flake to fix rather than to leave to the retry.
