@@ -65,7 +65,7 @@ describe('release-checks.yml ZAP and staging confirmation: the steps of release.
     expect(at(own, 'id')).toBe('staging');
   });
 
-  it('RF-1304 pushes the image first, then waits, confirms ZAP, then staging, and records release/ready last', async () => {
+  it('RF-1304 pushes the image first, then waits, confirms ZAP, then staging, and records release/ready before the failure comment', async () => {
     const document = checks();
     const all = await steps(document, 'checks');
     const push = all.findIndex((step) => String(at(step, 'run')).includes('docker push'));
@@ -77,15 +77,15 @@ describe('release-checks.yml ZAP and staging confirmation: the steps of release.
     expect([push, ...order]).toEqual([...[push, ...order]].sort((a, b) => a - b));
     expect(new Set(order).size).toBe(4);
     expect(order[0]).toBeGreaterThan(push);
-    expect(order[3]).toBe(all.length - 1);
+    expect(order[3]).toBe(all.length - 2);
   });
 
-  it('RF-1304 no step continues on error, and only the GHCR logout and release/ready run after a failure', async () => {
+  it('RF-1304 no step continues on error, and only the GHCR logout, release/ready and the failure comment run after a failure', async () => {
     const all = await steps(checks(), 'checks');
 
     expect(all.filter((step) => at(step, 'continue-on-error') !== undefined)).toEqual([]);
     expect(all.flatMap((step) => (at(step, 'if') === undefined ? [] : [at(step, 'name')]))).toEqual(
-      ['Log out of GHCR', ready],
+      ['Log out of GHCR', ready, 'Tell the owner the checks failed'],
     );
   });
 });
