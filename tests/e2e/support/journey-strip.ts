@@ -33,6 +33,8 @@ export async function routeJourney(
   page: Page,
   project: string,
   later: { readonly plan: object | null; readonly handoff: object | null },
+  /** P8-125: how the understand run ended, when it did not complete (`endState`, `errorCode`). */
+  end: object = {},
 ): Promise<void> {
   const ended = { queueState: 'Ended', endedAt: '2026-10-12T10:31:00.000Z' };
   await page.route('**/api/projects/*/journey*', async (route) => {
@@ -44,11 +46,38 @@ export async function routeJourney(
           ...{ id: replayRunId(project), runKey: '20261012-100000-understand' },
           ...{ endState: 'Completed', costMicros: 120_000, errorCode: null, ...ended },
           ...{ supportedClaims: 4, openQuestions: 0 },
+          ...end,
         },
         ...later,
       },
     });
   });
+}
+
+/** RF-1020, P8-125: what a colour token of the scheme computes to, read through an element that uses it. */
+export async function tokenColour(page: Page, token: string): Promise<string> {
+  return page.evaluate((name) => {
+    const probe = document.createElement('span');
+    document.body.append(probe);
+    probe.style.color = `var(--rst-${name})`;
+    const colour = getComputedStyle(probe).color;
+    probe.remove();
+    return colour;
+  }, token);
+}
+
+/** RF-1020: the computed colours of a part of a step (its state word by default). */
+export async function colourOf(
+  page: Page,
+  title: string,
+  part = '.rst-road__state',
+): Promise<{ readonly color: string; readonly background: string }> {
+  return stepOf(page, title)
+    .locator(part)
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { color: style.color, background: style.backgroundColor };
+    });
 }
 
 /** The plan run of the failure paths: written with gaps and ended RST-1806. */
