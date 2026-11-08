@@ -68,8 +68,11 @@ describe.skipIf(!hasTestDatabase)('the backfill and a run that ends again', () =
     const found = await new PgRunIndex(pool).find(read.userId, read.id);
     expect(found).toMatchObject({
       ...{ planSourceKey: '20261001-080000-understand', openQuestions: 2 },
-      ...{ endCode: null, supportedClaims: null, endedAt: Date.parse('2026-10-12T09:30:00.000Z') },
+      endedAt: Date.parse('2026-10-12T09:30:00.000Z'),
     });
+    // A null column is a fact nobody stored: the row mapper leaves the key out.
+    expect(found).not.toHaveProperty('endCode');
+    expect(found).not.toHaveProperty('supportedClaims');
     expect(await facts.pendingRuns(10)).toEqual([]);
   });
 });
