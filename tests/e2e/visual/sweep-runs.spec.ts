@@ -23,6 +23,7 @@ import {
 import { expectOptions, openPlanSetup, openStep } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
+import { addWidestRow, WIDEST_SUFFIX } from '../support/widest-history-row.js';
 import { expectNoMidWordBreak, expectPageInView } from '../support/sweep.js';
 
 // RNF-010, RF-010, RF-002, RF-1001, RF-1002, RF-1008, RF-1010, RF-1011, RF-504, RF-506,
@@ -146,8 +147,14 @@ test(
   visual,
   async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 800 });
+    await addWidestRow(page);
     await openHistory(page);
     await expect(runRow(page, '-understand')).toContainText('Partly read');
+    // The widest row a run can have: Well covered, Stopped by a restart and a Resume button.
+    const widest = runRow(page, WIDEST_SUFFIX);
+    await expect(widest).toContainText('Well covered');
+    await expect(widest).toContainText('Stopped by a restart');
+    await expect(widest.getByRole('button', { name: /^Resume run / })).toBeVisible();
     // The page never scrolls sideways (the hidden "Actions" header sat outside the box that scrolls).
     await expectPageInView(page);
 
