@@ -17,7 +17,9 @@ import { z } from 'zod';
 // parameterised SQL only. Each writer is one UPDATE of the rows it names; the open questions are
 // written only on the user's runs. The backfill reads the rows that existed before migration 0024
 // a few at a time and fills each with one UPDATE that keeps any fact a writer stored since
-// (COALESCE) and marks the row filled. A database failure is thrown as RST-2404 with the cause.
+// (COALESCE) and marks the row filled. The facts of the run's end are filled only while `ended_at`
+// is still the end time the pass read (P8-143): the row reads back in milliseconds, so the column is
+// cut to milliseconds before the comparison. A database failure is thrown as RST-2404 with the cause.
 
 const RECORD_PLAN_SOURCE = 'UPDATE runs SET plan_source_key = $2 WHERE id = $1';
 const RECORD_END = 'UPDATE runs SET end_code = $2, supported_claims = $3 WHERE id = $1';
@@ -26,8 +28,13 @@ const RECORD_OPEN_QUESTIONS =
 const RECORD_BRIEF_SAVED = 'UPDATE projects SET brief_saved_at = $3 WHERE user_id = $1 AND id = $2';
 const PENDING_RUNS =
   'SELECT ' + RUN_COLUMNS + ' FROM runs WHERE NOT facts_backfilled ORDER BY queued_at, id LIMIT $1';
+/** The run still has the end the pass read; a run that ended again keeps its newer end facts. */
+const SAME_END = "date_trunc('milliseconds', ended_at) IS NOT DISTINCT FROM $7::timestamptz";
 const FILL_RUN =
-  'UPDATE runs SET deepen_parent_id = COALESCE(deepen_parent_id, $2::uuid), plan_source_key = COALESCE(plan_source_key, $3), end_code = COALESCE(end_code, $4), supported_claims = COALESCE(supported_claims, $5), open_questions = COALESCE(open_questions, $6), facts_backfilled = true WHERE id = $1';
+  'UPDATE runs SET deepen_parent_id = COALESCE(deepen_parent_id, $2::uuid), plan_source_key = COALESCE(plan_source_key, $3), ' +
+  `end_code = CASE WHEN ${SAME_END} THEN COALESCE(end_code, $4) ELSE end_code END, ` +
+  `supported_claims = CASE WHEN ${SAME_END} THEN COALESCE(supported_claims, $5) ELSE supported_claims END, ` +
+  'open_questions = COALESCE(open_questions, $6), facts_backfilled = true WHERE id = $1';
 const PENDING_PROJECTS =
   'SELECT id::text AS project_id, user_id::text AS user_id FROM projects WHERE NOT facts_backfilled ORDER BY created_at, id LIMIT $1';
 const FILL_PROJECT =
@@ -77,10 +84,11 @@ export class PgJourneyFacts implements JourneyFactsStore, JourneyFactsBackfill {
     return (await this.run(PENDING_RUNS, [limit])).rows.map(toRun);
   }
 
-  async fillRun(runId: string, facts: StoredRunFacts): Promise<void> {
+  async fillRun(read: Pick<Run, 'id' | 'endedAt'>, facts: StoredRunFacts): Promise<void> {
     await this.run(FILL_RUN, [
-      ...[runId, uuidOrNull(facts.deepenParentId), facts.planSourceKey],
+      ...[read.id, uuidOrNull(facts.deepenParentId), facts.planSourceKey],
       ...[codeOrNull(facts.endCode), facts.supportedClaims, facts.openQuestions],
+      instantOf(read.endedAt),
     ]);
   }
 

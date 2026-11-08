@@ -15,7 +15,8 @@ import {
 // when there is nothing left to do but one query), a few rows at a time, one short UPDATE per row,
 // so it holds no lock for long. A fact whose file is missing, torn or another run's stays null and
 // is logged; the row is marked filled all the same and is not read again. A fill never replaces a
-// fact a writer has stored since (the store keeps it).
+// fact a writer has stored since (the store keeps it), nor the end of a run that ended again after
+// the pass read it (the store compares the end time read, P8-143).
 
 export interface JourneyBackfillDependencies extends JourneyFileDependencies {
   readonly briefs: Pick<PlanningBriefStore, 'read'>;
@@ -63,7 +64,7 @@ async function fillRuns(deps: JourneyBackfillDependencies, runs: readonly Run[])
     counts.set(run.projectId, project);
     const projectRuns = await deps.runs.list(run.userId, run.projectId);
     const facts = await runFileFacts(deps, run, projectRuns, problemOf(deps, run));
-    await deps.pending.fillRun(run.id, { ...facts, openQuestions: project.get(run.id) ?? null });
+    await deps.pending.fillRun(run, { ...facts, openQuestions: project.get(run.id) ?? null });
   }
 }
 
