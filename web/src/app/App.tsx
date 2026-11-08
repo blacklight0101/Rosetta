@@ -56,7 +56,7 @@ function SignedInPage(props: SignedInProps): JSX.Element {
     assign(signInPath);
   }, [assign]);
   const state = useSession(client, goToSignIn);
-  const { project, announce } = useShellProject(client, match.params['projectId']);
+  const { project, announce } = useShellProject(client, match.params['projectId'], location);
   if (state.status === 'loading') {
     return (
       <p class="rst-loading" role="status">

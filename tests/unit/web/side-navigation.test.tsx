@@ -225,3 +225,18 @@ it('P1-175 moves between the pages without changing the groups', async () => {
     ['main', 'project', 'admin'],
   ]);
 });
+
+it('P8-134 reads the project name again on the next page after the project was renamed', async () => {
+  rememberProject('p-7');
+  const projects: Record<string, string> = { 'p-7': 'octo/demo' };
+  appAt('/projects', { projects });
+  await screen.findByTestId('nav-group-project');
+  await projectGroup().findByText('Project: octo/demo');
+
+  projects['p-7'] = 'Demo shop';
+  await act(() => {
+    navigate('/projects/p-7');
+  });
+
+  expect(await projectGroup().findByText('Project: Demo shop')).not.toBeNull();
+});

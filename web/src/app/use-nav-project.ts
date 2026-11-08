@@ -8,6 +8,8 @@ import { forgetProject, rememberedProject, rememberProject } from './remembered-
 // address (its links show at once; the name follows). Elsewhere it is the last project opened in
 // this browser session, and its links appear only after the server has confirmed the user can open
 // it: a project that was deleted, or belongs to another user, answers 404 and is forgotten.
+// P8-134: the project is read again on every page, so a name changed on the projects list shows on
+// the next page.
 
 const notFound = 404;
 
@@ -17,7 +19,11 @@ interface Checked {
 }
 
 // RF-1105
-function useNavProject(client: ApiClient, routeProjectId: string | undefined): ProjectNav {
+function useNavProject(
+  client: ApiClient,
+  routeProjectId: string | undefined,
+  path: string,
+): ProjectNav {
   const id = routeProjectId ?? rememberedProject();
   const [checked, setChecked] = useState<Checked | undefined>();
   const [refused, setRefused] = useState<string | undefined>();
@@ -38,7 +44,7 @@ function useNavProject(client: ApiClient, routeProjectId: string | undefined): P
     return () => {
       abort.abort();
     };
-  }, [client, id]);
+  }, [client, id, path]);
   if (id === undefined || refused === id) return { status: 'none' };
   if (checked?.id === id) return { status: 'open', id, name: checked.name };
   return routeProjectId === undefined ? { status: 'pending' } : { status: 'open', id };
@@ -51,7 +57,8 @@ function useNavProject(client: ApiClient, routeProjectId: string | undefined): P
 export function useShellProject(
   client: ApiClient,
   routeProjectId: string | undefined,
+  path: string,
 ): { readonly project: ProjectNav; readonly announce: (id: string | undefined) => void } {
   const [announced, announce] = useState<string | undefined>();
-  return { project: useNavProject(client, routeProjectId ?? announced), announce };
+  return { project: useNavProject(client, routeProjectId ?? announced, path), announce };
 }
