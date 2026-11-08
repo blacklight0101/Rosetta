@@ -68,6 +68,9 @@ export const claimJudgedData = z.looseObject({
   reason: text.optional(),
 });
 
+/** `verify.claim.started` and `verify.claim.callEnded` (P8-58): the claim whose call began or ended. */
+export const claimCallData = z.looseObject({ claimId: text });
+
 /** `costMicros` is a number in the event log and may be a decimal string on the wire. */
 const micros = z.union([
   count,

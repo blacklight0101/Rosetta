@@ -1188,5 +1188,12 @@ arrived (`src/lib/live-run/judgement-state.ts`; the reducer keeps `judgement` as
 (`5 of 7 citations checked, 3 judged, 2 waiting for judgement`; done once nothing waits), the journey's
 check step and the run summary say the same; the claims list of an ended run never shows a claim waiting.
 
+RF-1002 (P8-60): the run state keeps the calls in flight per role in `inFlight` (`src/lib/live-run/run-state.ts`):
+`reader` holds the task ids with an `agent.started` and no `agent.ended` yet (`agent-events.ts`), `verifier` the
+claim ids of the rule in `docs/data-model.md` section 3.9 (`verifier-calls.ts`: added at `verify.claim.started`,
+removed at `verify.claim.callEnded`, emptied at `verify.judgement.started`, `verify.judgement.ended` and `run.ended`),
+and `limit` the `parallelism` of the latest `run.started` (`run-level-events.ts`; undefined for a run stored without
+it). The counts are the sizes of the lists; they are rebuilt from the stored events on a reload.
+
 RF-1004: `use-run.ts` reads the run through `event-refresh.ts`: at most one run read per second, one
 trailing read after the last event, none while idle and none after the page is left.
