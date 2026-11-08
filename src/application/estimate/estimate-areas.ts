@@ -1,6 +1,6 @@
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
-import { surfaceOf } from '../../domain/code-map/area-surface.js';
+import { surfaceReaderOf } from '../../domain/code-map/area-surface.js';
 import type { Area } from '../../domain/code-map/area.js';
 import type { RunEstimate } from './estimate-types.js';
 
@@ -8,10 +8,12 @@ import type { RunEstimate } from './estimate-types.js';
 
 /**
  * RF-626: the screens of the areas, taken to be one SCRN card for each page file the code map marks
- * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls.
+ * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls. The code
+ * map is indexed once for all the areas (RF-210, P8-133).
  */
 export function screensOf(areas: readonly Area[], codeMap: CodeMap): number {
-  return areas.reduce((total, area) => total + surfaceOf(area, codeMap).pages.length, 0);
+  const surfaceOf = surfaceReaderOf(codeMap);
+  return areas.reduce((total, area) => total + surfaceOf(area).pages.length, 0);
 }
 
 /** RF-155: the areas that hold a rendered workbook also resend the guidance and both formats. */
