@@ -40,8 +40,28 @@ Next, in this order: the CI cards P8-142 and P8-141 first, two builders (DEC-227
 
 Owner agenda from this round:
 
-- **P8-138 (#1308), ten rows left to you.** The builder fixed 16 findings, dropped 2 with a reason and left these 10 unchanged, so the default for every row is to keep the code as it is: `cap-warnings.ts` lines 63, 73 and 89; `TotalsPill.tsx` line 39 (the title is on a `strong`); `ServerMeter.tsx`, `ProviderTest.tsx` and `RunMeter.tsx` show plain amounts; `log-text.ts` lines 62-63 (three lines per verifier call against `LOG_LIMIT` 1000); `code-map-tiles.ts` line 93 (read before the coverage loads); `run-coverage.ts` line 96; `read-run-partly-read.ts` line 22 (reads `task-results.json` uncapped per partly read row); and the header of migration 0023, which stays because editing it would change its checksum. The rows are taken from the verdict and the card's Evidence; the pull request text only counts them. One more finding went to P8-73 (done).
-- **P8-74 (#1309): five wording and behaviour defaults** the builder left for you (listed in the builder's notes), and these: the select preselects OpenAI before Anthropic when both are usable, where the artboard lists Anthropic first; focus moves to "Provider for every role" after Apply; look at the page at the viewports of the orchestration README section 1, light and dark (no page walk was run).
+- **P8-138 (#1308), rows left to you.** The builder counted 10 owner rows but lists 9 (numbers are the builder's), each with a default:
+  1. `log-text.ts` writes three log lines per verifier call against `LOG_LIMIT` 1000; RF-1002 says the verbose log lists every event. Default: keep the lines, accepted knowingly.
+  2. `lastSignOfLife` streams the whole log (performance only). Default: a small separate card (a history port method that reads the last line from the end of the file).
+  3. `code-map-tiles.ts:93` draws finished tiles as "read" before the coverage loads. Default: keep "read" and reword the RF-230 Given so the Areas figure is what gives no verdict while it checks.
+  4. `read-run-partly-read.ts` reads `task-results.json` with no size cap. Default: no cap, because Rosetta writes the file itself (a cap in `FileTaskResults` would be its own card).
+  5. `TotalsPill.tsx:39`: the exact figure is a `title` on the `strong`. Default: link title "<split> · $3.113515" and drop the `strong` title.
+  6. `ServerMeter.tsx:41` and `RunMeter.tsx:79` show plain amounts. Default: design-system section 10 says meter text is a sentence; the exact figure is in the header pill and the role table.
+  7. `cap-warnings.ts`: the daily and monthly "left" amounts round up. Default: round every "left" amount down and widen the RF-428 scenario.
+  8. The P8-101 screenshots exist only as Playwright attachments. Default: CI attachments are enough, no PNG files in the repo.
+  9. The user's name can shrink to 0 px at 1280 px. Default: a floor of about 4rem on the name, with the meter's note dropping first.
+
+  Also from P8-138: migration 0023's header was dropped because migration files are checksummed, and `ProviderTest.tsx:81` was left to P8-73.
+
+- **P8-74 (#1309): five points** where the builder applied a default:
+  1. Some wording is the builder's own, written as Givens because the artboard draws only the Ollama plus own-key case: the no-key line ("X has no key you can use. ... so a run would be refused (RST-2302)."), "You may use the server's X key.", "Ollama can be reached." and the sentence for when nothing is usable.
+  2. The every-role control moves into the warning instead of appearing twice. After Apply, focus goes to "Provider for every role" in Models per role.
+  3. The warning follows the form's current, unsaved roles, so it goes away on Apply, before Save.
+  4. "Ollama (not reachable)" is shown disabled, and only for an Ollama that answered unreachable. Providers with no key are not listed (DEC-225 A).
+  5. The artboard's "All four roles use it" contradicts its own table, so the warning names the roles that actually use the provider.
+
+  Plus: OpenAI is preselected before Anthropic (the artboard lists Anthropic first). Look at the page at the viewports of the orchestration README section 1, light and dark (no page walk was run).
+
 - **P8-139 (#1303):** open questions are stored per understand-run family, not per project; the count lags while a Deepen runs until a family member ends (default for both: keep). On the deploy that ships 0024, compare the journey strip of a project with a Completed understand run, a Deepen and a plan written from it, before and after the start-up pass: it must read the same. After a rollback to an image from before 0024, run the rollback SQL of `environments-and-delivery.md` section 11 before rolling forward. More than one app replica does not serialise the refresh across processes; the next refresh heals it, and it matters only if the hosted app scales past one replica.
 - **P8-137:** a queued run reads "running" in the overview, and the overview has no budget. Say if either should change when it merges.
 - **P8-73 (#1287):** look at the "Use for every role" row at 375, 768 and 1280 px, light and dark, with a real Anthropic key and Ollama stopped (the verifier did not run the page walk).
@@ -59,6 +79,7 @@ Follow-ups found by the verifiers of these cards. They block nothing and are not
 - P8-77: the memory adapter accepts a duplicate id, and the arrays allow duplicates.
 - P8-127: the order of `shards.json`.
 - P8-134: no live region or success announcement after a rename.
+- P8-128: `web/src/pages/use-fold.ts:21-26`: a fold the user opens in the same task as the page opens it closes when the page releases it (the single toggle is read as the page's own change, so no user choice is recorded).
 - P8-74: the every-role control lists OpenAI before Anthropic where the artboard has Anthropic first; the test "Apply does not save" asserts immediately and would miss a delayed save; the build adds a warning icon and splits the "You have an Anthropic key." sentence into its own paragraph, both unlike the artboard.
 - P8-139: a race guard on `ended_at` in the backfill (`src/application/journey/journey-facts-backfill.ts:59-66`); the RF-615 backfill Given (`docs/spec/requirements.md`, about line 1454) says it fills "only from before ... at start-up", but it now fills every row once, at start-up or in the daily pass; `environments-and-delivery.md` section 11 should say when to run the rollback SQL on the 0024 deploy; the test name at `question-count-refresh.test.ts:52` lacks an RF id.
 
