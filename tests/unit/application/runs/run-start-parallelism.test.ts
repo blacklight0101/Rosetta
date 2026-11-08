@@ -52,3 +52,7 @@ it('RF-1002 run.started of a run whose project cannot be read carries no paralle
 it('RF-1002 run.started of a scan run carries no parallelism, it runs no reader', async () => {
   expect(await startedDataOf(projectWith(4), 'scan')).not.toHaveProperty('parallelism');
 });
+
+it('RF-1002 run.started of a plan run carries no parallelism, it runs no reader', async () => {
+  expect(await startedDataOf(projectWith(4), 'plan')).not.toHaveProperty('parallelism');
+});
