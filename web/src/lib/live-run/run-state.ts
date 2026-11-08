@@ -204,7 +204,7 @@ export interface DeepenProgress {
  * RF-1002 (P8-60): the calls each role has in flight now, and the limit, from the run's events
  * (data-model.md section 3.9, "Calls in flight"). The counts are the sizes of the id lists.
  */
-export interface CallsInFlight {
+interface CallsInFlight {
   /** The reader tasks with an `agent.started` and no `agent.ended` yet. */
   readonly reader: readonly string[];
   /**
