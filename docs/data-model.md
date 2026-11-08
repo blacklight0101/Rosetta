@@ -571,7 +571,9 @@ Calls in flight (P8-58, RF-1002). The verifier calls in flight are the claim ids
 `verify.claim.started`, remove the `claimId` of a `verify.claim.callEnded` (removing an id that is not there does
 nothing), and empty the set at `verify.judgement.started`, `verify.judgement.ended` and `run.ended`. The size of the set
 is the count: it is started minus callEnded in a well-formed log, never below zero, and it cannot stick after a crash,
-a resume or a write that was lost, because the next step event empties it. A replay of the stored log (a reload of the
+a resume or a write that was lost, because the next step event empties it. The reader calls in flight are the reader
+tasks with an `agent.started` and no `agent.ended`; `run.ended` empties them too, so a reader whose `agent.ended` was
+lost is not counted after a resume (P8-143). A replay of the stored log (a reload of the
 page, a resumed run) gives the count the live page had after each event. Never count `verify.claim.started` without a
 `verify.claim.judged`: the verdicts leave in claim order, so with parallelism above 1 a finished claim stays counted while
 an earlier one is slow (8 counted with 2 calls running), and a claim stopped or refused by a cap never gets a verdict. A

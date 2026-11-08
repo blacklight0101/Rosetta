@@ -196,6 +196,17 @@ describe('the step events', () => {
 
     expect(state.inFlight).toMatchObject({ verifier: [], limit: 4 });
   });
+
+  it('RF-1002 empty the readers at run.ended, so a reader whose agent.ended was lost is not counted after a resume', () => {
+    const state = stateAfter(
+      runStarted(1, 4),
+      agentStarted(2, 'reader-001', 'Catalog'),
+      runEnded(3, 'Interrupted'),
+      runStarted(4, 4),
+    );
+
+    expect(counts(state)).toEqual({ reader: 0, verifier: 0, limit: 4 });
+  });
 });
 
 describe('a reload of the page', () => {
