@@ -109,6 +109,9 @@ export const startedData = z.looseObject({
   caps: z.looseObject({ run: capPair }).optional(),
   // P5-07: the provider kind of each role, for the top bar meter's unit.
   roles: z.record(z.string(), z.looseObject({ kind: text.optional() })).optional(),
+  // RF-1002, P8-59: the calls a role runs at once; a log written before it, or a value that is not a
+  // whole number from 1, has no limit and the rest of the event still applies.
+  parallelism: z.number().int().positive().optional().catch(undefined),
 });
 
 export const resolvedData = z.looseObject({ url: text.optional(), commitSha: text.optional() });
