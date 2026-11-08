@@ -54,7 +54,10 @@ export function useProjectOverview(): {
     };
   }, [client, reads]);
   const add = (project: Project): void => {
-    const row: ProjectOverviewRow = { project, runs: 0, totals: zeroTotals, lastRun: null };
+    const row: ProjectOverviewRow = {
+      ...{ project, runs: 0, totals: zeroTotals, lastRun: null },
+      journey: null,
+    };
     setState((current) => ({
       status: 'ready',
       rows: current.status === 'ready' ? [...current.rows, row] : [row],
