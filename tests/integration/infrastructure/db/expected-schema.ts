@@ -57,6 +57,8 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'source_file_name text null',
     'source_uploaded_at timestamptz null',
     'source_workbooks int4 null',
+    'brief_saved_at timestamptz null',
+    'facts_backfilled bool',
   ],
   runs: [
     'id uuid',
@@ -80,6 +82,12 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'span_started_at timestamptz null',
     'active_ms int8',
     'end_reason text null',
+    'deepen_parent_id uuid null',
+    'plan_source_key text null',
+    'end_code text null',
+    'supported_claims int4 null',
+    'open_questions int4 null',
+    'facts_backfilled bool',
   ],
   journeys: [
     'project_id uuid',

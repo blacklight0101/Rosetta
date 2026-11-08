@@ -1,3 +1,4 @@
+import type { JourneyFactsStore } from '../../src/application/ports/journey-facts-store.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { ProjectRepository } from '../../src/application/ports/project-repository.js';
 import type { RunIndex } from '../../src/application/ports/run-index.js';
@@ -22,6 +23,8 @@ export function briefServices(parts: {
   readonly runs: RunIndex;
   readonly briefs: PlanningBriefStore;
   readonly clock: FixedClock;
+  /** P8-139: where the brief time is stored; none when left out. */
+  readonly facts?: Pick<JourneyFactsStore, 'recordBriefSaved'>;
 }): BriefServices {
   const deps = { ...parts, catalogue: shippedCatalogue };
   return {
