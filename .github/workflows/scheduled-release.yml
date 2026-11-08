@@ -105,13 +105,16 @@ jobs:
           gh workflow run release.yml --ref main
           note "Slot $SLOT, Madrid hour $hour$delay: started Release on main at $sha (it deploys to production once its checks pass)."
           # GitHub may list the new run only seconds later. The next slot in the group starts when this step
-          # ends, so wait until the run is listed (up to a minute); otherwise it could dispatch a second one,
-          # and release.yml queues, so it would deploy twice (P8-13).
+          # ends, so wait until the run is listed (up to a minute: five tries, the wait doubled from 2 up to
+          # 30 seconds, DEC-227); otherwise it could dispatch a second one, and release.yml queues, so it
+          # would deploy twice (P8-13).
           seen="[.[] | select(.headSha == \"$sha\" and .createdAt >= \"$started\")] | length"
-          for _ in 1 2 3 4 5 6; do
+          delay=2
+          for _ in 1 2 3 4 5; do
             listed="$(gh run list --workflow release.yml --branch main --limit 100 --json headSha,createdAt --jq "$seen")"
             [ "$listed" != 0 ] && exit 0
-            sleep 10
+            sleep "$delay"
+            delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
           done
           note "The Release run of $sha was not listed after a minute; the next slot may see it late."
         env:
