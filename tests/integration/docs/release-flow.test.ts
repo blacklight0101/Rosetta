@@ -181,3 +181,33 @@ describe('the 06:00 start in ADR-025 and RF-1304 (DEC-207)', () => {
     }
   });
 });
+
+describe('the checks workflow of the release merge in the delivery documents (DEC-207, P8-63)', () => {
+  it('DEC-207 docs/environments-and-delivery.md names release-checks.yml, its trigger, its job permissions and its token', async () => {
+    const text = section(
+      await read('docs/environments-and-delivery.md'),
+      '## 6. Continuous integration',
+    );
+
+    for (const fact of [
+      '`release-checks.yml`',
+      'every push to `main`',
+      '`contents: read`, `packages: write`, `statuses: write` and `issues: write`',
+      'workflow token',
+    ]) {
+      expect(text).toContain(fact);
+    }
+  });
+
+  it('DEC-207 the deploy runbook lists the checks workflow with its test and says the release merge gets its image at once', async () => {
+    const text = await read('docs/runbooks/deploy.md');
+    const row = text
+      .split('\n')
+      .find((line) => line.includes('`.github/workflows/release-checks.yml`'));
+    const release = section(text, '## Release to production');
+
+    expect(row).toContain('`tests/integration/tooling/release-checks-workflow.test.ts`');
+    expect(release).toContain('`release-checks.yml`');
+    expect(release).toContain('sha-<short>');
+  });
+});
