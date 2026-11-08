@@ -16,8 +16,9 @@ import { expectPageInView } from './support/sweep.js';
 // RF-231, RNF-010, design-system.md section 5.1, P8-89: the Coverage tooltip of a History row is an
 // overlay. Opening it moves no cell of the table, never pushes "More actions" out of the viewport, is not
 // clipped by the scrolling box of the table and adds no scrollbar, on the first row and on the last, in
-// the four views (@visual). The runs are real runs of the test server; the last-row test only reverses the
-// list, so that the row with measures is the last.
+// the four views (@visual); it closes with Escape on hover and stays under a diagonal move (P8-129). The
+// runs are real runs of the test server; the last-row test only reverses the list, so that the row with
+// measures is the last.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -100,6 +101,33 @@ async function movePointerOntoTip(page: Page, value: Locator, tip: Locator): Pro
   await expect(tip).toBeVisible();
 }
 
+/**
+ * P8-129: the pointer leaves the value through its side, outside the value and the tooltip for a moment, on
+ * its way onto the tooltip (a diagonal move), and the tooltip stays (WCAG 1.4.13, hoverable).
+ */
+async function crossCornerOntoTip(page: Page, value: Locator, tip: Locator): Promise<void> {
+  const [from, to] = [await value.boundingBox(), await tip.boundingBox()];
+  if (from === null || to === null) throw new Error('The value or its tooltip has no box.');
+  const below = to.y >= from.y + from.height;
+  await page.mouse.move(from.x + from.width - 2, from.y + from.height / 2);
+  await page.mouse.move(from.x + from.width + 6, below ? from.y + from.height - 3 : from.y + 3);
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 2 });
+  await page.waitForTimeout(400);
+  await expect(tip).toBeVisible();
+}
+
+/** P8-129: Escape closes a tooltip that only the pointer rests on; leaving and hovering again opens it. */
+async function expectEscapeOnHover(page: Page, value: Locator, tip: Locator): Promise<void> {
+  await value.hover();
+  await expect(tip).toBeVisible();
+  await expect(value).not.toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(tip).toBeHidden();
+  await page.mouse.move(0, 0);
+  await value.hover();
+  await expect(tip).toBeVisible();
+}
+
 /** Keyboard focus and then hover open the tooltip; neither moves anything of the table or page. */
 async function expectOverlayOn(page: Page, row: Locator): Promise<void> {
   const value = row.getByTestId('run-coverage');
@@ -122,6 +150,8 @@ async function expectOverlayOn(page: Page, row: Locator): Promise<void> {
   expect(await layoutOf(page, row)).toEqual(rest);
   await expectMoreActionsInView(page, row);
   await movePointerOntoTip(page, value, tip);
+  await crossCornerOntoTip(page, value, tip);
+  await expectEscapeOnHover(page, value, tip);
   await page.mouse.move(0, 0);
   await expect(tip).toBeHidden();
   expect(await layoutOf(page, row)).toEqual(rest);

@@ -245,6 +245,9 @@ rule without a tooltip, and an amount left of the approved amount rounds down (`
   keyboard and dismissal are the same. The tip is `position: fixed` like the Row menu panel, so opening it moves nothing
   of the table and a table's scroll region does not clip it. It stands `sp-1` under its trigger, or above when there is
   no room under it, keeps 8 px from the viewport's edges and follows a scroll or a resize; the pointer can move onto it.
+  As there, Escape pressed anywhere closes an open tip, also one the pointer alone rests on (the listener is on the
+  document while the tip is open, P8-129). It closes 200 ms after the pointer leaves the trigger and the tip, so a
+  pointer that crosses a corner on its way onto the tip keeps it open; a return within that time counts as not leaving.
   It wraps, up to 28rem wide and never wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
   `radius-md`, `shadow-2`, `z-menu`, `ink-muted`, `fs-xs`, `fw-body`, `sp-2` and `sp-3`.
 

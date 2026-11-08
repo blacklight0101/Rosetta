@@ -93,12 +93,18 @@ describe('the Coverage tooltip of the history closed with Escape', () => {
     });
     expect(isOpen(wrap)).toBe(true);
   });
+});
 
+describe('the Coverage tooltip of the history and an Escape with no tooltip open', () => {
   it('RF-231 given no Coverage tooltip open, Escape leaves it alone', async () => {
     const { wrap } = await coverageValue();
 
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    await hoverOpen(wrap);
+    fireEvent.mouseEnter(wrap);
+
+    await waitFor(() => {
+      expect(isOpen(wrap)).toBe(true);
+    });
   });
 });
 
