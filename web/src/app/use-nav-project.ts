@@ -8,8 +8,8 @@ import { forgetProject, rememberedProject, rememberProject } from './remembered-
 // address (its links show at once; the name follows). Elsewhere it is the last project opened in
 // this browser session, and its links appear only after the server has confirmed the user can open
 // it: a project that was deleted, or belongs to another user, answers 404 and is forgotten.
-// P8-134: the project is read again on every page, so a name changed on the projects list shows on
-// the next page.
+// P8-134: inside a project the project is read again on every page, so a name changed on the
+// projects list shows once the project is opened. Pages outside a project read the kept project once.
 
 const notFound = 404;
 
@@ -27,6 +27,7 @@ function useNavProject(
   const id = routeProjectId ?? rememberedProject();
   const [checked, setChecked] = useState<Checked | undefined>();
   const [refused, setRefused] = useState<string | undefined>();
+  const page = routeProjectId === undefined ? undefined : path;
   useEffect(() => {
     if (id === undefined) return undefined;
     const abort = new AbortController();
@@ -44,7 +45,7 @@ function useNavProject(
     return () => {
       abort.abort();
     };
-  }, [client, id, path]);
+  }, [client, id, page]);
   if (id === undefined || refused === id) return { status: 'none' };
   if (checked?.id === id) return { status: 'open', id, name: checked.name };
   return routeProjectId === undefined ? { status: 'pending' } : { status: 'open', id };

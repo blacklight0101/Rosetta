@@ -28,6 +28,8 @@ interface Setup {
   readonly hold?: Promise<undefined>;
   /** What every other call answers, 404 by default. */
   readonly otherwise?: number;
+  /** Receives the address of every call. */
+  readonly calls?: string[];
 }
 
 const urlOf = (input: RequestInfo | URL): string =>
@@ -41,6 +43,7 @@ function appAt(path: string, setup: Setup = {}) {
   window.history.pushState({}, '', path);
   const fetchFn: typeof fetch = (input) => {
     const url = urlOf(input);
+    setup.calls?.push(url);
     if (url === '/api/session') return Promise.resolve(json(200, session(setup.role ?? 'user')));
     const id = projectIdOf(url);
     const name = id === undefined ? undefined : setup.projects?.[id];
@@ -239,4 +242,20 @@ it('P8-134 reads the project name again on the next page after the project was r
   });
 
   expect(await projectGroup().findByText('Project: Demo shop')).not.toBeNull();
+});
+
+it('P8-134 reads the kept project once on pages outside a project', async () => {
+  rememberProject('p-7');
+  const calls: string[] = [];
+  appAt('/projects', { projects: { 'p-7': 'octo/demo' }, calls });
+  await screen.findByTestId('nav-group-project');
+  await projectGroup().findByText('Project: octo/demo');
+
+  for (const path of ['/settings', '/projects', '/settings']) {
+    await act(() => {
+      navigate(path);
+    });
+  }
+
+  expect(calls.filter((url) => url === '/api/projects/p-7')).toHaveLength(1);
 });
