@@ -70,11 +70,21 @@ export function onPlanned(state: RunState, event: RunEvent): RunState {
   return withAgent(state, event, (agent) => inRound(state, named(agent, event)));
 }
 
+/** RF-1002 (P8-60): the reader tasks in flight, the task added once or removed. */
+function withReader(state: RunState, agentTaskId: string, running: boolean): RunState {
+  const { reader } = state.inFlight;
+  if (reader.includes(agentTaskId) === running) return state;
+  const next = running ? [...reader, agentTaskId] : reader.filter((id) => id !== agentTaskId);
+  return { ...state, inFlight: { ...state.inFlight, reader: next } };
+}
+
 // RF-1002, RF-209
 export function onStarted(state: RunState, event: RunEvent): RunState {
-  return withAgent(state, event, (agent) =>
+  const started = withAgent(state, event, (agent) =>
     inRound(state, { ...named(agent, event), state: 'Running' }),
   );
+  const id = event.agentTaskId;
+  return id === undefined ? started : withReader(started, id, true);
 }
 
 // RF-1002, RF-1003
@@ -151,8 +161,10 @@ export function onCardProposed(state: RunState, event: RunEvent): RunState {
   return known ? withCard : { ...withCard, cards: [...withCard.cards, card] };
 }
 
-// RF-1002
-export function onAgentEnded(state: RunState, event: RunEvent): RunState {
+// RF-1002: the reader is no longer in flight, whatever its event holds.
+export function onAgentEnded(before: RunState, event: RunEvent): RunState {
+  const id = event.agentTaskId;
+  const state = id === undefined ? before : withReader(before, id, false);
   const parsed = agentEndedData.safeParse(event.data);
   if (!parsed.success) return state;
   const given = AGENT_STATES.find((each) => each === parsed.data.state);

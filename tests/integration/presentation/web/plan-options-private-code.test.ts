@@ -67,6 +67,18 @@ describe('POST /api/projects/:id/plan-options and the private code of an upload'
     expect(response.json()).toMatchObject({ code: ERROR_CODES.privateCodeNotConfirmed });
   });
 
+  it('RF-132 RST-1521 says where to confirm: the project, then try again (P8-98)', async () => {
+    const { amy, url } = await setup('upload');
+
+    const response = await amy.request({ method: 'POST', url, payload: { cloudConsent: true } });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: ERROR_CODES.privateCodeNotConfirmed,
+      nextStep: 'Give the private code confirmation for this project, then try again.',
+    });
+  });
+
   it('RF-132 keeps the consent first: no consent answers RST-1515', async () => {
     const { amy, url } = await setup('upload');
 

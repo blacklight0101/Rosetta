@@ -48,3 +48,13 @@ describe('partlyReadAreas', () => {
     expect(partlyReadAreas(areas)).toBe(2);
   });
 });
+
+describe('partlyReadAreas of a resumed old run (P8-138)', () => {
+  it('RF-230 RF-006 counts nothing for a resumed old run whose restored areas have no share', () => {
+    // P8-138: the tasks of the session before the resume kept their coverage without a share, so the
+    // areas read again carry one and the restored ones do not; the listing is as unknown as an old file.
+    const areas = [{ area: 'restored' }, { area: 'read again', firstPartyShare: 0.16 }];
+
+    expect(partlyReadAreas(areas)).toBe(0);
+  });
+});

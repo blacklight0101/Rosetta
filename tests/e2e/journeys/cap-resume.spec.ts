@@ -5,6 +5,7 @@ import { openProjectStart, repositories, runScan, chooseAreas } from '../support
 import {
   agentPanel,
   openRunTab,
+  expectCompleted,
   runStatus,
   startAndOpenLiveRun,
   RUN_DONE,
@@ -74,7 +75,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
 
   await page.getByRole('button', { name: /^Continue/u }).click();
 
-  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 180_000 });
+  await expectCompleted(page, 180_000);
   await expect(page).toHaveURL(live);
   await expect(page.getByTestId('approval-question')).toHaveCount(0);
   await openRunTab(page, 'Evidence');

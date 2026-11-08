@@ -1,35 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import {
-  at,
-  runStep,
-  stepIndex,
-  stepScript,
-  workflowDocument,
-} from '../../support/workflow-yaml.js';
+import { commentOf, runCommentStep, type CommentRun } from '../../support/production-deploys-gh.js';
+import { at, stepIndex, stepScript, workflowDocument } from '../../support/workflow-yaml.js';
 
 // RF-1304: after a production deploy whose smoke test passed, the deploy job of
 // .github/workflows/release.yml comments on the open issue "Production deploys" and mentions the
-// owner, so GitHub emails them; a failure to comment never fails a deploy that is already live.
+// owner, so GitHub emails them; a failure to comment never fails a deploy that is already live. The
+// issue lookup and the comment live in scripts/production-deploys-comment.sh, which the checks of
+// the release merge share (release-checks-notify.test.ts, P8-65).
 
 const release = (): Promise<unknown> => workflowDocument('release.yml');
 const image = 'ghcr.io/blacklight0101/rosetta';
 
 /** Runs the notification step against a fake gh that lists `issues` (number<TAB>title, one per line). */
-async function notify(issues: string): Promise<{ code: number; calls: string[] }> {
+async function notify(issues: string): Promise<CommentRun> {
   const script = stepScript(await release(), 'deploy', 'Tell the owner');
-  // The step calls gh inside $(...), so the calls go to a file that outlives the subshells.
-  const prelude = `
-calls_file="$(mktemp)"
-gh() {
-  printf '|%s' "$*" >> "$calls_file"
-  case "$1 $2" in
-    'issue list') printf '%s' "$FAKE_ISSUES" ;;
-    'issue create') echo 'https://github.com/blacklight0101/Rosetta/issues/77' ;;
-  esac
-}
-trap 'echo "CALLS$(cat "$calls_file")"; rm -f "$calls_file"' EXIT`;
   const env = {
-    FAKE_ISSUES: issues,
     GH_TOKEN: 'token',
     GH_REPO: 'blacklight0101/Rosetta',
     OWNER: 'blacklight0101',
@@ -39,9 +24,7 @@ trap 'echo "CALLS$(cat "$calls_file")"; rm -f "$calls_file"' EXIT`;
     ROSETTA_PUBLIC_URL: 'https://rosetta.example',
     RUN_URL: 'https://github.com/blacklight0101/Rosetta/actions/runs/9',
   };
-  const { code, output } = await runStep(script, env, prelude);
-  const line = output.split('\n').find((each) => each.startsWith('CALLS')) ?? 'CALLS';
-  return { code, calls: line.slice('CALLS'.length).split('|').filter(Boolean) };
+  return runCommentStep(script, env, issues);
 }
 
 describe('release.yml deploy job notification (RF-1304)', () => {
@@ -60,12 +43,21 @@ describe('release.yml deploy job notification (RF-1304)', () => {
     expect(at(document, 'jobs', 'deploy', 'permissions', 'issues')).toBe('write');
   });
 
-  it('RF-1304 comments on the open "Production deploys" issue and mentions the owner with the image, commit, URL and run', async () => {
-    const { code, calls } = await notify('12\tProduction deploys');
-    const comment = calls.find((call) => call.startsWith('issue comment')) ?? '';
+  it('RF-1304 comments with the shared script, which holds the only issue lookup', async () => {
+    const script = stepScript(await release(), 'deploy', 'Tell the owner');
 
-    expect(code).toBe(0);
-    expect(calls.some((call) => call.startsWith('issue create'))).toBe(false);
+    expect(script).toContain('bash scripts/production-deploys-comment.sh');
+    expect(script).not.toContain('gh ');
+  });
+});
+
+describe('release.yml deploy job notification: what it posts (RF-1304)', () => {
+  it('RF-1304 comments on the open "Production deploys" issue and mentions the owner with the image, commit, URL and run', async () => {
+    const run = await notify('12\tProduction deploys');
+    const comment = commentOf(run);
+
+    expect(run.code).toBe(0);
+    expect(run.calls.some((call) => call.startsWith('issue create'))).toBe(false);
     expect(comment).toContain('issue comment 12');
     expect(comment).toContain('@blacklight0101');
     expect(comment).toContain(`${image}:sha-1234567`);
@@ -75,19 +67,19 @@ describe('release.yml deploy job notification (RF-1304)', () => {
   });
 
   it('RF-1304 creates the "Production deploys" issue when none is open, then comments on it', async () => {
-    const { code, calls } = await notify('');
+    const run = await notify('');
 
-    expect(code).toBe(0);
-    expect(calls.some((call) => call.startsWith('issue create --title Production deploys'))).toBe(
-      true,
-    );
-    expect(calls.find((call) => call.startsWith('issue comment'))).toContain('issue comment 77');
+    expect(run.code).toBe(0);
+    expect(
+      run.calls.some((call) => call.startsWith('issue create --title Production deploys')),
+    ).toBe(true);
+    expect(commentOf(run)).toContain('issue comment 77');
   });
 
   it('RF-1304 ignores an open issue whose title only contains the words', async () => {
-    const { calls } = await notify('5\tNot about Production deploys');
+    const run = await notify('5\tNot about Production deploys');
 
-    expect(calls.some((call) => call.startsWith('issue create'))).toBe(true);
-    expect(calls.find((call) => call.startsWith('issue comment'))).toContain('issue comment 77');
+    expect(run.calls.some((call) => call.startsWith('issue create'))).toBe(true);
+    expect(commentOf(run)).toContain('issue comment 77');
   });
 });

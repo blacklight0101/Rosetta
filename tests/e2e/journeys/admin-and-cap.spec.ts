@@ -11,13 +11,14 @@ import { transitionsDone } from '../support/transitions.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 import { saveHostedReaderWithOneParallelReader } from '../support/parallel-readers.js';
+import { colourOf, stepOf, tokenColour } from '../support/journey-strip.js';
 
 // RF-1102, RF-1106, RF-1104, RF-422, RF-1010, RF-428, RNF-010, P1-46: the administrator creates a
 // user and saves the caps (the same figures as admin-users.spec.ts, so the server's month stays
 // under the banner the cost specs expect); the user signs in, stores a key, points the reader at a
 // priced model and starts a run whose cap is smaller than two calls at their worst case. The run
 // stops at the cap ("Partly read": the readers' room stops the readers before any call is refused, P7-02), keeps what was spent, and the header totals and the cost page
-// still show it (flow 4).
+// still show it (flow 4). The strip of the run page reads "Stopped at its cap" (RF-1020, P8-125).
 
 const keptDay = '1';
 const lowDay = '0.002';
@@ -43,6 +44,16 @@ async function adminSavesCaps(page: Page, day: string): Promise<void> {
   await caps.getByLabel('Server per month (USD)').fill('10');
   await caps.getByRole('button', { name: 'Save caps' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Caps saved' })).toBeVisible();
+}
+
+// RF-1020, DEC-217, P8-125: once the run has stopped, the strip of its page says so: the Understand step
+// reads "Stopped at its cap" in the warn tone, never "Failed".
+async function expectStripAtCap(page: Page): Promise<void> {
+  const understand = stepOf(page, 'Understand');
+  await expect(understand).toHaveAttribute('data-state', 'capped');
+  await expect(understand.locator('.rst-road__state')).toHaveText('Stopped at its cap');
+  await expect(understand).not.toContainText('Failed');
+  expect((await colourOf(page, 'Understand')).color).toBe(await tokenColour(page, 'warn-ink'));
 }
 
 async function userPicksPricedReader(page: Page): Promise<void> {
@@ -95,6 +106,7 @@ test(
       await expectNoSeriousViolations(page);
       await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
+      await expectStripAtCap(page);
       await page.getByRole('link', { name: 'Start page' }).click();
       await pill.getByRole('link', { name: /Your total/u }).click();
       await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();

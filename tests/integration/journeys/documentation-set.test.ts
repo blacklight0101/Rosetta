@@ -145,7 +145,9 @@ describe('the documentation set journey: coverage of the plan', () => {
     const { plan, documents } = current();
 
     expect(plan.endState).toBe('Completed');
-    expect(documents['checks.md']).toContain('Every item is built by at least one task card.');
+    expect(documents['checks.md']).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(documents['checks.md']).not.toMatch(/^\| (feature|table|operation|flow|screen) /mu);
   });
 
