@@ -20,6 +20,7 @@ the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are
 | Staging deploy             | `.github/workflows/staging.yml`                              | `tests/integration/tooling/staging-workflow.test.ts`                                  |
 | Owner email on each deploy | step `Tell the owner the deploy is live` of `release.yml`    | `tests/integration/tooling/release-notify.test.ts`                                    |
 | Release at 06:07 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
+| Image of the release merge | `.github/workflows/release-checks.yml`                       | `tests/integration/tooling/release-checks-workflow.test.ts`                           |
 | Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI              |
 | HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`                           |
 | OWASP ZAP baseline         | job `zap-baseline` of `.github/workflows/ci.yml`             | runs on every pull request and push to `main`; summary in the job summary             |
@@ -196,6 +197,10 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
 3. The owner checks the batch on the staging URL and merges the pull request with **Create a merge commit**, never
    squash or rebase: the deploy needs the merge commit, whose second parent is the `develop` commit staging deployed.
    For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
+   The merge is a push to `main`, so `release-checks.yml` builds the image of the merge commit, scans it with the
+   Trivy gate of Release and pushes `ghcr.io/blacklight0101/rosetta:sha-<short>` at once, with the workflow token only
+   (DEC-207, P8-63). A failed run there means that commit has no checked image (the build, the scan or the push failed): read its
+   log.
 4. At 06:07 Europe/Madrid the next morning (backups until 07:59), `scheduled-release.yml` starts Release on `main` (once per head commit
    of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). A slot GitHub starts after 07:59 still starts Release when the
    head commit of `main` was merged before 06:00 that day (P7-28, ADR-025); its step summary names the slot and its delay. A Release of that commit that failed or was cancelled is started again

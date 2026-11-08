@@ -1,0 +1,80 @@
+# Release checks (RF-1304, DEC-207, ADR-025, ADR-028 Proposed, P8-63): every push to main, which is
+# the owner's release merge of develop (DEC-175), gets its checks before the 06:00 Madrid release
+# instead of in it. This card builds, scans and pushes the image of that commit with the steps of the
+# image job of release.yml (tags from scripts/release-tags.sh, one build, the same Trivy gate, push of
+# `sha-<short>` to GHCR); later cards add the ZAP and staging confirmation, the result on the commit
+# (statuses: write) and the failure comment on the issue "Production deploys" (issues: write).
+# release.yml still builds its own image until Release changes to deploy only a checked commit.
+#
+# The workflow token is the only credential: no secret, no variable, no other token. Hardening as in
+# ci.yml: read-only default token, write scopes only in the job, actions pinned to a commit SHA,
+# values reach shell steps through env:.
+name: Release checks
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# The checks of a release merge are never cancelled half-way through a push; a later merge queues.
+concurrency:
+  group: release-checks-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: release checks (image build, scan, push to GHCR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      statuses: write
+      issues: write
+    steps:
+      # Full history, as in release.yml.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
+      - name: Work out the image tags
+        id: tags
+        run: bash scripts/release-tags.sh
+        env:
+          IMAGE: ghcr.io/blacklight0101/rosetta
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+      - name: Build the runtime image
+        run: docker build --label "org.opencontainers.image.source=https://github.com/$REPOSITORY" --tag rosetta:release .
+        env:
+          REPOSITORY: ${{ github.repository }}
+      # The same gate as the image job of ci.yml and release.yml: a fixable High or Critical finding
+      # stops the checks before anything is pushed.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rosetta:release
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: '1'
+      - name: Log in to GHCR
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+      - name: Push the tags
+        run: |
+          for tag in $TAGS; do
+            docker tag rosetta:release "$tag"
+            docker push "$tag"
+          done
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io
