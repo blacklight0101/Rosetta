@@ -66,7 +66,7 @@ it('RF-010 Enter in the Project name field saves the new name', async () => {
   const field = within(dialog).getByLabelText('Project name');
   fireEvent.input(field, { target: { value: 'Order Desk' } });
 
-  fireEvent.submit(field);
+  fireEvent.submit(field.closest('form') ?? document.body);
 
   await waitFor(() => {
     expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({ name: 'Order Desk' });

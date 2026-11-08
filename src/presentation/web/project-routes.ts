@@ -39,6 +39,8 @@ import { registerWorkbookBatchRoutes } from './workbook-batch-routes.js';
 //   field and error code (400). `If-Match: "<settingsVersion>"` (the ETag of a read) makes the save
 //   apply only if the settings were not saved since; otherwise 409 with RST-1007 and nothing is
 //   written (P1-106); a malformed value answers 400; without the header the save is unconditional.
+// - PUT /api/projects/:id/name `{ name }` renames the project (P8-134): the name is checked as at
+//   creation (400 RST-2000), another user's id answers 404 like an unknown one, 200 with the project.
 // - GET and PUT /api/projects/:id/planning-brief: the planning brief (planning-brief-routes.ts).
 // - GET /api/projects/:id/plan-estimate: the estimate of a plan run (plan-estimate-routes.ts).
 // - GET /api/projects/:id/plan-source: the understand run Plan setup plans from (plan-source-routes.ts).
@@ -82,6 +84,9 @@ const uploadBody = z.strictObject({
   sourceKind: z.enum(['upload', 'workbook']),
   name: z.string(),
 });
+
+// RF-010, P8-134: the new name, checked by the use case with the rule of creation.
+const renameBody = z.strictObject({ name: z.string() });
 
 interface IdParams {
   readonly id: string;
@@ -235,6 +240,28 @@ function registerSettings(server: FastifyInstance, services: ProjectServices): v
   );
 }
 
+function registerRename(server: FastifyInstance, services: ProjectServices): void {
+  server.put<{ Params: IdParams }>(
+    '/api/projects/:id/name',
+    { bodyLimit: CREATE_BODY_LIMIT_BYTES, config: { access: 'user' } },
+    async (request, reply) => {
+      const body = renameBody.safeParse(request.body);
+      if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const outcome = await services.renameProject.execute({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+        name: body.data.name,
+      });
+      if (!outcome.ok)
+        throw outcome.error === ERROR_CODES.notFound ? notFound() : new RosettaError(outcome.error);
+      return reply
+        .status(200)
+        .header('etag', etagOf(outcome.value))
+        .send(projectView(outcome.value));
+    },
+  );
+}
+
 function registerWorkspace(server: FastifyInstance, services: ProjectServices): void {
   server.get<{ Params: IdParams }>(
     '/api/admin/users/:id/projects',
@@ -259,6 +286,7 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerSourceUploadRoutes(server, services);
   registerWorkbookBatchRoutes(server, services);
   registerSettings(server, services);
+  registerRename(server, services);
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);
   registerPlanSourceRoutes(server, services);

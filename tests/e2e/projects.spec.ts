@@ -172,5 +172,9 @@ test('RF-010 P8-134 the owner renames a project from the row menu and the list a
   await expect(row.getByRole('link', { name: 'Demo shop', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'octo/demo', exact: true })).toHaveCount(0);
   await row.getByRole('link', { name: 'Open for Demo shop' }).click();
-  await expect(page.getByRole('heading', { name: 'Demo shop', level: 1 })).toBeVisible();
+  // With only a scan the page is headed "Start a run" (RF-1021); the navigation names the project.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  await expect(page.getByTestId('nav-group-project').locator('.rst-nav__heading')).toHaveText(
+    'Project: Demo shop',
+  );
 });
