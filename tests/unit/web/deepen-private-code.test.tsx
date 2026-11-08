@@ -97,7 +97,9 @@ describe('RF-209 the private-code box of the Deepen panel', () => {
 
     expect(await screen.findByLabelText(workbookBox)).toBeTruthy();
   });
+});
 
+describe('RF-209 where the Deepen panel shows no private-code box', () => {
   it('RF-209 a GitHub project shows no private-code box and sends no such field', async () => {
     const page = await opened({ project: json(200, projectOf('p-1', 'OrderDesk')) });
     await waitFor(() => {
@@ -123,7 +125,9 @@ describe('RF-209 the private-code box of the Deepen panel', () => {
     expect(screen.queryByRole('region', { name: noticeName })).toBeNull();
     expect(startButton().disabled).toBe(false);
   });
+});
 
+describe('RF-209 the switch to Ollama in the Deepen panel', () => {
   it('RF-209 the switch to Ollama saves every role on Ollama and reads the estimate again', async () => {
     let saved = false;
     const page = await opened({
