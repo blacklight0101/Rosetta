@@ -6,9 +6,9 @@ import type { EpochMs } from '../accounts/user.js';
 // withdrawn, so a run can still name the consent it ran under (RF-142).
 
 /** The providers a consent can name: every provider that may be non-local (DEC-118). */
-type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
+export type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
 
-type ConsentKind = 'cloud' | 'private-code';
+export type ConsentKind = 'cloud' | 'private-code';
 
 export interface ProjectConsent {
   readonly id: string;
@@ -21,4 +21,25 @@ export interface ProjectConsent {
   readonly givenAt: EpochMs;
   /** When the user withdrew it; null while it was not withdrawn. */
   readonly withdrawnAt: EpochMs | null;
+}
+
+/** RF-143, DEC-209: what a start needs a consent for: the non-local providers of its roles, its kinds. */
+export interface ConsentNeed {
+  readonly providers: readonly ConsentProvider[];
+  readonly kinds: readonly ConsentKind[];
+}
+
+/** DEC-209: a consent given on a project lasts 30 days. */
+export const CONSENT_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * RF-143, DEC-209: whether a consent covers a start at `now`: it is not withdrawn, it was given less
+ * than 30 days ago, and it names every provider and has every kind the start needs. A role whose
+ * provider changed to one it does not name makes it ask again.
+ */
+// RF-143
+export function consentHolds(consent: ProjectConsent, need: ConsentNeed, now: EpochMs): boolean {
+  if (consent.withdrawnAt !== null || now - consent.givenAt >= CONSENT_LIFETIME_MS) return false;
+  const named = need.providers.every((provider) => consent.providers.includes(provider));
+  return named && need.kinds.every((kind) => consent.kinds.includes(kind));
 }

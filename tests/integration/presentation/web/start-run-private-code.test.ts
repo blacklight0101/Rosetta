@@ -146,7 +146,10 @@ describe('POST /api/projects/:id/runs where no second confirmation is asked', ()
     });
 
     expect(response.statusCode).toBe(202);
-    expect(test.runs.executor.started[0]?.manifest.options).toEqual({ cloudConsent: true });
+    // RF-142, DEC-209: the run records the consent it gave and runs under.
+    const options = test.runs.executor.started[0]?.manifest.options;
+    expect(options).toEqual({ cloudConsent: true, consentId: options?.['consentId'] });
+    expect(typeof options?.['consentId']).toBe('string');
   });
 });
 

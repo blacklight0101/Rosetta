@@ -1123,7 +1123,10 @@ what is left is the line every step runs under (RF-435).
 
 One row per consent given; a withdrawal sets `withdrawn_at` on the project's rows that have none and never deletes a
 row, so the consents of a project, newest first, still show what a run could have run under (RF-142). How long a
-consent holds and when it is asked again (DEC-209) is decided by the use cases, not by the table.
+consent holds and when it is asked again (DEC-209) is decided by the use cases, not by the table: a consent holds while
+it is not withdrawn, was given less than 30 days ago and names every non-local provider and kind a start needs; a start
+of an understand run, a plan run or a Deepen under it records its `id` as `consentId` in the run's `options`
+(section 3.6), and a start that carries the boxes while none holds gives a new row (P8-78).
 
 **`cost_ledger`** (RF-428, RF-1106)
 
