@@ -49,7 +49,7 @@ describe('the open questions are refreshed after a change that stopped part way'
 });
 
 describe('a refresh the database refuses', () => {
-  it('DEC-226 is logged and the refresh does not fail', async () => {
+  it('DEC-226 RF-615 is logged and the refresh does not fail', async () => {
     const w = await world();
     const facts = {
       ...noJourneyFacts,
