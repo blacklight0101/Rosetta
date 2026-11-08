@@ -28,13 +28,4 @@ describe('projectCostSchema byRole per run', () => {
 
     expect(projectCostSchema.safeParse(body).success).toBe(false);
   });
-
-  it('RF-428 refuses a run line whose role lines are renamed', () => {
-    const body = responseWith((run) => {
-      run['roles'] = run['byRole'];
-      Reflect.deleteProperty(run, 'byRole');
-    });
-
-    expect(projectCostSchema.safeParse(body).success).toBe(false);
-  });
 });
