@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
 import { failure, json, renderPage, type Answer } from './fake-api.js';
+import { facts, source } from './journey-fixtures.js';
 import { lastRunOf, overviewRow, projectOf } from './project-fixtures.js';
 
 // RF-1008, RF-1108, RF-1010, design-system.md section 14 (Projects, queue notice): each project row
@@ -30,6 +31,12 @@ const queuedRun = lastRunOf({
   startedAt: null,
   endedAt: null,
   position: 2,
+});
+
+/** The journey the server sends with `queuedRun`: its understand run waits in the queue. */
+const queuedJourney = facts({
+  source: source({ id: 'r-9', queueState: 'Queued', endState: null, endedAt: null, position: 2 }),
+  briefSaved: false,
 });
 
 const renderProjects = (answers: Readonly<Record<string, Answer>>) =>
@@ -74,7 +81,7 @@ it('RF-1008 shows the position, the last run and the cost of each project, in th
 it('RF-1108 a queued latest run shows its position in the row and the queue notice', async () => {
   renderProjects({
     [overviewPath]: json(200, {
-      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })],
+      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun, journey: queuedJourney })],
       truncated: false,
     }),
   });
@@ -82,7 +89,8 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   const row = await rowOf('octo/demo');
   const notice = screen.getByTestId('queue-notice');
 
-  expect(within(row).getByText('Understand queued')).not.toBeNull();
+  // P8-137: the words of the project page's title, with the place in the queue under them.
+  expect(within(row).getByText('Understand running')).not.toBeNull();
   expect(row.textContent).toContain('position 2, 1 run ahead');
   expect(notice.textContent).toContain(
     'Your understand run of octo/demo is queued, position 2, 1 run ahead.',
@@ -91,6 +99,30 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   expect(within(notice).getByRole('link', { name: 'Open the live run' }).getAttribute('href')).toBe(
     '/runs/r-9',
   );
+});
+
+it('RF-1108 a queued scan before any understand run reads its newest run, with its position', async () => {
+  const scan = lastRunOf({
+    ...{ queueState: 'Queued', endState: null, startedAt: null },
+    position: 3,
+  });
+  renderProjects({
+    [overviewPath]: json(200, {
+      projects: [
+        overviewRow(demo, {
+          runs: 1,
+          lastRun: { ...scan, endedAt: null },
+          journey: facts({ source: null }),
+        }),
+      ],
+      truncated: false,
+    }),
+  });
+
+  const row = await rowOf('octo/demo');
+
+  expect(within(row).getByText('Scan queued')).not.toBeNull();
+  expect(row.textContent).toContain('position 3, 2 runs ahead');
 });
 
 it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and reads the list again', async () => {
