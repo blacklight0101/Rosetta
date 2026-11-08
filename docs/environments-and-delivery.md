@@ -192,6 +192,23 @@ finding is reported while the tests are still running, and the tests start witho
 
 `npm run verify` is unchanged and is what a local run of every gate still means.
 
+**Quarantine and stress runs** (P8-142, DEC-227). A confirmed flaky test leaves the required checks for a while
+without leaving CI, and a new or changed test runs repeatedly before it becomes required:
+
+- `tests/quarantine.json` lists the quarantined tests, each with its file, title path, owner, GitHub issue, last day
+  (`until`) and the run whose P8-54 flaky report confirmed the flake (`flakeRun`). In `verify` the Vitest setup file
+  `tests/support/quarantine-setup.ts` skips a listed test; in `e2e`, `scripts/run-e2e.mjs` passes Playwright's
+  `--test-list-invert` with the listed Playwright tests. `tests/integration/tooling/quarantine-list.test.ts` fails
+  `verify` when an entry is past its date or has no owner, issue or flake run.
+- The job `quarantine` (check `quarantined tests (not required)`) runs only the listed tests, once each without a
+  retry, and writes the list to its job summary; it runs only when the list has an entry and the change is code.
+- The job `test-picks` (check `pick quarantined and changed tests`) lists the pull request's added, changed and
+  renamed test files with the GitHub API; the job `stress` (check `stress changed tests (not required)`) runs only
+  those, five times each: Vitest shuffled with `--repeats=4`, Playwright with `--repeat-each=5` on four workers, no
+  retry, so one failed run fails it. It is skipped when no test file changed.
+- Neither check is required: the eight required names stay as they are (RNF-001). The rules, the costs and how an
+  entry joins and leaves the list are in [the CI throughput runbook](runbooks/ci-throughput.md), section 6.
+
 **Caches** (measured 2026-10-13 on pull request #304, revised 2026-10-22 by P1-183). `setup-node`'s npm cache stays.
 The extra caches tried on 2026-10-13 (Prettier, ESLint) did not pay for themselves, so none is used (below). The
 Playwright browsers are cached since P1-183:
