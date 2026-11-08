@@ -28,6 +28,8 @@ class PendingRows implements JourneyFactsBackfill {
   readonly runs: Run[];
   readonly projects: PendingProject[];
   readonly filledRuns = new Map<string, StoredRunFacts>();
+  /** The end time each fill said the pass read, by run id. */
+  readonly readEnds = new Map<string, EpochMs | null>();
   readonly filledProjects = new Map<string, EpochMs | null>();
 
   constructor(runs: readonly Run[], projects: readonly PendingProject[]) {
@@ -39,8 +41,9 @@ class PendingRows implements JourneyFactsBackfill {
     return Promise.resolve(this.runs.filter((run) => !this.filledRuns.has(run.id)).slice(0, limit));
   }
 
-  fillRun(runId: string, facts: StoredRunFacts): Promise<void> {
-    this.filledRuns.set(runId, facts);
+  fillRun(read: Pick<Run, 'id' | 'endedAt'>, facts: StoredRunFacts): Promise<void> {
+    this.filledRuns.set(read.id, facts);
+    this.readEnds.set(read.id, read.endedAt);
     return Promise.resolve();
   }
 
@@ -88,6 +91,20 @@ describe('the backfill of the journey facts', () => {
       ...{ deepenParentId: null, endCode: null, supportedClaims: 4, openQuestions: 2 },
     });
     expect(pending.filledProjects.get(w.project.id)).toBe(briefSavedAt);
+  });
+
+  it('RF-615 fills each run with the end time the pass read, so the store can keep a newer end', async () => {
+    const w = await world();
+    const plan = await addPlanRun(w.parts, w.project, {
+      ...{ runKey: '20261012-120000-plan', endState: 'Failed', startedAt: briefSavedAt + 1 },
+      ...{ sourceRunKey: sourceKey, errorCode: ERROR_CODES.planCoverageGap },
+    });
+    const read = { ...plan, endedAt: Date.parse('2026-10-12T12:30:00.123Z') };
+    const pending = new PendingRows([read], []);
+
+    await backfillJourneyFacts({ ...w.deps, pending });
+
+    expect(pending.readEnds.get(plan.id)).toBe(read.endedAt);
   });
 });
 

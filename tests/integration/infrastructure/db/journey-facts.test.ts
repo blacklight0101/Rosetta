@@ -105,7 +105,10 @@ describe.skipIf(!hasTestDatabase)('migration 0024 and the previous image', () =>
     const facts = new PgJourneyFacts(pool);
     const id = String(old.params[0]);
 
-    await facts.fillRun(id, { ...NULL_FACTS, supportedClaims: 3, openQuestions: 2 });
+    await facts.fillRun(
+      { id, endedAt: null },
+      { ...NULL_FACTS, supportedClaims: 3, openQuestions: 2 },
+    );
     await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
 
     const found = await new PgRunIndex(pool).find(parents.userId, id);
@@ -274,10 +277,13 @@ describe.skipIf(!hasTestDatabase)('the backfill rows', () => {
 
     const pending = await facts.pendingRuns(10);
     expect(pending.map((each) => each.runKey)).toEqual(['20261001-090000-understand']);
-    await facts.fillRun(String(older.params[0]), {
-      ...{ deepenParentId: newId(), planSourceKey: '20261001-070000-understand' },
-      ...{ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 1 },
-    });
+    await facts.fillRun(
+      { id: String(older.params[0]), endedAt: null },
+      {
+        ...{ deepenParentId: newId(), planSourceKey: '20261001-070000-understand' },
+        ...{ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 1 },
+      },
+    );
     expect(await facts.pendingProjects(10)).toEqual([parents]);
     await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
 
