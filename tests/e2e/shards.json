@@ -71,6 +71,7 @@
     "tests/e2e/landing-stages.spec.ts",
     "tests/e2e/page-shots.spec.ts",
     "tests/e2e/projects-runs.spec.ts",
+    "tests/e2e/cost-table-tooltip.spec.ts",
     "tests/e2e/report-offline.spec.ts",
     "tests/e2e/resume-run.spec.ts",
     "tests/e2e/run-replay.spec.ts",

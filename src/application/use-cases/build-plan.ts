@@ -63,7 +63,7 @@ export interface BuildPlanDependencies
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
   /** P8-139, DEC-226: the source the planner chose is stored on the run's row. */
-  readonly journeyFacts?: Pick<JourneyFactsStore, 'recordPlanSource'>;
+  readonly journeyFacts: Pick<JourneyFactsStore, 'recordPlanSource'>;
 }
 
 interface Finish {

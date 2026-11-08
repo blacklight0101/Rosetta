@@ -29,7 +29,7 @@ export interface ReopenQuestionDependencies {
   /** Finds the Deepens linked to the run; without it the run is a family of one. */
   readonly manifests?: Pick<RunManifestStore, 'read'>;
   /** P8-139, DEC-226: stores the open questions of the project once the question is reopened. */
-  readonly counts?: Pick<OpenQuestionCounts, 'refresh'>;
+  readonly counts: Pick<OpenQuestionCounts, 'refresh'>;
 }
 
 export type ReopenQuestionProblem = 'not-found' | 'run-not-ended';
@@ -65,7 +65,7 @@ export class ReopenQuestion {
     if (run.queueState !== 'Ended') return err('run-not-ended');
     // RF-646: a question of the one list is answered in every version of it; each is opened.
     for (const member of question.members) await this.reopenIn(project, run, member);
-    await this.deps.counts?.refresh(project);
+    await this.deps.counts.refresh(project);
     return ok((await projectQuestions(read, run)).questions);
   }
 

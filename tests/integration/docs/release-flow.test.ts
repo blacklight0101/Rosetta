@@ -156,8 +156,9 @@ describe('the 06:00 start in ADR-025 and RF-1304 (DEC-207)', () => {
     expect(note).toContain('06:00');
     expect(note).toContain('Europe/Madrid');
     expect(note).toContain('before');
-    expect(note).toContain('ADR-028');
+    expect(note).toContain('ADR-028 (Proposed) chooses the scheduler');
     expect(note).toContain('DEC-207');
+    expect(note).toContain('the 06:07 slots stay in force');
   });
 
   it('DEC-207 RF-1304 has the Given/When/Then for the checks before 06:00 and for the 06:00 start', async () => {
@@ -178,6 +179,75 @@ describe('the 06:00 start in ADR-025 and RF-1304 (DEC-207)', () => {
       'nothing deploys',
     ]) {
       expect(block).toContain(fact);
+    }
+  });
+});
+
+describe('the checks workflow of the release merge in the delivery documents (DEC-207, P8-63)', () => {
+  it('DEC-207 docs/environments-and-delivery.md names release-checks.yml, its trigger, its job permissions and its token', async () => {
+    const text = section(
+      await read('docs/environments-and-delivery.md'),
+      '## 6. Continuous integration',
+    );
+
+    for (const fact of [
+      '`release-checks.yml`',
+      'every push to `main`',
+      '`contents: read`, `checks: read`, `packages: write`, `statuses: write` and `issues: write`',
+      'workflow token',
+    ]) {
+      expect(text).toContain(fact);
+    }
+  });
+
+  it('DEC-207 the deploy runbook lists the checks workflow with its test and says the release merge gets its image at once', async () => {
+    const text = await read('docs/runbooks/deploy.md');
+    const row = text
+      .split('\n')
+      .find((line) => line.includes('`.github/workflows/release-checks.yml`'));
+    const release = section(text, '## Release to production');
+
+    expect(row).toContain('`tests/integration/tooling/release-checks-workflow.test.ts`');
+    expect(release).toContain('`release-checks.yml`');
+    expect(release).toContain('sha-<short>');
+  });
+});
+
+describe('release/ready in the delivery documents (DEC-207, P8-64)', () => {
+  it('DEC-207 docs/environments-and-delivery.md says the checks workflow confirms ZAP and staging and records release/ready', async () => {
+    const text = await read('docs/environments-and-delivery.md');
+
+    for (const fact of ['`release/ready`', '`zap-baseline`', 'ROSETTA_STAGING_ENABLED']) {
+      expect(section(text, '## 6. Continuous integration')).toContain(fact);
+    }
+    expect(section(text, '## 8.')).toContain('`release/ready`');
+  });
+
+  it('DEC-207 the deploy runbook says what release/ready on the release merge means and lists its tests', async () => {
+    const text = await read('docs/runbooks/deploy.md');
+    const release = section(text, '## Release to production');
+
+    expect(release).toContain('`release/ready`');
+    expect(release).toMatch(/`failure`[^\n]*names/u);
+    expect(text).toContain('`tests/integration/tooling/release-checks-ready.test.ts`');
+    expect(text).toContain('`tests/integration/tooling/release-ready-status.test.ts`');
+  });
+});
+
+describe('the facts of ADR-028 the provisioning rests on (DEC-207, P8-138)', () => {
+  it('DEC-207 ADR-028 names the one cron schedule, the Madrid hour guard, the token expiry and what the token reaches', async () => {
+    // P8-138: the facts the provisioning step and the rotation rest on.
+    const text = await read('docs/adr/ADR-028-on-time-release-start-from-a-container-apps-job.md');
+    const flat = text.replaceAll(/\s+/gu, ' ');
+
+    for (const fact of [
+      'one cron schedule that fires at 04:00 and 05:00 UTC',
+      'the hour in Europe/Madrid is 06',
+      'expires after 90 days',
+      'start and cancel workflow runs and read their logs and artifacts',
+      '7 h 06 min',
+    ]) {
+      expect(flat).toContain(fact);
     }
   });
 });

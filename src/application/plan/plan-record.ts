@@ -24,7 +24,7 @@ export async function recordPlanSources(
   deps: {
     readonly manifests: Pick<RunManifestStore, 'read'>;
     /** P8-139, DEC-226: stores the source the planner chose on the plan run's row. */
-    readonly journeyFacts?: Pick<JourneyFactsStore, 'recordPlanSource'>;
+    readonly journeyFacts: Pick<JourneyFactsStore, 'recordPlanSource'>;
   },
   execution: Pick<RunExecution, 'recordSource' | 'run'>,
   updates: ManifestUpdates,
@@ -35,7 +35,7 @@ export async function recordPlanSources(
   const versions = planPromptVersions(files);
   await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
   await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
-  await deps.journeyFacts?.recordPlanSource(execution.run.id, inputs.sourceRun.runKey);
+  await deps.journeyFacts.recordPlanSource(execution.run.id, inputs.sourceRun.runKey);
   await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
   await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
   const source = await deps.manifests.read(scopeOf(inputs.sourceRun));

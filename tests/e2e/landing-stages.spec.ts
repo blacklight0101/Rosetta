@@ -18,6 +18,51 @@ async function rowsOf(stages: Locator): Promise<number[]> {
   return [...rows.entries()].sort(([a], [b]) => a - b).map(([, count]) => count);
 }
 
+test.describe('landing page pipeline stages at the breakpoints', () => {
+  // P8-138: the two breakpoints, read on both sides (landing.css: one row from 1168 px, one column
+  // at 600 px and below).
+  for (const [width, expected] of [
+    [1168, [6]],
+    [1167, [3, 3]],
+    [601, [3, 3]],
+    [600, [1, 1, 1, 1, 1, 1]],
+  ] as const) {
+    test(`RF-1200 lays the six stages out as ${expected.join(' + ')} at ${String(width)} px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/');
+      const list = page.getByRole('list', { name: 'Pipeline' });
+      await list.scrollIntoViewIfNeeded();
+
+      expect(await rowsOf(list.getByRole('listitem'))).toEqual(expected);
+    });
+  }
+
+  test('RF-1200 in 3 + 3 the connector of the third and sixth stage ends at the row end', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/');
+    const list = page.getByRole('list', { name: 'Pipeline' });
+    await list.scrollIntoViewIfNeeded();
+
+    const lines = await list.evaluate((element) => {
+      const rowEnd = element.getBoundingClientRect().right;
+      return Array.from(element.querySelectorAll(':scope > li'), (item) => {
+        const box = item.getBoundingClientRect();
+        const end = box.right - parseFloat(getComputedStyle(item, '::before').right);
+        return { pastRowEnd: Math.round(end - rowEnd), pastStage: Math.round(end - box.right) };
+      });
+    });
+
+    // The third and sixth lines end at the row end; the first runs on into the gap before the second.
+    expect(lines[2]?.pastRowEnd).toBe(0);
+    expect(lines[5]?.pastRowEnd).toBe(0);
+    expect(lines[0]?.pastStage).toBeGreaterThan(0);
+  });
+});
+
 test.describe('landing page pipeline stages', () => {
   for (const width of [1280, 1100, 1024, 768, 601]) {
     test(`RF-1200 lays the six stages out as 6, 3 + 3 or 2 + 2 + 2 at ${String(width)} px`, async ({

@@ -8,13 +8,15 @@ import { totalCostText } from '../lib/cost-text.js';
 import { DeletionNotice } from './DeletionNotice.js';
 import { ProjectDialog } from './history-dialogs.js';
 import { ProjectPosition } from './ProjectPosition.js';
-import { ProjectRowActions } from './ProjectRowActions.js';
+import { ProjectRowActions, type RowActionHandlers } from './ProjectRowActions.js';
+import { RenameProjectDialog } from './RenameProjectDialog.js';
 import { useProjectDelete } from './use-project-delete.js';
+import { useProjectRename } from './use-project-rename.js';
 
 // RF-010, RF-1008, RF-1108, RF-1010, RF-1012, DEC-222, design-system.md section 14 (Projects),
 // `P8Projects` artboard: the table of the user's projects with the columns the artboard draws: the
 // project name as a link to its page, its source as a badge, where it is in the journey, the date and
-// time of its last run, its cost, an "Open" link and the row menu (settings, live run, Delete
+// time of its last run, its cost, an "Open" link and the row menu (Rename, live run, settings, Delete
 // project). The table scrolls inside its own box, so the page never scrolls sideways.
 
 const sourceBadge: Readonly<Record<Project['sourceKind'], string>> = {
@@ -50,10 +52,7 @@ function SourceNote({ project }: { readonly project: Project }): JSX.Element {
   );
 }
 
-function ProjectRow(props: {
-  readonly row: ProjectOverviewRow;
-  readonly onDelete: (projectId: string) => void;
-}): JSX.Element {
+function ProjectRow(props: { readonly row: ProjectOverviewRow } & RowActionHandlers): JSX.Element {
   const { row } = props;
   const { project, lastRun, totals, journey } = row;
   return (
@@ -75,7 +74,7 @@ function ProjectRow(props: {
         {totalCostText(totals)}
       </td>
       <td class="rst-table__actions-cell">
-        <ProjectRowActions row={row} onDelete={props.onDelete} />
+        <ProjectRowActions row={row} onRename={props.onRename} onDelete={props.onDelete} />
       </td>
     </tr>
   );
@@ -84,10 +83,11 @@ function ProjectRow(props: {
 // RF-1008, RF-1012
 export function ProjectRunsTable(props: {
   readonly rows: readonly ProjectOverviewRow[];
-  /** Reads the list again after a project was deleted. */
+  /** Reads the list again after a project was deleted or renamed. */
   readonly onChanged: () => void;
 }): JSX.Element {
   const remove = useProjectDelete(props.onChanged);
+  const rename = useProjectRename(props.onChanged);
   const error = remove.lookupError ?? remove.deletion.error;
   return (
     <>
@@ -112,12 +112,18 @@ export function ProjectRunsTable(props: {
           </thead>
           <tbody>
             {props.rows.map((row) => (
-              <ProjectRow key={row.project.id} row={row} onDelete={remove.ask} />
+              <ProjectRow
+                key={row.project.id}
+                row={row}
+                onRename={rename.ask}
+                onDelete={remove.ask}
+              />
             ))}
           </tbody>
         </table>
       </div>
       <ProjectDialog deletion={remove.deletion} />
+      <RenameProjectDialog rename={rename} />
     </>
   );
 }

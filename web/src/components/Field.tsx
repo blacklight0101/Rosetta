@@ -13,6 +13,8 @@ interface FieldError {
 interface FieldOption {
   readonly value: string;
   readonly label: string;
+  /** A select option that is shown but cannot be chosen; its label says why. */
+  readonly disabled?: boolean;
 }
 
 interface FieldBase {
@@ -150,7 +152,7 @@ function SelectControl(props: SelectField): JSX.Element {
       }}
     >
       {props.options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <option key={option.value} value={option.value} disabled={option.disabled === true}>
           {option.label}
         </option>
       ))}

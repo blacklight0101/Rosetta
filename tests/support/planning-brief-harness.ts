@@ -6,6 +6,7 @@ import { GetPlanningBrief } from '../../src/application/use-cases/get-planning-b
 import { SavePlanningBrief } from '../../src/application/use-cases/save-planning-brief.js';
 import { loadCatalogue } from '../../src/infrastructure/prompts/catalogue-files.js';
 import type { FixedClock } from './fixed-clock.js';
+import { noJourneyFacts } from './recording-journey-facts.js';
 
 // RF-605, DEC-80: the planning brief use cases over the shipped catalogue and a brief file kept in
 // memory (`answerStore` of observability-store.ts), for the unit, integration and access tests.
@@ -23,10 +24,10 @@ export function briefServices(parts: {
   readonly runs: RunIndex;
   readonly briefs: PlanningBriefStore;
   readonly clock: FixedClock;
-  /** P8-139: where the brief time is stored; none when left out. */
+  /** P8-139: where the brief time is stored; nowhere when left out. */
   readonly facts?: Pick<JourneyFactsStore, 'recordBriefSaved'>;
 }): BriefServices {
-  const deps = { ...parts, catalogue: shippedCatalogue };
+  const deps = { ...parts, catalogue: shippedCatalogue, facts: parts.facts ?? noJourneyFacts };
   return {
     getPlanningBrief: new GetPlanningBrief(deps),
     savePlanningBrief: new SavePlanningBrief(deps),

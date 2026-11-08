@@ -11,7 +11,7 @@ import type { OpenQuestionCounts } from './open-question-counts.js';
 export interface RunEndFactsDependencies {
   readonly cards: RunCards;
   readonly facts: Pick<JourneyFactsStore, 'recordEnd'>;
-  readonly counts?: Pick<OpenQuestionCounts, 'refresh'>;
+  readonly counts: Pick<OpenQuestionCounts, 'refresh'>;
 }
 
 export class RunEndFacts {
@@ -26,6 +26,6 @@ export class RunEndFacts {
     const supportedClaims = await supportedClaimsOf(this.deps.cards, run);
     await this.deps.facts.recordEnd(run.id, { endCode, supportedClaims });
     if (run.stage !== 'understand') return;
-    await this.deps.counts?.refresh({ userId: run.userId, projectId: run.projectId });
+    await this.deps.counts.refresh({ userId: run.userId, projectId: run.projectId });
   }
 }

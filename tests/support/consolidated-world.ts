@@ -32,6 +32,7 @@ import { sampleProject } from './project-fixtures.js';
 import { RecordingLogger } from './recording-logger.js';
 import { MapRunTextFiles, RecordingReportWriter, reportFigures } from './report-doubles.js';
 import { sampleRun } from './run-fixtures.js';
+import { noQuestionCounts } from './recording-journey-facts.js';
 
 // P5-11, RF-243, RF-1007: a run whose open questions consolidation merged, over the real file
 // adapters in memory. The cards are made by the real merge (`applyMerges`), so `mergedFrom` is what
@@ -162,12 +163,18 @@ function readersOf(seed: Seed, answers: FileAnswersFile): Omit<World, 'actor' | 
       return listed.ok ? listed.value.questions : [];
     },
     record: (entries) =>
-      new RecordAnswers({ runs, answers, cards: priorCards }).execute({
+      new RecordAnswers({ runs, answers, cards: priorCards, counts: noQuestionCounts }).execute({
         ...request,
         answers: entries,
       }),
     reopen: (cardId) =>
-      new ReopenQuestion({ runs, answers, cards: priorCards, logger }).execute({
+      new ReopenQuestion({
+        runs,
+        answers,
+        cards: priorCards,
+        logger,
+        counts: noQuestionCounts,
+      }).execute({
         ...request,
         cardId,
       }),

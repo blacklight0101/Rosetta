@@ -103,6 +103,22 @@ export function project(userId: string, overrides: Values = {}): Insert {
   );
 }
 
+export function projectConsent(projectId: string, userId: string, overrides: Values = {}): Insert {
+  return statement(
+    'INSERT INTO project_consent (id, project_id, user_id, providers, kinds, given_at, withdrawn_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+    {
+      id: newId(),
+      project_id: projectId,
+      user_id: userId,
+      providers: ['anthropic'],
+      kinds: ['cloud'],
+      given_at: at,
+      withdrawn_at: null,
+    },
+    overrides,
+  );
+}
+
 export function run(projectId: string, userId: string, overrides: Values = {}): Insert {
   return statement(
     'INSERT INTO runs (id, project_id, user_id, run_key, stage, queue_state, end_state, queued_at, cost_micros, input_tokens, output_tokens, cached_input_tokens) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',

@@ -27,6 +27,7 @@ export interface JourneyFileParts {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
   readonly runs: Pick<RunIndex, 'list'>;
+  readonly logger: Logger;
 }
 
 // RF-615
@@ -49,26 +50,33 @@ function questionParts(parts: JourneyFileParts) {
   };
 }
 
-/** RF-646: stores the open questions of a project after anything that changes them. */
+/**
+ * RF-646: stores the open questions of a project after anything that changes them. One instance
+ * serves every path (compose-runs.ts hands it to the history), so its refreshes of a project run in order.
+ */
 export function composeQuestionCounts(parts: JourneyFileParts): OpenQuestionCounts {
-  return new OpenQuestionCounts({ ...questionParts(parts), facts: new PgJourneyFacts(parts.pool) });
+  return new OpenQuestionCounts({
+    ...questionParts(parts),
+    facts: new PgJourneyFacts(parts.pool),
+    logger: parts.logger,
+  });
 }
 
-/** RF-615: stores what the end of a run knows. */
-export function composeRunEndFacts(parts: JourneyFileParts): RunEndFacts {
+/** RF-615: stores what the end of a run knows, and the open questions through `counts`. */
+export function composeRunEndFacts(
+  parts: JourneyFileParts,
+  counts: OpenQuestionCounts,
+): RunEndFacts {
   return new RunEndFacts({
     cards: keptRunCards(parts.writer),
     facts: new PgJourneyFacts(parts.pool),
-    counts: composeQuestionCounts(parts),
+    counts,
   });
 }
 
 /** DEC-226: the backfill of the rows from before migration 0024, as a scheduled job. */
 export function composeJourneyBackfill(
-  parts: JourneyFileParts & {
-    readonly history: Pick<RunEventHistory, 'read' | 'lastSeq'>;
-    readonly logger: Logger;
-  },
+  parts: JourneyFileParts & { readonly history: Pick<RunEventHistory, 'read' | 'lastSeq'> },
 ): ScheduledJob {
   const { writer, masker } = parts;
   return () =>

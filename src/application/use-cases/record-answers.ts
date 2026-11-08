@@ -27,7 +27,7 @@ export interface RecordAnswersDependencies {
   /** Finds the Deepens linked to the run; without it the run is a family of one. */
   readonly manifests?: Pick<RunManifestStore, 'read'>;
   /** P8-139, DEC-226: stores the open questions of the project once the answers are written. */
-  readonly counts?: Pick<OpenQuestionCounts, 'refresh'>;
+  readonly counts: Pick<OpenQuestionCounts, 'refresh'>;
 }
 
 export type RecordAnswersProblem = 'not-found' | 'unknown-question' | 'invalid-choice';
@@ -99,9 +99,13 @@ export class RecordAnswers {
     if (sections.length > 0) await answers.addQuestions(project, sections);
     for (const [runKey, entries] of planned.writes) {
       const recorded = await answers.recordAnswers(project, runKey, entries);
-      if (!recorded.ok) return recorded;
+      // DEC-226: the answers of the runs before this one are saved, so the count changed all the same.
+      if (!recorded.ok) {
+        await this.deps.counts.refresh(project);
+        return recorded;
+      }
     }
-    await this.deps.counts?.refresh(project);
+    await this.deps.counts.refresh(project);
     return ok((await projectQuestions(read, run)).questions);
   }
 }

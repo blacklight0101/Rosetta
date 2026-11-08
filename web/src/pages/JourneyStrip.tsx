@@ -102,7 +102,7 @@ function Next(props: JourneyStripProps): JSX.Element {
   if (action?.kind === 'deepen' && deepenRunId !== undefined) {
     return (
       <>
-        <DeepenAction runId={deepenRunId} recommended open />
+        <DeepenAction runId={deepenRunId} projectId={view.projectId} recommended open />
         {props.onSkipDeepen === undefined ? null : (
           <Button variant="secondary" onClick={props.onSkipDeepen}>
             Do not Deepen: answer the questions now

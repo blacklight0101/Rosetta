@@ -120,6 +120,22 @@ describe('cost by run roles and total', () => {
     ]);
     expect(within(table).queryByText('$0.00')).toBeNull();
   });
+
+  it('RF-428 adds up the exact amounts of the role cells to the Total, where the figures shown may not', async () => {
+    // $0.012345 + $0.012345 = $0.024690: shown $0.0123 + $0.0123 = $0.0246 against a Total of $0.0247.
+    const line = runLine('r-4', { reader: 12_345, verifier: 12_345 });
+    renderCost(json(200, { ...cost, byRun: [line], totals: costOf(24_690) }));
+
+    const row = rowOf(await byRun(), new RegExp(liveKey, 'u'));
+
+    const exact = within(row)
+      .getAllByRole('tooltip', { hidden: true })
+      .map((tip) => tip.textContent);
+    expect(exact).toEqual(['$0.012345', '$0.012345', '$0.02469']);
+    const micros = exact.map((figure) => Math.round(Number(figure.replace('$', '')) * 1_000_000));
+    expect((micros[0] ?? 0) + (micros[1] ?? 0)).toBe(micros[2]);
+    expect(cellsOf(row)).toEqual(['Understand', '$0.0123', '$0.0123', '-', '-', '$0.0247']);
+  });
 });
 
 describe('cost by run project total', () => {
