@@ -96,15 +96,18 @@ it('RF-436 the every-role control lists only the providers the user can use now'
   });
 });
 
-it('RF-436 an unreachable Ollama and a provider with no key are not listed', async () => {
+it('RF-436 an unreachable Ollama and a provider with no key cannot be chosen', async () => {
   renderSettings({
     'GET /api/models/ollama': unreachable,
     'GET /api/account/key-access': keyAccess({ openai: 'own' }),
   });
   await loaded();
 
+  // The roles use the unreachable Ollama, so the control sits in the warning of P8-74, which
+  // also shows that Ollama, disabled (DEC-225).
   await waitFor(() => {
-    expect(optionTexts(everyRole())).toEqual(['OpenAI']);
+    const choosable = Array.from(everyRole().options).filter((option) => !option.disabled);
+    expect(choosable.map((option) => option.textContent)).toEqual(['OpenAI']);
   });
 });
 
