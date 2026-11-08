@@ -78,6 +78,49 @@ describe('Plan setup and the private code of an upload', () => {
   });
 });
 
+// RF-143, DEC-209 (P8-80): the box shows when the page opens, before any start, so no plan is
+// refused with RST-1521 for a box that was not shown.
+describe('Plan setup shows the private-code box from the start', () => {
+  const runsCalls = (page: ReturnType<typeof renderPlan>): number =>
+    page.calls.filter((call) => call.path === `${base}/runs`).length;
+
+  it("RF-143 a zip project's Plan setup shows the private-code box from the start", async () => {
+    const page = renderPlan({
+      ...saved,
+      [`GET ${base}`]: json(200, uploadCloud),
+      [`GET ${base}/plan-estimate`]: json(200, cloudEstimate),
+    });
+    await ready();
+
+    expect(screen.getByRole('region', { name: noticeName })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: privateBox })).toBeTruthy();
+    expect(runsCalls(page)).toBe(0);
+  });
+
+  it("RF-143 a workbook project's Plan setup shows the private-code box from the start", async () => {
+    const workbookCloud = projectOf('p-1', 'Sheets', {
+      sourceKind: 'workbook',
+      sourceUrl: '',
+      settings: cloudProject['settings'],
+    });
+    const page = renderPlan({
+      ...saved,
+      [`GET ${base}`]: json(200, workbookCloud),
+      [`GET ${base}/plan-estimate`]: json(200, cloudEstimate),
+    });
+    await ready();
+
+    const notice = screen.getByRole('region', { name: /Your workbook data is private/u });
+    expect(notice.textContent).toContain('Cell values, formulas and macros from Sheets');
+    expect(
+      screen.getByRole('checkbox', {
+        name: /^I understand that cell values, formulas and macros from Sheets/u,
+      }),
+    ).toBeTruthy();
+    expect(runsCalls(page)).toBe(0);
+  });
+});
+
 describe('Plan setup and the options of a planner in the cloud', () => {
   it('RF-132 asks the planner for options only after both confirmations', async () => {
     const page = renderPlan({ [`GET ${base}`]: json(200, uploadCloud) });
