@@ -45,6 +45,16 @@ export interface Run {
   readonly unreadAreas: number;
   /** P8-111: why a run that ended `Interrupted` ended; null for any other run and for one with no recorded reason. */
   readonly endReason: RunEndReason | null;
+  /** P8-139, DEC-226: the run a Deepen improves, recorded when it is queued; absent for any other run. */
+  readonly deepenParentId?: string;
+  /** P8-139: the folder name of the understand run a plan run is written from; absent until known. */
+  readonly planSourceKey?: string;
+  /** P8-139: the `RST` code the run's `run.ended` event said; absent when it said none. */
+  readonly endCode?: string;
+  /** P8-139: the Supported claims of an understand run that ended `Completed` or `CapReached`. */
+  readonly supportedClaims?: number;
+  /** P8-139: the open questions of the understand run's family (RF-646), the same on every run of it. */
+  readonly openQuestions?: number;
 }
 
 /** RF-208, P7-02: the area counts an understand run ends with. */

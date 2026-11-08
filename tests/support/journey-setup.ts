@@ -1,7 +1,8 @@
+import type { GetJourney } from '../../src/application/use-cases/get-journey.js';
 import type { JourneyRecords } from '../../src/application/ports/journey-records.js';
 import type { RunManifestStore } from '../../src/application/ports/run-manifest-store.js';
 import type { Project } from '../../src/application/projects/project.js';
-import { GetJourney } from '../../src/application/use-cases/get-journey.js';
+import { journeyFromFiles } from './journey-from-files.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { actorOf } from '../../src/domain/accounts/actor.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
@@ -13,7 +14,6 @@ import { MemoryEventSink } from '../../src/infrastructure/events/memory-event-si
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { MemoryRunManifestStore } from '../../src/infrastructure/files/memory-run-manifest-store.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
-import type { JourneyStores } from './journey-seed.js';
 import { sampleAccount } from './account-fixtures.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { seedPlanSource } from './plan-source-seed.js';
@@ -33,12 +33,19 @@ export const olderKey = '20261010-090000-understand';
 
 export interface JourneyWorld {
   readonly project: Project;
-  readonly parts: JourneyStores;
+  readonly parts: {
+    readonly runs: MemoryRunIndex;
+    readonly manifests: MemoryRunManifestStore;
+    readonly events: MemoryEventSink;
+  };
   readonly seed: (given?: Parameters<typeof seedPlanSource>[2]) => Promise<Run | undefined>;
   readonly journey: GetJourney;
   readonly priorCards: FilePriorCards;
   /** The project's answers.md, to save or clear an answer after the run. */
   readonly answers: FileAnswersFile;
+  /** P8-139: the run files and the brief store the world writes to. */
+  readonly files: MemoryOutputWriter;
+  readonly briefs: FilePlanningBriefStore;
 }
 
 export async function setup(
@@ -60,7 +67,7 @@ export async function setup(
   const seed = (given: Parameters<typeof seedPlanSource>[2] = {}) =>
     seedPlanSource({ files, briefs, runs: parts.runs }, project, given);
   const answers = new FileAnswersFile({ writer: files, masker });
-  const journey = new GetJourney({
+  const journey = journeyFromFiles({
     projects,
     runs: parts.runs,
     manifests: readManifests ?? parts.manifests,
@@ -71,5 +78,5 @@ export async function setup(
     priorCards,
     journeys,
   });
-  return { project, parts, seed, journey, priorCards, answers };
+  return { project, parts, seed, journey, priorCards, answers, files, briefs };
 }

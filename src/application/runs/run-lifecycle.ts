@@ -17,6 +17,7 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { continueAmountOf } from '../../domain/budget/approved-amount.js';
 import { readUnderstandOptions } from '../understand/understand-options.js';
+import type { RunEndFacts } from '../journey/run-end-facts.js';
 import { RunEventPublisher } from './run-event-publisher.js';
 import { scopeOf } from './run-scope.js';
 import { startCapsDataOf, type StartCaps } from './run-start-caps.js';
@@ -46,6 +47,8 @@ export interface RunLifecycleDependencies {
    * records the caps of its manifest only (a test without a project).
    */
   readonly startCaps?: Pick<StartCaps, 'of'>;
+  /** P8-139, DEC-226: stores the journey facts the end knows; none in a run without a journey. */
+  readonly endFacts?: Pick<RunEndFacts, 'record'>;
 }
 
 export interface StartedRun {
@@ -108,10 +111,12 @@ export class RunLifecycle {
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),
     );
-    await this.attempt(ended, 'run.ended', async () => {
+    const closed = await this.attempt(ended, 'run.ended', async () => {
       const events = await RunEventPublisher.open({ scope: scopeOf(ended), ...this.eventParts() });
       await events.emit('run.ended', endData(ended, endState, manifest, detail));
+      return true;
     });
+    await this.recordEndFacts(ended, closed === true ? (detail.errorCode ?? null) : null);
     return ended;
   }
 
@@ -167,6 +172,16 @@ export class RunLifecycle {
       return event === undefined ? Number.NaN : Date.parse(event.at);
     });
     return seen === undefined || Number.isNaN(seen) ? (run.spanStartedAt ?? 0) : seen;
+  }
+
+  /**
+   * P8-139, DEC-226: the journey facts of the end, after `run.ended`: its code (none when the event
+   * could not be written, as the log then says), the Supported claims and the open questions.
+   */
+  private async recordEndFacts(run: Run, endCode: string | null): Promise<void> {
+    const { endFacts } = this.deps;
+    if (endFacts === undefined) return;
+    await this.attempt(run, 'the journey facts', () => endFacts.record(run, endCode));
   }
 
   private eventParts(): Pick<RunLifecycleDependencies, 'sink' | 'history' | 'clock'> {

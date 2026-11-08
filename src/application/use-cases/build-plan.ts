@@ -28,6 +28,7 @@ import type { IdGenerator } from '../ports/id-generator.js';
 import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
+import type { JourneyFactsStore } from '../ports/journey-facts-store.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { planInputsText, recordPlanSources } from '../plan/plan-record.js';
@@ -61,6 +62,8 @@ export interface BuildPlanDependencies
   readonly costReports: CostReportWriter;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
+  /** P8-139, DEC-226: the source the planner chose is stored on the run's row. */
+  readonly journeyFacts?: Pick<JourneyFactsStore, 'recordPlanSource'>;
 }
 
 interface Finish {

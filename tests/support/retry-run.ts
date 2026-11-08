@@ -1,6 +1,7 @@
+import type { GetJourney } from '../../src/application/use-cases/get-journey.js';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { GetJourney } from '../../src/application/use-cases/get-journey.js';
+import { journeyFromFiles } from './journey-from-files.js';
 import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
@@ -70,7 +71,7 @@ export function readersOfProject(h: UnderstandHarness): ProjectReaders {
   const s = h.stores;
   const cards = new FileRunCards(s.writer);
   const owner = { userId: h.project.userId, role: 'user' } as const;
-  const journey = new GetJourney({
+  const journey = journeyFromFiles({
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, history: s.log },
     briefs: new FilePlanningBriefStore({ writer: s.writer, masker: s.masker }),
     ...{ cards, answers: new FileAnswersFile({ writer: s.writer, masker: s.masker }) },

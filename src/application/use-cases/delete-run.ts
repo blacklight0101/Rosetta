@@ -1,6 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { OpenQuestionCounts } from '../journey/open-question-counts.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
@@ -27,6 +28,8 @@ export interface DeleteRunDependencies {
   readonly runs: RunIndex;
   readonly folders: WorkspaceFolders;
   readonly logger: Logger;
+  /** P8-139, DEC-226: a deleted run leaves its family; the open questions of the project are stored again. */
+  readonly counts?: Pick<OpenQuestionCounts, 'refresh'>;
 }
 
 export class DeleteRun {
@@ -51,6 +54,8 @@ export class DeleteRun {
     await markFolder(folders, logger, target);
     await removeFolder(folders, logger, target);
     if (!(await runs.removeEnded(userId, run.id))) return err(ERROR_CODES.notFound);
+    if (run.stage === 'understand')
+      await this.deps.counts?.refresh({ userId, projectId: run.projectId });
     await logger.log({
       level: 'info',
       logger: 'history',

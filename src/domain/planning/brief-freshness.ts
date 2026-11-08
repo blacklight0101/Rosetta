@@ -36,6 +36,12 @@ function newestPackageStart(runs: readonly Run[]): number | undefined {
  */
 // RF-605
 export function isBriefOutOfDate(savedAt: string, runs: readonly Run[]): boolean {
+  return isBriefOutOfDateAt(Date.parse(savedAt), runs);
+}
+
+/** RF-605, P8-139: the same rule for a brief time in epoch milliseconds, as the project row stores it. */
+// RF-605
+export function isBriefOutOfDateAt(savedAt: number, runs: readonly Run[]): boolean {
   const start = newestPackageStart(runs);
-  return start !== undefined && Date.parse(savedAt) > start;
+  return start !== undefined && savedAt > start;
 }

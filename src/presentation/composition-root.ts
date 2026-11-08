@@ -256,7 +256,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         auth,
       });
       close = closer({ server, runs, abortUploads, closeBatches });
-      const parts = { file, auth, pool, clock, runs: runs.queue, logger, environment };
+      const parts = { file, auth, pool, clock, runs, logger, environment };
       let address = '';
       await startUp({
         checkSchema: () => checkSchema(pool, logger),

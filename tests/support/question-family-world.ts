@@ -1,6 +1,6 @@
 import { planInputs } from '../../src/application/plan/plan-inputs.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
-import { GetJourney } from '../../src/application/use-cases/get-journey.js';
+import { journeyFromFiles } from './journey-from-files.js';
 import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../../src/application/use-cases/reopen-question.js';
@@ -200,7 +200,7 @@ export async function familyWorld(specs: readonly RunSpec[]): Promise<FamilyWorl
       return inputs.ok ? inputs.value.questions : [];
     },
     journey: async (index: number) => {
-      const journey = new GetJourney({
+      const journey = journeyFromFiles({
         ...{ projects, runs, manifests, briefs, answers, priorCards },
         history: new MemoryEventSink(),
         cards: runCards,

@@ -19,6 +19,7 @@ import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { createUploadStore } from './compose-uploads.js';
 import type { RunServices } from './web/run-routes.js';
 import type { HistoryServices } from './web/history-routes.js';
+import { composeQuestionCounts } from './compose-journey.js';
 
 // Architecture section 2 (composition root), RF-1008, RF-1012, RF-1105: the adapters and the use
 // cases behind the history page, the deletions, the administrator's snapshot list and the run
@@ -52,7 +53,10 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
   return {
     listHistory: new ListHistory({ projects, runs, folders, manifests, logger, partlyRead }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
-    deleteRun: new DeleteRun({ runs, folders, logger }),
+    deleteRun: new DeleteRun({
+      ...{ runs, folders, logger },
+      counts: composeQuestionCounts({ pool, writer, masker, runs }),
+    }),
     deleteProject: new DeleteProject({
       ...{ projects, runs, folders, logger },
       uploads: createUploadStore(dataDir),
