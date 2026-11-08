@@ -242,11 +242,14 @@ rule without a tooltip, and an amount left of the approved amount rounds down (`
   colour of its own, so it follows both themes.
 - **Overlay:** `useOverlayTip` in `web/src/components/overlay-tip.ts`, used by the exact figure of a cost amount and by the
   line of measures of a History row's Coverage value (`RunCoverage`, classes `rst-p889-coverage*` in
-  `web/src/styles/history.css`). Trigger, opening, keyboard and dismissal are the same. The tip is `position: fixed` like
-  the Row menu panel, so opening it moves nothing of the table and a table's scroll region does not clip it. It stands
-  `sp-1` under its trigger, or above when there is no room under it, keeps 8 px from the viewport's edges and follows a
-  scroll or a resize; the pointer can move onto it. The line of measures wraps, up to 28rem wide; the exact figure stays
-  on one line; neither is wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
+  `web/src/styles/history.css`). Trigger, opening, keyboard and dismissal are the same for both. The tip is
+  `position: fixed` like the Row menu panel, so opening it moves nothing of the table and a table's scroll region does not
+  clip it. It stands `sp-1` under its trigger, or above when there is no room under it, keeps 8 px from the viewport's
+  edges and follows a scroll or a resize; the pointer can move onto it. Escape pressed anywhere closes an open tip, also
+  one the pointer alone rests on (the listener is on the document while the tip is open, P8-117, P8-129). It closes
+  200 ms after the pointer leaves the trigger and the tip, so a pointer that crosses a corner on its way onto the tip
+  keeps it open; a return within that time counts as not leaving. The line of measures wraps, up to 28rem wide; the exact
+  figure stays on one line; neither is wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
   `radius-md`, `shadow-2`, `z-menu`, `ink-muted`, `fs-xs`, `fw-body`, `sp-2` and `sp-3`.
 
 ## 6. Status badges
@@ -286,6 +289,10 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
   checkbox when a role uses a cloud provider; Start is enabled only when the URL resolved and consent is given.
 - **Destructive confirmation**: a dialog that names the target, the space it frees, what is kept (the snapshot, the
   project totals), and "This cannot be undone"; the danger button repeats the verb ("Delete run").
+- **Set every role at once** (RF-436, DEC-225, P8-73, the `P8ProjectSettings` artboard): one row at the top of
+  the roles, "Provider for every role", "Model" (first option "The recommended one per role", then the provider's
+  models) and a primary "Apply to every role"; the provider list holds only what the user can use now, and the row is
+  absent when nothing is left. Apply changes the form only, like editing each role by hand; Save stays the one save.
 - **Disabled with a reason**: a control that cannot be used says why in its label or title ("Delete (in use)").
 - **Errors**: the `RST-xxxx` code, what happened and what to do, next to the field or in an error callout
   ([conventions](conventions.md) section 6).

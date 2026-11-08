@@ -1,13 +1,18 @@
 import type { RefObject } from 'preact';
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 // RNF-010, design-system.md section 5.1, P8-89: the overlay Tooltip, for a tip too long to sit in the flow
 // beside its trigger. It is `position: fixed` like the row menu, so it moves nothing of the table and the
 // scrolling box of a table never clips it; it stands under its trigger, or above when there is no room under
-// it, inside the viewport, and it follows a scroll or a resize while it is open.
+// it, inside the viewport, and it follows a scroll or a resize while it is open. P8-129: while it is open,
+// Escape pressed anywhere closes it (WCAG 1.4.13: a browser sends no key to a trigger that is only hovered,
+// so the listener sits on the document, as for the cost figures, P8-117), and it closes a moment after the
+// pointer leaves, so a pointer that crosses a corner on its way from the trigger onto the tip keeps it open.
 
 const GAP = 4;
 const EDGE = 8;
+/** How long a tip stays open after the pointer leaves it; a return within it counts as never leaving. */
+const CLOSE_DELAY_MS = 200;
 
 interface TipPlace {
   readonly left: number;
@@ -49,11 +54,59 @@ export interface OverlayTip {
   readonly tip: RefObject<HTMLSpanElement | null>;
   /** For the box that holds the trigger and the tip. */
   readonly onMouseEnter: () => void;
-  readonly onMouseLeave: (event: { readonly currentTarget: HTMLElement }) => void;
+  readonly onMouseLeave: () => void;
   /** For the trigger. */
   readonly onFocus: () => void;
   readonly onBlur: () => void;
   readonly onKeyDown: (event: KeyboardEvent) => void;
+}
+
+/** While the tip is open: it stands beside its trigger, follows a scroll or a resize, and Escape closes it. */
+function useOpenTip(
+  open: boolean,
+  anchor: RefObject<HTMLSpanElement | null>,
+  tip: RefObject<HTMLSpanElement | null>,
+  dismiss: () => void,
+): void {
+  // A layout effect: the tip stands in its place before the browser first paints it.
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    const follow = (): void => {
+      if (anchor.current !== null && tip.current !== null) place(anchor.current, tip.current);
+    };
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') dismiss();
+    };
+    follow();
+    window.addEventListener('resize', follow);
+    window.addEventListener('scroll', follow, true);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('resize', follow);
+      window.removeEventListener('scroll', follow, true);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, anchor, tip, dismiss]);
+}
+
+/** A close that waits a moment, cancelled when the pointer comes back; never left running after unmount. */
+function useLateClose(close: () => void): {
+  readonly start: () => void;
+  readonly cancel: () => void;
+} {
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const cancel = useCallback(() => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+  }, []);
+  useEffect(() => cancel, [cancel]);
+  return {
+    start: () => {
+      cancel();
+      timer.current = setTimeout(close, CLOSE_DELAY_MS);
+    },
+    cancel,
+  };
 }
 
 // RNF-010
@@ -64,32 +117,25 @@ export function useOverlayTip(): OverlayTip {
   const anchor = useRef<HTMLSpanElement>(null);
   const tip = useRef<HTMLSpanElement>(null);
   const open = (hovered || focused) && !dismissed;
-  // A layout effect: the tip stands in its place before the browser first paints it.
-  useLayoutEffect(() => {
-    if (!open) return undefined;
-    const follow = (): void => {
-      if (anchor.current !== null && tip.current !== null) place(anchor.current, tip.current);
-    };
-    follow();
-    window.addEventListener('resize', follow);
-    window.addEventListener('scroll', follow, true);
-    return () => {
-      window.removeEventListener('resize', follow);
-      window.removeEventListener('scroll', follow, true);
-    };
-  }, [open]);
+  const dismiss = useCallback(() => {
+    setDismissed(true);
+  }, []);
+  useOpenTip(open, anchor, tip, dismiss);
+  const leaving = useLateClose(() => {
+    setHovered(false);
+  });
   return {
     open,
     dismissed,
     anchor,
     tip,
     onMouseEnter: () => {
+      leaving.cancel();
       setHovered(true);
+      // A tip closed with Escape opens again on the next hover, unless its trigger keeps the focus.
+      if (!focused) setDismissed(false);
     },
-    onMouseLeave: (event) => {
-      setHovered(false);
-      if (!event.currentTarget.contains(document.activeElement)) setDismissed(false);
-    },
+    onMouseLeave: leaving.start,
     onFocus: () => {
       setFocused(true);
       setDismissed(false);
@@ -99,7 +145,7 @@ export function useOverlayTip(): OverlayTip {
       setDismissed(false);
     },
     onKeyDown: (event) => {
-      if (event.key === 'Escape') setDismissed(true);
+      if (event.key === 'Escape') dismiss();
     },
   };
 }

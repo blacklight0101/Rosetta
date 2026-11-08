@@ -192,7 +192,7 @@ describe('the checks workflow of the release merge in the delivery documents (DE
     for (const fact of [
       '`release-checks.yml`',
       'every push to `main`',
-      '`contents: read`, `packages: write`, `statuses: write` and `issues: write`',
+      '`contents: read`, `checks: read`, `packages: write`, `statuses: write` and `issues: write`',
       'workflow token',
     ]) {
       expect(text).toContain(fact);
