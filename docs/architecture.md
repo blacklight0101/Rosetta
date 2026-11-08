@@ -130,6 +130,7 @@ src/
                         rule (`stopAfterRound`, `DEEPEN_ROUNDS`), the understanding measures (`understandingMeasures`,
                         third-party code apart) and the Deepen record of the manifest (`DeepenRecord`, `canDeepen`)
     journey/            the journey of a project (RF-011, RF-435, ADR-027): its record (`JourneyRecord`, the one approved amount and when), the steps it runs (`stepsOf`), their spend (`journeySpend`) and what is left (`journeyRemaining`)
+    consent/            a consent to send code to non-local providers, given on a project (`ProjectConsent`, RF-143, DEC-209): the providers it names, its kinds (`cloud`, `private-code`), when it was given and withdrawn
     verifier/           the model family of a model id (`modelFamilyOf`, `sameModelFamily`, RF-301, DEC-57): a verifier of the reader's family is warned
     errors/             domain error codes and Result type
   application/
