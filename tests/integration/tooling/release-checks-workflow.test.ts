@@ -40,7 +40,7 @@ function expressions(node: unknown, key = ''): string[] {
     return keysOf(node).flatMap((name) => expressions(at(node, name), name));
   }
   if (typeof node !== 'string') return [];
-  const wrapped = [...node.matchAll(/\$\{\{\s*(.*?)\s*\}\}/gu)].map((match) => match[1] ?? '');
+  const wrapped = [...node.matchAll(/\$\{\{\s*(.*?)\s*\}\}/gsu)].map((match) => match[1] ?? '');
   return key === 'if' && wrapped.length === 0 ? [node.trim()] : wrapped;
 }
 
@@ -61,7 +61,7 @@ describe('release-checks.yml trigger', () => {
 });
 
 describe('release-checks.yml permissions and token', () => {
-  it('RF-1304 the default token is read-only; the one job holds contents read and packages, statuses and issues write', async () => {
+  it('RF-1304 the default token is read-only; the one job holds contents and checks read and packages, statuses and issues write', async () => {
     const document = await checks();
 
     expect(keysOf(document)).toEqual(['name', 'on', 'permissions', 'concurrency', 'jobs']);
@@ -77,6 +77,7 @@ describe('release-checks.yml permissions and token', () => {
     ]);
     expect(at(document, 'jobs', 'checks', 'permissions')).toEqual({
       contents: 'read',
+      checks: 'read',
       packages: 'write',
       statuses: 'write',
       issues: 'write',
@@ -90,10 +91,10 @@ describe('release-checks.yml secrets, variables and tokens', () => {
     const all = expressions(document);
 
     expect(all.length).toBeGreaterThan(0);
-    expect(all.filter((expression) => /\bsecrets\b/u.test(expression))).toEqual([]);
-    expect(all.filter((expression) => /\bvars\b/u.test(expression))).toEqual([
-      'vars.ROSETTA_STAGING_ENABLED',
-    ]);
+    expect(all.filter((expression) => /\bsecrets\b/iu.test(expression))).toEqual([]);
+    expect(new Set(all.filter((expression) => /\bvars\b/iu.test(expression)))).toEqual(
+      new Set(['vars.ROSETTA_STAGING_ENABLED']),
+    );
     expect(new Set(all.filter((expression) => /token/iu.test(expression)))).toEqual(
       new Set(['github.token']),
     );
@@ -105,17 +106,27 @@ describe('release-checks.yml secrets, variables and tokens', () => {
       jobs: {
         a: {
           if: "vars['X'] == 'true'",
-          env: { A: "${{ secrets['X'] }}", B: '${{ toJSON(secrets) }}', C: '${{ toJSON(vars) }}' },
+          env: {
+            A: "${{ secrets['X'] }}",
+            B: '${{ toJSON(secrets) }}',
+            C: '${{ toJSON(vars) }}',
+            D: '${{ SECRETS.X }}',
+            E: '${{ Vars.Y }}',
+            F: '${{\n  secrets.Z\n}}',
+          },
         },
       },
     };
-    const found = expressions(written).filter((each) => /\b(?:secrets|vars)\b/u.test(each));
+    const found = expressions(written).filter((each) => /\b(?:secrets|vars)\b/iu.test(each));
 
     expect(found).toEqual([
       "vars['X'] == 'true'",
       "secrets['X']",
       'toJSON(secrets)',
       'toJSON(vars)',
+      'SECRETS.X',
+      'Vars.Y',
+      'secrets.Z',
     ]);
   });
 
