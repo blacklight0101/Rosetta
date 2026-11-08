@@ -93,7 +93,7 @@ dialog.rst-p140-dialog::backdrop {
 
 /*
  * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide) the
- * table fits its box with every column of the History artboard. The cells sit closer together, and a
+ * table fits its box with every column of the History artboard (with the wider fonts of Linux too). The cells sit closer together, and a
  * heading, the run name (at its hyphens, as one block that is all link), the kind, the start, the
  * running time, the share under a Partly read badge, a state badge ("Stopped by a restart") and the Resume
  * button wrap instead of widening the table, and the Resume button stands above the row menu, so the
@@ -105,7 +105,7 @@ dialog.rst-p140-dialog::backdrop {
 @media (width > 40rem) and (width < 80rem) {
   .rst-p140-runs th,
   .rst-p140-runs td {
-    padding-inline: var(--rst-sp-2);
+    padding-inline: var(--rst-sp-1);
   }
 
   .rst-p140-runs th,
