@@ -134,7 +134,7 @@ it('RF-436 with no provider the user can use, the every-role row is not shown', 
     'GET /api/account/key-access': keyAccess({}),
   });
   await loaded();
-  await waitFor(() => selectOf('Reader model'));
+  await screen.findByLabelText('Reader model');
 
   expect(screen.queryByLabelText('Provider for every role')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Apply to every role' })).toBeNull();

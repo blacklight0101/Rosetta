@@ -71,8 +71,12 @@ describe('key access API scope', () => {
 
     const response = await amy.request({ method: 'GET', url });
 
-    expect(response.json()).toMatchObject({
-      providers: [{ provider: 'anthropic', ownKey: false, serverKey: false }],
+    expect(response.json()).toEqual({
+      providers: [
+        { provider: 'anthropic', ownKey: false, serverKey: false },
+        { provider: 'openai', ownKey: false, serverKey: false },
+        { provider: 'openai-compatible', ownKey: false, serverKey: false },
+      ],
     });
   });
 

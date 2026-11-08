@@ -30,6 +30,7 @@ import type { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-
 import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
 import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
 import { ListProviderKeys } from '../../src/application/use-cases/list-provider-keys.js';
+import { GetKeyAccess } from '../../src/application/use-cases/get-key-access.js';
 import { SaveProviderKey } from '../../src/application/use-cases/save-provider-key.js';
 import type { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
@@ -163,11 +164,12 @@ interface AuthParts {
 
 /** RF-1104: the key use cases over memory adapters and the fake resolver. */
 function keyServices(parts: AuthParts) {
-  const { keys, secretBox, resolver } = parts.keys;
+  const { keys, secretBox, resolver, serverKeys } = parts.keys;
   const base = { keys, auditLog: parts.auditLog, logger: parts.logger, clock: parts.clock };
   const hostCheck = new DnsPublicHostCheck({ resolver: resolver.resolve });
   return {
     listProviderKeys: new ListProviderKeys({ keys }),
+    getKeyAccess: new GetKeyAccess({ keys, users: parts.users, serverKeys }),
     saveProviderKey: new SaveProviderKey({ ...base, box: secretBox, hostCheck }),
     deleteProviderKey: new DeleteProviderKey(base),
   };
