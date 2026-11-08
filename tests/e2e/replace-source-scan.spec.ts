@@ -9,7 +9,7 @@ import {
   uploadZip,
 } from './support/zip-journey.js';
 
-// RF-160, RF-156, P8-106, P8-121: a source that replaces the one a project held is scanned again, and
+// RF-160, RF-1021, P8-106, P8-121: a source that replaces the one a project held is scanned again, and
 // until that scan has ended the page offers nothing that starts a run on the old code map. The page
 // asks the history for the project's newest scan before it starts the new one, so a slow history is
 // the moment the old areas and Analyse used to stay on the page (a run started then read the scan

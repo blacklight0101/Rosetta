@@ -78,7 +78,7 @@ describe('BuildPlan: the single-item rule', () => {
     expect(run.endState).toBe('Completed');
     expect(h.providers.gapRequests()).toHaveLength(1);
     expect(plain((await h.handoffOf(run))['checks.md'])).toContain(
-      'Every item is built by at least one task card.',
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
     );
     expect(plain((await h.handoffOf(run))['tasks.md'])).toContain('Implement the one screen');
     const warned = h.s.logger.entries

@@ -1,17 +1,19 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useId } from 'preact/hooks';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { unknownCallsText } from '../lib/cost-text.js';
 import { formatMoney } from '../lib/money.js';
+import { useOverlayTip } from './overlay-tip.js';
 
 // RF-428, RNF-010, DEC-54, DEC-217: a cost on the cost page, written by the one money formatter, each
 // amount with its exact figure in a tooltip. The amount takes focus (Tab, or a tap), which shows the
-// figure beside it and has a screen reader read it with the amount. Escape closes the figure while the
+// figure under it and has a screen reader read it with the amount. Escape closes the figure while the
 // pointer rests on the amount or the amount has focus, wherever the focus is (WCAG 1.4.13: a browser sends no
-// key to an amount that is only hovered, so the listener sits on the document while the figure is open),
+// key to an amount that is only hovered, so `useOverlayTip` listens on the document while the figure is open),
 // until the pointer leaves or the focus moves. In a table the amounts take one tab stop, which follows the
-// amount last focused, and the arrow keys, Home and End move between them. The figure sits beside the
-// focusable amount, not inside it, so the amount's name is the amount alone. Dollars read
+// amount last focused, and the arrow keys, Home and End move between them. The figure is the overlay Tooltip
+// of design-system.md section 5.1 (P8-127), so opening it moves nothing of a table; it sits beside the
+// focusable amount in the markup, not inside it, so the amount's name is the amount alone. Dollars read
 // `$3.11`; any other currency by its code. A cost the ledger does not know is named after the known
 // one, never shown as zero (RF-427).
 
@@ -74,45 +76,6 @@ function moveBetweenAmounts(event: KeyboardEvent): void {
   }
 }
 
-/**
- * Whether the figure of an amount is closed with Escape, and the four events that open and end it. The
- * document listener is there from the start of an amount with a tooltip and reads refs, so an Escape pressed
- * the moment the figure shows is never missed.
- */
-function useDismissal() {
-  const [dismissed, setDismissed] = useState(false);
-  const over = useRef({ hovered: false, focused: false });
-  useLayoutEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && (over.current.hovered || over.current.focused)) {
-        setDismissed(true);
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-    };
-  }, []);
-  return {
-    dismissed,
-    enter: () => {
-      over.current.hovered = true;
-    },
-    leave: () => {
-      over.current.hovered = false;
-      if (!over.current.focused) setDismissed(false);
-    },
-    focus: () => {
-      over.current.focused = true;
-      setDismissed(false);
-    },
-    blur: () => {
-      over.current.focused = false;
-      setDismissed(false);
-    },
-  };
-}
-
 export interface AmountProps {
   readonly currency: string;
   readonly micros: string;
@@ -124,29 +87,31 @@ export interface AmountProps {
 
 function ExactAmount(props: AmountProps & { readonly shown: string; readonly full: string }) {
   const tipId = useId();
-  const figure = useDismissal();
+  const figure = useOverlayTip();
   return (
     <span
       class="rst-p136-amount"
+      data-open={figure.open ? '' : undefined}
       data-dismissed={figure.dismissed ? '' : undefined}
-      onMouseEnter={figure.enter}
-      onMouseLeave={figure.leave}
+      onMouseEnter={figure.onMouseEnter}
+      onMouseLeave={figure.onMouseLeave}
     >
       <span
+        ref={figure.anchor}
         class="rst-p136-amount__value"
         {...{ [AMOUNT_ATTRIBUTE]: '' }}
         tabIndex={props.tabStop ? 0 : -1}
         aria-describedby={tipId}
         onFocus={() => {
-          figure.focus();
+          figure.onFocus();
           props.onReach?.();
         }}
-        onBlur={figure.blur}
+        onBlur={figure.onBlur}
         onKeyDown={moveBetweenAmounts}
       >
         {props.shown}
       </span>
-      <span id={tipId} role="tooltip" class="rst-p136-amount__exact">
+      <span ref={figure.tip} id={tipId} role="tooltip" class="rst-p136-amount__exact">
         {props.full}
       </span>
     </span>

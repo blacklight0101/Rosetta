@@ -146,3 +146,35 @@ test('RF-010 RF-1012 a row has the name link, a source badge, Open and a menu wh
   await expect(page.getByText('No projects yet')).toBeVisible();
   await expectNoSeriousViolations(page);
 });
+
+test('RF-010 P8-134 the owner renames a project from the row menu and the list and the page show the new name', async ({
+  page,
+}) => {
+  await createScannedProject(page);
+  await page.goto('/projects');
+  const menuButton = page.getByRole('button', { name: 'More actions for octo/demo' });
+  await menuButton.click();
+  await page.getByRole('menuitem', { name: 'Rename' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Rename project octo/demo' });
+  const field = dialog.getByLabel('Project name');
+  await expect(field).toHaveValue('octo/demo');
+  await expectNoSeriousViolations(page);
+
+  await field.fill('   ');
+  await dialog.getByRole('button', { name: 'Rename' }).click();
+  await expect(dialog.getByTestId('field-error')).toContainText('RST-2000');
+
+  await field.fill('Demo shop');
+  await dialog.getByRole('button', { name: 'Rename' }).click();
+
+  await expect(dialog).toHaveCount(0);
+  const row = page.getByRole('row').filter({ hasText: 'Demo shop' });
+  await expect(row.getByRole('link', { name: 'Demo shop', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'octo/demo', exact: true })).toHaveCount(0);
+  await row.getByRole('link', { name: 'Open for Demo shop' }).click();
+  // With only a scan the page is headed "Start a run" (RF-1021); the navigation names the project.
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/u);
+  await expect(page.getByTestId('nav-group-project').locator('.rst-nav__heading')).toHaveText(
+    'Project: Demo shop',
+  );
+});

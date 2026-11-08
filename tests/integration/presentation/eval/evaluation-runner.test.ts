@@ -2,6 +2,7 @@ import { mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
   parseExperiment,
   parseResults,
@@ -83,6 +84,39 @@ describe('the evaluation runner with the fake provider', () => {
         'Completed',
         'Completed',
       ]);
+    },
+    TIMEOUT,
+  );
+});
+
+const startedLine = z.looseObject({
+  type: z.literal('run.started'),
+  data: z.looseObject({ stage: z.string(), parallelism: z.number().optional() }),
+});
+
+/** The `run.started` data of every run the evaluation wrote, from the `events.jsonl` of each. */
+async function startedData(folder: string): Promise<z.output<typeof startedLine>['data'][]> {
+  const data = join(folder, 'data');
+  const files = (await readdir(data, { recursive: true })).filter((name) =>
+    name.endsWith('events.jsonl'),
+  );
+  const logs = await Promise.all(files.map((name) => readFile(join(data, name), 'utf8')));
+  const lines = logs.flatMap((log) => log.split('\n').filter((line) => line.trim() !== ''));
+  return lines.flatMap((line) => {
+    const parsed = startedLine.safeParse(JSON.parse(line));
+    return parsed.success ? [parsed.data.data] : [];
+  });
+}
+
+describe('the evaluation runner: the production wiring of run.started', () => {
+  it(
+    'RF-1002 records the parallelism the understand runs use on their run.started',
+    async () => {
+      const understand = (await startedData(shared.folder)).filter(
+        (data) => data.stage === 'understand',
+      );
+
+      expect(understand.map((data) => data.parallelism)).toEqual([1, 1, 1]);
     },
     TIMEOUT,
   );

@@ -3,6 +3,7 @@ import {
   breakdownOf,
   totalsOf,
   type BreakdownLine,
+  type CostBreakdown,
 } from '../../../../src/application/budget/cost-breakdown.js';
 import { costRunA, costRunB, groupOf } from '../../../support/cost-fixtures.js';
 
@@ -136,6 +137,13 @@ function countsOf(lines: readonly BreakdownLine[]): Record<string, number> {
   return Object.fromEntries(keys.map((key) => [key, sumOf(lines.map((line) => line.totals[key]))]));
 }
 
+/** The first run line; a missing one fails here instead of comparing two empty sums that agree. */
+function firstRunOf({ byRun }: CostBreakdown): CostBreakdown['byRun'][number] {
+  const [run] = byRun;
+  if (run === undefined) throw new Error('the breakdown has no run line');
+  return run;
+}
+
 describe('breakdownOf by role within a run', () => {
   it('RF-428 gives each run line one line per role with calls, in code-unit order', () => {
     const { byRun } = breakdownOf([...runA, runB]);
@@ -156,20 +164,19 @@ describe('breakdownOf by role within a run', () => {
   });
 
   it('RF-428 adds the role costs of a run up to its total, per currency', () => {
-    const run = breakdownOf([
-      ...runA,
-      groupOf({ currency: 'EUR', role: 'planner', costMicros: 9n }),
-    ]).byRun[0];
+    const run = firstRunOf(
+      breakdownOf([...runA, groupOf({ currency: 'EUR', role: 'planner', costMicros: 9n })]),
+    );
 
-    expect(run?.totals.cost).toEqual([
+    expect(run.totals.cost).toEqual([
       { currency: 'EUR', costMicros: 9n },
       { currency: 'USD', costMicros: 2_400n },
     ]);
-    expect([...sumOfRoles(run?.byRole ?? [])].sort()).toEqual([
+    expect([...sumOfRoles(run.byRole)].sort()).toEqual([
       ['EUR', 9n],
       ['USD', 2_400n],
     ]);
-    expect(countsOf(run?.byRole ?? [])).toEqual(countsOf(run ? [run] : []));
+    expect(countsOf(run.byRole)).toEqual(countsOf([run]));
   });
 
   it('RF-428 reads a role whose calls are all unpriced as unknown cost, not as zero', () => {

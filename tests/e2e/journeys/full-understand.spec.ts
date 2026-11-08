@@ -12,6 +12,7 @@ import {
   agentPanel,
   openQuestion,
   openRunTab,
+  expectCompleted,
   runStatus,
   startAndOpenLiveRun,
   valueOf,
@@ -147,7 +148,7 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await page.getByText('Start another run').click();
   await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 120_000 });
+  await expectCompleted(page, 120_000);
   await expect(page.getByText('1 of 1 agents done')).toBeVisible();
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, '(root)')).toContainText('Done');

@@ -19,6 +19,7 @@ import { StoreUpload } from '../../src/application/use-cases/store-upload.js';
 import { WorkbookRendererCheck } from '../../src/application/use-cases/workbook-renderer-check.js';
 import { WORKBOOK_RENDERER_VERSION } from '../../src/infrastructure/sources/workbook/workbook-renderer.js';
 import { WorkbookBatches } from '../../src/application/use-cases/workbook-batches.js';
+import { RenameProject } from '../../src/application/use-cases/rename-project.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -138,6 +139,7 @@ export function projectServices(
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: NO_LISTED_MODELS }),
+    renameProject: new RenameProject({ projects, clock }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),

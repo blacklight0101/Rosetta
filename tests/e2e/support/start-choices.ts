@@ -32,7 +32,11 @@ async function openFold(fold: Locator): Promise<void> {
  * whose scan has completed is not scanned on a load (P8-106, RF-160). While a scan runs the page shows
  * only the Scan section, and it shows the areas once its estimate is read (RF-1021). So the fold is
  * opened, and the state is accepted when no scan runs, no fold is closed and the areas are listed,
- * which the page does only after the scan, if there is one, has ended. There is no fixed wait: a
+ * which the page does only after the scan, if there is one, has ended. These are the areas of the
+ * code map the page holds: after a scan ends it keeps the old estimate until the new one is read,
+ * so in that one request the areas listed can be the old ones. It needs an area of own code: a page
+ * with none (a library-only or empty code map, a scan or an estimate that failed) never settles
+ * and fails after the 90 s of `toPass`. There is no fixed wait: a
  * state the page has not reached shows as a missing area, and everything is tried again (P8-106,
  * P8-121, RF-157).
  */
@@ -84,7 +88,10 @@ export async function showStartPage(page: Page, state: StartPageState): Promise<
   if (state === 'settled') await openSettled(page, fold);
 }
 
-/** Waits for the project page to read its journey and opens "Start another run" when it is folded. */
+/**
+ * Waits for the project page to read its journey and opens "Start another run" when it is folded.
+ * The page must list at least one area of own code (see `openSettled`).
+ */
 export async function showStartChoices(page: Page): Promise<void> {
   await showStartPage(page, 'settled');
 }
@@ -102,6 +109,7 @@ export async function openReplaceSource(page: Page): Promise<void> {
  * page hides the choices while it scans, which it does when the history holds no scan, after a source
  * is replaced and after "Scan again" (not on every load), and shows them again afterwards in the fold
  * as it was left; a fold that came back closed is opened again until the areas are listed (P8-106).
+ * The page must list at least one area of own code, or this fails after its timeout.
  */
 export async function revealAreas(page: Page): Promise<void> {
   const fold = page.getByTestId('start-another');

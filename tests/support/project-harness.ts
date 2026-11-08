@@ -6,6 +6,7 @@ import { CreateProject } from '../../src/application/use-cases/create-project.js
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
+import { RenameProject } from '../../src/application/use-cases/rename-project.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -36,6 +37,7 @@ export interface ProjectHarness {
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
   readonly updateProjectSettings: UpdateProjectSettings;
+  readonly renameProject: RenameProject;
   readonly openWorkspace: OpenWorkspace;
 }
 
@@ -69,6 +71,7 @@ export function projectHarness(
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock, models }),
+    renameProject: new RenameProject({ projects, clock }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog: audit, logger, clock }),
   };
 }

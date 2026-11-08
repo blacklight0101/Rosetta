@@ -14,16 +14,19 @@ const NOTHING_TO_READ = ['no application logic', 'no readable file'];
 
 /**
  * RF-230: how many areas of own code were read below the coverage bar, counted the way the run page
- * counts them: an area the code map calls third-party (`library`) is no part of the count. An area with no share (an old file) says nothing. This is the 80% bar of RF-231, not the
+ * counts them: an area the code map calls third-party (`library`) is no part of the count. An area with no share (an old file, or the restored part of a resumed one) makes the whole listing say nothing. This is the 80% bar of RF-231, not the
  * 50% at which readers ask for more (Q-50, DEC-220).
  */
 export function partlyReadAreas(
   areas: readonly ListedAreaShare[],
   library: ReadonlySet<string> = new Set(),
 ): number {
-  return areas.filter((each) => {
-    const share = each.firstPartyShare;
-    if (share === undefined || share >= COVERAGE_BAR || library.has(each.area)) return false;
-    return !NOTHING_TO_READ.some((note) => each.note?.includes(note) === true);
-  }).length;
+  const counted = areas.filter(
+    (each) =>
+      !library.has(each.area) &&
+      !NOTHING_TO_READ.some((note) => each.note?.includes(note) === true),
+  );
+  // RF-006 (P8-138): a resumed run of an older deploy restores areas with no share; it says nothing.
+  if (counted.some((each) => each.firstPartyShare === undefined)) return 0;
+  return counted.filter((each) => (each.firstPartyShare ?? 1) < COVERAGE_BAR).length;
 }

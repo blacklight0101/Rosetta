@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
+import { EveryRoleControl } from './EveryRoleControl.js';
 import { LimitSetting } from './LimitSetting.js';
 import { ModelChoice } from './ModelChoice.js';
 import { OllamaContextField } from './OllamaContextField.js';
@@ -151,10 +152,20 @@ export function ModelSettings(
   props: SectionProps & {
     readonly lists: Readonly<Record<string, ModelListState>>;
     readonly limit: ContextLimit | undefined;
+    /** RF-436, DEC-225: the providers the user can use now, for the every-role control. */
+    readonly usable: readonly { readonly value: string; readonly label: string }[];
   },
 ): JSX.Element {
   const { lists } = props;
   const chooseProvider = useProviderChoice(props.editor, lists);
+  // RF-436, P8-73: each role takes the provider as if it were chosen for that role alone, so the
+  // P8-72 rule picks its model; a model chosen in the control goes to all four instead.
+  const applyToEveryRole = (provider: string, model: string): void => {
+    for (const role of ROLE_NAMES) {
+      if (model === '') chooseProvider(role, provider);
+      else props.editor.changeRole(role, { provider, model });
+    }
+  };
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="models">
       <h2 id="models" class="rst-settings__heading">
@@ -165,6 +176,7 @@ export function ModelSettings(
         with its usual settings; keys are kept on the Settings and keys page. Choosing a provider
         selects its recommended model; change it if you want another.
       </p>
+      <EveryRoleControl providers={props.usable} lists={lists} onApply={applyToEveryRole} />
       {ROLE_NAMES.map((role) => (
         <RoleFields
           key={role}
