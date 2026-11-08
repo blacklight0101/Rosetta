@@ -1,15 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { OpenQuestionCounts } from '../../../../src/application/journey/open-question-counts.js';
 import { RunEndFacts } from '../../../../src/application/journey/run-end-facts.js';
-import type {
-  JourneyFactsStore,
-  RunEndFacts as EndFacts,
-} from '../../../../src/application/ports/journey-facts-store.js';
 import type { RunCards } from '../../../../src/application/ports/run-cards.js';
 import { DeleteRun } from '../../../../src/application/use-cases/delete-run.js';
 import { RecordAnswers } from '../../../../src/application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../../../../src/application/use-cases/reopen-question.js';
-import type { EpochMs } from '../../../../src/domain/accounts/user.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
@@ -24,38 +19,11 @@ import { sampleProject } from '../../../support/project-fixtures.js';
 import { createRunHarness, userAmy } from '../../../support/run-harness.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { stockCards } from '../../../support/data-model-defect-cards.js';
+import { RecordingFacts } from '../../../support/recording-journey-facts.js';
 
 // P8-139, DEC-226, RF-615: each fact of the journey is stored by the code that knows it: the run's
 // end (its code and Supported claims), every path that changes the open questions (the end of an
 // understand run, an answer saved, a question reopened, a run deleted) and the brief save.
-
-/** The facts the writers stored, in the order they stored them. */
-class RecordingFacts implements JourneyFactsStore {
-  readonly ends: [string, EndFacts][] = [];
-  readonly questions: [string, readonly string[], number][] = [];
-  readonly sources: [string, string][] = [];
-  readonly briefs: [string, string, EpochMs][] = [];
-
-  recordPlanSource(runId: string, sourceKey: string): Promise<void> {
-    this.sources.push([runId, sourceKey]);
-    return Promise.resolve();
-  }
-
-  recordEnd(runId: string, facts: EndFacts): Promise<void> {
-    this.ends.push([runId, facts]);
-    return Promise.resolve();
-  }
-
-  recordOpenQuestions(userId: string, runIds: readonly string[], count: number): Promise<void> {
-    this.questions.push([userId, runIds, count]);
-    return Promise.resolve();
-  }
-
-  recordBriefSaved(userId: string, projectId: string, savedAt: EpochMs): Promise<void> {
-    this.briefs.push([userId, projectId, savedAt]);
-    return Promise.resolve();
-  }
-}
 
 /** The cards of a run: five Supported claims in three cards. */
 const cards: RunCards = { cardsOf: () => Promise.resolve(stockCards()) };

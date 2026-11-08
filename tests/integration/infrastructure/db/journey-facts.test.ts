@@ -49,7 +49,7 @@ function runOf(parents: Parents, key: string, extra: Parameters<typeof sampleRun
 describe.skipIf(!hasTestDatabase)('migration 0024', () => {
   const database = useTestDatabase();
 
-  it('DEC-226 RF-615 the rows that existed are left for the backfill, empty, and new rows are not', async () => {
+  it('DEC-226 RF-615 every row is left for the backfill, also a row the previous image inserts after 0024', async () => {
     const { pool } = await database.createSchema({ migrate: false });
     const files = await readMigrationFiles(migrationsFolder);
     const apply = async (upTo: number): Promise<void> => {
@@ -62,24 +62,56 @@ describe.skipIf(!hasTestDatabase)('migration 0024', () => {
     await insert(pool, before);
 
     await apply(24);
+    // The previous image still serves while the migrate job runs (environments-and-delivery.md
+    // section 10 step 4) and serves again after a rollback (section 11): its insert names no fact.
     const after = run(parents.projectId, parents.userId, { run_key: '20261002-090000-scan' });
     await insert(pool, after);
+    const later = await parentsIn(pool, 'later');
 
     const runs = await pool.query<Record<string, unknown>>(
       'SELECT run_key, facts_backfilled, deepen_parent_id, plan_source_key, end_code, supported_claims, open_questions FROM runs ORDER BY run_key',
     );
+    const empty = { deepen_parent_id: null, plan_source_key: null, end_code: null };
+    const noCounts = { supported_claims: null, open_questions: null };
     expect(runs.rows).toEqual([
-      {
-        ...{ run_key: '20261001-090000-scan', facts_backfilled: false, deepen_parent_id: null },
-        ...{ plan_source_key: null, end_code: null, supported_claims: null, open_questions: null },
-      },
-      {
-        ...{ run_key: '20261002-090000-scan', facts_backfilled: true, deepen_parent_id: null },
-        ...{ plan_source_key: null, end_code: null, supported_claims: null, open_questions: null },
-      },
+      { run_key: '20261001-090000-scan', facts_backfilled: false, ...empty, ...noCounts },
+      { run_key: '20261002-090000-scan', facts_backfilled: false, ...empty, ...noCounts },
     ]);
     const projects = await pool.query('SELECT brief_saved_at, facts_backfilled FROM projects');
-    expect(projects.rows).toEqual([{ brief_saved_at: null, facts_backfilled: false }]);
+    expect(projects.rows).toEqual([
+      { brief_saved_at: null, facts_backfilled: false },
+      { brief_saved_at: null, facts_backfilled: false },
+    ]);
+    const facts = new PgJourneyFacts(pool);
+    const pending = await facts.pendingRuns(10);
+    expect(pending.map((each) => each.runKey)).toEqual([
+      '20261001-090000-scan',
+      '20261002-090000-scan',
+    ]);
+    const projectsLeft = await facts.pendingProjects(10);
+    expect(projectsLeft).toHaveLength(2);
+    expect(projectsLeft).toEqual(expect.arrayContaining([parents, later]));
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('migration 0024 and the previous image', () => {
+  const database = useTestDatabase();
+
+  it('DEC-226 RF-615 a row the previous image inserted after 0024 is filled and then left alone', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    const parents = await parentsIn(pool);
+    const old = run(parents.projectId, parents.userId, { run_key: '20261002-090000-understand' });
+    await insert(pool, old);
+    const facts = new PgJourneyFacts(pool);
+    const id = String(old.params[0]);
+
+    await facts.fillRun(id, { ...NULL_FACTS, supportedClaims: 3, openQuestions: 2 });
+    await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
+
+    const found = await new PgRunIndex(pool).find(parents.userId, id);
+    expect(found).toMatchObject({ supportedClaims: 3, openQuestions: 2 });
+    expect(await facts.pendingRuns(10)).toEqual([]);
+    expect(await facts.pendingProjects(10)).toEqual([]);
   });
 });
 
@@ -229,24 +261,34 @@ describe.skipIf(!hasTestDatabase)('the backfill rows', () => {
     const parents = await parentsIn(pool);
     const older = run(parents.projectId, parents.userId, { run_key: '20261001-090000-understand' });
     await insert(pool, older);
-    await pool.query('UPDATE runs SET facts_backfilled = false, open_questions = 5');
-    await pool.query('UPDATE projects SET facts_backfilled = false');
+    const parentId = newId();
+    // What the writers stored in every column since the row was inserted.
+    await pool.query(
+      'UPDATE runs SET deepen_parent_id = $1, plan_source_key = $2, end_code = $3, supported_claims = $4, open_questions = $5',
+      [parentId, '20261001-080000-understand', 'RST-1802', 7, 5],
+    );
+    await pool.query('UPDATE projects SET brief_saved_at = $1', [
+      new Date('2026-10-12T10:00:00.000Z'),
+    ]);
     const facts = new PgJourneyFacts(pool);
 
     const pending = await facts.pendingRuns(10);
     expect(pending.map((each) => each.runKey)).toEqual(['20261001-090000-understand']);
     await facts.fillRun(String(older.params[0]), {
-      ...NULL_FACTS,
+      ...{ deepenParentId: newId(), planSourceKey: '20261001-070000-understand' },
       ...{ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 1 },
     });
     expect(await facts.pendingProjects(10)).toEqual([parents]);
     await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
 
     const found = await new PgRunIndex(pool).find(parents.userId, String(older.params[0]));
-    expect(found).toMatchObject({ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 5 });
+    expect(found).toMatchObject({
+      ...{ deepenParentId: parentId, planSourceKey: '20261001-080000-understand' },
+      ...{ endCode: 'RST-1802', supportedClaims: 7, openQuestions: 5 },
+    });
     expect(await facts.pendingRuns(10)).toEqual([]);
     expect(await facts.pendingProjects(10)).toEqual([]);
     const project = await new PgProjectRepository(pool).find(parents.userId, parents.projectId);
-    expect(project?.briefSavedAt).toBe(Date.parse('2026-10-12T09:30:00.000Z'));
+    expect(project?.briefSavedAt).toBe(Date.parse('2026-10-12T10:00:00.000Z'));
   });
 });
