@@ -65,7 +65,7 @@ interface Shape {
   readonly merge?: boolean;
 }
 
-/** The base branch, the pull request branch `head` that changes `changed`, and their merge. */
+/** The base branch, the pull request branch `pr` (not `head`, which is HEAD on a case-insensitive disk) that changes `changed`, and their merge. */
 async function pullRequest(
   origin: string,
   changed: readonly string[],
@@ -73,13 +73,13 @@ async function pullRequest(
 ): Promise<void> {
   await git(origin, 'init', '-q', '-b', 'base');
   await commitFiles(origin, baseFiles);
-  await git(origin, 'checkout', '-q', '-b', 'head');
+  await git(origin, 'checkout', '-q', '-b', 'pr');
   await commitFiles(origin, changed, ' (changed)');
   await git(origin, 'checkout', '-q', 'base');
   if ((shape.baseMoved ?? []).length > 0) await commitFiles(origin, shape.baseMoved ?? [], ' (b)');
   if (shape.merge === false) return;
   const identity = ['-c', 'user.name=ci', '-c', 'user.email=ci@example.invalid'];
-  await git(origin, ...identity, 'merge', '-q', '--no-ff', '-m', 'merge', 'head');
+  await git(origin, ...identity, 'merge', '-q', '--no-ff', '-m', 'merge', 'pr');
 }
 
 /**
@@ -98,7 +98,7 @@ async function classify(
   await mkdir(origin);
   await pullRequest(origin, changed, shape);
   const url = pathToFileURL(origin).href;
-  const branch = shape.merge === false ? 'head' : 'base';
+  const branch = shape.merge === false ? 'pr' : 'base';
   await git(root, 'clone', '-q', '--depth', '2', '--branch', branch, url, clone);
   const output = join(root, 'github-output.txt');
   await writeFile(output, '');
