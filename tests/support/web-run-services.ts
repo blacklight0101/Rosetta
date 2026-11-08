@@ -1,5 +1,10 @@
 import type { GetJourney } from '../../src/application/use-cases/get-journey.js';
 import { startRunOf } from './journey-lookups.js';
+import { startConsentsOf } from '../../src/application/use-cases/consent-use-cases.js';
+import { MemoryProjectConsents } from '../../src/infrastructure/db/memory-project-consents.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
+import type { RoleKeyDependencies } from '../../src/application/runs/role-keys.js';
+import type { StartConsents } from '../../src/application/consent/start-consent.js';
 import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
@@ -219,6 +224,29 @@ function answerAndJourney(
 }
 
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
+/** DEC-209: one store of the project's consents, which every start of the test server shares. */
+function consentsOf(projects: MemoryProjectRepository, clock: Clock): StartConsents {
+  const consents = new MemoryProjectConsents(projects);
+  return startConsentsOf({ consents, clock, ids: new SequenceIdGenerator() });
+}
+
+/** RF-003, RF-209, DEC-209: Start run and Start Deepen, which share the project's consents. */
+function startServices(
+  runs: RunHarness,
+  stores: Parameters<typeof deepenServices>[1] & {
+    readonly briefs: PlanningBriefStore;
+    readonly clock: Clock;
+    readonly roleKeys: RoleKeyDependencies;
+  },
+): Pick<ServerOptions['runs'], 'startRun' | keyof ReturnType<typeof deepenServices>> {
+  const { projects, keys, roleKeys, briefs } = stores;
+  const consents = consentsOf(projects, stores.clock);
+  return {
+    startRun: startRunOf({ ...runs, projects, briefs, roleKeys, consents }),
+    ...deepenServices(runs, { projects, keys, roleKeys, consents }),
+  };
+}
+
 export function runServices(
   runs: RunHarness,
   stores: {
@@ -254,8 +282,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: startRunOf({ ...runs, projects, briefs: stores.briefs, roleKeys }),
-    ...deepenServices(runs, { projects, keys, roleKeys }),
+    ...startServices(runs, { ...stores, roleKeys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,

@@ -130,7 +130,7 @@ src/
                         rule (`stopAfterRound`, `DEEPEN_ROUNDS`), the understanding measures (`understandingMeasures`,
                         third-party code apart) and the Deepen record of the manifest (`DeepenRecord`, `canDeepen`)
     journey/            the journey of a project (RF-011, RF-435, ADR-027): its record (`JourneyRecord`, the one approved amount and when), the steps it runs (`stepsOf`), their spend (`journeySpend`) and what is left (`journeyRemaining`)
-    consent/            a consent to send code to non-local providers, given on a project (`ProjectConsent`, RF-143, DEC-209): the providers it names, its kinds (`cloud`, `private-code`), when it was given and withdrawn
+    consent/            a consent to send code to non-local providers, given on a project (`ProjectConsent`, RF-143, DEC-209): the providers it names, its kinds (`cloud`, `private-code`), when it was given and withdrawn; whether it holds for a start (`consentHolds`: not withdrawn, given less than 30 days ago, `CONSENT_LIFETIME_MS`, naming every provider and kind the start needs, P8-78)
     verifier/           the model family of a model id (`modelFamilyOf`, `sameModelFamily`, RF-301, DEC-57): a verifier of the reader's family is warned
     errors/             domain error codes and Result type
   application/
@@ -139,6 +139,7 @@ src/
     support/            helpers the use cases share (KeyedQueue: sign-in attempts per user name one at a time)
     runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started` with its start caps, `run.ended`), the start caps (`StartCaps`, RF-1106: the effective run cap and where each cap comes from, the key source of each role read through the `KeySourceLookup` port), the start parallelism (`StartParallelism`, RF-1002, P8-59: the clamped `agents.parallelism` an understand run records on `run.started`), the event publisher, the accepted manifest, the event and manifest schemas, the manifest security recorder (mask counts and blocked calls), `PrivateCodeRecheck` (P3-54, RF-132: wraps the understand and plan executors; a queued run whose roles now send private code to a cloud provider without the recorded confirmation ends `Failed` with `RST-1521` and starts nothing)
     providers/          provider rules the use cases share: which kinds need cloud consent (`needsCloudConsent`, RF-143)
+    consent/            the consent a start runs under (RF-143, RF-132, DEC-209, P8-78): what a start needs (`consentNeedOf`: the non-local providers of the roles it calls, `private-code` for an upload or workbook), `settleConsent` (a consent of the project that holds stands for the boxes; a start that carries them gives one; the run records `consentId`), used by StartRun (`runStartConsent`, with the retry's recorded consent of P7-38) and StartDeepen; the use cases GiveConsent, HeldConsent and WithdrawConsent are in `use-cases/consent-use-cases.ts`
     agent/              the agent loop (`runAgentTask`, its end states and reasons), the read-only tools
                         (`ReadOnlyTools`: definitions, zod-checked arguments, code-map lookup by exact
                         case, result limits), the reader prompt set (`ReaderPrompts`, `promptVersionsOf`);

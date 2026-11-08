@@ -29,10 +29,17 @@ export interface ConsentNeed {
   readonly kinds: readonly ConsentKind[];
 }
 
-/** DEC-209: how long a consent given on a project lasts. */
-export const CONSENT_LIFETIME_MS = 0;
+/** DEC-209: a consent given on a project lasts 30 days. */
+export const CONSENT_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
+/**
+ * RF-143, DEC-209: whether a consent covers a start at `now`: it is not withdrawn, it was given less
+ * than 30 days ago, and it names every provider and has every kind the start needs. A role whose
+ * provider changed to one it does not name makes it ask again.
+ */
 // RF-143
 export function consentHolds(consent: ProjectConsent, need: ConsentNeed, now: EpochMs): boolean {
-  return consent.id === '' && need.kinds.length === 0 && now < 0;
+  if (consent.withdrawnAt !== null || now - consent.givenAt >= CONSENT_LIFETIME_MS) return false;
+  const named = need.providers.every((provider) => consent.providers.includes(provider));
+  return named && need.kinds.every((kind) => consent.kinds.includes(kind));
 }

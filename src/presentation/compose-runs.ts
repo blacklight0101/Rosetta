@@ -54,6 +54,7 @@ import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
 import { withPrivateCodeRecheck } from './compose-recheck.js';
+import { composeConsents } from './compose-consents.js';
 import {
   composeJourney,
   composeJourneyBackfill,
@@ -165,18 +166,19 @@ function answerServices(
 /**
  * The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). RF-432: the server sets the
  * approved amount of a start; RF-011: the journey record keeps the one amount of all its steps.
+ * RF-431: every start path checks the roles' keys before a run is queued.
  */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability, counts } = service;
   const cards = keptPriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
-  // RF-431: every start path checks the roles' keys before a run is queued.
   const roleKeys = { users: new PgUserRepository(parts.pool), keys: parts.keySources };
   const estimateRun = composeEstimateRun(parts, { projects, runs, scans, roleKeys });
+  const consents = composeConsents(parts.pool, parts.clock); // DEC-209: one store for every start
   return {
     startRun: new StartRun({
-      ...{ projects, runs, manifests, submit: submitRun, roleKeys },
+      ...{ projects, runs, manifests, submit: submitRun, roleKeys, consents },
       ...{ journey: journeyLookupOf(estimateRun), journeys: new PgJourneyRecords(parts.pool) },
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
@@ -193,7 +195,7 @@ function runServices(service: ServiceParts): RunServices {
     ...composeDeepen({
       ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },
       ...{ masker: parts.masker, priceTable: parts.priceTable, models: parts.models, ollamaHost },
-      roleKeys,
+      ...{ roleKeys, consents },
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
