@@ -269,7 +269,11 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
       <h2 class="rst-live-section__title">Your turn</h2>
       <Next {...props} skip={skip} />
       {props.deepenRunId === undefined ? null : (
-        <DeepenAction runId={props.deepenRunId} recommended={deepenFirst} />
+        <DeepenAction
+          runId={props.deepenRunId}
+          projectId={props.run.projectId}
+          recommended={deepenFirst}
+        />
       )}
       {props.asks || props.failed ? (
         <PlanNext
