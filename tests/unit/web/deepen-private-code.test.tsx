@@ -152,6 +152,36 @@ describe('RF-209 the switch to Ollama in the Deepen panel', () => {
   });
 });
 
+describe('RF-209 the switch to Ollama and the private-code tick', () => {
+  it('RF-209 the switch to Ollama clears the private code tick, so the start does not send it', async () => {
+    let saved = false;
+    const page = await opened({
+      project: () => json(200, upload),
+      estimate: () => (saved ? deepenEstimate() : deepenEstimate({ roles: cloudRoles })),
+      more: {
+        [`PUT ${projectPath}/settings`]: () => {
+          saved = true;
+          return json(200, upload);
+        },
+      },
+    });
+    fireEvent.click(await screen.findByLabelText(codeBox));
+    const notice = screen.getByRole('region', { name: noticeName });
+
+    fireEvent.click(within(notice).getByRole('button', { name: switchName }));
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: noticeName })).toBeNull();
+      expect(startButton().disabled).toBe(false);
+    });
+    await confirmStart();
+
+    await waitFor(() => {
+      expect(posts(page)).toHaveLength(1);
+    });
+    expect(posts(page)[0]?.body).not.toHaveProperty('privateCodeConfirmed');
+  });
+});
+
 describe('RF-132 when the project cannot be read', () => {
   it('RF-132 shows the private-code box once the server asks, holds Start and then sends it', async () => {
     const answer: Answer = (call) => {
