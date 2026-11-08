@@ -83,3 +83,16 @@ export function formatAmount(value: number, unit: LimitUnit): string {
   const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/gu, ',');
   return `${sign}$${grouped}.${fraction.padEnd(2, '0')}`;
 }
+
+type OutputRole = keyof typeof templateDefaults.maxOutputTokens;
+
+/** RF-436 (P8-76): the output limit a role runs with when the project stores none. */
+export function builtInOutput(
+  role: OutputRole,
+  kind: string | undefined,
+  modelMaximum: number | undefined,
+): number {
+  return kind === undefined && modelMaximum === undefined
+    ? templateDefaults.maxOutputTokens[role]
+    : templateDefaults.maxOutputTokens[role];
+}
