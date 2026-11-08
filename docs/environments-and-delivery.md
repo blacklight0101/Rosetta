@@ -242,10 +242,14 @@ list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reope
 pushes the image of that commit before the release hour with the steps of the `image` job of `release.yml`; then it
 waits up to 40 minutes for the `zap-baseline` check of CI on that commit, confirms the ZAP baseline and the staging
 check with the two steps of the `deploy` job of `release.yml`, word for word (the staging check reads the repository
-variable `ROSETTA_STAGING_ENABLED`, as there), and last, in every case, sets the commit status `release/ready` on that
+variable `ROSETTA_STAGING_ENABLED`, as there), and then, in every case, sets the commit status `release/ready` on that
 commit: `success` only when every check passed, otherwise `failure` with a description naming what failed or did not
-run. Its one job holds `contents: read`, `packages: write`, `statuses: write` and `issues: write` of the workflow token
-and reads no secret and no other token. All of them follow the hardening below; `scheduled-release.yml` uses no
+run. Last, when `release/ready` is not `success` (or could not be recorded), whatever the cause, a cancel or timeout
+included, it comments on the open issue "Production deploys" with the owner mentioned, the commit, the cause and the
+run, with `scripts/production-deploys-comment.sh`, the script and issue lookup of the deploy notification of
+`release.yml` (P8-65); checks that pass comment nothing. Its one job holds
+`contents: read`, `checks: read`, `packages: write`, `statuses: write` and `issues: write` of the workflow token and
+reads no secret and no other token. All of them follow the hardening below; `scheduled-release.yml` uses no
 action and only `contents: read` and `actions: write`.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
@@ -332,7 +336,8 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   the input `target` `production` (from `main`) or `staging` (from `develop`, DEC-175). After the smoke test passes,
   the production deploy comments on the open issue "Production deploys" (created when missing) and mentions the
   owner, so GitHub emails them for every production update (RF-1304; the job's only write scope besides OIDC is
-  `issues`, and a failed comment never fails the deploy). The deploy jobs of
+  `issues`, and a failed comment never fails the deploy); `release-checks.yml` comments on the same issue, with the
+  same script, when the checks of a release merge fail (P8-65). The deploy jobs of
   `release.yml` and `staging.yml` and the provision job log in to Azure with OIDC and are the only places a workflow
   reads secrets.
 - Staging and the scheduled release (DEC-175, ADR-025): `staging.yml` builds and scans the image of every push to
@@ -342,7 +347,8 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   starts Release on `main` by `workflow_dispatch` once per head commit of `main` (nothing when a Release run of it is
   queued, running or succeeded, or while `ROSETTA_DEPLOY_ENABLED` is not `true`; the step summary names the slot that started it). The release merge already has its
   image: `release-checks.yml` builds, scans and pushes `sha-<short>` of every push to `main` (DEC-207, P8-63), confirms
-  the ZAP baseline and the staging check and records the commit status `release/ready` on it (P8-64). Release
+  the ZAP baseline and the staging check and records the commit status `release/ready` on it (P8-64); when that is
+  not `success` it comments on the issue "Production deploys" for the owner (P8-65). Release
   still rebuilds the image from the merge commit (the same tag, scanned again) until it changes to deploy only a
   checked commit (DEC-207), and its deploy job refuses a commit whose tree differs from its second parent (the `develop` side) or
   whose second parent did not pass `deploy (staging)`; the `workflow_dispatch` input `skip-staging-check` skips that
@@ -384,7 +390,8 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
 3. The owner says the batch is ready; the orchestrator opens the release pull request `develop` -> `main`; the owner
    merges it with a merge commit (and tags it for a version). Nothing deploys on the merge; `release-checks.yml`
    builds, scans and pushes the image of the merge commit (`sha-<short>`) within minutes, confirms the ZAP baseline
-   and the staging check, and sets the commit status `release/ready` on it within the hour (DEC-207).
+   and the staging check, and sets the commit status `release/ready` on it within the hour (DEC-207); when the checks
+   fail, it comments on the issue "Production deploys" with the owner mentioned, so the owner hears before 06:00.
 4. Hosted, at 06:07 Europe/Madrid the next morning (backups until 07:59) (`scheduled-release.yml`, or at once by running Release on `main`
    by hand): the release job builds and pushes the image; the deploy job checks that the ZAP baseline passed on the
    commit (threat model section 5) and that the tree passed staging, records the restore point (the host's
