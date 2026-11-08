@@ -217,11 +217,13 @@ test(
 );
 
 test('RNF-010 projects with the run columns and the project settings', visual, async ({ page }) => {
-  await page.goto('/projects');
   // P8-137: after a finished understand run the row says what the project page says beside its title.
-  await expect(page.getByRole('row').filter({ hasText: 'octo/webforms' })).toContainText(
-    /Deepen waiting|Questions waiting|Plan setup waiting|Estimate waiting|Nothing to plan from/u,
-  );
+  await openStartPage(page);
+  const status = page.getByTestId('project-status');
+  await expect(status).toHaveText(/\S/u);
+  const said = (await status.textContent())?.trim() ?? '';
+  await page.goto('/projects');
+  await expect(page.getByRole('row').filter({ hasText: 'octo/webforms' })).toContainText(said);
   await expectPageInView(page);
 
   await openSettingsFromList(page, 'octo/webforms');
