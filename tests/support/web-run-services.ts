@@ -53,6 +53,7 @@ import {
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
 import { deepenServices } from './web-deepen-services.js';
+import { noQuestionCounts } from './recording-journey-facts.js';
 
 /** RF-008, RF-504, RF-506: where the run folder is read from, zipped and reported on. */
 export interface RunOutputs {
@@ -159,8 +160,14 @@ function answerServices(
   const { projects, answers, priorCards: cards, logger } = stores;
   return {
     listAnswers: new ListAnswers({ runs: runs.runs, answers, cards }),
-    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards }),
-    reopenQuestion: new ReopenQuestion({ runs: runs.runs, answers, cards, logger }),
+    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards, counts: noQuestionCounts }),
+    reopenQuestion: new ReopenQuestion({
+      runs: runs.runs,
+      answers,
+      cards,
+      logger,
+      counts: noQuestionCounts,
+    }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
   };
 }

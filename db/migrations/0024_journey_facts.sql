@@ -13,10 +13,17 @@
 --                           answer is saved, a question is reopened or a run is deleted)
 --   projects.brief_saved_at when the planning brief was saved (written when it is saved)
 -- Null is a fact nobody stored: the journey reads it as it read a missing file.
--- `facts_backfilled` marks the rows the backfill still has to fill once from the files: false on
--- every row that exists now, true on every row inserted from now on (the default changes after the
--- column exists, which rewrites no row). Every statement only changes the catalogue, so the
--- migration holds its locks for an instant whatever the size of the tables.
+-- `facts_backfilled` marks the rows the backfill still has to fill from the files: false on every row,
+-- the ones that exist now and every one inserted later. A row is filled by the first backfill pass
+-- after it is inserted (at start-up, then daily); the fill keeps any fact a writer stored (COALESCE),
+-- so filling a row the writers already filled changes nothing. Rows the previous image inserts while
+-- it still serves during a deploy, or after a rollback, get no fact from a writer and are filled all
+-- the same (environments-and-delivery.md sections 10 and 11).
+-- Locks: the plain ADD COLUMN statements and the constant `DEFAULT false NOT NULL` only change the
+-- catalogue (no rewrite). Each of the three ADD COLUMN ... CHECK statements also reads `runs` once
+-- to validate its constraint (every value is null), under the ACCESS EXCLUSIVE lock the migration's
+-- one transaction holds until it commits; a sequential read of the table, measured at about 140 ms
+-- for 2 million rows on PostgreSQL 17.
 -- Additive: the table-level grants of rosetta_app (0002) already cover the new columns.
 
 ALTER TABLE runs ADD COLUMN deepen_parent_id uuid;
@@ -28,8 +35,6 @@ ALTER TABLE runs ADD COLUMN supported_claims integer
 ALTER TABLE runs ADD COLUMN open_questions integer
   CONSTRAINT runs_open_questions_check CHECK (open_questions >= 0);
 ALTER TABLE runs ADD COLUMN facts_backfilled boolean NOT NULL DEFAULT false;
-ALTER TABLE runs ALTER COLUMN facts_backfilled SET DEFAULT true;
 
 ALTER TABLE projects ADD COLUMN brief_saved_at timestamptz;
 ALTER TABLE projects ADD COLUMN facts_backfilled boolean NOT NULL DEFAULT false;
-ALTER TABLE projects ALTER COLUMN facts_backfilled SET DEFAULT true;

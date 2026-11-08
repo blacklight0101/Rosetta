@@ -36,7 +36,7 @@ export interface SavePlanningBriefDependencies {
   readonly catalogue: Catalogue;
   readonly clock: Clock;
   /** P8-139, DEC-226: where the brief time is stored; none in a test without a journey. */
-  readonly facts?: Pick<JourneyFactsStore, 'recordBriefSaved'>;
+  readonly facts: Pick<JourneyFactsStore, 'recordBriefSaved'>;
 }
 
 export class SavePlanningBrief {
@@ -74,7 +74,7 @@ export class SavePlanningBrief {
         : { ...unsaved, savedAt: clock.now().toISOString() };
     if (brief !== stored) await briefs.write(project, brief);
     // P8-139, DEC-226: the project row keeps when the brief was saved, for the journey.
-    await this.deps.facts?.recordBriefSaved(userId, request.projectId, Date.parse(brief.savedAt));
+    await this.deps.facts.recordBriefSaved(userId, request.projectId, Date.parse(brief.savedAt));
     const projectRuns = await runs.list(userId, request.projectId);
     return ok({ brief, saved: true, outOfDate: isBriefOutOfDate(brief.savedAt, projectRuns) });
   }

@@ -13,6 +13,7 @@ import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
 import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { noPartlyRead, type PartlyReadReader } from './partly-read-doubles.js';
 import type { RunHarness } from './run-harness.js';
+import { noQuestionCounts } from './recording-journey-facts.js';
 
 /** RF-1008, RF-1012: the history, deletion, snapshot and Projects page run use cases over the harness's memory adapters. */
 export function historyServices(parts: {
@@ -33,7 +34,7 @@ export function historyServices(parts: {
   return {
     listHistory: new ListHistory({ ...{ projects, runs, folders, logger, manifests, partlyRead } }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
-    deleteRun: new DeleteRun({ runs, folders, logger }),
+    deleteRun: new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }),
     deleteProject: new DeleteProject({
       ...{ projects, runs, folders, logger },
       uploads: upload.store,

@@ -53,8 +53,8 @@ export interface RunLifecycleDependencies {
    * shows; a run without it records none (an older log, a test without a project).
    */
   readonly parallelism?: Pick<StartParallelism, 'of'>;
-  /** P8-139, DEC-226: stores the journey facts the end knows; none in a run without a journey. */
-  readonly endFacts?: Pick<RunEndFacts, 'record'>;
+  /** P8-139, DEC-226: stores the journey facts the end knows (required, so no composition forgets it). */
+  readonly endFacts: Pick<RunEndFacts, 'record'>;
 }
 
 export interface StartedRun {
@@ -188,7 +188,6 @@ export class RunLifecycle {
    */
   private async recordEndFacts(run: Run, endCode: string | null): Promise<void> {
     const { endFacts } = this.deps;
-    if (endFacts === undefined) return;
     await this.attempt(run, 'the journey facts', () => endFacts.record(run, endCode));
   }
 

@@ -27,6 +27,8 @@ import { RecordingFacts } from '../../../support/recording-journey-facts.js';
 
 /** The cards of a run: five Supported claims in three cards. */
 const cards: RunCards = { cardsOf: () => Promise.resolve(stockCards()) };
+const loggerOf = () =>
+  new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
 
 describe('the end of a run stores its journey facts', () => {
   it('DEC-226 RF-615 the lifecycle hands the end code of run.ended to the journey facts', async () => {
@@ -75,7 +77,7 @@ describe('the open questions are stored by every path that changes them', () => 
     const world = await setup();
     const run = await world.seed({ brief: false });
     const facts = new RecordingFacts();
-    const counts = new OpenQuestionCounts({ ...world.parts, ...world, facts });
+    const counts = new OpenQuestionCounts({ ...world.parts, ...world, facts, logger: loggerOf() });
 
     await counts.refresh({ userId: actor.userId, projectId: world.project.id });
 
@@ -86,7 +88,7 @@ describe('the open questions are stored by every path that changes them', () => 
     const world = await setup();
     const run = await world.seed({ brief: false });
     const facts = new RecordingFacts();
-    const counts = new OpenQuestionCounts({ ...world.parts, ...world, facts });
+    const counts = new OpenQuestionCounts({ ...world.parts, ...world, facts, logger: loggerOf() });
     const deps = { runs: world.parts.runs, answers: world.answers, cards: world.priorCards };
     const save = new RecordAnswers({ ...deps, manifests: world.parts.manifests, counts });
 

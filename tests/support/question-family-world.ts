@@ -33,6 +33,7 @@ import { seedPlanSource } from './plan-source-seed.js';
 import { sampleProject } from './project-fixtures.js';
 import { RecordingLogger } from './recording-logger.js';
 import { sampleManifest, sampleRun } from './run-fixtures.js';
+import { noQuestionCounts } from './recording-journey-facts.js';
 
 // RF-646, DEC-179: a project whose understand run has Deepens, over the real file adapters in memory.
 // Each run has its cards and its sections of `answers.md`, written as the file holds them (a
@@ -173,7 +174,7 @@ export async function familyWorld(specs: readonly RunSpec[]): Promise<FamilyWorl
     stores;
   const answers = new FileAnswersFile({ writer: files, masker });
   const actor = actorOf(account);
-  const deps = { runs, answers, cards: priorCards, manifests };
+  const deps = { runs, answers, cards: priorCards, manifests, counts: noQuestionCounts };
   const runCards = new FileRunCards(files);
   const at = (index: number): Run => {
     const run = made[index];

@@ -45,6 +45,7 @@ import { MemoryLogger } from './memory-logger.js';
 import { fixtureRoot, type FixtureRepository } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import type { UnderstandProviders } from './understand-providers.js';
+import { noEndFacts } from './recording-journey-facts.js';
 
 // RF-200: the stores and the run queue of the understand harness, over memory indexes and the
 // real file writers. Kept apart from understand-run-harness.ts, which holds the harness itself.
@@ -193,6 +194,7 @@ export async function queueOf(
   const fetcher = fixtureFetcher(clock, s.repoRoot);
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
+    endFacts: noEndFacts,
     sink: new FanOutSink([log]),
     history: log,
   });

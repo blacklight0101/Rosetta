@@ -124,6 +124,8 @@ export interface RunComposition {
   recover(): Promise<void>;
   /** DEC-226: fills the journey facts of the rows from before they were stored (P8-139). */
   readonly journeyFactsBackfill: ScheduledJob;
+  /** DEC-226: the one store of the open questions, which the history's run deletion shares (P8-139). */
+  readonly questionCounts: OpenQuestionCounts;
 }
 
 function keepAliveScheduler(logger: Logger): IntervalScheduler {
@@ -256,9 +258,10 @@ export function composeRuns(parts: RunParts): RunComposition {
   const broadcaster = new SseBroadcaster(masker);
   const manifests = new FileRunManifestStore({ writer, masker });
   const projects = new PgProjectRepository(pool);
-  const files = { pool, writer, masker, runs };
+  const files = { pool, writer, masker, runs, logger };
   const stores = { runs, manifests, log, broadcaster, projects };
-  const lifecycle = composeLifecycle(parts, stores, composeRunEndFacts(files));
+  const counts = composeQuestionCounts(files);
+  const lifecycle = composeLifecycle(parts, stores, composeRunEndFacts(files, counts));
   const scan = composeScan({ ...parts, writer, manifests, projects });
   const answers = new FileAnswersFile({ writer, masker });
   const stage = { ...parts, writer, manifests, projects, runs, ids, answers };
@@ -282,13 +285,14 @@ export function composeRuns(parts: RunParts): RunComposition {
     queue,
     services: runServices({
       ...{ parts, writer, manifests, runs, log, broadcaster, projects, submitRun, queue, answers },
-      counts: composeQuestionCounts(files),
+      counts,
       observability: composeObservability({ runs, manifests, writer, masker, clock, dataDir }),
       scans: composeScanResults({ dataDir, writer, manifests, logger, packs: parts.packs }),
     }),
     submitRun,
     discardPartialSnapshots: () => discardPartialSnapshots(scan.fetcher, logger),
     recover: () => queue.recover(),
-    journeyFactsBackfill: composeJourneyBackfill({ ...files, history: log, logger }),
+    journeyFactsBackfill: composeJourneyBackfill({ ...files, history: log }),
+    questionCounts: counts,
   };
 }
