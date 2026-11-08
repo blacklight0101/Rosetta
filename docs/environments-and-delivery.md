@@ -406,7 +406,27 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
 Hosted: set the previous image tag. Migrations are additive within release 1, so the previous image runs on the newer
 schema; a migration that is not additive is announced in the release notes with its restore point (the backup of
 step 4). A fix goes through `develop`, staging and a release pull request like any change; in an emergency the owner
-runs Release on `main` with `skip-staging-check` (DEC-175). Local: `docker compose up -d` with the previous tag. The sample report is restored by reverting the pull
+runs Release on `main` with `skip-staging-check` (DEC-175). Local: `docker compose up -d` with the previous tag.
+
+Journey facts after a rollback (P8-139, DEC-226, [data-model.md section 4](data-model.md)): an image from before
+migration `0024` stores none of the journey facts on `runs` and `projects`. A row it inserts starts unfilled and is
+filled from the files by the next backfill pass of the newer image. But a run that ends, an answer saved or a brief
+saved under the previous image changes a row that may already be filled, and the pass never reads a filled row again.
+So, while the previous image still serves and before the newer image is deployed again, the owner runs, with the
+migrator connection:
+
+```sql
+BEGIN;
+UPDATE runs SET end_code = NULL, supported_claims = NULL, open_questions = NULL, facts_backfilled = false;
+UPDATE projects SET brief_saved_at = NULL, facts_backfilled = false;
+COMMIT;
+```
+
+The previous image never reads these columns, so the statement changes nothing it shows. The start-up pass of the
+newer image then fills every row again from the files; until a row is filled the strip reads it as it read a missing
+file. `deepen_parent_id` and `plan_source_key` are kept: they never change once stored, and a null one is filled by
+the pass. The same statement heals a run that ended on the previous image in the seconds both images serve during a
+deploy, after the newer image's start-up pass. The sample report is restored by reverting the pull
 request that changed `site/`.
 
 ## 12. Backup and restore
