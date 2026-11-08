@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 138     | 5         | 121        | 12        | 0                  | 103     | 29      | 6      | 54         | 24        |
-| **Total**                    | **628** | **123**   | **457**    | **48**    | **0**              | **329** | **273** | **26** | **316**    | **24**    |
+| P8 Evaluation fixes, round 2 | 139     | 5         | 121        | 13        | 0                  | 103     | 29      | 7      | 55         | 24        |
+| **Total**                    | **629** | **123**   | **457**    | **49**    | **0**              | **329** | **273** | **27** | **317**    | **24**    |
 
 ## Conventions for every card
 
@@ -9480,7 +9480,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-99
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Blocked (waits for P8-139, DEC-226)
 - **Evidence** (2026-11-04, P8-99 verifiers and DEC-222): "Where it is" reads the last run only, so the artboard's "Questions waiting" and "Deepen running" cannot show, "Understand running" also stands for a Deepen, and "Package ready" also stands for a package that is out of date. The limit is also worded too narrowly at `docs/spec/requirements.md:227` and in DEC-222: any newer understand run that did not complete changes the answer, not only a Deepen (P8-99 verifier round 3, MINOR).
 - **Reads**: `web/src/lib/journey/project-position.ts`, `src/application/use-cases/` (the overview and the journey read), `web/src/pages/ProjectRunsTable.tsx`, RF-010, RF-615, RF-1108, DEC-222.
 - **Do**: add the Givens first; red tests first.
@@ -9510,3 +9510,21 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the small fixes and their tests.
 - **Done when**: each finding is fixed or dropped with its reason; CI green.
 - **Refs**: RF-1002, RF-428, RF-230; follow-ups of the wave 3 cards; GitHub issue #1279
+
+### P8-139 - Follow-up: journey facts stored in PostgreSQL (DEC-226)
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-08, the P8-137 builder): the journey strip's position comes from facts that live only in each run's files: the Deepen parent of an understand run and the source run of a plan run (`manifest.json`), the supported claims (the card files), the open questions (`answers.md` and the OQ cards of the run family), whether and when the brief was saved (`planning-brief.json`) and the end code (`events.jsonl`, read by streaming the whole log). `GetJourney` (`src/application/use-cases/get-journey.ts`) reads them per project, so the Projects overview cannot show the strip's position for up to 100 projects with a fixed number of reads (P1-137, RF-010).
+- **Reads**: DEC-226, DEC-142, DEC-143, DEC-222, `src/domain/journey/`, `src/application/use-cases/get-journey.ts`, `run-family.ts`, the writers of those files (StartDeepen, BuildPlan, the run end, the answer save, the brief save), `db/migrations/`, `docs/data-model.md`, RF-010, RF-615, RF-1108.
+- **Do**: add the Givens first; red tests first. The next free migration is 0024.
+  - Store the facts as columns written by the code that knows them: on `runs`, the Deepen parent and the plan's source run (written when the run is queued), the end code and the supported-claim count (written when the run ends); per project, when the brief was saved and the number of open questions (written when an answer or the brief is saved).
+  - A backfill fills them from the existing files once; a run or project whose files cannot be read keeps nulls and is logged, and the journey treats a null as it treats a missing file today.
+  - `GetJourney` reads the columns and keeps one pure function that turns them into the `Journey` facts, so the P8-137 overview can reuse it and the two cannot drift; the strip's words do not change.
+  - `docs/data-model.md` (columns, grants, migration) and `docs/architecture.md` change in the same pull request.
+- **Delivers**: the migration, the writers, the backfill, the read change and their tests.
+- **Done when**: the strip shows the same position as before on every journey state, from the columns alone; a test proves the journey read no longer opens run files; CI green.
+- **Refs**: RF-010, RF-615, RF-1108, DEC-226; prerequisite of P8-137; GitHub issue #1284
