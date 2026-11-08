@@ -1097,6 +1097,22 @@ the `Clock` port.
 A new Analyse replaces the row. The journey's spend is the sum of the cost and tokens of its steps, read from `runs`, and
 what is left is the line every step runs under (RF-435).
 
+**`project_consent`** (RF-143, RF-142, DEC-209, ADR-006; migration `0025`, P8-77)
+
+| Column         | Type               | Rules                                                                                                                                                         |
+| -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | `uuid`             | primary key; from the `IdGenerator`, so a run can name the consent it ran under                                                                               |
+| `project_id`   | `uuid`             | with `user_id` a foreign key to `projects (id, user_id)` `ON DELETE CASCADE`; indexed with `given_at` (`project_consent_project_given_idx`)                   |
+| `user_id`      | `uuid`             | the project's owner; every read and write is scoped by it (RF-1105)                                                                                           |
+| `providers`    | `text[]`           | the non-local providers the consent names, at least one, each `anthropic`, `openai`, `openai-compatible` or `ollama` (`project_consent_providers_known`)      |
+| `kinds`        | `text[]`           | at least one of `cloud` (the provider notice, RF-143) and `private-code` (the confirmation for uploaded code, RF-132, RF-157) (`project_consent_kinds_known`) |
+| `given_at`     | `timestamptz`      | when the user gave it                                                                                                                                         |
+| `withdrawn_at` | `timestamptz` null | when the user withdrew it; null until then, never before `given_at` (`project_consent_withdrawn_after_given`)                                                 |
+
+One row per consent given; a withdrawal sets `withdrawn_at` on the project's rows that have none and never deletes a
+row, so the consents of a project, newest first, still show what a run could have run under (RF-142). How long a
+consent holds and when it is asked again (DEC-209) is decided by the use cases, not by the table.
+
 **`cost_ledger`** (RF-428, RF-1106)
 
 | Column                                                 | Type          | Rules                                                                                                                                                                                                                |
@@ -1239,7 +1255,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`, `0014_project_source_kind`, `0015_project_upload_source`, `0016_project_workbook_source`, `0017_project_workbook_source_columns`, `0018_runs_unread_areas`, `0019_runs_awaiting_approval`, `0020_journeys`, `0021_runs_running_time`, `0022_runs_end_reason`, `0023_runs_end_reason_needs_state`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`, `0014_project_source_kind`, `0015_project_upload_source`, `0016_project_workbook_source`, `0017_project_workbook_source_columns`, `0018_runs_unread_areas`, `0019_runs_awaiting_approval`, `0020_journeys`, `0021_runs_running_time`, `0022_runs_end_reason`, `0023_runs_end_reason_needs_state`, `0025_project_consent`), `0100..` later
 releases.
 
 **File schema versions**:

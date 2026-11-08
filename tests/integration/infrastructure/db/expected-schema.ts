@@ -88,6 +88,15 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'approved_cost_micros int8',
     'created_at timestamptz',
   ],
+  project_consent: [
+    'id uuid',
+    'project_id uuid',
+    'user_id uuid',
+    'providers _text',
+    'kinds _text',
+    'given_at timestamptz',
+    'withdrawn_at timestamptz null',
+  ],
   cost_ledger: [
     'id int8',
     'at timestamptz',
@@ -149,6 +158,8 @@ export const expectedIndexes: readonly string[] = [
   'cost_reservations (user_id)',
   'cost_reservations UNIQUE (user_id, run_id, call_id) NULLS NOT DISTINCT',
   'journeys UNIQUE (project_id)',
+  'project_consent (project_id, given_at)',
+  'project_consent UNIQUE (id)',
   'projects (user_id)',
   'projects UNIQUE (id)',
   'projects UNIQUE (id, user_id)',
@@ -174,6 +185,7 @@ export const readWriteTables: readonly string[] = [
   'projects',
   'runs',
   'journeys',
+  'project_consent',
   'cost_reservations',
   'server_settings',
 ];
