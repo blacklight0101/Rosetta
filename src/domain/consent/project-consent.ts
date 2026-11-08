@@ -6,9 +6,9 @@ import type { EpochMs } from '../accounts/user.js';
 // withdrawn, so a run can still name the consent it ran under (RF-142).
 
 /** The providers a consent can name: every provider that may be non-local (DEC-118). */
-export type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
+type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
 
-export type ConsentKind = 'cloud' | 'private-code';
+type ConsentKind = 'cloud' | 'private-code';
 
 export interface ProjectConsent {
   readonly id: string;
