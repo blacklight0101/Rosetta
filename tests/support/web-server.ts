@@ -60,6 +60,7 @@ import {
   streamRoute,
   type HistoryDoubles,
   type KeyParts,
+  type ServerKeyDouble,
 } from './web-server-parts.js';
 import { modelServices } from './model-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
@@ -114,6 +115,8 @@ export interface TestServer extends HistoryDoubles {
   readonly secretBox: AesGcmSecretBox;
   /** RF-1104: the DNS stand-in of the base-URL check; a test gives each host its addresses. */
   readonly resolver: FakeHostResolver;
+  /** RF-436, DEC-225: the providers the server holds a key for (`held`); none by default. */
+  readonly serverKeys: ServerKeyDouble;
   /** RF-407: the fake adapters the provider test was given, and the ledger it wrote to. */
   readonly providers: FakeAdapters;
   readonly providerLedger: SpyLedger;
