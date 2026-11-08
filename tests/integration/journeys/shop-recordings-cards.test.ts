@@ -45,6 +45,24 @@ describe('the shop recordings: the cards they cite exist', () => {
   });
 });
 
+describe('the shop recordings: the verifier rejects the claims it means to', () => {
+  it('RF-210 the verifier recording rejects exactly the three claims it names, with their cards', () => {
+    // The verifier's rejections sit at call positions, so a new reader order moves them silently.
+    const rejected = Object.entries(current().specification)
+      .filter(([path]) => path.startsWith('cards/'))
+      .flatMap(([, text]) => [...text.matchAll(/^### (\S+) \(Rejected\)/gmu)])
+      .map((match) => match[1] ?? '')
+      .toSorted();
+
+    expect(rejected).toEqual(['FLOW-003.c2', 'SCRN-001.c7', 'SCRN-004.c1']);
+    expect(titlesOf(rejected.map((id) => id.split('.')[0] ?? ''))).toEqual([
+      'Browse the catalogue',
+      'Checkout',
+      'Catalogue list',
+    ]);
+  });
+});
+
 describe('the shop recordings: the plan and the PRD name their cards', () => {
   it('RF-210 the plan and the PRD cite the feature and the flow of each requirement', async () => {
     const plan = await recordedAnswer(PLANNER, 0, z.object({ requirements: z.array(named) }));
