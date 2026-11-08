@@ -211,7 +211,9 @@ Playwright browsers are cached since P1-183:
   one file can create an error in another that the cache then reports as clean. Lint always runs in full.
 
 **Documentation-only pull requests** (added 2026-10-13). A first job, `changes`, compares the pull request with its
-base using plain git (`git diff --name-only --no-renames base...head`, full history, no third-party action;
+base using plain git (`git diff --name-only --no-renames HEAD^1 HEAD` on GitHub's merge commit of the pull request,
+whose first parent is the base, so the job fetches that commit and its parents only, DEC-227; a `HEAD` that is not a
+merge commit counts as code; no third-party action;
 `--no-renames` lists both paths of a moved file, so moving code or a prompt into `docs/` still counts as code) and
 sets `code=false` only when every changed file is documentation: anything under `docs/`, or a `*.md` file at the
 repository root. Markdown anywhere else (`src/`, `tests/`, `prompts/`, `templates/`, `scripts/` and so on) counts as
@@ -226,6 +228,18 @@ documents: `tests/integration/docs/`, the workflow tests, `release-schema.test.t
 `workflow-docs-only.test.ts` fails when a test that reads `docs/` is missing from that list. `audit`, `gitleaks`,
 `dependency-review` and `pr-title` run as before. The `changes` job is not a required check: if it fails, the
 jobs that need it do not run and the required checks stay missing, so the pull request cannot merge.
+
+**Git history per job** (DEC-227, P8-140). A checkout fetches only the history its job reads: one commit by
+default; `changes`, the `deploy` job of `release.yml` and the `checks` job of `release-checks.yml` fetch a merge
+commit and its parents (`fetch-depth: 2`; the staging check reads `HEAD^2` and its tree); `gitleaks` fetches the
+pull request's commits plus the merge commit and the parent of the first one (the range gitleaks-action scans), or
+one commit for a push of one commit (every squash merge to `develop`), and the whole history for a push of several (a
+release merge to `main`: its range `<first pushed>^..<head>` walks `main`'s first parents back to where `develop` was
+cut); the release `image` job fetches one commit,
+and the whole history only for a `vX.Y.Z` tag, whose check that the tag is on `main` (`scripts/release-tags.sh`,
+DEC-29) needs `origin/main`. A checkout that may fetch the whole history (`fetch-depth: 0`, or an expression that
+can give 0) says why on the same line; `workflow-fetch-depth.test.ts` fails otherwise. Checkout times are in
+`docs/runbooks/ci-throughput.md` section 6.
 
 **Edits of a pull request** (P1-146). `ci.yml` runs on `opened`, `synchronize` and `reopened` only. An edit of the
 title or the body starts `pr-title.yml` alone, which runs `pr-title` and nothing else. The alternative, a job skipped
