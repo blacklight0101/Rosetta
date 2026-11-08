@@ -213,6 +213,27 @@ describe('the checks workflow of the release merge in the delivery documents (DE
   });
 });
 
+describe('release/ready in the delivery documents (DEC-207, P8-64)', () => {
+  it('DEC-207 docs/environments-and-delivery.md says the checks workflow confirms ZAP and staging and records release/ready', async () => {
+    const text = await read('docs/environments-and-delivery.md');
+
+    for (const fact of ['`release/ready`', '`zap-baseline`', 'ROSETTA_STAGING_ENABLED']) {
+      expect(section(text, '## 6. Continuous integration')).toContain(fact);
+    }
+    expect(section(text, '## 8.')).toContain('`release/ready`');
+  });
+
+  it('DEC-207 the deploy runbook says what release/ready on the release merge means and lists its tests', async () => {
+    const text = await read('docs/runbooks/deploy.md');
+    const release = section(text, '## Release to production');
+
+    expect(release).toContain('`release/ready`');
+    expect(release).toMatch(/`failure`[^\n]*names/u);
+    expect(text).toContain('`tests/integration/tooling/release-checks-ready.test.ts`');
+    expect(text).toContain('`tests/integration/tooling/release-ready-status.test.ts`');
+  });
+});
+
 describe('the facts of ADR-028 the provisioning rests on (DEC-207, P8-138)', () => {
   it('DEC-207 ADR-028 names the one cron schedule, the Madrid hour guard, the token expiry and what the token reaches', async () => {
     // P8-138: the facts the provisioning step and the rotation rest on.

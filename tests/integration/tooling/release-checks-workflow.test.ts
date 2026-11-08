@@ -2,7 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { useTempRoot } from '../../support/temp-root.js';
-import { workflowText } from '../../support/workflow-files.js';
 import {
   at,
   keysOf,
@@ -13,9 +12,11 @@ import {
   workflowDocument,
 } from '../../support/workflow-yaml.js';
 
-// RF-1304, DEC-207, ADR-025, ADR-028 (Proposed), P8-63: .github/workflows/release-checks.yml. Every
-// push to main (the owner's release merge) builds, scans and pushes the image of that commit before
-// the 06:00 release, with the steps of the image job of release.yml and the workflow token only.
+// RF-1304, DEC-207, ADR-025, ADR-028 (Proposed), P8-63, P8-64: .github/workflows/release-checks.yml.
+// Every push to main (the owner's release merge) builds, scans and pushes the image of that commit
+// before the 06:00 release, with the steps of the image job of release.yml and the workflow token
+// only. The ZAP and staging confirmation and the release/ready status are tested in
+// release-checks-ready.test.ts.
 
 const checks = (): Promise<unknown> => workflowDocument('release-checks.yml');
 const release = (): Promise<unknown> => workflowDocument('release.yml');
@@ -27,6 +28,20 @@ async function step(needle: string): Promise<unknown> {
   const document = await checks();
   const steps = at(document, 'jobs', 'checks', 'steps');
   return Array.isArray(steps) ? steps[stepIndex(document, 'checks', needle)] : undefined;
+}
+
+/**
+ * Every expression of a parsed workflow: the inside of each `${{ }}` in any value, and each `if:`
+ * value written without `${{ }}`. Comments are not part of the parsed document.
+ */
+function expressions(node: unknown, key = ''): string[] {
+  if (Array.isArray(node)) return node.flatMap((each: unknown) => expressions(each));
+  if (typeof node === 'object' && node !== null) {
+    return keysOf(node).flatMap((name) => expressions(at(node, name), name));
+  }
+  if (typeof node !== 'string') return [];
+  const wrapped = [...node.matchAll(/\$\{\{\s*(.*?)\s*\}\}/gu)].map((match) => match[1] ?? '');
+  return key === 'if' && wrapped.length === 0 ? [node.trim()] : wrapped;
 }
 
 describe('release-checks.yml trigger', () => {
@@ -49,8 +64,17 @@ describe('release-checks.yml permissions and token', () => {
   it('RF-1304 the default token is read-only; the one job holds contents read and packages, statuses and issues write', async () => {
     const document = await checks();
 
+    expect(keysOf(document)).toEqual(['name', 'on', 'permissions', 'concurrency', 'jobs']);
     expect(at(document, 'permissions')).toEqual({ contents: 'read' });
     expect(keysOf(at(document, 'jobs'))).toEqual(['checks']);
+    // No job-level if:, continue-on-error, env, defaults or strategy: the job's result is the real one.
+    expect(keysOf(at(document, 'jobs', 'checks'))).toEqual([
+      'name',
+      'runs-on',
+      'timeout-minutes',
+      'permissions',
+      'steps',
+    ]);
     expect(at(document, 'jobs', 'checks', 'permissions')).toEqual({
       contents: 'read',
       packages: 'write',
@@ -58,19 +82,40 @@ describe('release-checks.yml permissions and token', () => {
       issues: 'write',
     });
   });
+});
 
-  it('RNF-003 reads no secret, no variable and no token but the workflow token', async () => {
-    const code = (await workflowText('release-checks.yml'))
-      .split('\n')
-      .filter((line) => !line.trimStart().startsWith('#'))
-      .join('\n');
-    const expressions = [...code.matchAll(/\$\{\{\s*(.*?)\s*\}\}/gu)].map((match) => match[1]);
+describe('release-checks.yml secrets, variables and tokens', () => {
+  it('RNF-003 reads no secret, no token but the workflow token and no variable but ROSETTA_STAGING_ENABLED, in any expression', async () => {
+    const document = await checks();
+    const all = expressions(document);
 
-    expect(code).not.toContain('secrets.');
-    expect(code).not.toContain('vars.');
-    expect(code).not.toContain('id-token');
-    expect(expressions.filter((expression) => /token/iu.test(expression ?? ''))).toEqual([
-      'github.token',
+    expect(all.length).toBeGreaterThan(0);
+    expect(all.filter((expression) => /\bsecrets\b/u.test(expression))).toEqual([]);
+    expect(all.filter((expression) => /\bvars\b/u.test(expression))).toEqual([
+      'vars.ROSETTA_STAGING_ENABLED',
+    ]);
+    expect(new Set(all.filter((expression) => /token/iu.test(expression)))).toEqual(
+      new Set(['github.token']),
+    );
+    expect(JSON.stringify(document)).not.toContain('id-token');
+  });
+
+  it('RNF-003 the expression scan sees secrets and variables however they are written', () => {
+    const written = {
+      jobs: {
+        a: {
+          if: "vars['X'] == 'true'",
+          env: { A: "${{ secrets['X'] }}", B: '${{ toJSON(secrets) }}', C: '${{ toJSON(vars) }}' },
+        },
+      },
+    };
+    const found = expressions(written).filter((each) => /\b(?:secrets|vars)\b/u.test(each));
+
+    expect(found).toEqual([
+      "vars['X'] == 'true'",
+      "secrets['X']",
+      'toJSON(secrets)',
+      'toJSON(vars)',
     ]);
   });
 
@@ -94,30 +139,39 @@ describe('release-checks.yml image build and tags', () => {
     expect(missing).toEqual([]);
   });
 
-  it('RF-1300 a push to main gets the sha-<short> tag of its commit from release-tags.sh, never latest', async () => {
-    const tags = await step('bash scripts/release-tags.sh');
+  it('RF-1300 a push to main pushes only the sha-<short> tag of its commit from release-tags.sh, never latest', async () => {
+    const document = await checks();
     const output = join(root.path, 'github-output.txt');
+    const pushed = join(root.path, 'docker.log');
     await writeFile(output, '');
-    const result = await runStep(stepScript(await checks(), 'checks', 'Work out the image tags'), {
-      IMAGE: String(at(tags, 'env', 'IMAGE')),
+    const tagged = await runStep(stepScript(document, 'checks', 'Work out the image tags'), {
+      IMAGE: String(at(await step('bash scripts/release-tags.sh'), 'env', 'IMAGE')),
       REF_TYPE: 'branch',
       REF_NAME: 'main',
       GITHUB_SHA: '0123456789abcdef0123456789abcdef01234567',
       GITHUB_OUTPUT: output,
     });
+    const tags = /^tags=(.*)$/mu.exec(await readFile(output, 'utf8'))?.[1] ?? '';
+    const docker = `docker() { printf '%s\\n' "$*" >> "$DOCKER_LOG"; }`;
+    const push = await runStep(
+      stepScript(document, 'checks', 'Push the tags'),
+      { TAGS: tags, DOCKER_LOG: pushed },
+      docker,
+    );
+    const calls = (await readFile(pushed, 'utf8')).split('\n').filter((line) => line !== '');
 
-    expect(at(tags, 'env')).toEqual({
-      IMAGE: image,
-      REF_TYPE: '${{ github.ref_type }}',
-      REF_NAME: '${{ github.ref_name }}',
-    });
-    expect(result.code).toBe(0);
-    expect((await readFile(output, 'utf8')).split('\n')).toEqual([
-      'sha-tag=sha-0123456',
-      `tags=${image}:sha-0123456`,
-      '',
+    expect([tagged.code, push.code]).toEqual([0, 0]);
+    expect(calls.filter((line) => line.startsWith('push '))).toEqual([`push ${image}:sha-0123456`]);
+    expect(calls.filter((line) => line.startsWith('tag '))).toEqual([
+      `tag rosetta:release ${image}:sha-0123456`,
     ]);
-    expect(stepTexts(await checks(), 'checks').join('\n')).not.toContain(':latest');
+    // The pushed tags come only from the script's output, and no other step tags or pushes.
+    expect(at(await step('docker push'), 'env')).toEqual({
+      TAGS: '${{ steps.tags.outputs.tags }}',
+    });
+    expect(
+      stepTexts(document, 'checks').filter((text) => /docker (?:push|tag)\b/u.test(text)),
+    ).toHaveLength(1);
   });
 });
 
@@ -146,15 +200,17 @@ describe('release-checks.yml scan gate and GHCR login', () => {
     expect(at(gate, 'if')).toBeUndefined();
   });
 
-  it('RNF-003 logs in to GHCR with the workflow token on standard input and always logs out', async () => {
+  it('RNF-003 logs in to GHCR with the workflow token on standard input and always logs out after the push', async () => {
     const document = await checks();
     const login = await step('docker login');
-    const steps = at(document, 'jobs', 'checks', 'steps');
-    const last: unknown = Array.isArray(steps) ? steps.at(-1) : undefined;
+    const logout = await step('docker logout');
 
     expect(at(login, 'run')).toContain('--password-stdin');
     expect(at(login, 'env', 'TOKEN')).toBe('${{ github.token }}');
-    expect(at(last, 'if')).toBe('always()');
-    expect(at(last, 'run')).toBe('docker logout ghcr.io');
+    expect(at(logout, 'if')).toBe('always()');
+    expect(at(logout, 'run')).toBe('docker logout ghcr.io');
+    expect(stepIndex(document, 'checks', 'docker logout')).toBeGreaterThan(
+      stepIndex(document, 'checks', 'docker push'),
+    );
   });
 });
