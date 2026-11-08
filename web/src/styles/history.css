@@ -92,15 +92,15 @@ dialog.rst-p140-dialog::backdrop {
 }
 
 /*
- * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide) the
- * table fits its box with every column of the History artboard (with the wider fonts of Linux too). The cells sit closer together, and a
- * heading, the run name (at its hyphens, as one block that is all link), the kind, the start, the
- * running time, the share under a Partly read badge, a state badge ("Stopped by a restart") and the Resume
- * button wrap instead of widening the table, and the Resume button stands above the row menu, so the
- * widest row (Well covered, stopped by a restart, with Resume) fits; the commit, the coverage value and
- * the figures stay on one line. They wrap only
- * between words: the content column's `anywhere` would break inside them. From 1280 px the table is as
- * before; on a phone it stacks (pages.css).
+ * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide)
+ * the table fits its box with every column of the History artboard (with the wider fonts of Linux
+ * too). The cells sit closer together, and a heading, the run name (at its hyphens, as one block
+ * that is all link), the kind, the start, the running time, the share under a Partly read badge, a
+ * state badge ("Stopped by a restart") and the Resume button wrap instead of widening the table,
+ * and the Resume button stands above the row menu, so the widest row (Well covered, stopped by a
+ * restart, with Resume) fits; the commit, the coverage value and the figures stay on one line. They
+ * wrap only between words: the content column's `anywhere` would break inside them. From 1280 px
+ * the table is as before; on a phone it stacks (pages.css).
  */
 @media (width > 40rem) and (width < 80rem) {
   .rst-p140-runs th,
@@ -140,7 +140,11 @@ dialog.rst-p140-dialog::backdrop {
   }
 }
 
-/* P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History artboard. The flex is on a box inside the cell, never on the td, which would leave the table layout and lose the row separator. */
+/*
+ * P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History
+ * artboard. The flex is on a box inside the cell, never on the td, which would leave the table
+ * layout and lose the row separator.
+ */
 
 .rst-p140-row-actions {
   display: flex;
@@ -215,13 +219,20 @@ dialog.rst-p140-dialog::backdrop {
   color: var(--rst-ink-soft);
 }
 
-/* P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is its centre); below 1280 px it wraps as one inline block, whose whole box is the link (P8-136) */
+/*
+ * P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is
+ * its centre); below 1280 px it wraps as one inline block, whose whole box is the link (P8-136)
+ */
 
 .rst-p140-run-name {
   white-space: nowrap;
 }
 
-/* P8-89: the Coverage value and its tooltip line, the overlay Tooltip of design-system.md section 5.1: out of the flow, so the table does not move, and fixed like the row menu panel, so its scrolling box does not clip it. useOverlayTip sets left and top. */
+/*
+ * P8-89: the Coverage value and its tooltip line, the overlay Tooltip of design-system.md section
+ * 5.1: out of the flow, so the table does not move, and fixed like the row menu panel, so its
+ * scrolling box does not clip it. useOverlayTip sets left and top.
+ */
 
 .rst-p889-coverage__value {
   border-block-end: 1px dotted var(--rst-ink-soft);
@@ -246,7 +257,8 @@ dialog.rst-p140-dialog::backdrop {
   white-space: normal;
 }
 
-/* The pointer crosses the gap between the value and the tooltip without leaving either (WCAG 1.4.13) */
+/* The pointer crosses the gap between the value and the tooltip without leaving either
+   (WCAG 1.4.13) */
 
 .rst-p889-coverage__line::before {
   position: absolute;
