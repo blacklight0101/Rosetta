@@ -1,5 +1,5 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/preact';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HistoryPage } from '../../../web/src/pages/HistoryPage.js';
 import { json, renderPage } from './fake-api.js';
 import { doneKey, history } from './history-fixtures.js';
@@ -11,16 +11,20 @@ import { measures, understanding } from './understanding-fixtures.js';
 // pointer crosses from the value onto it, even when the move leaves both boxes for a moment.
 
 afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   window.history.pushState({}, '', '/');
 });
 
 /** Longer than the close delay of the overlay tooltip, shorter than a test's patience. */
 const AFTER_DELAY_MS = 600;
 
-const pause = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
+/** Fake timers start once the page is up, so the waits of the page itself stay real. */
+async function pause(ms: number): Promise<void> {
+  await act(() => {
+    vi.advanceTimersByTime(ms);
   });
+}
 
 async function coverageValue(): Promise<{ value: HTMLElement; wrap: HTMLElement }> {
   const settled = { ...history, runs: history.runs.slice(1) };
@@ -55,6 +59,7 @@ describe('the Coverage tooltip of the history closed with Escape', () => {
   it('RF-231 given a Coverage tooltip that only the pointer rests on, Escape pressed anywhere closes it, and it opens again on the next hover', async () => {
     const { value, wrap } = await coverageValue();
     await hoverOpen(wrap);
+    vi.useFakeTimers();
 
     await act(() => {
       fireEvent.keyDown(document.body, { key: 'Escape' });
@@ -64,6 +69,7 @@ describe('the Coverage tooltip of the history closed with Escape', () => {
     expect(isOpen(wrap)).toBe(false);
     fireEvent.mouseLeave(wrap);
     await pause(AFTER_DELAY_MS);
+    vi.useRealTimers();
     await hoverOpen(wrap);
   });
 
@@ -73,6 +79,7 @@ describe('the Coverage tooltip of the history closed with Escape', () => {
       value.focus();
     });
     await hoverOpen(wrap);
+    vi.useFakeTimers();
 
     await act(() => {
       fireEvent.keyDown(document.body, { key: 'Escape' });
@@ -112,6 +119,7 @@ describe('the Coverage tooltip of the history under a moving pointer', () => {
   it('RF-231 stays open while the pointer crosses from the value onto the tooltip through a gap', async () => {
     const { wrap } = await coverageValue();
     await hoverOpen(wrap);
+    vi.useFakeTimers();
 
     fireEvent.mouseLeave(wrap);
     await pause(50);
@@ -125,11 +133,55 @@ describe('the Coverage tooltip of the history under a moving pointer', () => {
   it('RF-231 closes when the pointer leaves for good', async () => {
     const { wrap } = await coverageValue();
     await hoverOpen(wrap);
+    vi.useFakeTimers();
 
     fireEvent.mouseLeave(wrap);
+    await pause(AFTER_DELAY_MS);
 
-    await waitFor(() => {
-      expect(isOpen(wrap)).toBe(false);
-    });
+    expect(isOpen(wrap)).toBe(false);
+  });
+});
+
+/** The keydown handlers the document still holds, from the adds and removes seen since the spies began. */
+function trackKeydown(): () => number {
+  const held = new Set<unknown>();
+  const add = document.addEventListener.bind(document);
+  const remove = document.removeEventListener.bind(document);
+  vi.spyOn(document, 'addEventListener').mockImplementation((type, handler, options) => {
+    if (type === 'keydown') held.add(handler);
+    add(type, handler, options);
+  });
+  vi.spyOn(document, 'removeEventListener').mockImplementation((type, handler, options) => {
+    if (type === 'keydown') held.delete(handler);
+    remove(type, handler, options);
+  });
+  return () => held.size;
+}
+
+describe('the Coverage tooltip of the history and its keydown listener', () => {
+  it('RF-231 holds a document keydown listener only while the tooltip is open, and none once it closed', async () => {
+    const { wrap } = await coverageValue();
+    const held = trackKeydown();
+    expect(held()).toBe(0);
+
+    await hoverOpen(wrap);
+    expect(held()).toBe(1);
+    vi.useFakeTimers();
+    fireEvent.mouseLeave(wrap);
+    await pause(AFTER_DELAY_MS);
+
+    expect(isOpen(wrap)).toBe(false);
+    expect(held()).toBe(0);
+  });
+
+  it('RF-231 leaves no document keydown listener behind when the page unmounts with the tooltip open', async () => {
+    const { wrap } = await coverageValue();
+    const held = trackKeydown();
+    await hoverOpen(wrap);
+    expect(held()).toBe(1);
+
+    cleanup();
+
+    expect(held()).toBe(0);
   });
 });
