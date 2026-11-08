@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 142     | 5         | 124        | 13        | 0                  | 104     | 31      | 7      | 55         | 24        |
-| **Total**                    | **632** | **123**   | **460**    | **49**    | **0**              | **330** | **275** | **27** | **317**    | **24**    |
+| P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
+| **Total**                    | **633** | **123**   | **461**    | **49**    | **0**              | **330** | **276** | **27** | **318**    | **24**    |
 
 ## Conventions for every card
 
@@ -9617,3 +9617,21 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
   - the required check names are unchanged;
   - CI is green.
 - **Refs**: DEC-227, RNF-001, RNF-005, ADR-025; follows P8-54; owner request of 2026-11-08; GitHub issue #1301
+
+### P8-143 - Follow-up: minor findings of Phase 8 round 2
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-08, the verifiers of the cards merged that day): MINOR findings that blocked no merge, read from the verdicts and not re-checked since. A line number may have moved. Owner questions are not here; they are in `handoff.md`.
+  - Tests: the P8-126 `saveBrief` test timeout of 15 s should be 30 s; the P8-74 "Apply does not save" test (`tests/unit/web/project-settings-role-warning.test.tsx`, about 111-141) asserts no PUT at once and misses a save a tick later; the P8-75 test (`tests/unit/web/start-run-role-warning.test.tsx`, about 128-172) re-reads the same project, so it does not prove a setting another session saved is kept (give the re-read a changed setting and a newer `settingsVersion`, assert the PUT keeps it and sends the new If-Match); the P8-137 "Understand done" assertion in `tests/e2e/visual/sweep-runs.spec.ts` became a looser five-way regex; `question-count-refresh.test.ts:52` (P8-139) has no RF id in its name; the order of `tests/e2e/shards.json` (P8-127).
+  - Code: the P8-60 reader list is not reset; the P8-77 memory consent adapter accepts a duplicate id and its arrays allow duplicates; `web/src/pages/use-fold.ts:21-26` (P8-128) closes a fold the user opened in the same task as the page; the P8-134 rename dialog has no live-region or status announcement on success; `pg-run-index.ts` `LIST_OF_PROJECTS` (P8-137) reads every run of up to 100 projects on each 5 s poll (bound it only if cheap and safe); the P8-139 start-up backfill can take an older `end_code` over a newer null end (`src/application/journey/journey-facts-backfill.ts`, about 59-66: guard the fill on the `ended_at` the pass read).
+  - Scripts: `scripts/release-checks-sweep.sh` (P8-141) reads only the first page of commit statuses (`per_page=100`), and its `fail` aborts the walk under `set -e` when the owner comment fails after the status is recorded.
+  - Words: `docs/spec/requirements.md`: the RF-1304 notify Given still says a `zap-baseline` that "did not finish within the wait" is named (the sweep names it now); the RF-615 backfill Given says it fills only rows from before the facts were stored, at start-up (it fills every row once, at start-up or in the daily pass); the P8-98 card should name RF-132 and the P8-124 refs and trace row should read RF-210, not RF-231; `docs/environments-and-delivery.md` section 11 does not say when to run the rollback statement on the deploy that ships migration 0024; the P8-55 busy-runner row of `docs/runbooks/ci-throughput.md` (median 38.3, n=10) could not be reproduced (a verifier got median 37.2, n=11): reconcile it or state the exclusion; the long comment line in `web/src/styles/history.css` (about 94-104, P8-136).
+- **Reads**: the files named in the evidence; the verdicts on the pull requests of those cards.
+- **Do**: red test where one applies. Check each finding against the code first, and drop one that no longer holds, saying so in the pull request.
+- **Delivers**: the small fixes and their tests.
+- **Done when**: each finding is fixed or dropped with its reason; CI green.
+- **Refs**: RF-1304, RF-615, RF-436, RF-1002; follow-ups of the cards merged on 2026-11-08; GitHub issue #1320

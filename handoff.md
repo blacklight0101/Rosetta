@@ -71,7 +71,7 @@ Owner agenda from this round:
 - **P8-63 and P8-64:** their effect on the next release (the Release checks run starts on the merge push, pushes the image with the workflow token, and gives the merge commit `release/ready` within an hour; cancel one run during the wait once to see `release/ready` = failure). The double image build holds until P8-66.
 - **Carried over:** the administrator's server figure shows only from 1600 px (default: keep); ADR-028 is still Proposed and needs your acceptance; P8-51 (merge queue); P8-46..P8-49; Q-67; staging is not enabled (`ROSETTA_STAGING_ENABLED`), so `release/ready` reads "Ready" without a staging check until you enable it.
 
-Follow-ups found by the verifiers of these cards. They block nothing and are not cards yet; the orchestrator files them (one card for the small ones, as P8-138 did) when it opens their issues:
+Follow-ups found by the verifiers of these cards. They block nothing; the small ones are filed as card P8-143 (#1320), and the list stays here for reference:
 
 - P8-126: the 15 s `saveBrief` timeout in the test should be 30 s.
 - P8-98: the card should have named RF-132.
