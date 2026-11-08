@@ -238,18 +238,29 @@ list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reope
 **Deployment workflows** (DEC-175, ADR-025). Besides `ci.yml`, `codeql.yml` (also on pushes to `main` and
 `develop`) and `pages.yml`: `staging.yml` deploys every push to `develop` to staging (job `deploy (staging)`), and
 `scheduled-release.yml` starts `release.yml` on `main` at 06:07 Europe/Madrid, with backups until 07:59 (section 8).
-`release-checks.yml` (DEC-207, P8-63, P8-64) runs on every push to `main`, the owner's release merge, and builds, scans and
-pushes the image of that commit before the release hour with the steps of the `image` job of `release.yml`; then it
-waits up to 40 minutes for the `zap-baseline` check of CI on that commit, confirms the ZAP baseline and the staging
-check with the two steps of the `deploy` job of `release.yml`, word for word (the staging check reads the repository
-variable `ROSETTA_STAGING_ENABLED`, as there), and then, in every case, sets the commit status `release/ready` on that
-commit: `success` only when every check passed, otherwise `failure` with a description naming what failed or did not
-run. Last, when `release/ready` is not `success` (or could not be recorded), whatever the cause, a cancel or timeout
-included, it comments on the open issue "Production deploys" with the owner mentioned, the commit, the cause and the
-run, with `scripts/production-deploys-comment.sh`, the script and issue lookup of the deploy notification of
-`release.yml` (P8-65); checks that pass comment nothing. Its one job holds
+`release-checks.yml` (DEC-207, P8-63, P8-64) runs for every push to `main`, the owner's release merge: GitHub starts
+it when the CI run of that push completes (event `workflow_run` of `CI` on `main`, pushes from this repository
+only; DEC-227, P8-141), so no runner waits for the `zap-baseline` check. It checks out that commit and builds, scans
+and pushes its image before the release hour with the steps of the `image` job of `release.yml`; then it confirms
+the ZAP baseline and the staging check with the two steps of the `deploy` job of `release.yml`, word for word (the
+staging check reads the repository variable `ROSETTA_STAGING_ENABLED`, as there), and then, in every case, sets the
+commit status `release/ready` on that commit: `success` only when every check passed, otherwise `failure` with a
+description naming what failed or did not run. Last, when `release/ready` is not `success` (or could not be
+recorded), whatever the cause, a cancel or timeout included, it comments on the open issue "Production deploys" with
+the owner mentioned, the commit, the cause and the run, with `scripts/production-deploys-comment.sh`, the script and
+issue lookup of the deploy notification of `release.yml` (P8-65); checks that pass comment nothing. A `check_run`
+event was rejected: GitHub does not start workflows for check runs of a suite that GitHub Actions created, which
+`zap-baseline` is. A `workflow_run` workflow runs from its file on the default branch (`develop`), so its run and
+check are listed there. Its job `checks` holds
 `contents: read`, `checks: read`, `packages: write`, `statuses: write` and `issues: write` of the workflow token and
-reads no secret and no other token. All of them follow the hardening below; `scheduled-release.yml` uses no
+reads no secret and no other token. Its job `sweep` runs every hour at minute 41 (`scripts/release-checks-sweep.sh`)
+with `contents: read`, `checks: read`, `statuses: write` and `issues: write`: a commit of `main` of the last 24 hours
+that has no `release/ready` gets `failure` and a comment, named "zap-baseline did not finish on this commit within 40
+minutes" when that check had not finished 40 minutes after the merge, or "the release checks did not run" when it
+had and nothing was recorded 2 hours after the merge; so a check that never completes still tells the owner. No
+workflow waits in a loop for another workflow's check, and every remaining poll of an outside service (the Azure
+waits for the migrate job and the new revision, the wait of `scheduled-release.yml` for its run to be listed) has a
+cap on its tries and a doubling back-off up to 30 seconds (DEC-227; `tests/integration/tooling/workflow-waits.test.ts`). All of them follow the hardening below; `scheduled-release.yml` uses no
 action and only `contents: read` and `actions: write`.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
