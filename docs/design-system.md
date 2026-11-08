@@ -206,12 +206,13 @@ component in every state and both themes; the end-to-end suite screenshots it. T
 `/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
 and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
-### 5.1 Tooltip (RF-231, RF-428, RNF-010, DEC-217, P8-118, P8-89)
+### 5.1 Tooltip (RF-231, RF-428, RNF-010, DEC-217, DEC-220, P8-118, P8-89, P8-127)
 
-The Tooltip has two variants with one behaviour: **in flow**, for a short tip that fits beside its trigger, and **overlay**,
-for a tip too long for that. The bullets below describe the in-flow variant, and the last bullet what the overlay changes.
+The Tooltip is an **overlay** with one behaviour: it opens over the page, so it moves nothing of a table (DEC-220,
+P8-89, P8-127). The bullets below describe the exact figure of a cost amount, and the last bullet the overlay's
+placement and the other tip that uses it.
 
-The in-flow Tooltip is the exact figure of a cost amount, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
+The exact figure of a cost amount is a Tooltip, built by `CostFigure` (`web/src/components/CostFigure.tsx`) with the
 classes `rst-p136-amount`, `rst-p136-amount__value` and `rst-p136-amount__exact` in `web/src/styles/cost.css`. It exists
 only when the exact figure differs from the shown amount; otherwise the amount is plain text.
 Every other page writes its amounts by the same formatter (`formatMoney`, `moneyText` in `web/src/lib/money.ts`); an amount in a table
@@ -223,10 +224,9 @@ rule without a tooltip, and an amount left of the approved amount rounds down (`
 - **Trigger:** the shown amount, a `span` with `tabindex="0"` (or `-1` when another amount of its table holds the table's tab stop), a dotted underline in `ink-soft` and the help cursor. The
   tip is a sibling `span` with `role="tooltip"` beside it, not inside it, so the trigger's name is the amount alone; the
   trigger points at the tip with `aria-describedby`, so a screen reader reads the exact figure after the amount.
-- **Opening:** pointer hover, keyboard focus (Tab) and touch (a tap focuses the trigger) show the tip. It sits in the
-  flow beside the amount, in the mono font at `fs-xs` in `ink-muted`, with `sp-2` of space before it, on one line
-  (`white-space: nowrap`); it is never positioned absolutely or in a layer, so nothing is clipped: in the scroll region
-  of a table the tip can widen its cell instead.
+- **Opening:** pointer hover, keyboard focus (Tab) and touch (a tap focuses the trigger) show the tip. It opens as the
+  overlay below (`useOverlayTip`), in the mono font at `fs-xs` in `ink-muted`, on one line (`white-space: nowrap`), so
+  no cell of a table moves and a table's scroll region does not clip it (P8-127).
 - **Keyboard:** the amounts of one table take a single tab stop, which follows the amount last focused; Tab reaches it
   and shows the tip, and the next Tab goes to the next focusable element after the amounts (in a table with links, such
   as By run, the link of the next row). Only an amount that has a tip takes the stop; a plain amount takes none. ArrowDown
@@ -238,17 +238,18 @@ rule without a tooltip, and an amount left of the approved amount rounds down (`
   alone rested there, moving it away and back opens the tip again. If the amount has focus, the tip stays closed while
   the pointer leaves and enters again; it opens again only after the focus leaves the amount and returns to it. Moving
   the focus away also ends the dismissal.
-- **Tokens:** `ink-soft`, `ink-muted`, `fs-xs`, `sp-2`, `fw-body` and the mono family; it has no colour of its own, so it
-  follows both themes.
-- **Overlay:** the line of measures of a History row's Coverage value (`RunCoverage`, `useOverlayTip` in
-  `web/src/components/overlay-tip.ts`, classes `rst-p889-coverage*` in `web/src/styles/history.css`). Trigger, opening,
-  keyboard and dismissal are the same. The tip is `position: fixed` like the Row menu panel, so opening it moves nothing
-  of the table and a table's scroll region does not clip it. It stands `sp-1` under its trigger, or above when there is
-  no room under it, keeps 8 px from the viewport's edges and follows a scroll or a resize; the pointer can move onto it.
-  As there, Escape pressed anywhere closes an open tip, also one the pointer alone rests on (the listener is on the
-  document while the tip is open, P8-129). It closes 200 ms after the pointer leaves the trigger and the tip, so a
-  pointer that crosses a corner on its way onto the tip keeps it open; a return within that time counts as not leaving.
-  It wraps, up to 28rem wide and never wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
+- **Tokens:** `ink-soft` for the trigger's underline, and the overlay's tokens below with the mono family; it has no
+  colour of its own, so it follows both themes.
+- **Overlay:** `useOverlayTip` in `web/src/components/overlay-tip.ts`, used by the exact figure of a cost amount and by the
+  line of measures of a History row's Coverage value (`RunCoverage`, classes `rst-p889-coverage*` in
+  `web/src/styles/history.css`). Trigger, opening, keyboard and dismissal are the same for both. The tip is
+  `position: fixed` like the Row menu panel, so opening it moves nothing of the table and a table's scroll region does not
+  clip it. It stands `sp-1` under its trigger, or above when there is no room under it, keeps 8 px from the viewport's
+  edges and follows a scroll or a resize; the pointer can move onto it. Escape pressed anywhere closes an open tip, also
+  one the pointer alone rests on (the listener is on the document while the tip is open, P8-117, P8-129). It closes
+  200 ms after the pointer leaves the trigger and the tip, so a pointer that crosses a corner on its way onto the tip
+  keeps it open; a return within that time counts as not leaving. The line of measures wraps, up to 28rem wide; the exact
+  figure stays on one line; neither is wider than the viewport less `sp-4` on each side. Tokens: `surface-raised`, `rule`,
   `radius-md`, `shadow-2`, `z-menu`, `ink-muted`, `fs-xs`, `fw-body`, `sp-2` and `sp-3`.
 
 ## 6. Status badges

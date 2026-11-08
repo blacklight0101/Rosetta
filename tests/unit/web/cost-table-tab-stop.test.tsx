@@ -81,14 +81,19 @@ describe('cost table tab stop when the rows change', () => {
     expect(stops(container)).toEqual(['0', '-1']);
   });
 
-  it('RF-428 given plain amounts, no document listener is added for them, and one for each amount with a tooltip', () => {
+  it('RF-428 given plain amounts, no document listener is added for them, and one only while a figure is open', async () => {
     const add = vi.spyOn(document, 'addEventListener');
     const keydowns = (): number => add.mock.calls.filter(([type]) => type === 'keydown').length;
 
     render(table([row('a', '0'), row('b', '0')]));
     expect(keydowns()).toBe(0);
 
-    render(table([row('c', '0'), row('d', '7'), row('e', '7')]));
-    expect(keydowns()).toBe(2);
+    const { container } = render(table([row('c', '0'), row('d', '7'), row('e', '7')]));
+    expect(keydowns()).toBe(0);
+
+    await act(() => {
+      focusable(container)[0]?.focus();
+    });
+    expect(keydowns()).toBe(1);
   });
 });
