@@ -98,3 +98,17 @@ export function saveProjectSettings(
     schema: savedSettingsSchema,
   });
 }
+
+// RF-010, P8-134: the new name of a project, from the row menu of the projects list.
+export function renameProject(
+  client: ApiClient,
+  projectId: string,
+  name: string,
+): Promise<ApiResult<Project>> {
+  return client.request({
+    method: 'PUT',
+    path: `/api/projects/${encodeURIComponent(projectId)}/name`,
+    body: { name },
+    schema: projectSchema,
+  });
+}
