@@ -127,8 +127,22 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await expect(runStatus(page)).toContainText(`Partly read: ${share ?? ''}% of your code`);
 });
 
+/** The History artboard's columns of a GitHub project's Runs table, the row menu last (hidden "Actions"). */
+const HISTORY_COLUMNS = [
+  'Run',
+  'Kind',
+  'Commit',
+  'State',
+  'Coverage',
+  'Started',
+  'Running time',
+  'Tokens',
+  'Cost',
+  'Actions',
+];
+
 test(
-  'RNF-010 RF-1008 the history at 1024 px does not scroll the page sideways and reaches every More actions',
+  'RNF-010 RF-1008 the history at 1024 px fits the Runs table in its box with every More actions in view',
   visual,
   async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 800 });
@@ -137,14 +151,28 @@ test(
     // The page never scrolls sideways (the hidden "Actions" header sat outside the box that scrolls).
     await expectPageInView(page);
 
-    // The table is wider than its box at 1024 px and scrolls inside it (design-system.md section 8):
-    // each row's button comes into view, inside the viewport, by scrolling that box.
-    for (const button of await runsTable(page)
+    // P8-136: the table keeps every column the artboard draws and fits its box, so the box does not
+    // scroll sideways and each row's More actions is inside the viewport as the page opens.
+    const table = runsTable(page);
+    await expect(table.getByRole('columnheader')).toHaveText(HISTORY_COLUMNS);
+    const fit = await table.evaluate((element) => {
+      const box = element.parentElement;
+      return {
+        scrollWidth: box?.scrollWidth ?? 0,
+        clientWidth: box?.clientWidth ?? 0,
+        right: box?.getBoundingClientRect().right ?? 0,
+      };
+    });
+    expect(fit.scrollWidth, 'the Runs table is no wider than its box').toBeLessThanOrEqual(
+      fit.clientWidth,
+    );
+    // Each More actions ends inside the box and inside the viewport, with the box not scrolled.
+    for (const button of await table
       .getByRole('button', { name: /^More actions for run / })
       .all()) {
-      await button.scrollIntoViewIfNeeded();
       const box = await button.boundingBox();
-      expect((box?.x ?? 2000) + (box?.width ?? 0)).toBeLessThanOrEqual(1024);
+      const right = (box?.x ?? 2000) + (box?.width ?? 0);
+      expect(right).toBeLessThanOrEqual(Math.min(fit.right, 1024));
     }
   },
 );
