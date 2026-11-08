@@ -6,9 +6,9 @@ import type { EpochMs } from '../accounts/user.js';
 // withdrawn, so a run can still name the consent it ran under (RF-142).
 
 /** The providers a consent can name: every provider that may be non-local (DEC-118). */
-type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
+export type ConsentProvider = 'anthropic' | 'openai' | 'openai-compatible' | 'ollama';
 
-type ConsentKind = 'cloud' | 'private-code';
+export type ConsentKind = 'cloud' | 'private-code';
 
 export interface ProjectConsent {
   readonly id: string;
@@ -21,4 +21,18 @@ export interface ProjectConsent {
   readonly givenAt: EpochMs;
   /** When the user withdrew it; null while it was not withdrawn. */
   readonly withdrawnAt: EpochMs | null;
+}
+
+/** RF-143, DEC-209: what a start needs a consent for: the non-local providers of its roles, its kinds. */
+export interface ConsentNeed {
+  readonly providers: readonly ConsentProvider[];
+  readonly kinds: readonly ConsentKind[];
+}
+
+/** DEC-209: how long a consent given on a project lasts. */
+export const CONSENT_LIFETIME_MS = 0;
+
+// RF-143
+export function consentHolds(consent: ProjectConsent, need: ConsentNeed, now: EpochMs): boolean {
+  return consent.id === '' && need.kinds.length === 0 && now < 0;
 }

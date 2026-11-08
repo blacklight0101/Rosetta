@@ -25,7 +25,7 @@ import { scopeOf } from '../runs/run-scope.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
 import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 import type { ApprovedAmount } from '../understand/understand-options.js';
-
+import type { StartConsents } from './consent-use-cases.js';
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
 // It finds the signed-in user's project (another user's id and an unknown id answer the same) and
 // submits a run of a stage whose use case exists. Each stage card adds its stage to
@@ -67,6 +67,7 @@ export interface StartRunDependencies {
    * under what is left of its amount. Absent only where no journey is kept (evaluation tools).
    */
   readonly journeys?: JourneyRecords;
+  readonly consents?: StartConsents; // DEC-209: the consents of the project
 }
 
 export interface StartRunRequest {
