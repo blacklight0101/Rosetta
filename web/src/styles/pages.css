@@ -341,6 +341,15 @@
   min-inline-size: 0;
 }
 
+/* RF-436, P8-73: the every-role control, one row of two selects and Apply at the top of the roles. */
+.rst-every-role {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  padding-block: var(--rst-sp-2);
+}
+
 .rst-prices {
   display: flex;
   flex-direction: column;

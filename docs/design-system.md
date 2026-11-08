@@ -285,6 +285,10 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
   checkbox when a role uses a cloud provider; Start is enabled only when the URL resolved and consent is given.
 - **Destructive confirmation**: a dialog that names the target, the space it frees, what is kept (the snapshot, the
   project totals), and "This cannot be undone"; the danger button repeats the verb ("Delete run").
+- **Set every role at once** (RF-436, DEC-225, P8-73, the `P8ProjectSettings` artboard): one row at the top of
+  the roles, "Provider for every role", "Model" (first option "The recommended one per role", then the provider's
+  models) and a primary "Apply to every role"; the provider list holds only what the user can use now, and the row is
+  absent when nothing is left. Apply changes the form only, like editing each role by hand; Save stays the one save.
 - **Disabled with a reason**: a control that cannot be used says why in its label or title ("Delete (in use)").
 - **Errors**: the `RST-xxxx` code, what happened and what to do, next to the field or in an error callout
   ([conventions](conventions.md) section 6).
