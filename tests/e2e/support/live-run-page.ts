@@ -123,7 +123,8 @@ export async function openScanRun(page: Page): Promise<void> {
   await expect(
     page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
   ).toBeVisible();
-  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
+  // A scan run is never partly read, so its head reads "Completed" (P8-138).
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 }
 
 /** Starts an understand run of the named areas and opens its live page. */
@@ -147,6 +148,15 @@ export function valueOf(scope: Locator, label: string): Locator {
  * read an area below the coverage bar (as the recorded small apps do), "Partly read: 67% of your code".
  */
 export const RUN_DONE = /Completed|Partly read: \d+% of your code/u;
+
+/**
+ * P8-138: an understand run that ended `Completed`, every area finished. RUN_DONE alone also matches a
+ * run its cap stopped early with areas unread ("Partly read" too), so the end state is read as well.
+ */
+export async function expectCompleted(page: Page, timeout: number): Promise<void> {
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout });
+  await expect(runStatus(page)).toHaveAttribute('data-end-state', 'Completed');
+}
 
 export function runStatus(page: Page): Locator {
   return page.getByTestId('run-status');

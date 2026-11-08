@@ -33,6 +33,19 @@ describe('RF-1002 the head of the run page', () => {
     },
   );
 
+  it('RF-1002 names the end state of an ended run on its status, so a test can tell Completed from stopped early', () => {
+    // P8-138: "Partly read: 67% of your code" reads the same for a Completed run and a CapReached one.
+    bar({ kind: 'ended', endState: 'CapReached' });
+
+    expect(screen.getByTestId('run-status').dataset['endState']).toBe('CapReached');
+  });
+
+  it('RF-1002 names no end state while the run is running', () => {
+    bar({ kind: 'running' });
+
+    expect(screen.getByTestId('run-status').dataset['endState']).toBeUndefined();
+  });
+
   it('RF-1002 keeps the run key in the same title group', () => {
     bar({ kind: 'running' });
 
