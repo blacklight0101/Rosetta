@@ -42,7 +42,9 @@ async function notify(cause: string, issues = '12\tProduction deploys'): Promise
     GH_TOKEN: 'token',
     GH_REPO: 'blacklight0101/Rosetta',
     OWNER: 'blacklight0101',
-    GITHUB_SHA: sha,
+    // The commit of the CI run; GITHUB_SHA is the head of develop under workflow_run.
+    COMMIT: sha,
+    GITHUB_SHA: 'f'.repeat(40),
     RUN_URL: runUrl,
   };
   return runCommentStep(script, env, issues);

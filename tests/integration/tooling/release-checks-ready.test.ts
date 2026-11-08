@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,18 +7,18 @@ import { fakeGh, type FakeGh } from '../../support/fake-gh.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { at, keysOf, runStep, stepScript, workflowDocument } from '../../support/workflow-yaml.js';
 
-// RF-1304, DEC-207, P8-64: after release-checks.yml has pushed the image of the release merge, it
-// confirms the ZAP baseline and the staging check with the steps of the deploy job of release.yml,
-// word for word (it first waits for zap-baseline of CI to finish), and in every case sets the
-// commit status release/ready: success only when every step before it succeeded and both checks
-// passed. Steps run with bash against a fake gh; nothing reaches GitHub.
+// RF-1304, DEC-207, DEC-227, P8-64, P8-141: after release-checks.yml has pushed the image of the
+// release merge, it confirms the ZAP baseline and the staging check with the steps of the deploy job
+// of release.yml, word for word (CI, zap-baseline included, has completed: its completion started
+// the job), and in every case sets the commit status release/ready: success only when every step
+// before it succeeded and both checks passed. Steps run with bash against a fake gh; nothing
+// reaches GitHub.
 
 const checks = (): Promise<unknown> => workflowDocument('release-checks.yml');
 const release = (): Promise<unknown> => workflowDocument('release.yml');
 const root = useTempRoot('rosetta-release-ready-');
 const sha = '0123456789abcdef0123456789abcdef01234567';
 const repoName = 'blacklight0101/Rosetta';
-const wait = 'Wait for the ZAP baseline of this commit';
 const zap = 'The ZAP baseline passed on this commit';
 const staging = 'This tree passed staging';
 const ready = 'Record release/ready on the commit';
@@ -42,12 +42,17 @@ async function named(
 }
 
 describe('release-checks.yml ZAP and staging confirmation: the steps of release.yml', () => {
-  it('RF-1304 confirms the ZAP baseline with the step of the deploy job of release.yml, word for word', async () => {
+  it('RF-1304 confirms the ZAP baseline with the step of the deploy job of release.yml, word for word, on its own commit', async () => {
     const [own] = await named(checks(), 'checks', zap);
     const [deploy] = await named(release(), 'deploy', zap);
+    const env = at(deploy, 'env');
+    const rest = keysOf(env).filter((key) => key !== 'COMMIT');
 
     expect(at(own, 'run')).toBe(at(deploy, 'run'));
-    expect(at(own, 'env')).toEqual(at(deploy, 'env'));
+    // Release names its own commit; the checks job sets COMMIT once, for every step.
+    expect(at(env, 'COMMIT')).toBe('${{ github.sha }}');
+    expect(at(own, 'env')).toEqual(Object.fromEntries(rest.map((key) => [key, at(env, key)])));
+    expect(String(at(own, 'run'))).toContain('$COMMIT');
     expect(keysOf(own)).toEqual(['name', 'id', 'run', 'env']);
     expect(at(own, 'id')).toBe('zap');
   });
@@ -64,20 +69,22 @@ describe('release-checks.yml ZAP and staging confirmation: the steps of release.
     expect(keysOf(own)).toEqual(['name', 'id', 'run', 'env']);
     expect(at(own, 'id')).toBe('staging');
   });
+});
 
-  it('RF-1304 pushes the image first, then waits, confirms ZAP, then staging, and records release/ready before the failure comment', async () => {
+describe('release-checks.yml ZAP and staging confirmation: the order of the steps', () => {
+  it('RF-1304 pushes the image first, then confirms ZAP, then staging, and records release/ready before the failure comment', async () => {
     const document = checks();
     const all = await steps(document, 'checks');
     const push = all.findIndex((step) => String(at(step, 'run')).includes('docker push'));
     const order = await Promise.all(
-      [wait, zap, staging, ready].map(async (name) => (await named(document, 'checks', name))[1]),
+      [zap, staging, ready].map(async (name) => (await named(document, 'checks', name))[1]),
     );
 
     expect(push).toBeGreaterThan(-1);
     expect([push, ...order]).toEqual([...[push, ...order]].sort((a, b) => a - b));
-    expect(new Set(order).size).toBe(4);
+    expect(new Set(order).size).toBe(3);
     expect(order[0]).toBeGreaterThan(push);
-    expect(order[3]).toBe(all.length - 2);
+    expect(order[2]).toBe(all.length - 2);
   });
 
   it('RF-1304 no step continues on error, and only the GHCR logout, release/ready and the failure comment run after a failure', async () => {
@@ -109,7 +116,7 @@ describe('release-checks.yml ZAP confirmation: behaviour', () => {
     const script = stepScript(await checks(), 'checks', zap);
     const result = await runStep(
       script,
-      { ...gh.env, GH_REPO: repoName, GITHUB_SHA: sha },
+      { ...gh.env, GH_REPO: repoName, COMMIT: sha, GITHUB_SHA: 'f'.repeat(40) },
       gh.prelude,
     );
 
@@ -155,68 +162,20 @@ describe('release-checks.yml staging confirmation: behaviour', () => {
   });
 });
 
-/** A fake gh that answers the lines of `answers` in turn (the last one repeats; `error` fails). */
-const waitPrelude = [
-  'gh() {',
-  `  printf '%s\\n' "$*" >> "$GH_LOG"`,
-  `  n=$(( $(wc -l < "$GH_LOG") ))`,
-  `  line="$(sed -n "\${n}p" "$GH_ANSWERS")"`,
-  `  [ -n "$line" ] || line="$(tail -n 1 "$GH_ANSWERS")"`,
-  `  [ "$line" != error ] || return 1`,
-  `  printf '%s\\n' "$line"`,
-  '}',
-  `sleep() { printf '%s\\n' "$1" >> "$SLEEP_LOG"; }`,
-].join('\n');
+describe('release-checks.yml holds no runner to wait for zap-baseline (DEC-227)', () => {
+  it('DEC-227 no step sleeps, loops or polls a check: CI has completed when the job starts', async () => {
+    const all = await steps(checks(), 'checks');
+    const scripts = all.map((step) => {
+      const run = at(step, 'run');
+      return typeof run === 'string' ? run : '';
+    });
 
-/** Runs the wait step against the answers; returns its code, output, gh calls and sleeps. */
-async function waitFor(answers: string[]): Promise<{
-  code: number;
-  output: string;
-  calls: string[];
-  slept: number;
-}> {
-  const folder = root.path.replaceAll('\\', '/');
-  const files = {
-    GH_LOG: `${folder}/gh.log`,
-    GH_ANSWERS: `${folder}/answers`,
-    SLEEP_LOG: `${folder}/sleep.log`,
-  };
-  await writeFile(files.GH_ANSWERS, `${answers.join('\n')}\n`);
-  const script = stepScript(await checks(), 'checks', wait);
-  const result = await runStep(
-    script,
-    { ...files, GH_REPO: repoName, GITHUB_SHA: sha },
-    waitPrelude,
-  );
-  const lines = async (path: string): Promise<string[]> =>
-    (await readFile(path, 'utf8').catch(() => '')).split('\n').filter((line) => line !== '');
-  const slept = (await lines(files.SLEEP_LOG)).reduce((sum, each) => sum + Number(each), 0);
-  return { ...result, calls: await lines(files.GH_LOG), slept };
-}
-
-describe('release-checks.yml waits for zap-baseline of CI', () => {
-  it('RF-1304 polls the status of zap-baseline on the commit until it is completed, through a gh error', async () => {
-    const result = await waitFor(['missing', 'queued', 'error', 'in_progress', 'completed', 'x']);
-
-    expect(result.code).toBe(0);
-    expect(result.calls).toHaveLength(5);
-    expect(new Set(result.calls)).toEqual(
-      new Set([
-        `api repos/${repoName}/commits/${sha}/check-runs?check_name=zap-baseline --jq .check_runs[0].status // "missing"`,
-      ]),
-    );
-  });
-
-  it('RF-1304 stops waiting after 40 minutes and leaves the decision to the ZAP step', async () => {
-    const result = await waitFor(['in_progress']);
-    const [waitStep] = await named(checks(), 'checks', wait);
-
-    expect(result.code).toBe(0);
-    expect(result.calls).toHaveLength(80);
-    expect(result.slept).toBe(40 * 60);
-    expect(result.output).toContain('::warning::');
-    expect(at(waitStep, 'id')).toBe('zap-wait');
-    expect(keysOf(waitStep)).toEqual(['name', 'id', 'run', 'env']);
-    expect(at(await checks(), 'jobs', 'checks', 'timeout-minutes')).toBe(60);
+    expect(
+      scripts.filter((script) => /\bsleep\b|\bseq\b|\bwhile\b|\buntil\b/u.test(script)),
+    ).toEqual([]);
+    expect(
+      all.map((step) => String(at(step, 'name'))).filter((name) => /wait/iu.test(name)),
+    ).toEqual([]);
+    expect(all.map((step) => at(step, 'id'))).not.toContain('zap-wait');
   });
 });
