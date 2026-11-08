@@ -23,7 +23,9 @@ export async function showStepDetails(page: Page): Promise<void> {
   await expect(journey(page).getByRole('button', { name: 'Hide step details' })).toHaveAttribute(
     'aria-expanded',
     'true',
-  );
+  ); // P8-138: the details are read with toContainText, which reads hidden text too, so the open body
+  // must be seen before the caller asserts on it.
+  await expect(journey(page).locator('.rst-road__detail').first()).toBeVisible();
 }
 
 /** The facts the journey of the recorded run is drawn from: its plan run and package, or none. */

@@ -398,7 +398,7 @@ conversation (an area that met its context limit, in two halves); the retry's tr
 | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Purpose | what each ended reader task of an understand run left, so a resume keeps the finished tasks (RF-006)                           |
 | Writer  | `RunUnderstand` through `TaskResults`, rewritten after every task that ends and when a cap leaves claims `Unverified` (RF-304) |
-| Readers | `RunUnderstand` when the run is resumed; a Deepen (RF-209), which seeds from the parent run's file and its estimate            |
+| Readers | `RunUnderstand` on resume; a Deepen seeding from the parent run (RF-209); Read understanding; History (RF-230)                 |
 
 `{ schemaVersion: 1, tasks }` where each task is `{ agentTaskId, area, state, turns, withoutCards, cards, coverage }`: `state` is
 how the task ended (an `AgentTaskState` after `Running`), `cards` its cards with their ids and every claim with its status
