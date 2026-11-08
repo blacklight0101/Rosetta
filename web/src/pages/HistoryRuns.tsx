@@ -179,7 +179,7 @@ export function HistoryRuns({ runs, showCommit, onDelete }: HistoryRunsProps): J
   );
   return (
     <ScrollRegion label="Runs table">
-      <table class="rst-table rst-table--stack" aria-label="Runs">
+      <table class="rst-table rst-table--stack rst-p140-runs" aria-label="Runs">
         <thead>
           <tr>
             <th scope="col">Run</th>
