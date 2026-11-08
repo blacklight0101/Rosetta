@@ -160,16 +160,18 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-      # Threat model section 5: the zap-baseline check of ci.yml passed on this commit.
+      # Threat model section 5: the zap-baseline check of ci.yml passed on this commit. COMMIT names it,
+      # so release-checks.yml (a workflow_run, whose GITHUB_SHA is develop) runs this step word for word.
       - name: The ZAP baseline passed on this commit
         run: |
-          conclusion="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')"
-          echo "zap-baseline on $GITHUB_SHA: $conclusion"
+          conclusion="$(gh api "repos/$GH_REPO/commits/$COMMIT/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "zap-baseline on $COMMIT: $conclusion"
           if [ "$conclusion" != success ]; then
             echo "::error::The ZAP baseline did not pass on this commit; nothing is deployed."
             exit 1
           fi
         env:
+          COMMIT: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
       # DEC-175, ADR-025: a release is a merge commit of develop into main (merge commit, not
@@ -244,13 +246,17 @@ jobs:
         run: |
           az containerapp job update --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
           execution="$(az containerapp job start --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --query name --output tsv)"
-          for _ in $(seq 1 90); do
+          # DEC-227: 32 tries, the wait doubled from 5 up to 30 seconds (about 15 minutes in all).
+          delay=5
+          for _ in $(seq 1 32); do
             status="$(az containerapp job execution show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --job-execution-name "$execution" --query properties.status --output tsv)"
             case "$status" in
               Succeeded) echo "Migrate execution $execution: Succeeded."; exit 0 ;;
-              Running | Processing | '') sleep 10 ;;
+              Running | Processing | '') ;;
               *) echo "::error::Migrate execution $execution ended $status; the app is not changed."; exit 1 ;;
             esac
+            sleep "$delay"
+            delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
           done
           echo "::error::Migrate execution $execution did not finish in 15 minutes; the app is not changed."
           exit 1
@@ -258,14 +264,17 @@ jobs:
         run: az containerapp update --name "$AZ_APP" --resource-group "$AZ_RG" --image "$IMAGE:$SHA_TAG" --output none
       - name: Wait for the new revision and /healthz over HTTPS
         run: |
-          for _ in $(seq 1 60); do
+          # DEC-227: 22 tries, the wait doubled from 5 up to 30 seconds (about 10 minutes in all).
+          delay=5
+          for _ in $(seq 1 22); do
             revisions="$(az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --query '[properties.latestRevisionName, properties.latestReadyRevisionName]' --output tsv | tr '\n' ' ')"
             read -r latest ready <<< "$revisions"
             if [ -n "$latest" ] && [ "$latest" = "$ready" ] && curl -fsS --max-time 10 "$ROSETTA_PUBLIC_URL/healthz" > /dev/null; then
               echo "Revision $latest is ready and $ROSETTA_PUBLIC_URL/healthz answers."
               exit 0
             fi
-            sleep 10
+            sleep "$delay"
+            delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
           done
           echo "::error::$ROSETTA_PUBLIC_URL/healthz did not answer from the new revision in 10 minutes."
           exit 1

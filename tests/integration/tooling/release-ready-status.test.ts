@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { useTempRoot } from '../../support/temp-root.js';
 import { at, keysOf, runStep, stepScript, workflowDocument } from '../../support/workflow-yaml.js';
 
-// RF-1304, DEC-207, P8-64: the last step of release-checks.yml sets the commit status release/ready
-// on the release merge in every case (if: always()): success only when the job so far succeeded and
-// the ZAP wait, the ZAP check and the staging check each succeeded; otherwise failure with a
+// RF-1304, DEC-207, P8-64, P8-141: the last step of release-checks.yml sets the commit status
+// release/ready on the release merge (COMMIT) in every case (if: always()): success only when the job
+// so far succeeded and the ZAP check and the staging check each succeeded; otherwise failure with a
 // description that names what failed or did not run, which it also writes as the output `cause`
 // for the failure comment (P8-65). The step runs with bash against a fake gh that records each
 // argument; nothing reaches GitHub.
@@ -37,7 +37,6 @@ describe('release-checks.yml release/ready: the step', () => {
   it('RF-1304 reads the job status, the outcome of each check, whether staging is enabled, and only the workflow token', async () => {
     expect(at(await statusStep(), 'env')).toEqual({
       JOB_STATUS: '${{ job.status }}',
-      ZAP_WAIT: '${{ steps.zap-wait.outcome }}',
       ZAP: '${{ steps.zap.outcome }}',
       STAGING: '${{ steps.staging.outcome }}',
       STAGING_ENABLED: '${{ vars.ROSETTA_STAGING_ENABLED }}',
@@ -102,19 +101,20 @@ function fieldsOf(call: readonly string[]): Record<string, string> {
 
 /** Runs the release/ready step with the given job status and step outcomes. */
 async function post(
-  outcomes: readonly [string, string, string, string],
+  outcomes: readonly [string, string, string],
   world: World = {},
 ): Promise<Posted> {
-  const [JOB_STATUS, ZAP_WAIT, ZAP, STAGING] = outcomes;
+  const [JOB_STATUS, ZAP, STAGING] = outcomes;
   const folder = root.path.replaceAll('\\', '/');
   const files = { GH_LOG: `${folder}/gh.log`, GITHUB_OUTPUT: `${folder}/output` };
   const answers = {
     FAKE_ZAP: world.zap ?? 'failure',
     STAGING_ENABLED: world.stagingEnabled ?? 'true',
   };
-  const env = { JOB_STATUS, ZAP_WAIT, ZAP, STAGING, GH_REPO: repoName, ...files, ...answers };
+  const env = { JOB_STATUS, ZAP, STAGING, GH_REPO: repoName, ...files, ...answers };
   const script = stepScript(await checks(), 'checks', name);
-  const result = await runStep(script, { ...env, GITHUB_SHA: sha, RUN_URL: runUrl }, prelude);
+  const vars = { COMMIT: sha, GITHUB_SHA: 'f'.repeat(40), RUN_URL: runUrl };
+  const result = await runStep(script, { ...env, ...vars }, prelude);
   const text = await readFile(files.GH_LOG, 'utf8').catch(() => '');
   const output = await readFile(files.GITHUB_OUTPUT, 'utf8').catch(() => '');
   const calls = text
@@ -135,18 +135,16 @@ const zapLookup = [
 
 describe('release-checks.yml release/ready: what it records', () => {
   it.each([
-    [['success', 'success', 'success', 'success'], 'success', /^Ready: .*staging check passed/u],
-    [['failure', 'success', 'failure', 'skipped'], 'failure', /ZAP baseline did not pass/u],
-    [['failure', 'failure', 'skipped', 'skipped'], 'failure', /ZAP baseline did not pass/u],
-    [['failure', 'success', 'success', 'failure'], 'failure', /staging check did not pass/u],
-    [['failure', 'skipped', 'skipped', 'skipped'], 'failure', /image build, scan or push failed/u],
-    [['cancelled', 'cancelled', 'skipped', 'skipped'], 'failure', /cancelled/u],
-    [['success', 'success', 'success', 'skipped'], 'failure', /did not run/u],
-    [['success', 'success', 'success', ''], 'failure', /did not run/u],
-    [['success', 'success', 'skipped', 'success'], 'failure', /did not run/u],
-    [['success', 'skipped', 'success', 'success'], 'failure', /did not run/u],
+    [['success', 'success', 'success'], 'success', /^Ready: .*staging check passed/u],
+    [['failure', 'failure', 'skipped'], 'failure', /ZAP baseline did not pass/u],
+    [['failure', 'success', 'failure'], 'failure', /staging check did not pass/u],
+    [['failure', 'skipped', 'skipped'], 'failure', /image build, scan or push failed/u],
+    [['cancelled', 'skipped', 'skipped'], 'failure', /cancelled/u],
+    [['success', 'success', 'skipped'], 'failure', /did not run/u],
+    [['success', 'success', ''], 'failure', /did not run/u],
+    [['success', 'skipped', 'success'], 'failure', /did not run/u],
   ] as const)(
-    'RF-1304 job, wait, ZAP, staging %j record release/ready %s',
+    'RF-1304 job, ZAP, staging %j record release/ready %s',
     async (outcomes, state, description) => {
       const result = await post(outcomes);
       const { description: text = '', ...rest } = result.fields;
@@ -169,7 +167,7 @@ describe('release-checks.yml release/ready: what it records', () => {
 
 describe('release-checks.yml release/ready: the named causes', () => {
   it('RF-1304 says the staging check was skipped, not passed, while staging is not enabled', async () => {
-    const result = await post(['success', 'success', 'success', 'success'], { stagingEnabled: '' });
+    const result = await post(['success', 'success', 'success'], { stagingEnabled: '' });
     const text = result.fields['description'] ?? '';
 
     expect(result.fields['state']).toBe('success');
@@ -179,13 +177,17 @@ describe('release-checks.yml release/ready: the named causes', () => {
   });
 
   it.each([
-    ['cancelled', /^Not ready: zap-baseline was cancelled on this commit \(a later push to main/u],
-    ['missing', /^Not ready: zap-baseline did not finish on this commit within 40 minutes/u],
+    [
+      'cancelled',
+      /^Not ready: zap-baseline was cancelled on this commit \(a later push to main cancels it\); re-run it and these checks run again/u,
+    ],
+    // CI completed (that started the job) without a zap-baseline result.
+    ['missing', /^Not ready: CI finished without a zap-baseline result on this commit/u],
     ['failure', /^Not ready: the ZAP baseline did not pass on this commit/u],
   ] as const)(
     'RF-1304 a ZAP baseline that ends %s is named plainly in release/ready and the cause',
     async (zap, description) => {
-      const result = await post(['failure', 'success', 'failure', 'skipped'], { zap });
+      const result = await post(['failure', 'failure', 'skipped'], { zap });
       const text = result.fields['description'] ?? '';
 
       expect(result.lookups).toEqual([zapLookup]);
@@ -197,8 +199,8 @@ describe('release-checks.yml release/ready: the named causes', () => {
   );
 
   it('RF-1304 looks the ZAP baseline up only when it failed', async () => {
-    const passed = await post(['success', 'success', 'success', 'success']);
-    const staging = await post(['failure', 'success', 'success', 'failure']);
+    const passed = await post(['success', 'success', 'success']);
+    const staging = await post(['failure', 'success', 'failure']);
 
     expect(passed.lookups).toEqual([]);
     expect(staging.lookups).toEqual([]);

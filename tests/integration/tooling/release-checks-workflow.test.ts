@@ -12,16 +12,32 @@ import {
   workflowDocument,
 } from '../../support/workflow-yaml.js';
 
-// RF-1304, DEC-207, ADR-025, ADR-028 (Proposed), P8-63, P8-64: .github/workflows/release-checks.yml.
-// Every push to main (the owner's release merge) builds, scans and pushes the image of that commit
-// before the 06:00 release, with the steps of the image job of release.yml and the workflow token
-// only. The ZAP and staging confirmation and the release/ready status are tested in
-// release-checks-ready.test.ts.
+// RF-1304, DEC-207, DEC-227, ADR-025, ADR-028 (Proposed), P8-63, P8-64, P8-141:
+// .github/workflows/release-checks.yml. When the CI run of a push to main (the owner's release merge)
+// completes, GitHub starts the checks (workflow_run), which build, scan and push the image of that
+// commit before the 06:00 release, with the steps of the image job of release.yml and the workflow
+// token only. A workflow_run runs from the default branch (develop), so the job names the commit of
+// the CI run itself (COMMIT). The ZAP and staging confirmation and the release/ready status are
+// tested in release-checks-ready.test.ts, the hourly sweep in release-checks-sweep.test.ts.
 
 const checks = (): Promise<unknown> => workflowDocument('release-checks.yml');
 const release = (): Promise<unknown> => workflowDocument('release.yml');
 const image = 'ghcr.io/blacklight0101/rosetta';
 const root = useTempRoot('rosetta-release-checks-');
+const headSha = '${{ github.event.workflow_run.head_sha }}';
+
+/** The steps of one job, as parsed. */
+function stepsOf(document: unknown, job: string): unknown[] {
+  const found = at(document, 'jobs', job, 'steps');
+  return Array.isArray(found) ? found : [];
+}
+
+/** A step of the image job as text, without what names its commit: the checkout ref and the tag inputs. */
+function withoutCommit(step: unknown): string {
+  return JSON.stringify(step, (key, value: unknown) =>
+    ['ref', 'REF_TYPE', 'REF_NAME'].includes(key) ? undefined : value,
+  );
+}
 
 /** The step of the checks job whose text contains `needle`, as parsed. */
 async function step(needle: string): Promise<unknown> {
@@ -45,36 +61,70 @@ function expressions(node: unknown, key = ''): string[] {
 }
 
 describe('release-checks.yml trigger', () => {
-  it('RF-1304 runs on every push to main, the release merge, and on nothing else', async () => {
+  it('DEC-227 starts when the CI run of a push to main completes, and hourly for the sweep, on nothing else', async () => {
     const document = await checks();
 
-    expect(keysOf(at(document, 'on'))).toEqual(['push']);
-    expect(at(document, 'on', 'push')).toEqual({ branches: ['main'] });
+    expect(keysOf(at(document, 'on'))).toEqual(['workflow_run', 'schedule']);
+    expect(at(document, 'on', 'workflow_run')).toEqual({
+      workflows: ['CI'],
+      types: ['completed'],
+      branches: ['main'],
+    });
+    expect(at(document, 'on', 'schedule')).toEqual([{ cron: '41 * * * *' }]);
   });
 
-  it('RF-1304 a later release merge queues behind running checks, so a push is never cancelled half-way', async () => {
+  it('DEC-227 the checks job runs only for a CI run of a push to main of this repository, never for a fork', async () => {
+    const condition = String(at(await checks(), 'jobs', 'checks', 'if'));
+
+    expect(condition.split(' && ')).toEqual([
+      "github.event_name == 'workflow_run'",
+      "github.event.workflow_run.event == 'push'",
+      "github.event.workflow_run.head_branch == 'main'",
+      'github.event.workflow_run.head_repository.full_name == github.repository',
+    ]);
+  });
+
+  it('RF-1304 the checks of one commit queue behind each other and are never cancelled half-way; other commits do not replace them', async () => {
     expect(at(await checks(), 'concurrency')).toEqual({
-      group: 'release-checks-${{ github.ref }}',
+      group: 'release-checks-${{ github.event.workflow_run.head_sha || github.ref }}',
       'cancel-in-progress': false,
     });
+  });
+
+  it('DEC-227 every step works on the commit of the CI run, not on the default branch the workflow runs from', async () => {
+    const document = await checks();
+    const job = JSON.stringify(at(document, 'jobs', 'checks'));
+
+    expect(at(document, 'jobs', 'checks', 'env')).toEqual({ COMMIT: headSha });
+    expect(at(await step('actions/checkout@'), 'with', 'ref')).toBe(headSha);
+    expect(at(await step('bash scripts/release-tags.sh'), 'env')).toEqual({
+      IMAGE: 'ghcr.io/blacklight0101/rosetta',
+      REF_TYPE: 'branch',
+      REF_NAME: '${{ github.event.workflow_run.head_branch }}',
+    });
+    expect(job).not.toContain('GITHUB_SHA');
+    expect(job).not.toContain('github.sha');
   });
 });
 
 describe('release-checks.yml permissions and token', () => {
-  it('RF-1304 the default token is read-only; the one job holds contents and checks read and packages, statuses and issues write', async () => {
+  it('RF-1304 the default token is read-only; the checks job holds contents and checks read and packages, statuses and issues write', async () => {
     const document = await checks();
 
     expect(keysOf(document)).toEqual(['name', 'on', 'permissions', 'concurrency', 'jobs']);
     expect(at(document, 'permissions')).toEqual({ contents: 'read' });
-    expect(keysOf(at(document, 'jobs'))).toEqual(['checks']);
-    // No job-level if:, continue-on-error, env, defaults or strategy: the job's result is the real one.
+    expect(keysOf(at(document, 'jobs'))).toEqual(['checks', 'sweep']);
+    // No continue-on-error, defaults or strategy: the job's result is the real one.
     expect(keysOf(at(document, 'jobs', 'checks'))).toEqual([
       'name',
+      'if',
       'runs-on',
       'timeout-minutes',
       'permissions',
+      'env',
       'steps',
     ]);
+    expect(at(document, 'jobs', 'checks', 'timeout-minutes')).toBe(30);
     expect(at(document, 'jobs', 'checks', 'permissions')).toEqual({
       contents: 'read',
       checks: 'read',
@@ -136,9 +186,9 @@ describe('release-checks.yml secrets, variables and tokens', () => {
 });
 
 describe('release-checks.yml image build and tags', () => {
-  it('RF-1304 has every step of the image job of release.yml, unchanged and in the same order', async () => {
-    const own = stepTexts(await checks(), 'checks');
-    const released = stepTexts(await release(), 'image');
+  it('RF-1304 has every step of the image job of release.yml, unchanged but for the commit it names, and in the same order', async () => {
+    const own = stepsOf(await checks(), 'checks').map(withoutCommit);
+    const released = stepsOf(await release(), 'image').map(withoutCommit);
     let from = 0;
     const missing = released.filter((text) => {
       const found = own.indexOf(text, from);
@@ -149,17 +199,21 @@ describe('release-checks.yml image build and tags', () => {
     expect(released.length).toBeGreaterThan(0);
     expect(missing).toEqual([]);
   });
+});
 
+describe('release-checks.yml image tags', () => {
   it('RF-1300 a push to main pushes only the sha-<short> tag of its commit from release-tags.sh, never latest', async () => {
     const document = await checks();
     const output = join(root.path, 'github-output.txt');
     const pushed = join(root.path, 'docker.log');
     await writeFile(output, '');
+    // Under workflow_run GITHUB_SHA is the head of develop; the tag names COMMIT, the merge.
     const tagged = await runStep(stepScript(document, 'checks', 'Work out the image tags'), {
       IMAGE: String(at(await step('bash scripts/release-tags.sh'), 'env', 'IMAGE')),
       REF_TYPE: 'branch',
       REF_NAME: 'main',
-      GITHUB_SHA: '0123456789abcdef0123456789abcdef01234567',
+      COMMIT: '0123456789abcdef0123456789abcdef01234567',
+      GITHUB_SHA: 'fedcba9876543210fedcba9876543210fedcba98',
       GITHUB_OUTPUT: output,
     });
     const tags = /^tags=(.*)$/mu.exec(await readFile(output, 'utf8'))?.[1] ?? '';
