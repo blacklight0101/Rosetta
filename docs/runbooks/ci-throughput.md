@@ -112,3 +112,57 @@ shard passed) are unchanged, so no ruleset changes.
   own; the 1.1 min per project of section 4). A test that fails on the retry too still fails the shard.
 - **Re-measure**: count the "Flaky e2e tests" lines in the job summaries of the next 50 runs; each one is a full run
   saved, and each named test is a flake to fix rather than to leave to the retry.
+
+### P8-142: quarantine confirmed flaky tests and stress new tests (DEC-227)
+
+P8-54 keeps one flake from costing a full run, but a test that keeps flaking stays in a required check with no owner,
+and a new test becomes required the moment it merges, having run once. Two non-required jobs of `ci.yml` close both
+gaps; the eight required check names do not change, so the ruleset does not either.
+
+- **The quarantine list** is `tests/quarantine.json`, a JSON array, empty to start with. Each entry names one test:
+  `file` (its path from the repository root), `title` (the describe blocks and the test title, in order; a shorter
+  list quarantines a whole describe block), `owner` (the GitHub login who fixes or removes it), `issue` (the number of
+  its GitHub issue), `until` (the last day, `YYYY-MM-DD`, UTC, the entry applies) and `flakeRun` (the URL of the CI run
+  that confirmed the flake, `https://github.com/<owner>/<repo>/actions/runs/<id>`).
+- **Joining it**: a test joins only after a flake that the P8-54 report confirms. For a Playwright test, `flakeRun` is
+  the run whose job summary has the line "Flaky e2e tests: N passed only on retry." naming that test; the reviewer of
+  the pull request that adds the entry opens it. The tests run offline (RNF-005), so the guard below checks only the
+  shape of the URL, not the run. A Vitest test has no retry report: its `flakeRun` is the run where it failed on a
+  commit that passed on a rerun.
+- **Skipped in the required checks**: in `verify`, the setup file `tests/support/quarantine-setup.ts` of every Vitest
+  project skips a listed test, which the report shows as skipped; in `e2e`, `scripts/run-e2e.mjs` writes the
+  Playwright entries to `test-results/quarantine.txt` and passes Playwright's `--test-list-invert`. A quarantined test
+  that fails therefore never holds a merge.
+- **Still run and reported**: the job `quarantine` (check `quarantined tests (not required)`) runs only when the list
+  has an entry and the change is code. `node scripts/quarantine-run.mjs` writes every entry (test, owner, issue,
+  until, flake run) to the job summary, then runs only the listed Vitest tests (`ROSETTA_QUARANTINE=only`) and only the
+  listed Playwright tests (`--test-list`), once each and without a retry. The check is red while a quarantined test
+  still fails; it is not required, so that blocks nothing.
+- **The guard**: `tests/integration/tooling/quarantine-list.test.ts`, part of `verify`, fails when an entry is past its
+  `until` date, has no owner, no issue or no flake run, names a file that no longer exists, or has a malformed field.
+  An expired or ownerless entry therefore turns the required `verify` red on the next code change, so it is fixed,
+  extended with a new date in a reviewed pull request, or removed.
+- **Leaving it**: the pull request that fixes the test removes its entry. Its file changed, so the stress job runs it.
+
+**The stress job.** The job `test-picks` (check `pick quarantined and changed tests`) checks out only
+`tests/quarantine.json` and, on a pull request, lists the pull request's own files with
+`gh api --paginate repos/<repo>/pulls/<n>/files` (removed files left out, a renamed file under its new path). It keeps
+the test files: `tests/**/*.test.ts`, `tests/**/*.test.tsx` and `tests/e2e/**/*.spec.ts`. It does not use
+`vitest --changed`, which follows imports and misses tests that read the documents. When no test file changed, the job
+`stress` (check `stress changed tests (not required)`) is skipped: a pull request without test changes pays only the
+few seconds of `test-picks`. Otherwise `node scripts/stress-tests.mjs` runs only those tests:
+
+- Vitest: `vitest run <files> --sequence.shuffle --sequence.seed=<seed> --repeats=4 --retry=0`, so every test runs five
+  times, the files in parallel workers and the files and tests in a shuffled order; the seed is printed, so a failing
+  order can be replayed with the same command.
+- Playwright: `node scripts/run-e2e.mjs <specs> --repeat-each=5 --workers=4 --retries=0`, five runs of every test
+  spread over four workers (two by default) against one test server. Playwright has no shuffle option; with
+  `fullyParallel` the repeats interleave across the workers, so their order changes from run to run.
+
+A test that fails once fails the job (no retry). The check is not required; a red one means the new or changed test
+is not ready, and the pull request should not merge until it is green.
+
+- **Costs**: on a pull request without test changes only `test-picks` runs (one file checked out, one API call; not
+  measured yet); otherwise `npm ci`, Chromium from its cache and five runs of the changed tests only.
+- **What only a real flake shows**: that `flakeRun` really names a test the P8-54 report printed, and that a test
+  that fails one run in five fails the stress check on GitHub, are only seen on a real run.

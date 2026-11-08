@@ -9,6 +9,13 @@ import { defineConfig } from 'vitest/config';
 const localWorkers = Math.max(2, Math.floor(availableParallelism() / 2));
 const workers = process.env['CI'] === undefined ? { maxWorkers: localWorkers } : {};
 
+// P8-142 (DEC-227): every project skips the tests of tests/quarantine.json (or, with
+// ROSETTA_QUARANTINE=only, every other test); see tests/support/quarantine-setup.ts.
+const quarantineSetup = 'tests/support/quarantine-setup.ts';
+const blockNetwork = 'tests/support/block-network.ts';
+const sharedSetup: string[] = [quarantineSetup];
+const offlineSetup: string[] = [blockNetwork, quarantineSetup];
+
 // Vitest's 5 s test timeout is a limit for a quiet machine. A test that takes 1 s alone takes
 // several times that when the CPU is shared, so the default is 60 s; a test that hangs still fails.
 const shared = {
@@ -16,8 +23,9 @@ const shared = {
   env: { ROSETTA_TEST: '1' },
   testTimeout: 60_000,
   hookTimeout: 60_000,
+  setupFiles: sharedSetup,
 } as const;
-const offline = { ...shared, setupFiles: 'tests/support/block-network.ts' } as const;
+const offline = { ...shared, setupFiles: offlineSetup } as const;
 
 // P1-178: CI splits the run in shards (`--shard=n/N --reporter=blob`); a shard sees only part of the code
 // coverage, so it cannot meet the thresholds. ROSETTA_COVERAGE_SHARD=1 turns the check off for a
@@ -48,7 +56,7 @@ export default defineConfig({
           ...offline,
           name: 'web',
           environment: 'happy-dom',
-          setupFiles: ['tests/support/block-network.ts', 'tests/unit/web/setup.ts'],
+          setupFiles: [blockNetwork, 'tests/unit/web/setup.ts', quarantineSetup],
           include: ['tests/unit/web/**/*.test.{ts,tsx}'],
         },
       },
