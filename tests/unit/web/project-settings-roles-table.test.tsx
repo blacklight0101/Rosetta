@@ -78,7 +78,7 @@ function rowOf(role: string): HTMLElement {
 
 /** The text of the State cell of a role, the last cell of its row. */
 const stateOf = (role: string): string =>
-  within(rowOf(role)).getAllByRole('cell').at(-1)?.textContent?.trim() ?? '';
+  within(rowOf(role)).getAllByRole('cell').at(-1)?.textContent.trim() ?? '';
 
 it('RF-436 the Roles section is one table with the columns and the rows of the artboard', async () => {
   renderSettings();
