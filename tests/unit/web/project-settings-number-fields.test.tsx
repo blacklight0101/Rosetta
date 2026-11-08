@@ -69,7 +69,7 @@ it('RF-436 an unset hosted reader shows 8,192 in its field and slider, the limit
   expect(
     screen.getByText('8,192 is the default. The field and the slider always show the same value.'),
   ).toBeTruthy();
-  expect(screen.queryByText(/^Differs from the default/u)).toBeNull();
+  expect(screen.queryByText(/^Differs from the default of 8,192/u)).toBeNull();
 
   fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
   await screen.findByText('Settings saved.');

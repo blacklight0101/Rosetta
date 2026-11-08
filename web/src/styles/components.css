@@ -153,6 +153,24 @@
   border-color: var(--rst-danger-ink);
 }
 
+/* RF-436 (P8-76): a number field with its value written out beside it ("2,000,000 tokens"). */
+.rst-field__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  align-items: center;
+}
+
+.rst-field__row .rst-field__control {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.rst-field__suffix {
+  font-size: var(--rst-fs-sm);
+  color: var(--rst-ink-soft);
+}
+
 .rst-field__radios {
   display: flex;
   flex-wrap: wrap;
