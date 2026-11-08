@@ -82,13 +82,14 @@ export const writeButton = (page: Page): Locator =>
 /**
  * Presses a save button and waits until the brief was saved. The wait is bounded, so a save that
  * never answers (one held behind the planner's options, #1202) fails here and names the save,
- * instead of running into the timeout of the whole test.
+ * instead of running into the timeout of the whole test; 30 s, the bound of the other waits on a
+ * loaded runner (P8-143).
  */
 export async function saveBrief(page: Page, button: Locator): Promise<void> {
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-    { timeout: 15_000 },
+    { timeout: 30_000 },
   );
   await button.click();
   expect((await saved).ok()).toBe(true);
