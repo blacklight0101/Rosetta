@@ -60,7 +60,12 @@ export function callEvents(events: readonly RunEvent[]): string[] {
   });
 }
 
-/** P8-58: what a consumer of the log counts: starts minus ends after each event, never negative. */
+/**
+ * P8-58: what a consumer of the log counts: starts minus ends after each event, never negative.
+ * This is not the rule of RF-1002 (`docs/data-model.md` 3.9: a set of claim ids, an unknown end changes
+ * nothing, emptied at the judgement and run events); the two agree only on a well-formed log, which
+ * is what these tests feed. The page's reducer tests (P8-60) prove the set rule; this helper does not.
+ */
 export function callsInFlight(events: readonly RunEvent[]): {
   readonly peak: number;
   readonly min: number;
