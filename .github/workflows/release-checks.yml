@@ -1,14 +1,18 @@
-# Release checks (RF-1304, DEC-207, ADR-025, ADR-028 Proposed, P8-63): every push to main, which is
-# the owner's release merge of develop (DEC-175), gets its checks before the 06:00 Madrid release
-# instead of in it. This card builds, scans and pushes the image of that commit with the steps of the
-# image job of release.yml (tags from scripts/release-tags.sh, one build, the same Trivy gate, push of
-# `sha-<short>` to GHCR); later cards add the ZAP and staging confirmation, the result on the commit
-# (statuses: write) and the failure comment on the issue "Production deploys" (issues: write).
-# release.yml still builds its own image until Release changes to deploy only a checked commit.
+# Release checks (RF-1304, DEC-207, ADR-025, ADR-028 Proposed, P8-63, P8-64): every push to main,
+# which is the owner's release merge of develop (DEC-175), gets its checks before the 06:00 Madrid
+# release instead of in it. The job builds, scans and pushes the image of that commit with the steps
+# of the image job of release.yml (tags from scripts/release-tags.sh, one build, the same Trivy gate,
+# push of `sha-<short>` to GHCR); then it confirms the ZAP baseline and the staging check with the
+# two steps of the deploy job of release.yml, word for word (tests keep them equal), and last, in
+# every case, records the result on the commit as the commit status `release/ready` (statuses:
+# write). A later card adds the failure comment on the issue "Production deploys" (issues: write).
+# release.yml still builds its own image and makes its own checks until Release changes to deploy
+# only a commit whose release/ready is success.
 #
-# The workflow token is the only credential: no secret, no variable, no other token. Hardening as in
-# ci.yml: read-only default token, write scopes only in the job, actions pinned to a commit SHA,
-# values reach shell steps through env:.
+# The workflow token is the only credential: no secret, no other token. The one variable read is
+# ROSETTA_STAGING_ENABLED, by the staging check, as in release.yml. Hardening as in ci.yml: read-only
+# default token, write scopes only in the job, actions pinned to a commit SHA, values reach shell
+# steps through env:.
 name: Release checks
 
 on:
@@ -25,9 +29,9 @@ concurrency:
 
 jobs:
   checks:
-    name: release checks (image build, scan, push to GHCR)
+    name: release checks (image, ZAP baseline, staging, release/ready)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
@@ -78,3 +82,105 @@ jobs:
       - name: Log out of GHCR
         if: always()
         run: docker logout ghcr.io
+      # CI runs zap-baseline on the same push, so its check may not have finished yet: wait up to 40
+      # minutes for it to complete. This step decides nothing; the next one does, as in Release.
+      - name: Wait for the ZAP baseline of this commit
+        id: zap-wait
+        run: |
+          for _ in $(seq 1 80); do
+            status="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA/check-runs?check_name=zap-baseline" --jq '.check_runs[0].status // "missing"')" || status=unknown
+            if [ "$status" = completed ]; then
+              echo "zap-baseline on $GITHUB_SHA has completed."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning::zap-baseline on $GITHUB_SHA did not complete in 40 minutes; the next step finds no passing conclusion."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # Word for word the step of the deploy job of release.yml (threat model section 5).
+      - name: The ZAP baseline passed on this commit
+        id: zap
+        run: |
+          conclusion="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "zap-baseline on $GITHUB_SHA: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::The ZAP baseline did not pass on this commit; nothing is deployed."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # Word for word the step of the deploy job of release.yml (DEC-175, ADR-025): the tree of this
+      # merge is the tree of its develop parent and `deploy (staging)` passed on that parent; skipped
+      # with a warning while ROSETTA_STAGING_ENABLED is not 'true'. This workflow has no input, so
+      # skip-staging-check (an emergency override of Release) never applies here.
+      - name: This tree passed staging
+        id: staging
+        run: |
+          if [ "$STAGING_ENABLED" != true ]; then
+            echo "::warning::staging is not enabled; the staging check is skipped (DEC-175)."
+            echo "- staging is not enabled; the staging check is skipped (DEC-175)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$SKIP_STAGING_CHECK" = true ]; then
+            echo "::warning::The staging check was skipped (input skip-staging-check)."
+            echo "- **Staging check skipped** (input skip-staging-check, emergencies only): $(git rev-parse HEAD) was deployed without it." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! develop="$(git rev-parse --verify --quiet 'HEAD^2^{commit}')"; then
+            echo "::error::This commit has no second parent, so it is not a release merge of develop; nothing is deployed (docs/runbooks/deploy.md, Release)."
+            exit 1
+          fi
+          if [ "$(git rev-parse 'HEAD^{tree}')" != "$(git rev-parse "$develop^{tree}")" ]; then
+            echo "::error::The tree of this commit differs from the tree of develop at $develop, which staging deployed; nothing is deployed."
+            exit 1
+          fi
+          conclusion="$(gh api "repos/$GH_REPO/commits/$develop/check-runs?check_name=deploy%20(staging)" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "deploy (staging) on $develop: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::deploy (staging) did not pass on $develop; nothing is deployed."
+            exit 1
+          fi
+        env:
+          STAGING_ENABLED: ${{ vars.ROSETTA_STAGING_ENABLED }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # RF-1304, DEC-207: always, so a failed, skipped or cancelled step still records the result.
+      # success only when every step before it succeeded and the wait and both checks each succeeded;
+      # otherwise failure, named in the description. The step fails with the status, so the run is
+      # red whenever release/ready is not success.
+      - name: Record release/ready on the commit
+        if: always()
+        run: |
+          if [ "$JOB_STATUS" = success ] && [ "$ZAP_WAIT" = success ] && [ "$ZAP" = success ] && [ "$STAGING" = success ]; then
+            state=success
+            description='Ready: the image is pushed, the ZAP baseline and the staging check passed.'
+          elif [ "$ZAP_WAIT" = failure ] || [ "$ZAP" = failure ]; then
+            state=failure
+            description='Not ready: the ZAP baseline did not pass on this commit.'
+          elif [ "$STAGING" = failure ]; then
+            state=failure
+            description='Not ready: the staging check did not pass (the tree, or deploy (staging) of the develop parent).'
+          elif [ "$JOB_STATUS" = cancelled ]; then
+            state=failure
+            description='Not ready: the checks were cancelled or timed out before they finished.'
+          elif [ "$JOB_STATUS" = failure ]; then
+            state=failure
+            description='Not ready: the image build, scan or push failed; the ZAP and staging checks did not run.'
+          else
+            state=failure
+            description="Not ready: a check did not run (ZAP baseline: ${ZAP:-none}, staging check: ${STAGING:-none})."
+          fi
+          gh api --method POST "repos/$GH_REPO/statuses/$GITHUB_SHA" -f state="$state" -f context=release/ready -f description="$description" -f target_url="$RUN_URL" > /dev/null
+          echo "release/ready on $GITHUB_SHA: $state. $description"
+          [ "$state" = success ]
+        env:
+          JOB_STATUS: ${{ job.status }}
+          ZAP_WAIT: ${{ steps.zap-wait.outcome }}
+          ZAP: ${{ steps.zap.outcome }}
+          STAGING: ${{ steps.staging.outcome }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
