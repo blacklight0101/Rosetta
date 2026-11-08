@@ -184,3 +184,64 @@ section 6, "Git history per job"). Before, five checkouts fetched every branch a
   only what a one-commit fetch took in the same runs, not a measurement of the changed jobs.
 - **Saves**: about a second per changed job per run if the changed jobs come down to the `audit` figure, and it grows
   with the history; small next to the 96 job minutes of a run (section 2).
+
+### P8-55: caches, and the after numbers
+
+**Method.** The same as section 1 and P8-140, read-only: `gh api .../actions/workflows/ci.yml/runs` for the runs of
+2026-11-08 from 15:00Z, then `gh api .../actions/runs/<id>/jobs` per run (job and step times) and
+`gh api .../actions/jobs/<id>/logs` for the times inside a step (Vite's "built in", BuildKit's per-layer `DONE`).
+Wall is the last job's end minus the run's creation; a run counts as "runners free" when no job of it waited more than
+0.1 min for a runner. Measured, not estimated, unless a line says otherwise. The scripts stay in the builder's scratch
+space.
+
+**The three caches.**
+
+- _Playwright browsers_: already cached since P1-183 (key on the Playwright version). Measured: the restore takes 1
+  to 5 s and the install check 1 to 2 s per job. Nothing to add.
+- _Web bundle_: **not added; the premise does not hold.** Each e2e shard runs `vite build` inside
+  `scripts/run-e2e.mjs`; in the six shards of runs 42521937025 and 42520783898 Vite reported "built in" 195 to 354 ms,
+  under a second from the step's start. An `actions/cache` restore of the browser folder in the same jobs took 1 to
+  5 s, so a cached bundle would be slower than building it, and would add a key to keep right. The 40 to 62 s between
+  the build and the first test is the start of the Playwright web server (`tests/e2e/support/serve.ts`), not the
+  build.
+- _Image layers_: **added, in the `image` job.** Before, measured in run 42521937025 (job 128857160098): the runtime
+  `docker build` took 81 s, of which the base image 3.2 s, `npm ci` of the build stage 55.0 s (the production
+  `npm ci` of the `deps` stage, 9.2 s, runs beside it), `npm run build` 13.3 s, `apt-get upgrade` 4.6 s and the
+  export 2.7 s; the test image took 18 s more. Over the 35 code runs of the day from 15:00Z the image builds and the two Compose
+  stack starts (which build the image again) took 246 to 328 s per run. Now `docker/build-push-action` builds both
+  images with BuildKit and keeps the layers in the GitHub Actions cache (`docs/environments-and-delivery.md`,
+  section 6, "Caches"): only a push writes it, the `runtime` stage is always rebuilt so its `apt-get upgrade` is never
+  stale, every other layer is keyed by BuildKit on the content it copies.
+  - **Saves, upper bound** (from the times above, not measured with the cache): the 55 s `npm ci` layer whenever
+    `package-lock.json` did not change, and the 13 s build whenever `src/` and `web/` did not change, so at most about
+    1.1 job minutes of the run's 92 to 101. It saves **no wall**: the `image` job ends at +3.5 min and the run's
+    critical path (the Windows test chain) at +12.8 min. The cost of the BuildKit container, the cache download and
+    loading the image into Docker is not measured yet.
+  - **Only real runs can show it**: this card's own pull request reads `develop`'s cache, which is empty until the
+    first push to `develop` after the merge writes it, so its run shows only the cold cost; the first `develop` run
+    after that and the pull requests after it show the saving. No figure is stated until then; measure the `image`
+    job's two build steps against the 81 s and 18 s above.
+  - **Not cached**: `compose-smoke` and `zap-baseline` still build with `docker compose up --build` (95 to 109 s and
+    91 to 104 s for "Start the stack" in today's runs), which checks the `build:` sections of the Compose files that
+    local deployment uses and cannot reach the GitHub Actions cache. Caching them means building the images with
+    `docker/build-push-action` first and dropping `--build`, which loses that check; that is the owner's pick.
+
+**After numbers, this group (P8-54, P8-140, P8-141, P8-142, and P8-55 still to come).**
+
+| Measure                                                                  | Before (section 2, 2026-11-04)  | After (2026-11-08)                                                |
+| ------------------------------------------------------------------------ | ------------------------------- | ----------------------------------------------------------------- |
+| Wall of a passed code run, runners free                                  | 13.6 min ("quiet runner pool")  | median 13.3, range 12.1 to 13.8 (n = 10 passed)                   |
+| The same, only runs with today's full `ci.yml` (25 jobs, from 20:07Z)    | -                               | median 13.4, range 12.9 to 13.9 (n = 5; one red on gitleaks only) |
+| Wall of a passed code run, every run                                     | median 15.9, p90 23.6           | median 14.8 (n = 29 passed code runs)                             |
+| Wall of a passed code run with a job queued 8 min or more (15:04-16:28Z) | 18.0 (3 or more runs in flight) | median 38.3, range 23.0 to 56.6 (n = 10; queue 8.4 to 28.1)       |
+| Job minutes of a code run                                                | 96                              | 88.5 to 103.4; median 94.1 for the 25-job runs                    |
+| Longest job                                                              | Windows shard 1, 11.5           | a Windows shard, 11.2 to 12.1 (shards not balanced)               |
+
+**Done when: "a PR's CI finishes in under 15 min wall clock when runners are free".** It holds, measured: every code
+run of the day that passed with free runners finished in 12.1 to 13.8 min (median 13.3), the pull request run 42521937025 on today's full
+workflow in 12.9 min. It held before this group too (13.6 min on a quiet pool, section 3); the group did not move it,
+and no cache can: the critical path is the Windows test chain (a shard of up to 12.1 min, the 1.6 to 1.8 min merge job,
+`verify`). It does **not** hold when runners are busy: the ten passed code runs of 15:04Z to 16:28Z, while a burst of
+pull requests was in flight, took a median of 38.3 min; what they took over 13 min was queue time. Only P8-51 (one queue run per batch) and
+P8-52 (fewer jobs per pull request run) reduce that, and both wait on the owner; picks 1 and 3 of section 4 are what
+would move the free-runner figure.

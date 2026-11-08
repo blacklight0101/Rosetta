@@ -623,11 +623,40 @@ jobs:
           cache: npm
       - if: needs.changes.outputs.code != 'false'
         run: npm ci
-      # The runtime image is the default target; the test image must build too (compose.ci.yaml, P1-45).
+      # P8-55: the layers are kept in the GitHub Actions cache (docs/runbooks/ci-throughput.md
+      # section 6). BuildKit keys each layer on its instruction and the content of the files it copies
+      # (package-lock.json for npm ci, src and web for the build) and the base on its digest, so a
+      # cached layer is never stale. The runtime stage upgrades the system packages, which no file
+      # pins, so it is always rebuilt. A pull request reads the cache of its base branch and never
+      # writes one. The builder's own image is pinned like every image CI starts (RNF-003).
       - if: needs.changes.outputs.code != 'false'
-        run: docker build --tag "$ROSETTA_IMAGE" .
-      - if: needs.changes.outputs.code != 'false'
-        run: docker build --target test --tag rosetta:ci-test .
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: image=moby/buildkit:v0.34.1@sha256:99368f3e46177c6405b9740e4461d91cee004128daeecca78d4ceac50ec1da5c
+      # The runtime image is the default target, loaded for the container test and Trivy.
+      - name: Build the runtime image
+        if: needs.changes.outputs.code != 'false'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          tags: ${{ env.ROSETTA_IMAGE }}
+          load: true
+          provenance: false
+          no-cache-filters: runtime
+          cache-from: type=gha,scope=rosetta-image
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=rosetta-image' || '' }}
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+      # The test image must build too (compose.ci.yaml, P1-45); it reuses the build stage above.
+      - name: Build the test image
+        if: needs.changes.outputs.code != 'false'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: test
+          provenance: false
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
       # Starts the image against the service database and calls /healthz (RF-1300, Linux only).
       - if: needs.changes.outputs.code != 'false'
         run: npx vitest run --project integration tests/integration/image
