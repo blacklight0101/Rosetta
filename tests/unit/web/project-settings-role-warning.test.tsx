@@ -128,6 +128,8 @@ it('RF-436 one Apply in the warning gives every role Anthropic with its recommen
   await waitFor(() => {
     expect(document.activeElement).toBe(selectOf('Provider for every role'));
   });
+  // Apply saves nothing, also a moment later: only Save settings saves (DEC-106).
+  await new Promise((resolve) => setTimeout(resolve, 50));
   expect(calls.filter((call) => call.method === 'PUT')).toEqual([]);
 
   fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));

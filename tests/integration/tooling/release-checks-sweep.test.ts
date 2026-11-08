@@ -31,13 +31,21 @@ interface Merge {
   readonly recorded: number;
   /** The status of zap-baseline on the commit (`missing` when it has none). */
   readonly zap: string;
+  /** The page of the commit's statuses (100 a page) its release/ready statuses are on. */
+  readonly page: 1 | 2;
 }
 
 /**
  * A fake gh, exported so it also answers inside the scripts the sweep starts. It answers from the
- * world file: `sha date parent recorded zap` per line.
+ * world file: `sha date parent recorded zap page` per line. The statuses come in two pages, the
+ * second only with `--paginate`; `FAKE_COMMENT_FAILS` makes the owner comment fail.
  */
 const prelude = [
+  'statuses() {',
+  '  recorded="$(world 4 "$1")"; page="$(world 6 "$1")"',
+  `  if [ "$page" = 2 ]; then echo 0; else echo "$recorded"; fi`,
+  `  case "$1" in *--paginate*) if [ "$page" = 2 ]; then echo "$recorded"; else echo 0; fi ;; esac`,
+  '}',
   'world() {',
   `  sha="$(printf '%s' "$2" | sed 's#.*/commits/\\([0-9a-f]*\\).*#\\1#')"`,
   `  awk -v sha="$sha" -v field="$1" '$1 == sha { if (field == 0) print $2, ($3 == "-" ? "" : $3); else print $field }' "$FAKE_WORLD"`,
@@ -48,13 +56,14 @@ const prelude = [
   `    *'commits/main --jq'*) printf '%s\\n' "$FAKE_HEAD" ;;`,
   `    *'--method POST'*) ;;`,
   `    'issue list'*) printf '12\\tProduction deploys\\n' ;;`,
+  `    'issue comment'*) [ -z "\${FAKE_COMMENT_FAILS:-}" ] ;;`,
   `    'issue '*) ;;`,
-  `    *'/statuses?'*) world 4 "$*" ;;`,
+  `    *'/statuses?'*) statuses "$*" ;;`,
   `    *'/check-runs?'*) world 5 "$*" ;;`,
   `    *'/commits/'*) world 0 "$*" ;;`,
   '  esac',
   '}',
-  'export -f gh world',
+  'export -f gh world statuses',
 ].join('\n');
 
 /** An ISO 8601 UTC instant `minutes` ago. */
@@ -65,15 +74,16 @@ function ago(minutes: number): string {
 /** Runs the sweep step against the world; returns its code, output and gh calls. */
 async function sweep(
   merges: readonly Merge[],
+  fakes: Readonly<Record<string, string>> = {},
 ): Promise<{ code: number; output: string; calls: string[] }> {
   const folder = root.path.replaceAll('\\', '/');
   const files = { GH_LOG: `${folder}/gh.log`, FAKE_WORLD: `${folder}/world` };
   const lines = merges.map((m) =>
-    [m.sha, ago(m.minutes), m.parent, String(m.recorded), m.zap].join(' '),
+    [m.sha, ago(m.minutes), m.parent, String(m.recorded), m.zap, String(m.page)].join(' '),
   );
   await writeFile(files.FAKE_WORLD, `${lines.join('\n')}\n`);
   await writeFile(files.GH_LOG, '');
-  const env = { ...files, FAKE_HEAD: merges[0]?.sha ?? '', GH_REPO: repoName };
+  const env = { ...files, ...fakes, FAKE_HEAD: merges[0]?.sha ?? '', GH_REPO: repoName };
   const vars = { OWNER: 'blacklight0101', RUN_URL: runUrl, GH_TOKEN: 'token' };
   const script = stepScript(await checks(), 'sweep', name);
   const result = await runStep(script, { ...env, ...vars }, prelude);
@@ -89,8 +99,11 @@ const merge = (
   sha: string,
   minutes: number,
   zap: string,
-  more: { readonly recorded?: number; readonly parent?: string } = {},
-): Merge => ({ sha, minutes, zap, recorded: more.recorded ?? 0, parent: more.parent ?? '-' });
+  more: { readonly recorded?: number; readonly parent?: string; readonly page?: 2 } = {},
+): Merge => ({
+  ...{ sha, minutes, zap, recorded: more.recorded ?? 0 },
+  ...{ parent: more.parent ?? '-', page: more.page ?? 1 },
+});
 
 describe('release-checks.yml sweep: the job', () => {
   it('DEC-227 runs only on the hourly schedule, with read access to contents and checks and write access to statuses and issues', async () => {
@@ -179,6 +192,10 @@ describe('release-checks.yml sweep: the other causes and the walk', () => {
       merge(a, 50, 'completed'),
     ],
     ['that has release/ready', merge(a, 180, 'in_progress', { recorded: 1 })],
+    [
+      'whose release/ready is past the first page of its statuses',
+      merge(a, 180, 'in_progress', { recorded: 1, page: 2 }),
+    ],
   ])('RF-1304 a merge %s records nothing and comments nothing', async (_label, world) => {
     const result = await sweep([world]);
 
@@ -198,5 +215,24 @@ describe('release-checks.yml sweep: the other causes and the walk', () => {
     expect(posts(result.calls).map((call) => call.includes(`statuses/${b}`))).toEqual([true]);
     expect(lookups.map((call) => call.includes(`commits/${c}`))).toEqual([false, false]);
     expect(result.calls.some((call) => call.includes(`commits/${d}`))).toBe(false);
+  });
+});
+
+describe('release-checks.yml sweep: a comment that fails', () => {
+  it('DEC-227 an owner comment that fails stops neither the walk nor the record, and the sweep fails at the end', async () => {
+    const result = await sweep([merge(a, 50, 'missing', { parent: b }), merge(b, 180, 'missing')], {
+      FAKE_COMMENT_FAILS: '1',
+    });
+
+    expect(posts(result.calls).map((call) => call.includes(`statuses/${a}`))).toEqual([
+      true,
+      false,
+    ]);
+    expect(posts(result.calls).map((call) => call.includes(`statuses/${b}`))).toEqual([
+      false,
+      true,
+    ]);
+    expect(comments(result.calls)).toHaveLength(2);
+    expect(result.code).not.toBe(0);
   });
 });

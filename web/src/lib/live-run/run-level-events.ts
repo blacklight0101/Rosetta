@@ -83,10 +83,18 @@ export function onSourceResolved(state: RunState, event: RunEvent): RunState {
   return { ...state, source: { owner, repo, subpath: '', commitSha } };
 }
 
-/** RF-1002: an ended run has no verifier call in flight, whatever its event holds. */
+/** RF-1002: an ended run has no call in flight, reader or verifier, whatever its event holds. */
+function withoutCallsInFlight(state: RunState): RunState {
+  const emptied = withoutVerifierCalls(state);
+  const { inFlight } = emptied;
+  return inFlight.reader.length === 0
+    ? emptied
+    : { ...emptied, inFlight: { ...inFlight, reader: [] } };
+}
+
 // RF-1003, RF-1108, RF-1002
 export function onRunEnded(state: RunState, event: RunEvent): RunState {
-  const emptied = withoutVerifierCalls(state);
+  const emptied = withoutCallsInFlight(state);
   const parsed = endedData.safeParse(event.data);
   if (!parsed.success) return emptied;
   const { endState, errorCode, totals, failedAreas, unreadAreas, endReason } = parsed.data;

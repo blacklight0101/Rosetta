@@ -481,8 +481,15 @@ The previous image never reads these columns, so the statement changes nothing i
 newer image then fills every row again from the files; until a row is filled the strip reads it as it read a missing
 file. `deepen_parent_id` and `plan_source_key` are kept: they never change once stored, and a null one is filled by
 the pass. The same statement heals a run that ended on the previous image in the seconds both images serve during a
-deploy, after the newer image's start-up pass. The sample report is restored by reverting the pull
-request that changed `site/`.
+deploy, after the newer image's start-up pass.
+
+On the deploy that ships migration `0024` (P8-143): run the statement once after step 4 of section 10 has finished
+and the previous image no longer serves (the host shows only the new revision), and only when a run ended, an answer
+was saved or a brief was saved between the new revision's start and that moment; then restart the new revision so its
+start-up pass fills every row again (otherwise the daily pass does it, and until then the strip reads those rows as
+missing files). Run it neither before the migrate step (the columns do not exist yet) nor while the previous image
+still serves (it could change a row again after the statement). On a later deploy it is not needed: both images then
+store the facts. The sample report is restored by reverting the pull request that changed `site/`.
 
 ## 12. Backup and restore
 

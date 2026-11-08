@@ -237,6 +237,13 @@ space.
 | Job minutes of a code run                                                | 96                              | 88.5 to 103.4; median 94.1 for the 25-job runs                    |
 | Longest job                                                              | Windows shard 1, 11.5           | a Windows shard, 11.2 to 12.1 (shards not balanced)               |
 
+How the busy row is counted (reconciled 2026-11-08, P8-143): the passed `ci.yml` runs created from 15:04Z to 16:28Z
+with a job queued 8 min or more, without the pull request run 42492954128 of `docs/ci-cards-from-video` (a docs branch,
+not a code run), and the wall from the run's `created_at` to its `updated_at`. That counts the 13 min run 42495274413
+waited in its concurrency group before its first job was created. Counted from the first job created to the last job
+completed, with the docs run, the same window gives 11 runs, median 37.2, range 23.0 to 56.6 (the verifier's reading);
+both readings say the same thing: queue time, not work, made the busy runs slow.
+
 **Done when: "a PR's CI finishes in under 15 min wall clock when runners are free".** It holds, measured: every code
 run of the day that passed with free runners finished in 12.1 to 13.8 min (median 13.3), the pull request run 42521937025 on today's full
 workflow in 12.9 min. It held before this group too (13.6 min on a quiet pool, section 3); the group did not move it,

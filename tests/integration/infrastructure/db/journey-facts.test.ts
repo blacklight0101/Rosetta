@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { readMigrationFiles } from '../../../../src/infrastructure/db/migration-files.js';
 import { PgJourneyFacts } from '../../../../src/infrastructure/db/pg-journey-facts.js';
 import { PgMigrator } from '../../../../src/infrastructure/db/pg-migrator.js';
@@ -12,6 +12,7 @@ import {
   migrationsFolder,
   testClock,
   useTestDatabase,
+  type TestDatabase,
 } from '../../../support/postgres.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 
@@ -44,6 +45,23 @@ async function parentsIn(target: DatabasePool, name = 'owner'): Promise<Parents>
 
 function runOf(parents: Parents, key: string, extra: Parameters<typeof sampleRun>[0] = {}) {
   return sampleRun({ id: newId(), ...parents, runKey: key, ...extra });
+}
+
+interface World {
+  readonly pool: DatabasePool;
+  readonly parents: Parents;
+  readonly runs: PgRunIndex;
+  readonly facts: PgJourneyFacts;
+}
+
+/**
+ * A migrated schema of its own with an owner and a project, for one test: the stress job repeats
+ * and shuffles the tests of a file, and run keys and user names are unique in a schema.
+ */
+async function worldIn(database: TestDatabase): Promise<World> {
+  const { pool } = await database.createSchema({ migrate: true });
+  const parents = await parentsIn(pool);
+  return { pool, parents, runs: new PgRunIndex(pool), facts: new PgJourneyFacts(pool) };
 }
 
 describe.skipIf(!hasTestDatabase)('migration 0024', () => {
@@ -105,7 +123,10 @@ describe.skipIf(!hasTestDatabase)('migration 0024 and the previous image', () =>
     const facts = new PgJourneyFacts(pool);
     const id = String(old.params[0]);
 
-    await facts.fillRun(id, { ...NULL_FACTS, supportedClaims: 3, openQuestions: 2 });
+    await facts.fillRun(
+      { id, endedAt: null },
+      { ...NULL_FACTS, supportedClaims: 3, openQuestions: 2 },
+    );
     await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
 
     const found = await new PgRunIndex(pool).find(parents.userId, id);
@@ -117,18 +138,11 @@ describe.skipIf(!hasTestDatabase)('migration 0024 and the previous image', () =>
 
 describe.skipIf(!hasTestDatabase)('the journey facts columns', () => {
   const database = useTestDatabase();
-  let pool: DatabasePool;
-  let parents: Parents;
-
-  beforeAll(async () => {
-    ({ pool } = await database.createSchema({ migrate: true }));
-    parents = await parentsIn(pool);
-  });
-
   const update = (sql: string, params: unknown[]) => ({ sql, params });
 
   it('DEC-226 an end code is an RST code and the counts are never negative', async () => {
-    const id = (await new PgRunIndex(pool).insert(runOf(parents, '20261003-090000-understand'))).ok;
+    const { pool, parents, runs } = await worldIn(database);
+    const id = (await runs.insert(runOf(parents, '20261003-090000-understand'))).ok;
     expect(id).toBe(true);
     const set = (column: string, value: unknown) =>
       outcomeOf(pool, update(`UPDATE runs SET ${column} = $1`, [value]));
@@ -140,7 +154,9 @@ describe.skipIf(!hasTestDatabase)('the journey facts columns', () => {
   });
 
   it('DEC-226 RF-1302 rosetta_app may write every journey fact', async () => {
-    const runs = update(
+    const { pool, parents, runs } = await worldIn(database);
+    expect((await runs.insert(runOf(parents, '20261003-090000-understand'))).ok).toBe(true);
+    const runFacts = update(
       'UPDATE runs SET deepen_parent_id = $1, plan_source_key = $2, end_code = $3, supported_claims = $4, open_questions = $5, facts_backfilled = true',
       [newId(), '20261003-090000-understand', 'RST-1806', 3, 2],
     );
@@ -149,23 +165,16 @@ describe.skipIf(!hasTestDatabase)('the journey facts columns', () => {
       [],
     );
 
-    expect(await outcomeOf(pool, runs, 'rosetta_app')).toBe('ok');
+    expect(await outcomeOf(pool, runFacts, 'rosetta_app')).toBe('ok');
     expect(await outcomeOf(pool, projects, 'rosetta_app')).toBe('ok');
   });
 });
 
 describe.skipIf(!hasTestDatabase)('the writers of the journey facts', () => {
   const database = useTestDatabase();
-  let parents: Parents;
-  let runs: PgRunIndex;
-
-  beforeAll(async () => {
-    const { pool } = await database.createSchema({ migrate: true });
-    parents = await parentsIn(pool);
-    runs = new PgRunIndex(pool);
-  });
 
   it('RF-1108 DEC-226 a queued Deepen and a plan run keep the run they come from on their row', async () => {
+    const { parents, runs } = await worldIn(database);
     const deepen = runOf(parents, '20261004-090000-understand', { deepenParentId: newId() });
     const plan = runOf(parents, '20261004-090000-plan', {
       stage: 'plan',
@@ -181,19 +190,9 @@ describe.skipIf(!hasTestDatabase)('the writers of the journey facts', () => {
 
 describe.skipIf(!hasTestDatabase)('the writers of the journey facts (end and questions)', () => {
   const database = useTestDatabase();
-  let pool: DatabasePool;
-  let parents: Parents;
-  let runs: PgRunIndex;
-  let facts: PgJourneyFacts;
-
-  beforeAll(async () => {
-    ({ pool } = await database.createSchema({ migrate: true }));
-    parents = await parentsIn(pool);
-    runs = new PgRunIndex(pool);
-    facts = new PgJourneyFacts(pool);
-  });
 
   it('RF-615 DEC-226 the end, the plan source and the open questions are stored on the run', async () => {
+    const { parents, runs, facts } = await worldIn(database);
     const understand = runOf(parents, '20261005-090000-understand');
     const plan = runOf(parents, '20261005-100000-plan', { stage: 'plan' });
     await runs.insert(understand);
@@ -221,19 +220,9 @@ describe.skipIf(!hasTestDatabase)('the writers of the journey facts (end and que
 
 describe.skipIf(!hasTestDatabase)('the writers of the journey facts (owner and brief)', () => {
   const database = useTestDatabase();
-  let pool: DatabasePool;
-  let parents: Parents;
-  let runs: PgRunIndex;
-  let facts: PgJourneyFacts;
-
-  beforeAll(async () => {
-    ({ pool } = await database.createSchema({ migrate: true }));
-    parents = await parentsIn(pool);
-    runs = new PgRunIndex(pool);
-    facts = new PgJourneyFacts(pool);
-  });
 
   it('RF-1105 DEC-226 another user cannot store open questions on a run that is not theirs', async () => {
+    const { pool, parents, runs, facts } = await worldIn(database);
     const understand = runOf(parents, '20261006-090000-understand');
     await runs.insert(understand);
     const other = await parentsIn(pool, 'other');
@@ -244,6 +233,7 @@ describe.skipIf(!hasTestDatabase)('the writers of the journey facts (owner and b
   });
 
   it('RF-615 DEC-226 the brief time is stored on the project', async () => {
+    const { pool, parents, facts } = await worldIn(database);
     const savedAt = Date.parse('2026-10-12T09:30:00.123Z');
 
     await facts.recordBriefSaved(parents.userId, parents.projectId, savedAt);
@@ -274,10 +264,13 @@ describe.skipIf(!hasTestDatabase)('the backfill rows', () => {
 
     const pending = await facts.pendingRuns(10);
     expect(pending.map((each) => each.runKey)).toEqual(['20261001-090000-understand']);
-    await facts.fillRun(String(older.params[0]), {
-      ...{ deepenParentId: newId(), planSourceKey: '20261001-070000-understand' },
-      ...{ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 1 },
-    });
+    await facts.fillRun(
+      { id: String(older.params[0]), endedAt: null },
+      {
+        ...{ deepenParentId: newId(), planSourceKey: '20261001-070000-understand' },
+        ...{ endCode: 'RST-1806', supportedClaims: 3, openQuestions: 1 },
+      },
+    );
     expect(await facts.pendingProjects(10)).toEqual([parents]);
     await facts.fillProject(parents.projectId, Date.parse('2026-10-12T09:30:00.000Z'));
 

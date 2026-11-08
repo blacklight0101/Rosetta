@@ -60,6 +60,16 @@ export function projectConsentsContract(name: string, fresh: () => Promise<Proje
     expect(await consents.list(bob, project)).toEqual([]);
   });
 
+  it(`RF-142 ${name} refuses a consent whose id is already stored and keeps the first`, async () => {
+    const consents = await fresh();
+    await consents.give(consent(first));
+
+    await expect(
+      consents.give(consent(first, { providers: ['openai'], givenAt: 1_800_000_500_000 })),
+    ).rejects.toMatchObject({ code: 'RST-2404' });
+    expect(await consents.list(amy, project)).toEqual([consent(first)]);
+  });
+
   it(`RF-1105 ${name} lists nothing for another user's project`, async () => {
     const consents = await fresh();
     await consents.give(consent(first));

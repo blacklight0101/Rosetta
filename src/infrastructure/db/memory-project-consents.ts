@@ -18,6 +18,10 @@ export class MemoryProjectConsents implements ProjectConsents {
   async give(consent: ProjectConsent): Promise<void> {
     const project = await this.projects.find(consent.userId, consent.projectId);
     if (project === undefined) throw new RosettaError(ERROR_CODES.notFound);
+    // The primary key of `project_consent` refuses an id that is stored; PgProjectConsents says RST-2404.
+    if (this.consents.some((each) => each.id === consent.id)) {
+      throw new RosettaError(ERROR_CODES.databaseQueryFailed);
+    }
     this.consents = [...this.consents, { ...consent, withdrawnAt: null }];
   }
 

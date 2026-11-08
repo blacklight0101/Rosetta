@@ -8861,7 +8861,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
   - RST-1521 says where to confirm, in the words of P8-25 (with a stored consent the box is not shown, so the message names the project's consent line): "Give the private code confirmation for this project, then try again."
 - **Delivers**: the message change, with unit and integration tests.
 - **Done when**: `POST plan-options` without the private-code confirmation answers RST-1521 with that message; CI green.
-- **Refs**: RF-627, ADR-005, ADR-007; P8-25; EV-86; split from P8-31 (DEC-214); GitHub issue #1172
+- **Refs**: RF-132 (RST-1521 is the private-code confirmation's code; added 2026-11-08, P8-143), RF-627, ADR-005, ADR-007; P8-25; EV-86; split from P8-31 (DEC-214); GitHub issue #1172
 
 ### P8-99 - Projects list: name link, Open, row menu, source badge, date and time
 
@@ -9271,14 +9271,14 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Gate**: none
 - **Status**: Done
 - **Evidence** (2026-11-04, P8-94 verifier #1216): the priority of a rerun subset is untested (`task-plan.ts:65-66`); `surfaceOf` costs areas times files (`reading-priority.ts:25-33`); `planTasks` without `scanned` has no priority (`task-plan.ts:29-35`).
-- **Reads**: `task-plan.ts` and `reading-priority.ts`, their tests, DEC-216, RF-231.
+- **Reads**: `task-plan.ts` and `reading-priority.ts`, their tests, DEC-216, RF-210.
 - **Do**: red tests first.
   - A rerun of a subset of areas keeps the app-first order.
   - `planTasks` without `scanned`: a test pins what it does, and the code gives the same order as a scan with no surface data.
   - `surfaceOf` looks files up by area once, so its cost grows with files, not areas times files; behaviour unchanged.
 - **Delivers**: the tests and the small changes.
 - **Done when**: the new tests pass and the recordings stay unchanged; CI green.
-- **Refs**: RF-231, DEC-216; follow-up of P8-94; GitHub issue #1240
+- **Refs**: RF-210 (read RF-231 until 2026-11-08, P8-143), DEC-216; follow-up of P8-94; GitHub issue #1240
 
 ### P8-125 - Follow-up: the strip's warn step is tested, and admin-and-cap asserts it (P8-112)
 

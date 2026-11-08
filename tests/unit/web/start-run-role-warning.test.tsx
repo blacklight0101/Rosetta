@@ -125,14 +125,21 @@ it('RF-436 the start page warns that an unreachable Ollama is used by all four r
   expect(puts(calls)).toEqual([]);
 });
 
+/** The project as another session saved it after the page read it: a new cap and version 2. */
+function savedElsewhere(): Record<string, unknown> {
+  const settings = templateSettings();
+  const budget = { ...settings.budget, run: { ...settings.budget.run, maxCostMicros: 900_000 } };
+  return projectOf('p-1', 'octo/demo', { settings: { ...settings, budget }, settingsVersion: 2 });
+}
+
 it('RF-436 Apply in the start-page warning saves every role on Anthropic with its recommended model in the project settings', async () => {
+  let elsewhere = false;
   let saved = false;
   const { calls } = renderWarned({
-    [`GET ${projectPath}`]: () =>
-      json(
-        200,
-        saved ? projectWithRoles('anthropic', 'claude-haiku-5-5') : projectOf('p-1', 'octo/demo'),
-      ),
+    [`GET ${projectPath}`]: () => {
+      if (saved) return json(200, projectWithRoles('anthropic', 'claude-haiku-5-5'));
+      return json(200, elsewhere ? savedElsewhere() : projectOf('p-1', 'octo/demo'));
+    },
     [`PUT ${settingsRoute}`]: () => {
       saved = true;
       return json(200, projectWithRoles('anthropic', 'claude-haiku-5-5'));
@@ -143,6 +150,8 @@ it('RF-436 Apply in the start-page warning saves every role on Anthropic with it
     expect(selectOf('Provider for every role').value).toBe('anthropic');
   });
   const estimatesBefore = calls.filter((call) => call.path.startsWith(estimatePath)).length;
+  // Another session saves the settings after the page read them; Apply reads them again.
+  elsewhere = true;
 
   fireEvent.click(screen.getByRole('button', { name: 'Apply to every role' }));
 
@@ -150,7 +159,7 @@ it('RF-436 Apply in the start-page warning saves every role on Anthropic with it
     'Saved in the project settings: every role now uses Anthropic.',
   );
   const [put] = puts(calls);
-  expect(put?.ifMatch).toBe('"1"');
+  expect(put?.ifMatch).toBe('"2"');
   const template = templateSettings();
   const haiku = { provider: 'anthropic', model: 'claude-haiku-5-5' };
   expect(rolesIn(put?.body)).toEqual({
@@ -160,7 +169,9 @@ it('RF-436 Apply in the start-page warning saves every role on Anthropic with it
     planner: { ...template.roles.planner, ...haiku },
     summariser: { ...template.roles.summariser, ...haiku },
   });
-  expect(put?.body).toMatchObject({ agents: template.agents, budget: template.budget });
+  // What the other session saved stays.
+  const budget = { ...template.budget, run: { ...template.budget.run, maxCostMicros: 900_000 } };
+  expect(put?.body).toMatchObject({ agents: template.agents, budget });
   expect(screen.queryByRole('alert')).toBeNull();
   await waitFor(() => {
     expect(document.activeElement).toBe(line);

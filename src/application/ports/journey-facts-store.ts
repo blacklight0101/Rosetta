@@ -40,13 +40,15 @@ export interface PendingProject {
 
 /**
  * The rows that existed before the facts were stored (migration 0024) and are filled once from the
- * files. A fill never replaces a fact a writer stored since, and marks the row filled even when a
- * fact stays null, so a row is read once.
+ * files. A fill never replaces a fact a writer stored since, nor the facts of the run's end when
+ * the run ended again after the pass read it (P8-143), and marks the row filled even when a fact
+ * stays null, so a row is read once.
  */
 export interface JourneyFactsBackfill {
   /** Runs not filled yet, of every user, oldest first; at most `limit`. */
   pendingRuns(limit: number): Promise<readonly Run[]>;
-  fillRun(runId: string, facts: StoredRunFacts): Promise<void>;
+  /** `read` is the run as `pendingRuns` gave it: its end time is the one the end facts belong to. */
+  fillRun(read: Pick<Run, 'id' | 'endedAt'>, facts: StoredRunFacts): Promise<void>;
   /** Projects not filled yet, of every user, oldest first; at most `limit`. */
   pendingProjects(limit: number): Promise<readonly PendingProject[]>;
   fillProject(projectId: string, briefSavedAt: EpochMs | null): Promise<void>;
