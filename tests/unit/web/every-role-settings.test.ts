@@ -1,9 +1,9 @@
 import { expect, it } from 'vitest';
-import type { ProjectSettings } from '../../../web/src/api/project-schemas.js';
+import { projectSchema, type ProjectSettings } from '../../../web/src/api/project-schemas.js';
 import { settingsOnEveryRole } from '../../../web/src/pages/every-role-settings.js';
 import { LOCAL_OLLAMA_MODEL } from '../../../web/src/pages/local-roles.js';
 import type { ModelListState } from '../../../web/src/pages/model-lists.js';
-import { templateSettings } from './project-fixtures.js';
+import { projectOf } from './project-fixtures.js';
 
 // RF-436, P8-75: the settings the start-page warning saves when "Apply to every role" is pressed:
 // the four roles on the chosen provider, each with the model the every-role rule gives it, and
@@ -18,7 +18,7 @@ const anthropic: ModelListState = {
   ],
 };
 
-const settings = (): ProjectSettings => templateSettings();
+const settings = (): ProjectSettings => projectSchema.parse(projectOf('p-1', 'octo/demo')).settings;
 
 const modelsOf = (saved: ProjectSettings) =>
   [saved.roles.reader, saved.roles.verifier, saved.roles.planner, saved.roles.summariser].map(

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
-import { failure, json, type Answer, type RecordedCall } from './fake-api.js';
+import { failure, json, type Answer, type RenderedPage } from './fake-api.js';
 import { projectOf, templateSettings } from './project-fixtures.js';
 import { estimatePath, projectPath } from './start-run-fixtures.js';
 import { renderStart } from './start-run-helpers.js';
@@ -91,7 +91,7 @@ function selectOf(label: string): HTMLSelectElement {
 }
 
 const warning = () => screen.findByRole('alert');
-const puts = (calls: readonly RecordedCall[]) => calls.filter((call) => call.method === 'PUT');
+const puts = (calls: RenderedPage['calls']) => calls.filter((call) => call.method === 'PUT');
 
 function rolesIn(body: unknown): unknown {
   return typeof body === 'object' && body !== null ? Reflect.get(body, 'roles') : undefined;

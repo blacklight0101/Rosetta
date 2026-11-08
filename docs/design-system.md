@@ -297,6 +297,9 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
   When a role's provider cannot be used now (P8-74), the row moves into a warning callout at the top of the page
   that names the provider and its roles; there the list also shows an unreachable Ollama as "Ollama (not
   reachable)", which cannot be chosen. After Apply the warning goes and focus moves to the row in its usual place.
+  The start page shows the same warning under the project's title (P8-75); it has no Save, so the warning says
+  that Apply saves the choice in the project settings, Apply saves at once, and a line that takes the focus says
+  what was saved ("Saved in the project settings: every role now uses Anthropic.").
 - **Disabled with a reason**: a control that cannot be used says why in its label or title ("Delete (in use)").
 - **Errors**: the `RST-xxxx` code, what happened and what to do, next to the field or in an error callout
   ([conventions](conventions.md) section 6).
