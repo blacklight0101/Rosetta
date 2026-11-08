@@ -170,17 +170,17 @@ function useApplyFromWarning(
   };
 }
 
+type ModelSettingsProps = SectionProps & {
+  readonly lists: Readonly<Record<string, ModelListState>>;
+  readonly limit: ContextLimit | undefined;
+  /** RF-436, DEC-225: the providers the user can use now, for the every-role control. */
+  readonly usable: readonly { readonly value: string; readonly label: string }[];
+  /** RF-436, P8-74: the warning on roles that cannot be used now; it holds the control. */
+  readonly warning: RoleWarningFacts | undefined;
+};
+
 // RF-002
-export function ModelSettings(
-  props: SectionProps & {
-    readonly lists: Readonly<Record<string, ModelListState>>;
-    readonly limit: ContextLimit | undefined;
-    /** RF-436, DEC-225: the providers the user can use now, for the every-role control. */
-    readonly usable: readonly { readonly value: string; readonly label: string }[];
-    /** RF-436, P8-74: the warning on roles that cannot be used now; it holds the control. */
-    readonly warning: RoleWarningFacts | undefined;
-  },
-): JSX.Element {
+export function ModelSettings(props: ModelSettingsProps): JSX.Element {
   const { lists } = props;
   const chooseProvider = useProviderChoice(props.editor, lists);
   // RF-436, P8-73: each role takes the provider as if it were chosen for that role alone, so the
