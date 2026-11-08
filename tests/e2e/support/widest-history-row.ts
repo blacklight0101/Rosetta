@@ -9,7 +9,7 @@ export const WIDEST_SUFFIX = '-restarted';
 /** The end of the id of the copy, so a route can tell its understanding from the real run's. */
 const COPY_SUFFIX = '-copy';
 
-const historyBody = z.object({
+const historyBody = z.looseObject({
   runs: z.array(z.looseObject({ id: z.string(), runId: z.string() })),
 });
 const understandingBody = z.looseObject({ measures: z.looseObject({}).nullable() });
