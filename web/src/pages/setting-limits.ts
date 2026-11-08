@@ -83,3 +83,32 @@ export function formatAmount(value: number, unit: LimitUnit): string {
   const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/gu, ',');
   return `${sign}$${grouped}.${fraction.padEnd(2, '0')}`;
 }
+
+type OutputRole = keyof typeof templateDefaults.maxOutputTokens;
+
+/**
+ * Q-57: the output limit of a role on a hosted model (Anthropic, OpenAI) before the model's own
+ * maximum, as src/application/models/role-limits.ts gives it; tests/unit/web/output-default.test.ts
+ * keeps the two in step.
+ */
+const hostedOutputDefaults: Readonly<Record<OutputRole, number>> = {
+  reader: 8_192,
+  verifier: 4_000,
+  planner: 16_384,
+  summariser: 4_000,
+};
+
+/**
+ * RF-436, RF-405, Q-57 (P8-76): the output limit a role runs with when the project stores none: on a
+ * hosted provider the smaller of the role's hosted default and the model's maximum in the shipped
+ * list, on any other provider the role's local default (the template's).
+ */
+export function builtInOutput(
+  role: OutputRole,
+  kind: string | undefined,
+  modelMaximum: number | undefined,
+): number {
+  if (kind !== 'anthropic' && kind !== 'openai') return templateDefaults.maxOutputTokens[role];
+  const hosted = hostedOutputDefaults[role];
+  return Math.min(modelMaximum ?? hosted, hosted);
+}

@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useState } from 'preact/hooks';
 import { NumberSetting, type SettingBase } from './SettingFields.js';
 import {
   formatAmount,
@@ -22,8 +23,13 @@ interface LimitProps extends SettingBase {
   /** The top of the slider when it is lower than the range's own top. */
   readonly max?: number;
   readonly defaultValue: number;
-  /** Where the slider sits while the field is empty, for a limit that may be left unset (Q-57). */
+  /**
+   * The number an empty field stands for, for a limit that may be left unset (Q-57): the field and
+   * the slider show it while the draft stays empty, so a save still leaves the limit out (P8-76).
+   */
   readonly emptyAt?: number;
+  /** What the number counts, for the value written with thousands separators beside the field (P8-76). */
+  readonly noun?: string;
   readonly unit: LimitUnit;
   /** No range hint while the value that sets this range is itself invalid (P2-29). */
   readonly hideHint?: boolean;
@@ -102,6 +108,60 @@ function sliderAt(current: number | undefined, emptyAt: number | undefined, rang
   return current ?? emptyAt ?? range.min;
 }
 
+interface FieldText {
+  readonly text: string;
+  readonly onInput: (value: string) => void;
+  readonly onBlur: () => void;
+}
+
+/**
+ * RF-436 (P8-76): the text of the number field. An empty draft shows the number it stands for,
+ * except while a field the user emptied keeps the focus, so typing over it is not interrupted.
+ */
+function useFieldText(
+  value: string,
+  emptyAt: number | undefined,
+  onInput: (value: string) => void,
+): FieldText {
+  const [emptied, setEmptied] = useState(false);
+  const empty = value.trim() === '';
+  return {
+    text: empty && emptyAt !== undefined && !emptied ? String(emptyAt) : value,
+    onInput: (typed) => {
+      setEmptied(typed.trim() === '');
+      onInput(typed);
+    },
+    onBlur: () => {
+      setEmptied(false);
+    },
+  };
+}
+
+/** RF-436 (P8-76): the number beside the field with its thousands separated, when it holds one. */
+function readingOf(current: number | undefined, noun: string | undefined): string | undefined {
+  if (current === undefined || noun === undefined) return undefined;
+  return `${formatValue(current, 'count')} ${noun}`;
+}
+
+/** RF-436 (P8-76): the number field of a limit, with the number an empty draft stands for. */
+function LimitField(props: LimitProps & { readonly describedBy: string | undefined }): JSX.Element {
+  const field = useFieldText(props.value, props.emptyAt, props.onInput);
+  return (
+    <NumberSetting
+      id={props.id}
+      label={props.label}
+      path={props.path}
+      help={props.help}
+      errorFor={props.errorFor}
+      value={field.text}
+      onInput={field.onInput}
+      onBlur={field.onBlur}
+      describedBy={props.describedBy}
+      suffix={readingOf(numberOf(props.value), props.noun)}
+    />
+  );
+}
+
 // RF-002
 export function LimitSetting(props: LimitProps): JSX.Element {
   const { id, value, range, unit, defaultValue } = props;
@@ -125,16 +185,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
   ]);
   return (
     <div class="rst-limit">
-      <NumberSetting
-        id={id}
-        label={props.label}
-        path={props.path}
-        help={props.help}
-        errorFor={props.errorFor}
-        value={value}
-        onInput={props.onInput}
-        describedBy={hint === undefined ? undefined : hintId}
-      />
+      <LimitField {...props} describedBy={hint === undefined ? undefined : hintId} />
       <RangeInput
         id={rangeId}
         label={props.label}

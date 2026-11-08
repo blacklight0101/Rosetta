@@ -10,7 +10,13 @@ import { OllamaContextField } from './OllamaContextField.js';
 import { recommendedModel, type ModelListState } from './model-lists.js';
 import { ProviderSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
-import { ranges, templateDefaults, type Range } from './setting-limits.js';
+import {
+  builtInOutput,
+  formatValue,
+  ranges,
+  templateDefaults,
+  type Range,
+} from './setting-limits.js';
 import { contextPath, usesOllama, type ContextLimit } from './ollama-context.js';
 import { useProviderChoice } from './use-recommended-model.js';
 
@@ -44,36 +50,49 @@ function ReaderTurns({ editor, errorFor }: SectionProps): JSX.Element {
   );
 }
 
-/** Q-57: what an empty output limit means. */
-const unsetOutputHelp = 'Not set: the role uses the default of its model.';
+/** Q-57, RF-436 (P8-76): what an empty output limit means, in the words of the design board. */
+const unsetOutputHelp = (builtIn: number): string =>
+  `${formatValue(builtIn, 'count')} is the default. The field and the slider always show the same value.`;
+
+/** The maximum output the shipped list gives the chosen model, once the list has come. */
+function listedMaximum(list: ModelListState | undefined, model: string): number | undefined {
+  const listed = list?.status === 'ready' ? list.models.find((e) => e.model === model) : undefined;
+  return listed?.maxOutputTokens;
+}
 
 /** DEC-163: the output slider tops out at the maximum the chosen model lists, else 32,768. */
 function outputRange(list: ModelListState | undefined, model: string): Range {
-  const listed = list?.status === 'ready' ? list.models.find((e) => e.model === model) : undefined;
-  return { ...ranges.maxOutputTokens, max: listed?.maxOutputTokens ?? ranges.maxOutputTokens.max };
+  return {
+    ...ranges.maxOutputTokens,
+    max: listedMaximum(list, model) ?? ranges.maxOutputTokens.max,
+  };
 }
 
 function OutputTokens({
   editor,
   errorFor,
+  kindOf,
   role,
   list,
 }: SectionProps & {
   readonly role: RoleName;
   readonly list: ModelListState | undefined;
 }): JSX.Element {
+  const draft = editor.draft.roles[role];
+  // RF-436 (P8-76): the default shown is the limit a run gives the role on this provider and model.
+  const builtIn = builtInOutput(role, kindOf(draft.provider), listedMaximum(list, draft.model));
   return (
     <LimitSetting
       id={`role-${role}-output`}
       label={`${roleText[role].title} max output tokens`}
       path={`roles.${role}.maxOutputTokens`}
       errorFor={errorFor}
-      range={outputRange(list, editor.draft.roles[role].model)}
-      help={editor.draft.roles[role].maxOutputTokens.trim() === '' ? unsetOutputHelp : undefined}
+      range={outputRange(list, draft.model)}
+      help={draft.maxOutputTokens.trim() === '' ? unsetOutputHelp(builtIn) : undefined}
       unit="count"
-      defaultValue={templateDefaults.maxOutputTokens[role]}
-      emptyAt={templateDefaults.maxOutputTokens[role]}
-      value={editor.draft.roles[role].maxOutputTokens}
+      defaultValue={builtIn}
+      emptyAt={builtIn}
+      value={draft.maxOutputTokens}
       onInput={(maxOutputTokens) => {
         editor.changeRole(role, { maxOutputTokens });
       }}
