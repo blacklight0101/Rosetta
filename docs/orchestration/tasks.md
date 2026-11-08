@@ -9535,7 +9535,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1315)
 - **Evidence** (2026-11-08, the orchestrator, from the owner's request): six checkouts fetch the whole history with `fetch-depth: 0`:
   - `ci.yml`: `changes`, which only diffs `BASE_SHA...HEAD_SHA` of a pull request, and `gitleaks`;
   - `release.yml`: `image` and `deploy`;
@@ -9565,7 +9565,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-65
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1313; takes effect from the next release merge into `main`)
 - **Evidence** (2026-11-08, the orchestrator, from the owner's request):
   - The `release-checks.yml` step "Wait for the ZAP baseline of this commit" holds a runner for up to 40 minutes. It asks GitHub for the `zap-baseline` check every 30 s, up to 80 times, while that check runs in another workflow.
   - The Azure waits in `release.yml` and `scheduled-release.yml` poll every 10 s with no back-off.
@@ -9591,7 +9591,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-54
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1314)
 - **Evidence** (2026-11-08, the orchestrator, from the owner's request):
   - Eight checks are required on `develop`: `verify` on both systems, `audit`, `gitleaks`, `dependency-review`, `pr-title`, `codeql` and `e2e`. One flaky test in a required check holds every pull request.
   - P8-54 retries an e2e test once and names it. A test that keeps flaking still stays in the required check, with no owner.
