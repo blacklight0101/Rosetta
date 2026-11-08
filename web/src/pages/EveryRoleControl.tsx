@@ -12,8 +12,15 @@ import type { ModelListState } from './model-lists.js';
 /** The model value that means "the model choosing the provider selects for each role". */
 const recommendedPerRole = '';
 
+/** A provider of the list; a disabled one is shown but cannot be chosen (P8-74). */
+export interface ProviderOption {
+  readonly value: string;
+  readonly label: string;
+  readonly disabled?: true;
+}
+
 interface EveryRoleProps {
-  readonly providers: readonly { readonly value: string; readonly label: string }[];
+  readonly providers: readonly ProviderOption[];
   readonly lists: Readonly<Record<string, ModelListState>>;
   /** An empty model asks for the recommended one per role. */
   readonly onApply: (provider: string, model: string) => void;
@@ -34,9 +41,10 @@ export function EveryRoleControl({
   onApply,
 }: EveryRoleProps): JSX.Element | null {
   const [chosen, setChosen] = useState({ provider: '', model: recommendedPerRole });
-  const first = providers[0];
+  const choosable = providers.filter((each) => each.disabled !== true);
+  const first = choosable[0];
   if (first === undefined) return null;
-  const provider = providers.some((each) => each.value === chosen.provider)
+  const provider = choosable.some((each) => each.value === chosen.provider)
     ? chosen.provider
     : first.value;
   const model = provider === chosen.provider ? chosen.model : recommendedPerRole;

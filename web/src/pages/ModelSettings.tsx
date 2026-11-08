@@ -1,6 +1,9 @@
 import type { JSX } from 'preact';
+import { useEffect, useRef } from 'preact/hooks';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
 import { EveryRoleControl } from './EveryRoleControl.js';
+import { RoleWarning } from './RoleWarning.js';
+import type { RoleWarningFacts } from './role-warning.js';
 import { LimitSetting } from './LimitSetting.js';
 import { ModelChoice } from './ModelChoice.js';
 import { OllamaContextField } from './OllamaContextField.js';
@@ -147,6 +150,26 @@ function OllamaContext({
   );
 }
 
+/**
+ * RF-436, P8-74: Apply in the warning makes every role usable, so the warning goes; focus then
+ * moves to the every-role control in its usual place instead of being lost with the warning.
+ */
+function useApplyFromWarning(
+  warned: boolean,
+  apply: (provider: string, model: string) => void,
+): (provider: string, model: string) => void {
+  const applied = useRef(false);
+  useEffect(() => {
+    if (warned || !applied.current) return;
+    applied.current = false;
+    document.getElementById('every-role-provider')?.focus();
+  }, [warned]);
+  return (provider, model) => {
+    applied.current = true;
+    apply(provider, model);
+  };
+}
+
 // RF-002
 export function ModelSettings(
   props: SectionProps & {
@@ -154,6 +177,8 @@ export function ModelSettings(
     readonly limit: ContextLimit | undefined;
     /** RF-436, DEC-225: the providers the user can use now, for the every-role control. */
     readonly usable: readonly { readonly value: string; readonly label: string }[];
+    /** RF-436, P8-74: the warning on roles that cannot be used now; it holds the control. */
+    readonly warning: RoleWarningFacts | undefined;
   },
 ): JSX.Element {
   const { lists } = props;
@@ -166,27 +191,36 @@ export function ModelSettings(
       else props.editor.changeRole(role, { provider, model });
     }
   };
+  const { warning } = props;
+  const applyFromWarning = useApplyFromWarning(warning !== undefined, applyToEveryRole);
   return (
-    <section class="rst-card rst-settings__section" aria-labelledby="models">
-      <h2 id="models" class="rst-settings__heading">
-        Models per role
-      </h2>
-      <p class="rst-settings__note">
-        Every role names a provider and a model. A provider the project did not use before is added
-        with its usual settings; keys are kept on the Settings and keys page. Choosing a provider
-        selects its recommended model; change it if you want another.
-      </p>
-      <EveryRoleControl providers={props.usable} lists={lists} onApply={applyToEveryRole} />
-      {ROLE_NAMES.map((role) => (
-        <RoleFields
-          key={role}
-          {...props}
-          role={role}
-          chooseProvider={chooseProvider}
-          list={lists[props.editor.draft.roles[role].provider]}
-        />
-      ))}
-      <OllamaContext {...props} limit={props.limit} />
-    </section>
+    <>
+      {warning === undefined ? null : (
+        <RoleWarning facts={warning} lists={lists} onApply={applyFromWarning} />
+      )}
+      <section class="rst-card rst-settings__section" aria-labelledby="models">
+        <h2 id="models" class="rst-settings__heading">
+          Models per role
+        </h2>
+        <p class="rst-settings__note">
+          Every role names a provider and a model. A provider the project did not use before is
+          added with its usual settings; keys are kept on the Settings and keys page. Choosing a
+          provider selects its recommended model; change it if you want another.
+        </p>
+        {warning === undefined ? (
+          <EveryRoleControl providers={props.usable} lists={lists} onApply={applyToEveryRole} />
+        ) : null}
+        {ROLE_NAMES.map((role) => (
+          <RoleFields
+            key={role}
+            {...props}
+            role={role}
+            chooseProvider={chooseProvider}
+            list={lists[props.editor.draft.roles[role].provider]}
+          />
+        ))}
+        <OllamaContext {...props} limit={props.limit} />
+      </section>
+    </>
   );
 }
