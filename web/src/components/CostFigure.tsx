@@ -78,23 +78,21 @@ function moveBetweenAmounts(event: KeyboardEvent): void {
 
 /**
  * Escape closes the open figure wherever the key is pressed: a browser sends no key to an amount that is
- * only hovered (WCAG 1.4.13). The listener is added before the figure is first painted, so an Escape pressed
- * the moment it shows is never missed.
+ * only hovered (WCAG 1.4.13). The listener is there from the start of an amount with a tooltip and reads a
+ * ref, so an Escape pressed the moment the figure shows is never missed.
  */
 function useEscapeAnywhere(tip: OverlayTip): void {
-  const { open, onKeyDown } = tip;
-  const latest = useRef(onKeyDown);
-  latest.current = onKeyDown;
+  const latest = useRef(tip);
+  latest.current = tip;
   useLayoutEffect(() => {
-    if (!open) return undefined;
     const onKey = (event: KeyboardEvent): void => {
-      latest.current(event);
+      if (latest.current.open) latest.current.onKeyDown(event);
     };
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, []);
 }
 
 export interface AmountProps {
