@@ -5,7 +5,7 @@ import { json, renderPage, type Answer } from './fake-api.js';
 import { projectOf, templateSettings } from './project-fixtures.js';
 
 // RF-436, DEC-225, P8-73: "Provider for every role", "Model" and "Apply to every role" at the top
-// of the Models per role section. Only the providers the user can use now are listed; Apply fills
+// of the Roles section. Only the providers the user can use now are listed; Apply fills
 // the four roles in the form, and only Save settings saves them.
 
 const route = '/api/projects/p-1';

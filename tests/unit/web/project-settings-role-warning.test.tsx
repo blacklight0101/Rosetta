@@ -171,7 +171,7 @@ it('RF-436 with no provider the user can use, the warning points to Settings and
   expect(screen.queryByLabelText('Provider for every role')).toBeNull();
 });
 
-it('RF-436 with every role usable there is no warning, and the control stays in Models per role', async () => {
+it('RF-436 with every role usable there is no warning, and the control stays in Roles', async () => {
   renderSettings({ 'GET /api/models/ollama': installed });
   await loaded();
 

@@ -5,10 +5,10 @@ import { EveryRoleControl } from './EveryRoleControl.js';
 import { RoleWarning } from './RoleWarning.js';
 import type { RoleWarningFacts } from './role-warning.js';
 import { LimitSetting } from './LimitSetting.js';
-import { ModelChoice } from './ModelChoice.js';
 import { OllamaContextField } from './OllamaContextField.js';
-import { recommendedModel, type ModelListState } from './model-lists.js';
-import { ProviderSetting } from './SettingFields.js';
+import type { ModelListState } from './model-lists.js';
+import type { RoleState } from './role-state.js';
+import { roleTitles, RolesTable } from './RolesTable.js';
 import type { SectionProps } from './settings-section.js';
 import {
   builtInOutput,
@@ -20,16 +20,9 @@ import {
 import { contextPath, usesOllama, type ContextLimit } from './ollama-context.js';
 import { useProviderChoice } from './use-recommended-model.js';
 
-// RF-002, RF-405, RF-436, DEC-116, DEC-117, DEC-156, design-system.md section 14: the provider, model and
-// output limit of each agent role; only the reader has a turn limit. The limits are sliders (P2-15).
-// The model is chosen from the provider's list, with "Other model..." for free text.
-
-const roleText: Readonly<Record<RoleName, { readonly title: string; readonly purpose: string }>> = {
-  reader: { title: 'Reader', purpose: 'Reads each area of the code and writes the cards.' },
-  verifier: { title: 'Verifier', purpose: 'Checks every claim against its evidence.' },
-  planner: { title: 'Planner', purpose: 'Writes the architecture, decisions and roadmap.' },
-  summariser: { title: 'Summariser', purpose: 'Writes the short summaries.' },
-};
+// RF-002, RF-405, RF-436, DEC-116, DEC-117, DEC-156, design-system.md section 14: the Roles section.
+// The provider and model of each agent role are the Roles table of the `P8ProjectSettings` artboard
+// (P8-135); under it the output limit of each role and the reader's turn limit, as sliders (P2-15).
 
 function ReaderTurns({ editor, errorFor }: SectionProps): JSX.Element {
   return (
@@ -84,7 +77,7 @@ function OutputTokens({
   return (
     <LimitSetting
       id={`role-${role}-output`}
-      label={`${roleText[role].title} max output tokens`}
+      label={`${roleTitles[role]} max output tokens`}
       path={`roles.${role}.maxOutputTokens`}
       errorFor={errorFor}
       range={outputRange(list, draft.model)}
@@ -100,51 +93,22 @@ function OutputTokens({
   );
 }
 
-function RoleFields(
-  props: SectionProps & {
-    readonly role: RoleName;
-    readonly list: ModelListState | undefined;
-    readonly chooseProvider: (role: RoleName, provider: string) => void;
-  },
+/** The output limit of each role and the reader's turn limit, under the table. */
+function RoleLimits(
+  props: SectionProps & { readonly lists: Readonly<Record<string, ModelListState>> },
 ): JSX.Element {
-  const { editor, errorFor, providers, role, list, chooseProvider } = props;
-  const { title, purpose } = roleText[role];
-  const draft = editor.draft.roles[role];
-  const path = `roles.${role}`;
+  const { lists, ...section } = props;
   return (
-    <div class="rst-role" data-testid="role-settings">
-      <div>
-        <h3 class="rst-role__name">{title}</h3>
-        <p class="rst-settings__note">{purpose}</p>
-      </div>
-      <div class="rst-role__fields">
-        <ProviderSetting
-          id={`role-${role}-provider`}
-          label={`${title} provider`}
-          path={`${path}.provider`}
-          errorFor={errorFor}
-          options={providers}
-          value={draft.provider}
-          onChange={(provider) => {
-            chooseProvider(role, provider);
-          }}
+    <div class="rst-settings__grid">
+      {ROLE_NAMES.map((role) => (
+        <OutputTokens
+          key={role}
+          {...section}
+          role={role}
+          list={lists[section.editor.draft.roles[role].provider]}
         />
-        <ModelChoice
-          key={draft.provider}
-          id={`role-${role}-model`}
-          label={`${title} model`}
-          value={draft.model}
-          list={list}
-          needsTools={role === 'reader'}
-          recommended={recommendedModel(draft.provider, list, role === 'reader')}
-          error={errorFor(`${path}.model`)}
-          onChange={(model) => {
-            editor.changeRole(role, { model });
-          }}
-        />
-        <OutputTokens {...props} role={role} list={list} />
-        {role === 'reader' ? <ReaderTurns {...props} /> : null}
-      </div>
+      ))}
+      <ReaderTurns {...section} />
     </div>
   );
 }
@@ -196,6 +160,8 @@ type ModelSettingsProps = SectionProps & {
   readonly usable: readonly { readonly value: string; readonly label: string }[];
   /** RF-436, P8-74: the warning on roles that cannot be used now; it holds the control. */
   readonly warning: RoleWarningFacts | undefined;
+  /** RF-436, P8-135: whether each role's provider can be used now, for the State column. */
+  readonly states: Readonly<Record<RoleName, RoleState | undefined>>;
 };
 
 // RF-002
@@ -218,26 +184,24 @@ export function ModelSettings(props: ModelSettingsProps): JSX.Element {
         <RoleWarning facts={warning} lists={lists} onApply={applyFromWarning} />
       )}
       <section class="rst-card rst-settings__section" aria-labelledby="models">
-        <h2 id="models" class="rst-settings__heading">
-          Models per role
-        </h2>
-        <p class="rst-settings__note">
-          Every role names a provider and a model. A provider the project did not use before is
-          added with its usual settings; keys are kept on the Settings and keys page. Choosing a
-          provider selects its recommended model; change it if you want another.
-        </p>
+        <div class="rst-roles__head">
+          <h2 id="models" class="rst-settings__heading">
+            Roles
+          </h2>
+          <p class="rst-settings__note">
+            Choosing a provider selects its recommended model; change it if you want another.
+          </p>
+        </div>
         {warning === undefined ? (
           <EveryRoleControl providers={props.usable} lists={lists} onApply={applyToEveryRole} />
         ) : null}
-        {ROLE_NAMES.map((role) => (
-          <RoleFields
-            key={role}
-            {...props}
-            role={role}
-            chooseProvider={chooseProvider}
-            list={lists[props.editor.draft.roles[role].provider]}
-          />
-        ))}
+        <RolesTable
+          {...props}
+          labelledBy="models"
+          states={props.states}
+          chooseProvider={chooseProvider}
+        />
+        <RoleLimits {...props} />
         <OllamaContext {...props} limit={props.limit} />
       </section>
     </>

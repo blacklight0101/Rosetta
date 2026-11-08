@@ -10,6 +10,7 @@ import { PriceOverrides } from './PriceOverrides.js';
 import { everyRoleProviders, keyedProviders } from './every-role.js';
 import { contextLimitOf, ollamaModels } from './ollama-context.js';
 import { kindOfProvider, providerOptions } from './provider-choices.js';
+import { roleStates } from './role-state.js';
 import { roleWarningOf } from './role-warning.js';
 import type { SectionProps } from './settings-section.js';
 import type { SettingsDraft } from './project-settings-form.js';
@@ -23,9 +24,9 @@ import { useSettingsDraft, useSettingsSave, type DraftEditor } from './use-setti
 
 /**
  * The model lists of the roles' providers and of the providers the user has a key for, the trained
- * context that bounds the Ollama field, the providers the every-role control lists (RF-436) and
- * the warning on roles that cannot be used now (P8-74): Ollama is always asked, as only its answer
- * shows that it can be reached.
+ * context that bounds the Ollama field, the providers the every-role control lists (RF-436), the
+ * warning on roles that cannot be used now (P8-74) and the State of each role (P8-135): Ollama is
+ * always asked, as only its answer shows that it can be reached.
  */
 function useRoleModels(settings: ProjectSettings, draft: SettingsDraft) {
   const access = useKeyAccess();
@@ -38,6 +39,7 @@ function useRoleModels(settings: ProjectSettings, draft: SettingsDraft) {
     limit: contextLimitOf(ollamaModels(draft.roles), ollama),
     usable,
     warning: roleWarningOf(settings, { roles: draft.roles, access, ollama, usable }),
+    states: roleStates(settings, draft.roles, access, ollama),
   };
 }
 
@@ -65,8 +67,8 @@ function sectionOf(
 
 export function ProjectSettingsForm({ project }: { readonly project: Project }): JSX.Element {
   const drafting = useSettingsDraft(project.settings);
-  const { lists, limit, usable, warning } = useRoleModels(project.settings, drafting.draft);
-  const saving = useSettingsSave(project, drafting, limit);
+  const models = useRoleModels(project.settings, drafting.draft);
+  const saving = useSettingsSave(project, drafting, models.limit);
   const formRef = useRef<HTMLFormElement>(null);
   useHashScroll();
   useRefusalFocus(formRef, saving.refusal);
@@ -94,7 +96,7 @@ export function ProjectSettingsForm({ project }: { readonly project: Project }):
       }}
     >
       {saving.banner === undefined ? null : <ErrorBanner error={saving.banner} />}
-      <ModelSettings {...section} lists={lists} limit={limit} usable={usable} warning={warning} />
+      <ModelSettings {...section} {...models} />
       <CapSettings {...section} roles={project.settings.budget.roles ?? {}} />
       <ScanSettings {...section} />
       <IgnoreRules {...section} />
