@@ -13,7 +13,7 @@ import type { ModelListState } from './model-lists.js';
 const recommendedPerRole = '';
 
 /** A provider of the list; a disabled one is shown but cannot be chosen (P8-74). */
-export interface ProviderOption {
+interface ProviderOption {
   readonly value: string;
   readonly label: string;
   readonly disabled?: true;
