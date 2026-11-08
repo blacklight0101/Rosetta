@@ -1,6 +1,6 @@
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
-import { plainFile, writeAndDownload } from './support/handoff-journey.js';
+import { decisionsOf, plainFile, writeAndDownload } from './support/handoff-journey.js';
 import { openStartPage } from './support/live-run-page.js';
 import {
   openPlanSetup,
@@ -52,8 +52,8 @@ test('RF-609 DEC-208 picking C# on .NET on a non-.NET project offers ASP.NET Cor
   }
   await expectNoSeriousViolations(page);
 
-  // P8-119: the owner takes the four recommended layers and starts the plan; the package names them,
-  // so the choice reaches the plan. The recordings of the Python project name none of these technologies.
+  // P8-119, P8-138, RF-610: the owner takes the four recommended layers and starts the plan; the TRD and
+  // a decision record per layer name them. The recordings of the Python project name none of them.
   for (const [layer, title] of Object.entries(offered)) {
     await page.getByRole('radiogroup', { name: layer }).getByRole('radio', { name: title }).check();
   }
@@ -61,8 +61,10 @@ test('RF-609 DEC-208 picking C# on .NET on a non-.NET project offers ASP.NET Cor
   await expect(writeButton(page)).toBeEnabled();
   const files = await writeAndDownload(page);
   const trd = plainFile(files, 'trd.md');
+  const decisions = decisionsOf(files);
   for (const technology of ['ASP.NET Core Razor Pages', 'SQL Server', 'Dapper', 'xUnit']) {
     expect(trd).toContain(technology);
+    expect(decisions).toContain(technology);
   }
   expect(trd).toContain('C# on .NET');
 });

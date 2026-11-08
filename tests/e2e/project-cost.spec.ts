@@ -47,11 +47,18 @@ test('RF-1106 RF-1010 the administrator sees the server month against the cap an
 }, info) => {
   await signInAs(context, costAccountFor('cost-admin', info.project.name));
 
+  // P8-101, P8-138: the header shows the server month from 1600 px and leaves it to the users and
+  // caps page below; toContainText reads hidden text too, so the figure is checked to be seen.
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/projects');
+  const server = page.getByTestId('header-server-month');
+  await expect(server).toBeAttached();
+  await expect(server).toBeHidden();
 
-  const pill = page.getByTestId('header-totals');
-  await expect(pill).toContainText('Server, this month');
-  await expect(pill).toContainText(/\$[\d.]+ of \$10\.00/u);
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await expect(server).toBeVisible();
+  await expect(server).toContainText('Server, this month');
+  await expect(server).toContainText(/\$[\d.]+ of \$10\.00/u);
   const banner = page.getByRole('status').filter({ hasText: 'of its monthly cap' });
   await expect(banner).toContainText(/The server has used (8[5-9]|9\d|100)% of its monthly cap/u);
   await expectNoSeriousViolations(page);
