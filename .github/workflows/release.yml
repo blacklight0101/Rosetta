@@ -49,9 +49,10 @@ jobs:
     outputs:
       sha-tag: ${{ steps.tags.outputs.sha-tag }}
     steps:
+      # One commit: only a tag run reads history, in release-tags.sh (DEC-227).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ github.ref_type != 'tag' && 1 || 0 }} # 0 for a tag: release-tags.sh needs origin/main and the history from it down to the tagged commit (DEC-29)
           persist-credentials: false
       # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
       - name: Work out the image tags
@@ -152,10 +153,10 @@ jobs:
       IMAGE: ghcr.io/blacklight0101/rosetta
       SHA_TAG: ${{ needs.image.outputs.sha-tag }}
     steps:
-      # Full history: the staging check reads the parents of the release merge commit.
+      # The release merge commit and its parents: the staging check reads HEAD^2 and its tree (DEC-227).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

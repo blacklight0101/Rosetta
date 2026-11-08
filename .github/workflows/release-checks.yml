@@ -60,11 +60,12 @@ jobs:
     env:
       COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
-      # Full history, as in release.yml: the staging check reads the parents of the merge commit.
+      # The merge commit and its parents, as in the deploy job of release.yml: the staging check reads
+      # HEAD^2 and its tree; the tags are for a branch, so release-tags.sh reads no history (DEC-227).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 0
+          fetch-depth: 2
           persist-credentials: false
       # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
       - name: Work out the image tags
