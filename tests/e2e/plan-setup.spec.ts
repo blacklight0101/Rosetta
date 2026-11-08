@@ -172,6 +172,25 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
   await expectNoSeriousViolations(page);
 });
 
+test('RF-605 P8-82 the estimate and Start the plan stay in view at the top and the bottom of the page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openStartPage(page);
+
+  await openPlanSetup(page);
+
+  await expect(page.getByRole('region', { name: 'Roles' })).toContainText('Planner');
+  const bar = page.getByRole('region', { name: 'Plan summary' });
+  await expect(bar).toContainText(/Plan estimate: likely (\$[\d.]+|[\d,]+ tokens)/u);
+  for (const top of [0, 1_000_000]) {
+    await page.evaluate(`window.scrollTo(0, ${String(top)})`);
+    await expect(bar).toBeInViewport({ ratio: 1 });
+    await expect(bar.getByRole('button', { name: /^Start the plan/u })).toBeInViewport();
+  }
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-435 RF-432 P8-01 the plan estimate says the plan runs under what is left of the journey amount, not the project run caps', async ({
   page,
 }) => {

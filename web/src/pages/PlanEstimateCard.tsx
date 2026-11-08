@@ -1,6 +1,5 @@
 import type { JSX } from 'preact';
 import type { PlanCap, PlanEstimate } from '../api/plan-schemas.js';
-import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import {
@@ -13,26 +12,15 @@ import {
   type Blocker,
 } from '../lib/plan-setup/estimate.js';
 import type { EstimateLoad } from './use-plan-estimate.js';
-import { useWritePackage } from './use-write-package.js';
 
 // RF-613, RF-143, RF-427, design-system.md section 14 (Plan setup): the estimate of the planner
-// against the caps, what stops the run (no price, no key), a warning for a figure over a cap, and
-// "Start the plan". The calls behind the figures are shown only when the estimate names them.
+// against the caps, what stops the run (no price, no key) and a warning for a figure over a cap;
+// "Start the plan" sits in the bar at the bottom of the window (PlanStartBar.tsx, P8-82). The calls
+// behind the figures are shown only when the estimate names them.
 
 export interface PlanEstimateCardProps {
-  readonly projectId: string;
-  /** RF-614: the understand run the package is written from. */
-  readonly sourceRunId: string | undefined;
-  /** RST-1802: the source run was refused, so no package can be written from it. */
-  readonly sourceRefused: boolean;
   readonly load: EstimateLoad;
   readonly blockers: readonly Blocker[];
-  readonly consent: boolean;
-  /** RF-132: the second confirmation was ticked. */
-  readonly privateConfirmed: boolean;
-  /** Why the package cannot be written yet for a reason of the steps or the consent. */
-  readonly stepReason: string | undefined;
-  readonly outOfDate: boolean;
 }
 
 function CapRow({ cap }: { readonly cap: PlanCap }): JSX.Element {
@@ -116,21 +104,8 @@ function Blockers({ blockers }: { readonly blockers: readonly Blocker[] }): JSX.
   );
 }
 
-function reasonOf(props: PlanEstimateCardProps): string | undefined {
-  const { load, blockers, stepReason } = props;
-  if (props.sourceRefused) return 'The source run cannot be used. Fix it above first.';
-  if (load.status === 'idle') return stepReason ?? 'Save your answers first.';
-  if (load.status === 'loading') return 'The estimate is being read.';
-  if (load.status === 'failed') return 'The estimate could not be read.';
-  if (blockers.length > 0) return 'Fix the problem above first.';
-  return stepReason;
-}
-
 // RF-613
-export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
-  const { projectId, sourceRunId, load, blockers, consent, outOfDate } = props;
-  const writing = useWritePackage({ projectId, sourceRunId }, consent, props.privateConfirmed);
-  const reason = reasonOf(props);
+export function PlanEstimateCard({ load, blockers }: PlanEstimateCardProps): JSX.Element {
   return (
     <section
       class="rst-plan-card"
@@ -148,15 +123,6 @@ export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
       {load.status === 'failed' ? <ErrorBanner error={load.error} /> : null}
       {load.status === 'ready' ? <Figures estimate={load.estimate} /> : null}
       <Blockers blockers={blockers} />
-      {writing.error === undefined ? null : <ErrorBanner error={writing.error} />}
-      <Button
-        variant="primary"
-        busy={writing.busy}
-        {...(reason === undefined ? {} : { disabledReason: reason })}
-        onClick={writing.write}
-      >
-        {outOfDate ? 'Start the plan again' : 'Start the plan'}
-      </Button>
     </section>
   );
 }
