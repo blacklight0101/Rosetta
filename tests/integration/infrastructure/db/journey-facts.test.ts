@@ -5,7 +5,8 @@ import { PgMigrator } from '../../../../src/infrastructure/db/pg-migrator.js';
 import { PgProjectRepository } from '../../../../src/infrastructure/db/pg-project-repository.js';
 import { PgRunIndex } from '../../../../src/infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
-import { insert, newId, outcomeOf, project, run, user } from '../../../support/db-rows.js';
+import { insert, newId, outcomeOf, run, user } from '../../../support/db-rows.js';
+import { sampleProject } from '../../../support/project-fixtures.js';
 import {
   hasTestDatabase,
   migrationsFolder,
@@ -34,10 +35,11 @@ interface Parents {
 
 async function parentsIn(target: DatabasePool, name = 'owner'): Promise<Parents> {
   const userId = newId();
-  const projectRow = project(userId);
   await insert(target, user({ id: userId, user_name: name }));
-  await insert(target, projectRow);
-  return { userId, projectId: String(projectRow.params[0]) };
+  // A project the repository can read back, settings included.
+  const saved = sampleProject({ id: newId(), userId, sourceUrl: `https://github.com/o/${name}` });
+  await new PgProjectRepository(target).insertOrFind(saved);
+  return { userId, projectId: saved.id };
 }
 
 function runOf(parents: Parents, key: string, extra: Parameters<typeof sampleRun>[0] = {}) {

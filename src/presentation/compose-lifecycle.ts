@@ -6,15 +6,27 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
 import { composeStartCaps } from './compose-start-caps.js';
-import type { RunParts } from './compose-runs.js';
+import type { Clock } from '../application/ports/clock.js';
+import type { KeySourceLookup } from '../application/ports/key-source-lookup.js';
+import type { Logger } from '../application/ports/logger.js';
+import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { ollamaHostOf } from './compose-understand.js';
 
 // RF-003, RF-1006, RF-1106, architecture section 2 (composition root): the steps of a run beyond the
 // index: the manifest, the event log with the live broadcaster, the start caps and (P8-139, DEC-226)
 // the journey facts of its end.
 
+/** What the lifecycle needs of the run parts (compose-runs.ts). */
+export interface LifecycleParts {
+  readonly pool: DatabasePool;
+  readonly clock: Clock;
+  readonly logger: Logger;
+  readonly keySources: KeySourceLookup;
+  readonly ollamaUrl: string | undefined;
+}
+
 export function composeLifecycle(
-  parts: RunParts,
+  parts: LifecycleParts,
   stores: {
     readonly runs: RunIndex;
     readonly manifests: RunManifestStore;
