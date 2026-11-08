@@ -12,7 +12,7 @@ import { randomInt } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isPlaywrightFile, isVitestFile } from './quarantine.mjs';
+import { isPlaywrightFile } from './quarantine.mjs';
 
 const RUNS = 5;
 const E2E_WORKERS = 4;
@@ -20,6 +20,11 @@ const E2E_WORKERS = 4;
 const require = createRequire(import.meta.url);
 const vitestCli = join(dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
 const runE2e = join(dirname(fileURLToPath(import.meta.url)), 'run-e2e.mjs');
+
+// The files the projects of vitest.config.ts include; a file outside them would end the run on
+// "no test files". The test-picks job of ci.yml filters with the same shape.
+const vitestIncluded =
+  /^tests\/(?:(?:unit|integration|e2e)\/.+\.test\.ts|unit\/web\/.+\.test\.tsx)$/u;
 
 /** The paths of ROSETTA_STRESS_FILES, or undefined when it is not a JSON array of strings. */
 function parseFiles(text) {
@@ -36,7 +41,7 @@ function parseFiles(text) {
 
 /** The runs of the stress job: Vitest for the test files, Playwright for the specs. */
 function planOf(files, seed) {
-  const vitest = files.filter(isVitestFile);
+  const vitest = files.filter((file) => vitestIncluded.test(file));
   const specs = files.filter(isPlaywrightFile);
   const plan = [];
   if (vitest.length > 0) {

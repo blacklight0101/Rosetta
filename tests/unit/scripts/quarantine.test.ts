@@ -90,6 +90,28 @@ describe('quarantine list, matching a test', () => {
     expect(isQuarantined([], entry.file, [...entry.title])).toBe(false);
   });
 
+  it('RNF-005 matches titles and file paths exactly, never by a substring', () => {
+    const run = [{ ...entry, title: ['live run'] }];
+
+    // "live run" is listed: a describe block named "live running" is another block.
+    expect(isQuarantined(run, entry.file, ['live running', 'RF-1002 stop a run'])).toBe(false);
+    expect(isQuarantined(run, entry.file, ['pre live run', 'RF-1002 stop a run'])).toBe(false);
+    expect(isQuarantined(entries, entry.file, ['live run', 'RF-1002 stop a run twice'])).toBe(
+      false,
+    );
+    // A longer path, a sibling path and a path with a prefix must not match the listed one.
+    expect(isQuarantined(entries, `${entry.file}.bak`, [...entry.title])).toBe(false);
+    expect(isQuarantined(entries, `x/${entry.file}`, [...entry.title])).toBe(false);
+    expect(isQuarantined(entries, 'tests/e2e/live-run-controls.spec', [...entry.title])).toBe(
+      false,
+    );
+    expect(isQuarantined(entries, 'tests/e2e/live-run-controls.spec.tsx', [...entry.title])).toBe(
+      false,
+    );
+    // A listed describe block still quarantines every test inside it, however deep.
+    expect(isQuarantined(run, entry.file, ['live run', 'nested', 'RF-1004 deep test'])).toBe(true);
+  });
+
   it('RNF-005 tells Vitest test files from Playwright spec files', () => {
     expect(isVitestFile('tests/unit/domain/a.test.ts')).toBe(true);
     expect(isVitestFile('tests/unit/web/a.test.tsx')).toBe(true);

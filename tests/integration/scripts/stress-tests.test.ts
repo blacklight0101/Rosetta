@@ -64,6 +64,27 @@ describe('scripts/stress-tests.mjs, the plan', () => {
   });
 });
 
+describe('scripts/stress-tests.mjs, the files it picks', () => {
+  it('RNF-005 skips test files no Vitest project includes, so the run never ends on "no test files"', async () => {
+    const files = [
+      'tests/unit/domain/a.test.ts',
+      'tests/unit/a.test.tsx',
+      'tests/compose/b.test.ts',
+      'tests/support/c.test.ts',
+      'tests/e2e/d.test.ts',
+      'tests/integration/e.test.ts',
+    ];
+    const result = await runNode(stress, [], { cwd: process.cwd(), env: dryRun(files) });
+
+    expect(result.code).toBe(0);
+    expect(planOf.parse(JSON.parse(result.stdout))[0]?.args.slice(1, 4)).toEqual([
+      'tests/unit/domain/a.test.ts',
+      'tests/e2e/d.test.ts',
+      'tests/integration/e.test.ts',
+    ]);
+  });
+});
+
 describe('scripts/stress-tests.mjs, its input', () => {
   it('RNF-005 a list that is not a JSON array of paths is refused', async () => {
     const result = await runNode(stress, [], {
@@ -86,7 +107,7 @@ describe('scripts/stress-tests.mjs, a real run', { timeout: 120_000 }, () => {
   it('RNF-005 a test that fails one run out of five fails the stress run', async () => {
     sandbox = await makeSandbox(
       {
-        'tests/flaky.test.ts': [
+        'tests/unit/flaky.test.ts': [
           'let runs = 0;',
           "test('fails on its third run', () => {",
           '  runs += 1;',
@@ -97,7 +118,7 @@ describe('scripts/stress-tests.mjs, a real run', { timeout: 120_000 }, () => {
       },
       { quarantine: false },
     );
-    const env = childEnv({ ROSETTA_STRESS_FILES: JSON.stringify(['tests/flaky.test.ts']) });
+    const env = childEnv({ ROSETTA_STRESS_FILES: JSON.stringify(['tests/unit/flaky.test.ts']) });
     const result = await runNode(stress, [], { cwd: sandbox.root, env });
 
     expect(result.code).not.toBe(0);
@@ -107,7 +128,7 @@ describe('scripts/stress-tests.mjs, a real run', { timeout: 120_000 }, () => {
   it('RNF-005 a stable test runs five times and passes', async () => {
     sandbox = await makeSandbox(
       {
-        'tests/stable.test.ts': [
+        'tests/unit/stable.test.ts': [
           "import { appendFileSync } from 'node:fs';",
           "test('counts its runs', () => {",
           "  appendFileSync('runs.log', 'run\\n');",
@@ -117,7 +138,7 @@ describe('scripts/stress-tests.mjs, a real run', { timeout: 120_000 }, () => {
       },
       { quarantine: false },
     );
-    const env = childEnv({ ROSETTA_STRESS_FILES: JSON.stringify(['tests/stable.test.ts']) });
+    const env = childEnv({ ROSETTA_STRESS_FILES: JSON.stringify(['tests/unit/stable.test.ts']) });
     const result = await runNode(stress, [], { cwd: sandbox.root, env });
     const runs = (await readFile(join(sandbox.root, 'runs.log'), 'utf8')).trim().split('\n');
 

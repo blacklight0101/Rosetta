@@ -86,6 +86,17 @@ describe('the quarantine in the required Vitest runs', { timeout: 120_000 }, () 
     expect(result.code).toBe(1);
   });
 
+  it('RNF-005 a listed title that only starts a test title does not skip that test', async () => {
+    const { root } = await sandboxWith([
+      entryOf('tests/a.test.ts', ['suite', 'flaky']),
+      entryOf('tests/a.test.ts.bak', ['suite', 'flaky one']),
+    ]);
+    const result = await runNode(vitestCli, vitestArgs, { cwd: root, env: childEnv() });
+
+    expect(await statuses(root)).toEqual(['flaky one: failed', 'stable one: passed']);
+    expect(result.code).toBe(1);
+  });
+
   it('RNF-005 with an empty list every test runs', async () => {
     const { root } = await sandboxWith([]);
     const result = await runNode(vitestCli, vitestArgs, { cwd: root, env: childEnv() });

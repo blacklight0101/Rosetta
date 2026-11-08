@@ -413,7 +413,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-          PICK: '.[] | select(.status != "removed") | .filename | select(test("^tests/(.+\\.test\\.tsx?|e2e/.+\\.spec\\.ts)$"))'
+          PICK: '.[] | select(.status != "removed") | .filename | select(test("^tests/((unit|integration|e2e)/.+\\.test\\.ts|unit/web/.+\\.test\\.tsx|e2e/.+\\.spec\\.ts)$"))'
 
   # The quarantined tests (tests/quarantine.json) still run and are reported here; `verify` and `e2e`
   # skip them. Red while a quarantined test fails; not required, so it blocks nothing.

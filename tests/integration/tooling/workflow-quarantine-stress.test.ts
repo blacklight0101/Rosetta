@@ -63,7 +63,8 @@ describe('GitHub Actions workflows: the pick job', () => {
     expect(job).toMatch(/^ {6}pull-requests: read$/mu);
     expect(job).toContain('gh api --paginate "repos/$REPO/pulls/$PR/files"');
     expect(job).toContain('select(.status != "removed")');
-    expect(job).toContain('\\\\.test\\\\.tsx?');
+    // Only the files the Vitest projects include (vitest.config.ts) and the Playwright specs.
+    expect(job).toContain('(unit|integration|e2e)/.+\\\\.test\\\\.ts|unit/web/.+\\\\.test\\\\.tsx');
     expect(job).toContain('\\\\.spec\\\\.ts');
     expect(job).toContain('GH_TOKEN: ${{ github.token }}');
     expect(job).toContain('changed: ${{ steps.changed.outputs.files }}');
