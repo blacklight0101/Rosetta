@@ -18,8 +18,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P5 Polish (G-10)             | 50      | 10        | 40         | 0         | 0                  | 22      | 28      | 0      | 3          | 0         |
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
-| P8 Evaluation fixes, round 2 | 139     | 5         | 121        | 13        | 0                  | 103     | 29      | 7      | 55         | 24        |
-| **Total**                    | **629** | **123**   | **457**    | **49**    | **0**              | **329** | **273** | **27** | **317**    | **24**    |
+| P8 Evaluation fixes, round 2 | 142     | 5         | 124        | 13        | 0                  | 104     | 31      | 7      | 55         | 24        |
+| **Total**                    | **632** | **123**   | **460**    | **49**    | **0**              | **330** | **275** | **27** | **317**    | **24**    |
 
 ## Conventions for every card
 
@@ -9528,3 +9528,92 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the migration, the writers, the backfill, the read change and their tests.
 - **Done when**: the strip shows the same position as before on every journey state, from the columns alone; a test proves the journey read no longer opens run files; CI green.
 - **Refs**: RF-010, RF-615, RF-1108, DEC-226; prerequisite of P8-137; GitHub issue #1284
+
+### P8-140 - CI: fetch only the history a job needs (DEC-227)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-08, the orchestrator, from the owner's request): six checkouts fetch the whole history with `fetch-depth: 0`:
+  - `ci.yml`: `changes`, which only diffs `BASE_SHA...HEAD_SHA` of a pull request, and `gitleaks`;
+  - `release.yml`: `image` and `deploy`;
+  - `release-checks.yml`: `checks`.
+    Every run downloads the full history for them, although most need two commits or one tag. The other checkouts already use the default depth of 1.
+- **Reads**: DEC-227, `.github/workflows/ci.yml`, `release.yml`, `release-checks.yml`, `docs/runbooks/ci-throughput.md`, `docs/environments-and-delivery.md` section 6, ADR-025, DEC-29.
+- **Do**: red tests first (the workflow tests in `tests/integration/tooling/`).
+  - For each of the six checkouts, find what the job really reads from git and fetch only that. Examples:
+    - the two commits of the diff (`git fetch --depth=1 origin $BASE_SHA`);
+    - only the pull request's own commits for gitleaks (`--log-opts` on the range);
+    - the one tag that the image step reads for `X.Y.Z` (DEC-29).
+  - Keep `fetch-depth: 0` only where a job truly needs it, with a one-line comment saying why.
+  - Add a workflow test that fails on a new `fetch-depth: 0` without that comment.
+  - Add a line to `docs/runbooks/ci-throughput.md` with the checkout time before and after, measured from CI logs and labelled as measured.
+- **Delivers**: the workflow changes, the guard test and the runbook line.
+- **Done when**:
+  - no job fetches history it does not read;
+  - `changes` still classifies a pull request correctly;
+  - gitleaks still scans every commit of the pull request;
+  - the release image still gets its `X.Y.Z` tag on a version tag;
+  - CI is green.
+- **Refs**: DEC-227, ADR-025, DEC-29, RNF-001; owner request of 2026-11-08; GitHub issue #1299
+
+### P8-141 - CI: wait for the ZAP check by event, not a polling runner (DEC-227)
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P8-65
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-08, the orchestrator, from the owner's request):
+  - The `release-checks.yml` step "Wait for the ZAP baseline of this commit" holds a runner for up to 40 minutes. It asks GitHub for the `zap-baseline` check every 30 s, up to 80 times, while that check runs in another workflow.
+  - The Azure waits in `release.yml` and `scheduled-release.yml` poll every 10 s with no back-off.
+- **Reads**: DEC-227, DEC-207, ADR-025, ADR-028, `.github/workflows/release-checks.yml`, `ci.yml` (`zap-baseline`), `release.yml`, `scheduled-release.yml`, `scripts/production-deploys-comment.sh` (P8-65), RF-1304, `docs/runbooks/deploy.md`, `docs/environments-and-delivery.md` section 6.
+- **Do**: red tests first (the workflow tests in `tests/integration/tooling/`).
+  - Start the readiness decision from GitHub's own completion event instead of a waiting runner. For example, use a `workflow_run` of CI on `main` completing, or a `check_run` `completed` for `zap-baseline`. The decision must still read the `zap-baseline` conclusion of the same commit.
+  - Keep the meaning of `release/ready`, its causes (P8-64, P8-65), the failure comment and the 40-minute "did not finish" cause.
+  - A ZAP check that never completes must still end as a failure with a named cause, not as a silent missing status. A scheduled sweep or a timeout job can do this.
+  - Give every remaining poll of an outside service (the Azure waits) a cap and a back-off. Add a workflow test that fails on a new `sleep` loop without a cap.
+  - In the same pull request, update `docs/runbooks/deploy.md` and `docs/environments-and-delivery.md` section 6.
+  - Say in the PR what only a real release merge can show.
+- **Delivers**: the event-driven readiness, the capped waits, the tests and the docs.
+- **Done when**:
+  - no workflow holds a runner to wait for another workflow's check;
+  - `release/ready` is still posted for every commit to `main`;
+  - a failing or missing ZAP check still notifies the owner (RF-1304);
+  - CI is green.
+- **Refs**: DEC-227, DEC-207, ADR-025, ADR-028, RF-1304, RNF-001; owner request of 2026-11-08; GitHub issue #1300
+
+### P8-142 - CI: quarantine confirmed flaky tests and stress new tests (DEC-227)
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P8-54
+- **Gate**: none
+- **Status**: Todo
+- **Evidence** (2026-11-08, the orchestrator, from the owner's request):
+  - Eight checks are required on `develop`: `verify` on both systems, `audit`, `gitleaks`, `dependency-review`, `pr-title`, `codeql` and `e2e`. One flaky test in a required check holds every pull request.
+  - P8-54 retries an e2e test once and names it. A test that keeps flaking still stays in the required check, with no owner.
+  - A new test becomes required the moment it merges, without ever having run more than once.
+- **Reads**: DEC-227, P8-54 (`tests/e2e/support/flaky-reporter.ts`, `playwright.config.ts`), `.github/workflows/ci.yml`, `tests/e2e/shards.json`, `vitest.config.ts`, `docs/runbooks/ci-throughput.md`, `docs/environments-and-delivery.md` section 6, RNF-001, RNF-005.
+- **Do**: red tests first.
+  - **Quarantine**:
+    - A checked-in list (for example `tests/quarantine.json`) names each quarantined test, with its owner, its GitHub issue and a date by which it must be fixed or removed.
+    - The required `e2e` and `verify` runs skip the tests on the list.
+    - A separate, non-required CI job runs only the quarantined tests and reports them.
+    - A test fails CI when an entry is past its date or has no owner or issue.
+    - A test may join the list only after a flake that the P8-54 report confirms.
+  - **Stress run**:
+    - On a pull request that adds or changes a test file, a CI job runs only those tests several times, in parallel and in shuffled order. Use Playwright `--repeat-each` with more workers, and vitest shuffle with repeats.
+    - A test that fails once in that job fails the job, so a new test proves itself before it can block others.
+  - The required check names stay unchanged (RNF-001).
+  - Document the quarantine rule and the stress job in `docs/runbooks/ci-throughput.md` and `docs/environments-and-delivery.md`.
+- **Delivers**: the quarantine list and its guard, the quarantine job, the stress job, the tests and the docs.
+- **Done when**:
+  - a quarantined test no longer blocks a merge, but still runs and is reported;
+  - an expired or ownerless entry turns CI red;
+  - a new test that fails one run in the stress job fails that job;
+  - the required check names are unchanged;
+  - CI is green.
+- **Refs**: DEC-227, RNF-001, RNF-005, ADR-025; follows P8-54; owner request of 2026-11-08; GitHub issue #1301

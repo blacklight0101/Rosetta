@@ -74,7 +74,9 @@ describe('checks.md: items no task card builds', () => {
   it('RF-627 when every item is built it says so and lists nothing', () => {
     const checks = plain(filesOf([planTask({ builds: everything })])['checks.md']);
 
-    expect(checks).toContain('Every item is built by at least one task card.');
+    expect(checks).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(checks).not.toMatch(/^\| feature/mu);
     expect(checks).not.toContain('not complete');
   });

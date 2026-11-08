@@ -6,8 +6,8 @@ import { COVERAGE_BAR } from './measure-text.js';
 // of its first-party tokens the summary names) was read; below it the area is "partly read". The
 // share is the one the run wrote in its coverage (`readShare` of the domain, library and generated
 // files in none), so the page, the summary and the reader gate use one calculation. Until the
-// coverage is known, or when it cannot be read or is an old file with no shares, the page says no
-// verdict.
+// coverage is known, or when it cannot be read or is an old file with no shares (also in part, for a
+// resumed run of an older deploy), the page says no verdict.
 
 /** What the page knows of how much of each area was read. */
 export type AreaReading =
@@ -37,6 +37,12 @@ export function readingOf(
     return { status: 'unknown' };
   }
   const library = new Set((areas ?? []).filter((each) => each.thirdParty).map((each) => each.name));
+  // RF-006 (P8-138): a resumed run of an older deploy restores areas with no share beside new ones.
+  if (
+    listing.areas.some((each) => each.firstPartyShare === undefined && countsAsArea(each, library))
+  ) {
+    return { status: 'unknown' };
+  }
   const partly = new Map<string, number>();
   for (const each of listing.areas) {
     const share = each.firstPartyShare;

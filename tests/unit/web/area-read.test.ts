@@ -98,3 +98,13 @@ describe('percentText', () => {
     ]);
   });
 });
+
+describe('readingOf a resumed old run (P8-138)', () => {
+  it('RF-230 RF-006 gives no verdict for a resumed old run whose restored areas have no share', () => {
+    // P8-138: an area restored from the session before the resume has no share; it is not read.
+    const restored = { area: 'Restored', files: [] };
+    const reading = readingOf(listing(restored, area('Web', 0.9)), false, []);
+
+    expect(reading).toEqual({ status: 'unknown' });
+  });
+});

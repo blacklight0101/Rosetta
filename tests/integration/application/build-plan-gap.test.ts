@@ -98,7 +98,9 @@ describe('BuildPlan: gaps closed by the call', () => {
 
     expect(run.endState).toBe('Completed');
     const checks = plain((await h.handoffOf(run))['checks.md']);
-    expect(checks).toContain('Every item is built by at least one task card.');
+    expect(checks).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(checks).not.toMatch(/^\| (feature|table|operation|flow|screen) /mu);
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
   });

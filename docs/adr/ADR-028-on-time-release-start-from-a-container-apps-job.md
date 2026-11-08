@@ -7,7 +7,7 @@
 ## Context
 
 ADR-025 promises that production changes at 06:00 Madrid, started by a GitHub `schedule` trigger. GitHub started the
-first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 07 min
+first scheduled run of each day from 2026-10-28 to 2026-11-02 between 10:17 and 12:13 UTC, 5 h 10 min to 7 h 06 min
 after its 05:07 UTC slot, and none had started on 2026-11-03 by 08:07 UTC; a run started by `workflow_dispatch` starts
 within seconds (Q-63). The owner decided (DEC-207) that Release starts on time from a scheduler that does not depend
 on GitHub's queue, and that every check runs before that hour. This ADR chooses the scheduler. It only chooses: the
@@ -15,10 +15,11 @@ accepted decision is followed by a provisioning step that the owner runs.
 
 ## Options Considered
 
-1. **A Container Apps job** in the existing environment (ADR-024), with two cron triggers at 04:00 and 05:00 UTC. The
-   job goes on only when the hour in Europe/Madrid is 06 (cron is in UTC, and summer and winter time differ by one
-   hour) and starts Release on `main` by `workflow_dispatch`. It uses a fine-grained token limited to this
-   repository with Actions write, stored as a secret of the job. It has no other access and reads no other secret.
+1. **A Container Apps job** in the existing environment (ADR-024), with one cron schedule that fires at
+   04:00 and 05:00 UTC. The job goes on only when the hour in Europe/Madrid is 06 (cron is in UTC, and summer and
+   winter time differ by one hour) and starts Release on `main` by `workflow_dispatch`. It uses a fine-grained token
+   limited to this repository with Actions write, stored as a secret of the job. It has no other access and reads no
+   other secret.
 2. **A Logic App** with a recurrence trigger set to the Madrid time zone and an HTTP action that dispatches Release
    with the same token.
 3. **Deploying from Azure with a managed identity**: the 06:00 job runs the restore point, migration, image switch and
@@ -52,7 +53,8 @@ fail in its execution history and Release does not start, and the owner then run
 **Negative**
 
 - One secret that can start Actions runs outside GitHub; its reach is one repository and Actions write. A leak lets
-  someone start workflows, not read code or secrets; the rotation and the narrow scope are the limit.
+  someone start and cancel workflow runs and read their logs and artifacts, not read code or secrets; the rotation and
+  the narrow scope are the limit.
 - A new resource to provision and a step to remember every 90 days.
 - The GitHub schedule of ADR-025 stays as a backup until two mornings have started on time.
 

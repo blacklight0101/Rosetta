@@ -189,6 +189,12 @@ const brokenWordsIn = (selector: string): string => `(() => {
   return broken;
 })()`;
 
+/** For each matching element, the number of lines its text takes. */
+const lineCountsIn = (selector: string): string => `(() =>
+  [...document.querySelectorAll(${JSON.stringify(selector)})].map(
+    (element) => new Set([...element.getClientRects()].map((box) => Math.round(box.top))).size,
+  ))()`;
+
 const n = z.number();
 /** control top, bottom, left, right; bar top, bottom, left, right; window height. */
 const boxesSchema = z.tuple([n, n, n, n, n, n, n, n, n]);
@@ -198,7 +204,9 @@ const longName =
 
 const longArea =
   'Services/CustomerOnboarding/RegionalReleases/DeploymentTemplates/PipelineOrchestration';
-const longModel = 'experimental-reasoning-model-with-a-very-long-release-name-20261103-preview';
+// Long words between few separators: a rule that breaks words cuts one at either width, where short
+// words let the line end fall on a hyphen by chance (P8-126).
+const longModel = 'multimodalreasoning-extendedcontext-windowrelease-candidate20261103';
 const estimateBody = z.looseObject({ areas: z.array(z.unknown()), roles: z.array(z.unknown()) });
 
 /** The real estimate with one long area name and long model names, so both wrap at their separators. */
@@ -264,6 +272,15 @@ for (const { name, size } of sizes) {
     await expect(wrapped.first()).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('.rst-start__area-name')).toHaveCount(1);
     await expect(page.locator('td.rst-table__wrap').first()).toBeVisible();
+    // Every model name wraps at this width, so a rule that breaks words has words to break here too.
+    const modelLines = z
+      .array(n)
+      .parse(await page.evaluate(lineCountsIn('td.rst-table__wrap .rst-mono')));
+    expect(modelLines).not.toHaveLength(0);
+    expect(
+      Math.min(...modelLines),
+      `lines of each model name ${JSON.stringify(modelLines)}`,
+    ).toBeGreaterThanOrEqual(2);
 
     const title: unknown = await page.evaluate(brokenWordsIn('h1'));
     const areas: unknown = await page.evaluate(

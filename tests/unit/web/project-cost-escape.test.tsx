@@ -46,7 +46,9 @@ describe('project cost page tooltip closed with Escape', () => {
     expect(document.activeElement).not.toBe(amount);
     expect(wrap.hasAttribute('data-dismissed')).toBe(true);
     fireEvent.mouseLeave(wrap);
+    fireEvent.mouseEnter(wrap);
     expect(wrap.hasAttribute('data-dismissed')).toBe(false);
+    expect(wrap.hasAttribute('data-open')).toBe(true);
   });
 
   it('RF-428 given a focused amount that the pointer rests on, Escape closes it while the amount keeps focus, until the focus moves', async () => {

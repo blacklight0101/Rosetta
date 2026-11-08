@@ -79,11 +79,16 @@ export const estimate = (page: Page): Locator =>
 export const writeButton = (page: Page): Locator =>
   page.getByRole('button', { name: /^Start the plan/u });
 
-/** Presses a save button and waits until the brief was saved. */
+/**
+ * Presses a save button and waits until the brief was saved. The wait is bounded, so a save that
+ * never answers (one held behind the planner's options, #1202) fails here and names the save,
+ * instead of running into the timeout of the whole test.
+ */
 export async function saveBrief(page: Page, button: Locator): Promise<void> {
   const saved = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+    { timeout: 15_000 },
   );
   await button.click();
   expect((await saved).ok()).toBe(true);

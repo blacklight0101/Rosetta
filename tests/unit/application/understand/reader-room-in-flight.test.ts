@@ -259,4 +259,28 @@ describe('P8-132 the readers room keeps each call in flight as an entry of its o
     });
     await Promise.all([first, stopped]);
   });
+
+  it('RF-429 RF-422 a waiting call whose run is stopped goes to the provider at the next wake, not behind the calls in flight', async () => {
+    // P8-138: a Stop aborts the run's one signal while a call is parked in the room (reader-task hands
+    // the run's signal to every call); the call is woken by the next release and must not wait again.
+    const s = setup();
+    const stop = new AbortController();
+    const calls = [
+      s.guarded('reader-001'),
+      s.guarded('reader-002'),
+      s.guarded('reader-003', stop.signal),
+    ];
+    await settle();
+    expect(s.started).toEqual(['reader-001']);
+
+    stop.abort();
+    s.gates[0]?.open();
+    await settle();
+
+    expect(s.started).toEqual(['reader-001', 'reader-002', 'reader-003']);
+    s.gates.forEach((gate) => {
+      gate.open();
+    });
+    await Promise.allSettled(calls);
+  });
 });

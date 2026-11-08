@@ -3,9 +3,11 @@
 # release instead of in it. The job builds, scans and pushes the image of that commit with the steps
 # of the image job of release.yml (tags from scripts/release-tags.sh, one build, the same Trivy gate,
 # push of `sha-<short>` to GHCR); then it confirms the ZAP baseline and the staging check with the
-# two steps of the deploy job of release.yml, word for word (tests keep them equal), and last, in
+# two steps of the deploy job of release.yml, word for word (tests keep them equal), and then, in
 # every case, records the result on the commit as the commit status `release/ready` (statuses:
-# write). A later card adds the failure comment on the issue "Production deploys" (issues: write).
+# write). When release/ready is not success, the last step comments on the issue "Production
+# deploys" with the owner mentioned (issues: write; P8-65), with the script of the deploy
+# notification of release.yml. checks: read lets the job read the zap-baseline check run.
 # release.yml still builds its own image and makes its own checks until Release changes to deploy
 # only a commit whose release/ready is success.
 #
@@ -34,6 +36,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      checks: read
       packages: write
       statuses: write
       issues: write
@@ -152,14 +155,24 @@ jobs:
       # otherwise failure, named in the description. The step fails with the status, so the run is
       # red whenever release/ready is not success.
       - name: Record release/ready on the commit
+        id: ready
         if: always()
         run: |
           if [ "$JOB_STATUS" = success ] && [ "$ZAP_WAIT" = success ] && [ "$ZAP" = success ] && [ "$STAGING" = success ]; then
             state=success
-            description='Ready: the image is pushed, the ZAP baseline and the staging check passed.'
+            if [ "$STAGING_ENABLED" = true ]; then
+              description='Ready: the image is pushed, the ZAP baseline and the staging check passed.'
+            else
+              description='Ready: the image is pushed and the ZAP baseline passed; the staging check was skipped (staging is not enabled).'
+            fi
           elif [ "$ZAP_WAIT" = failure ] || [ "$ZAP" = failure ]; then
             state=failure
-            description='Not ready: the ZAP baseline did not pass on this commit.'
+            zap="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')" || zap=unknown
+            case "$zap" in
+              cancelled) description='Not ready: zap-baseline was cancelled on this commit (a later push to main cancels it); re-run it, then these checks.' ;;
+              missing) description='Not ready: zap-baseline did not finish on this commit within 40 minutes.' ;;
+              *) description='Not ready: the ZAP baseline did not pass on this commit.' ;;
+            esac
           elif [ "$STAGING" = failure ]; then
             state=failure
             description='Not ready: the staging check did not pass (the tree, or deploy (staging) of the develop parent).'
@@ -173,6 +186,9 @@ jobs:
             state=failure
             description="Not ready: a check did not run (ZAP baseline: ${ZAP:-none}, staging check: ${STAGING:-none})."
           fi
+          if [ "$state" != success ]; then
+            echo "cause=$description" >> "$GITHUB_OUTPUT"
+          fi
           gh api --method POST "repos/$GH_REPO/statuses/$GITHUB_SHA" -f state="$state" -f context=release/ready -f description="$description" -f target_url="$RUN_URL" > /dev/null
           echo "release/ready on $GITHUB_SHA: $state. $description"
           [ "$state" = success ]
@@ -181,6 +197,22 @@ jobs:
           ZAP_WAIT: ${{ steps.zap-wait.outcome }}
           ZAP: ${{ steps.zap.outcome }}
           STAGING: ${{ steps.staging.outcome }}
+          STAGING_ENABLED: ${{ vars.ROSETTA_STAGING_ENABLED }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # RF-1304, DEC-207, P8-65: whenever release/ready did not succeed (it is failure, or it could not
+      # be recorded), whatever failed before, a cancel or the job timeout included, tell the owner
+      # before the 06:00 release: a comment on the issue "Production deploys" with the shared script
+      # of the deploy notification of release.yml (the same issue lookup), naming the commit, the
+      # cause written by release/ready and the run. Checks that pass comment nothing.
+      - name: Tell the owner the checks failed
+        if: always() && steps.ready.outcome != 'success'
+        run: |
+          MESSAGE="the checks of the release merge $GITHUB_SHA failed; only a commit whose checks passed deploys at 06:00 Madrid (DEC-207). ${CAUSE:-Not ready: release/ready could not be recorded on this commit.} Run: $RUN_URL" bash scripts/production-deploys-comment.sh
+        env:
+          CAUSE: ${{ steps.ready.outputs.cause }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

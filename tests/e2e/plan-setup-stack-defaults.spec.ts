@@ -6,6 +6,7 @@ import {
   openPlanSetup,
   openStep,
   recorded,
+  saveBrief,
   stepPill,
   understandCatalog,
 } from './support/plan-setup-page.js';
@@ -43,12 +44,7 @@ test('RF-609 RF-605 #1202 saving while the options are held records only the typ
     .check();
   await page.getByLabel('Your answer for Hosting').fill('On-premises Kubernetes');
 
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-  );
-  await page.getByRole('button', { name: 'Save and continue' }).click();
-  expect((await saved).ok()).toBe(true);
+  await saveBrief(page, page.getByRole('button', { name: 'Save and continue' }));
   await expect(stepPill(page, 'Project context')).toHaveAttribute('aria-current', 'step');
 
   // Released after the save: the options arrive late and the page shows them, the brief is unchanged.
@@ -82,12 +78,7 @@ test('RF-609 RF-605 P7-29 saving the stack step after the options arrived record
   await hosting.getByRole('radio', { name: 'Type your own answer' }).check();
   await page.getByLabel('Your answer for Hosting').fill('On-premises Kubernetes');
 
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-  );
-  await page.getByRole('button', { name: 'Save and continue' }).click();
-  expect((await saved).ok()).toBe(true);
+  await saveBrief(page, page.getByRole('button', { name: 'Save and continue' }));
 
   await expect(stepPill(page, 'Project context')).toHaveAttribute('aria-current', 'step');
   await expect(recorded(page)).toContainText('7 of 7 layers');
