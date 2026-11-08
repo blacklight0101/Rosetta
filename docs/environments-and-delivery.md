@@ -400,7 +400,7 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted by the provisioning
    (RF-801, RF-1301); the owner may also try the batch on the staging URL.
 3. The owner says the batch is ready; the orchestrator opens the release pull request `develop` -> `main`; the owner
    merges it with a merge commit (and tags it for a version). Nothing deploys on the merge; `release-checks.yml`
-   builds, scans and pushes the image of the merge commit (`sha-<short>`) within minutes, confirms the ZAP baseline
+   builds, scans and pushes the image of the merge commit (`sha-<short>`) once CI on it has finished, confirms the ZAP baseline
    and the staging check, and sets the commit status `release/ready` on it within the hour (DEC-207); when the checks
    fail, it comments on the issue "Production deploys" with the owner mentioned, so the owner hears before 06:00.
 4. Hosted, at 06:07 Europe/Madrid the next morning (backups until 07:59) (`scheduled-release.yml`, or at once by running Release on `main`
