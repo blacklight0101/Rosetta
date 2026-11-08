@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 stopped on the owner's order with its work merged into `develop` and nothing released. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-08. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second round are merged into `develop` and nothing is released. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,61 @@ _Last updated 2026-11-04. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-08, Phase 8 wave 3 round 2; the build goes on in a fresh orchestrator session, DEC-214).** Twenty-three more cards are merged into `develop` today and none is released: P8-63 #1283, P8-64 #1288, P8-59 #1286, P8-125 #1292, P8-54 #1293, P8-128 #1289, P8-65 #1294, P8-73 #1287, P8-129 #1290, P8-98 #1297, P8-97 #1291, P8-60 #1296, P8-126 #1306, P8-138 #1308, P8-133 #1307, P8-127 #1305, P8-77 #1304, P8-134 #1310, P8-74 #1309, P8-79 #1298, P8-136 #1295, P8-139 #1303 and P8-137 #1311 (last, on P8-139's facts). Nothing is in flight. Counts are in the [tasks.md totals](docs/orchestration/tasks.md); the follow-ups below are not cards yet.
+
+**Before the next release into `main`, read which deploy cards are on `develop`:** P8-62, P8-63, P8-64 and P8-65 are. `release-checks.yml` runs on every push to `main` and pushes `sha-<short>` to GHCR, then waits for ZAP and staging and sets `release/ready`; it reads no secret and nothing reads `release/ready` yet (P8-66). Until P8-66, Release rebuilds the same commit and re-pushes the same tag, so the image is built twice per release. Migration 0024 (P8-139) ships with the same release.
+
+Test stack: the stack named in the entry below is older than today's cards, so what they change must not be judged there.
+
+Next, in this order: the CI cards P8-142 and P8-141 first, two builders (DEC-227), then P8-140; then P8-61, P8-66..P8-71 as far as they need no live setup, P8-75, P8-76, P8-78, P8-80..P8-83, P8-84..P8-86, P8-95, P8-96, P8-135; CI cards P8-52 and P8-55 last. P8-46..P8-49 stay the owner's, and P8-51 stays blocked on the owner.
+
+Owner agenda from this round:
+
+- **P8-138 (#1308), rows left to you.** The builder counted 10 owner rows but lists 9 (numbers are the builder's), each with a default:
+  1. `log-text.ts` writes three log lines per verifier call against `LOG_LIMIT` 1000; RF-1002 says the verbose log lists every event. Default: keep the lines, accepted knowingly.
+  2. `lastSignOfLife` streams the whole log (performance only). Default: a small separate card (a history port method that reads the last line from the end of the file).
+  3. `code-map-tiles.ts:93` draws finished tiles as "read" before the coverage loads. Default: keep "read" and reword the RF-230 Given so the Areas figure is what gives no verdict while it checks.
+  4. `read-run-partly-read.ts` reads `task-results.json` with no size cap. Default: no cap, because Rosetta writes the file itself (a cap in `FileTaskResults` would be its own card).
+  5. `TotalsPill.tsx:39`: the exact figure is a `title` on the `strong`. Default: link title "<split> · $3.113515" and drop the `strong` title.
+  6. `ServerMeter.tsx:41` and `RunMeter.tsx:79` show plain amounts. Default: design-system section 10 says meter text is a sentence; the exact figure is in the header pill and the role table.
+  7. `cap-warnings.ts`: the daily and monthly "left" amounts round up. Default: round every "left" amount down and widen the RF-428 scenario.
+  8. The P8-101 screenshots exist only as Playwright attachments. Default: CI attachments are enough, no PNG files in the repo.
+  9. The user's name can shrink to 0 px at 1280 px. Default: a floor of about 4rem on the name, with the meter's note dropping first.
+
+  Also from P8-138: migration 0023's header was dropped because migration files are checksummed, and `ProviderTest.tsx:81` was left to P8-73.
+
+- **P8-74 (#1309): five points** where the builder applied a default:
+  1. Some wording is the builder's own, written as Givens because the artboard draws only the Ollama plus own-key case: the no-key line ("X has no key you can use. ... so a run would be refused (RST-2302)."), "You may use the server's X key.", "Ollama can be reached." and the sentence for when nothing is usable.
+  2. The every-role control moves into the warning instead of appearing twice. After Apply, focus goes to "Provider for every role" in Models per role.
+  3. The warning follows the form's current, unsaved roles, so it goes away on Apply, before Save.
+  4. "Ollama (not reachable)" is shown disabled, and only for an Ollama that answered unreachable. Providers with no key are not listed (DEC-225 A).
+  5. The artboard's "All four roles use it" contradicts its own table, so the warning names the roles that actually use the provider.
+
+  Plus: OpenAI is preselected before Anthropic (the artboard lists Anthropic first). Look at the page at the viewports of the orchestration README section 1, light and dark (no page walk was run).
+
+- **P8-139 (#1303):** open questions are stored per understand-run family, not per project; the count lags while a Deepen runs until a family member ends (default for both: keep). On the deploy that ships 0024, compare the journey strip of a project with a Completed understand run, a Deepen and a plan written from it, before and after the start-up pass: it must read the same. After a rollback to an image from before 0024, run the rollback SQL of `environments-and-delivery.md` section 11 before rolling forward. More than one app replica does not serialise the refresh across processes; the next refresh heals it, and it matters only if the hosted app scales past one replica.
+- **P8-137:** a queued run reads "running" in the overview, and the overview has no budget. Say if either should change.
+- **P8-73 (#1287):** look at the "Use for every role" row at 375, 768 and 1280 px, light and dark, with a real Anthropic key and Ollama stopped (the verifier did not run the page walk).
+- **P8-65 (#1294):** confirm on a real failing release run that the owner is notified.
+- **P8-63 and P8-64:** their effect on the next release (the Release checks run starts on the merge push, pushes the image with the workflow token, and gives the merge commit `release/ready` within an hour; cancel one run during the wait once to see `release/ready` = failure). The double image build holds until P8-66.
+- **Carried over:** the administrator's server figure shows only from 1600 px (default: keep); ADR-028 is still Proposed and needs your acceptance; P8-51 (merge queue); P8-46..P8-49; Q-67; staging is not enabled (`ROSETTA_STAGING_ENABLED`), so `release/ready` reads "Ready" without a staging check until you enable it.
+
+Follow-ups found by the verifiers of these cards. They block nothing and are not cards yet; the orchestrator files them (one card for the small ones, as P8-138 did) when it opens their issues:
+
+- P8-126: the 15 s `saveBrief` timeout in the test should be 30 s.
+- P8-98: the card should have named RF-132.
+- P8-124: its Refs and the RF-210 trace row should read RF-210, not RF-231.
+- P8-142 (note for the builder, before it starts): `vitest --changed` misses tests that read documents, so a docs change can pass `verify:local` and fail in CI.
+- P8-60: the reader list is not reset.
+- P8-77: the memory adapter accepts a duplicate id, and the arrays allow duplicates.
+- P8-127: the order of `shards.json`.
+- P8-134: no live region or success announcement after a rename.
+- P8-137: `pg-run-index.ts` `LIST_OF_PROJECTS` reads every run of up to 100 projects on each 5 s poll; it is one statement, but the payload grows with run history.
+- P8-137: in `tests/e2e/visual/sweep-runs.spec.ts` the "Understand done" assertion became a looser five-way regex.
+- P8-128: `web/src/pages/use-fold.ts:21-26`: a fold the user opens in the same task as the page opens it closes when the page releases it (the single toggle is read as the page's own change, so no user choice is recorded).
+- P8-74: the every-role control lists OpenAI before Anthropic where the artboard has Anthropic first; the test "Apply does not save" asserts immediately and would miss a delayed save; the build adds a warning icon and splits the "You have an Anthropic key." sentence into its own paragraph, both unlike the artboard.
+- P8-139: a race guard on `ended_at` in the backfill (`src/application/journey/journey-facts-backfill.ts:59-66`); the RF-615 backfill Given (`docs/spec/requirements.md`, about line 1454) says it fills "only from before ... at start-up", but it now fills every row once, at start-up or in the daily pass; `environments-and-delivery.md` section 11 should say when to run the rollback SQL on the 0024 deploy; the test name at `question-count-refresh.test.ts:52` lacks an RF id.
 
 **Resume (2026-11-05, Phase 8 wave 3 stopped on the owner's order; start a fresh orchestrator session).** The owner said on 2026-11-04 to finish what was running and start nothing new, and to write this handoff when it had merged. All of it has: 38 cards are merged into `develop` and none is released. No card pull request is open and no agent is running.
 
@@ -368,6 +423,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-11-08 (Phase 8 wave 3 round 2)** - docs pull request `docs/build-status-2026-11-08`: 23 cards merged into `develop` (none released), Status lines set to Done, follow-ups of the verdicts and the owner agenda written in the first entry of the resume point.
 - **2026-11-05 (Phase 8 wave 3 stopped)** - docs pull request `docs/build-status-wave3-final`: the owner stopped new cards; 38 cards of the wave are merged into `develop` and none is released. DEC-223 (Q-68 answered) and DEC-224 recorded, follow-up cards P8-134..P8-138 appended, Status lines and totals updated, the P8-60 counting rule and the row menu's scroll rule corrected. Owner agenda, next cards and costs are in the first entry of the resume point.
 - **2026-10-30 (owner decisions, Phase 7 merges)** - docs pull request `docs/owner-decisions-2026-10-30` (`needs-owner`): DEC-199..DEC-202 applied to `CLAUDE.md`, the orchestration README, the spec (RF-639, RF-641, RF-645) and `tasks.md` (Status lines of the merged Phase 7 cards, new cards P7-23 and P7-24, totals and waves); production deployed Phase 6 at 06:14 Madrid after a manual start of Scheduled release.
 - **2026-10-27 (release flow)** - docs and workflows pull request `docs/develop-staging-release` (`needs-owner`): the owner decided DEC-175 (ADR-025 Accepted): `develop` becomes the integration and default branch, every push to it deploys to a staging app (`staging.yml`) that shares the Azure environment, storage account and PostgreSQL server, a release is a pull request `develop` -> `main` merged by the owner with a merge commit, and production deploys at 06:00 Europe/Madrid (`scheduled-release.yml`), refusing a tree that did not pass staging. Owner and switch-over steps: agenda item 47.
