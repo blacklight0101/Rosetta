@@ -27,7 +27,10 @@ jobs:
   # a *.md file at the repository root. Markdown anywhere else (src/, tests/, prompts/, templates/...)
   # is code. --no-renames lists both paths of a move. A push to main always counts as code. Plain
   # git, no third-party action. The other jobs fail closed: their heavy steps run unless code is
-  # exactly 'false'.
+  # exactly 'false'. A pull request is checked out as GitHub's merge commit of its head into its base,
+  # whose first parent is the base: HEAD^1..HEAD is what the pull request changes in the tree CI
+  # tests, so the job fetches that commit and its parents only (DEC-227). A HEAD that is not a merge
+  # commit counts as code.
   changes:
     name: changes
     runs-on: ubuntu-latest
@@ -37,14 +40,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           persist-credentials: false
       - name: Classify the changed files
         id: classify
         run: |
           code=true
-          if [ "$EVENT" = pull_request ]; then
-            files="$(git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA")"
+          if [ "$EVENT" = pull_request ] && git rev-parse --verify --quiet 'HEAD^2^{commit}' > /dev/null; then
+            files="$(git diff --name-only --no-renames 'HEAD^1' HEAD)"
             printf 'Changed files:\n%s\n' "$files"
             code=false
             [ -n "$files" ] || code=true
@@ -63,8 +66,6 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
         env:
           EVENT: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
   # The static gates (P1-177): typecheck, lint, format, architecture and dead code, in parallel with
   # the tests. They give the same answer on every operating system, so they run once, on Linux.
@@ -541,9 +542,28 @@ jobs:
       contents: read
       pull-requests: read
     steps:
+      # gitleaks-action scans <first commit of the pull request>^..<its last commit> on a pull request
+      # (in the merge commit checked out: the pull request's commits plus the merge and that parent),
+      # and on a push of one commit (every squash merge to develop) that commit alone (DEC-227).
+      - name: History the scan reads
+        id: history
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            depth=$((PR_COMMITS + 2))
+          elif [ -z "$SECOND_PUSHED" ]; then
+            depth=1
+          else
+            depth=0
+          fi
+          echo "depth=$depth"
+          echo "depth=$depth" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_COMMITS: ${{ github.event.pull_request.commits }}
+          SECOND_PUSHED: ${{ github.event.commits[1].id }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ steps.history.outputs.depth }} # 0 for a push of several commits (a release merge to main): its range <first pushed>^..<head> walks main's first parents back to where develop was cut
           persist-credentials: false
       # Personal account: no licence key needed. github.token is the run's automatic token.
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0

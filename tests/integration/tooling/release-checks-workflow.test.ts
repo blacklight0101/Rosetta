@@ -32,10 +32,14 @@ function stepsOf(document: unknown, job: string): unknown[] {
   return Array.isArray(found) ? found : [];
 }
 
-/** A step of the image job as text, without what names its commit: the checkout ref and the tag inputs. */
+/**
+ * A step of the image job as text, without what names its commit (the checkout ref and the tag
+ * inputs) and without the checkout depth: each job fetches the history it reads (DEC-227), and only
+ * the checks job reads the parents of the merge (workflow-fetch-depth.test.ts pins both depths).
+ */
 function withoutCommit(step: unknown): string {
   return JSON.stringify(step, (key, value: unknown) =>
-    ['ref', 'REF_TYPE', 'REF_NAME'].includes(key) ? undefined : value,
+    ['ref', 'REF_TYPE', 'REF_NAME', 'fetch-depth'].includes(key) ? undefined : value,
   );
 }
 

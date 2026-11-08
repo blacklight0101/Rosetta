@@ -166,3 +166,21 @@ is not ready, and the pull request should not merge until it is green.
   measured yet); otherwise `npm ci`, Chromium from its cache and five runs of the changed tests only.
 - **What only a real flake shows**: that `flakeRun` really names a test the P8-54 report printed, and that a test
   that fails one run in five fails the stress check on GitHub, are only seen on a real run.
+
+### P8-140: fetch only the history a job reads (DEC-227)
+
+Each checkout now fetches only the git history its job reads (the list is in `docs/environments-and-delivery.md`
+section 6, "Git history per job"). Before, five checkouts fetched every branch and tag with their whole history.
+
+- **Before, measured** from the job logs of the 35 completed `CI` runs of 2026-11-08 15:17Z to 19:26Z (22 pull
+  request runs, 13 pushes to `develop`; `gh api .../actions/jobs/<id>/logs`, the time from the checkout step's first
+  line to the next step, and inside it the "Fetching the repository" group). Median checkout step / fetch, in seconds:
+  `changes` 3.6 / 2.7 on a pull request and 3.9 / 2.9 on a push; `gitleaks` 3.6 / 2.6 and 3.7 / 2.7; for
+  comparison `audit` in the same runs, which already fetched one commit, 2.4 / 1.4 and 2.3 / 1.4. `release.yml`, the
+  5 `workflow_dispatch` runs of 2026-10-24 to 2026-11-03: `image` 2.9 / 2.1, `deploy` 3.2 / 2.3 (3 runs).
+  `release-checks.yml` had no run yet.
+- **After**: to be measured on the CI run of this card's pull request (`changes`, `gitleaks`) and on the next release
+  (`image`, `deploy`, `checks`), with the same method; no figure is stated until then. The `audit` figure above is
+  only what a one-commit fetch took in the same runs, not a measurement of the changed jobs.
+- **Saves**: about a second per changed job per run if the changed jobs come down to the `audit` figure, and it grows
+  with the history; small next to the 96 job minutes of a run (section 2).
