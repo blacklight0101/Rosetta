@@ -86,6 +86,7 @@ export function initialRunState(): RunState {
     cards: [],
     claims: [],
     judgement: 'idle',
+    inFlight: { reader: [], verifier: [], limit: undefined },
     log: [],
     roleCostMicros: {},
     roleTokens: {},
