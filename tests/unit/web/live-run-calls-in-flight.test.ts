@@ -154,6 +154,16 @@ describe('the verifier calls in flight', () => {
   });
 });
 
+describe('a claim started twice', () => {
+  it('RF-1002 count a claim once when its verify.claim.started comes a second time', () => {
+    const started = stateAfter(claimStarted(1, 'c1'), claimStarted(2, 'c1'));
+
+    expect(started.inFlight.verifier).toEqual(['c1']);
+    expect(started.inFlight.verifier).toHaveLength(1);
+    expect(applyEvent(started, claimCallEnded(3, 'c1')).inFlight.verifier).toHaveLength(0);
+  });
+});
+
 describe('the step events', () => {
   it('RF-1002 empty the set at verify.judgement.started', () => {
     const state = stateAfter(
