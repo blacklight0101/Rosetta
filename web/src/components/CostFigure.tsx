@@ -1,15 +1,15 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useId, useLayoutEffect, useRef } from 'preact/hooks';
+import { useId } from 'preact/hooks';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { unknownCallsText } from '../lib/cost-text.js';
 import { formatMoney } from '../lib/money.js';
-import { useOverlayTip, type OverlayTip } from './overlay-tip.js';
+import { useOverlayTip } from './overlay-tip.js';
 
 // RF-428, RNF-010, DEC-54, DEC-217: a cost on the cost page, written by the one money formatter, each
 // amount with its exact figure in a tooltip. The amount takes focus (Tab, or a tap), which shows the
-// figure beside it and has a screen reader read it with the amount. Escape closes the figure while the
+// figure under it and has a screen reader read it with the amount. Escape closes the figure while the
 // pointer rests on the amount or the amount has focus, wherever the focus is (WCAG 1.4.13: a browser sends no
-// key to an amount that is only hovered, so the listener sits on the document while the figure is open),
+// key to an amount that is only hovered, so `useOverlayTip` listens on the document while the figure is open),
 // until the pointer leaves or the focus moves. In a table the amounts take one tab stop, which follows the
 // amount last focused, and the arrow keys, Home and End move between them. The figure is the overlay Tooltip
 // of design-system.md section 5.1 (P8-127), so opening it moves nothing of a table; it sits beside the
@@ -76,25 +76,6 @@ function moveBetweenAmounts(event: KeyboardEvent): void {
   }
 }
 
-/**
- * Escape closes the open figure wherever the key is pressed: a browser sends no key to an amount that is
- * only hovered (WCAG 1.4.13). The listener is there from the start of an amount with a tooltip and reads a
- * ref, so an Escape pressed the moment the figure shows is never missed.
- */
-function useEscapeAnywhere(tip: OverlayTip): void {
-  const latest = useRef(tip);
-  latest.current = tip;
-  useLayoutEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if (latest.current.open) latest.current.onKeyDown(event);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-    };
-  }, []);
-}
-
 export interface AmountProps {
   readonly currency: string;
   readonly micros: string;
@@ -107,7 +88,6 @@ export interface AmountProps {
 function ExactAmount(props: AmountProps & { readonly shown: string; readonly full: string }) {
   const tipId = useId();
   const figure = useOverlayTip();
-  useEscapeAnywhere(figure);
   return (
     <span
       class="rst-p136-amount"
