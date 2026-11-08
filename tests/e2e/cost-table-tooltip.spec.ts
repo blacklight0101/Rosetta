@@ -6,8 +6,8 @@ import { signInAs } from './support/sign-in.js';
 // RF-428, RNF-010, DEC-220, design-system.md section 5.1, P8-127: the exact figure of an amount in a
 // table of the cost page moves nothing. Focusing and hovering the first and the last amount of each table
 // leaves every cell where it was, the table and its scrolling box as wide and the page as large, and the
-// figure is whole: inside the viewport and on top, in the four views (@visual). The cost answer is
-// replaced by one whose amounts all carry an exact figure, in every table.
+// figure is whole: inside the viewport and on top, in the four views (@visual). The test gives the cost
+// answer, whose amounts all carry an exact figure in every table, and an empty History.
 
 const visual = { tag: '@visual' };
 
@@ -78,18 +78,24 @@ async function openCostPage(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
 }
 
-/** Where every cell of the table stands and how large the table, its scrolling box and the page are. */
+/**
+ * Where every cell of the table stands in the table, where the table stands on the page and how large the
+ * table, its scrolling box and the page are. Places are taken from the body's box, so a scroll of the page by
+ * a fraction of a pixel (a focus or a hover can bring the amount into view) is not read as a move.
+ */
 async function layoutOf(page: Page, table: Locator): Promise<unknown> {
   return {
     cells: await table.locator('th, td').evaluateAll((cells) =>
       cells.map((cell) => {
         const box = cell.getBoundingClientRect();
-        return [box.x, box.y, box.width, box.height];
+        const origin = cell.closest('table')?.getBoundingClientRect() ?? box;
+        return [box.x - origin.x, box.y - origin.y, box.width, box.height];
       }),
     ),
     table: await table.evaluate((element) => {
       const box = element.getBoundingClientRect();
-      return [box.width, box.height];
+      const body = document.body.getBoundingClientRect();
+      return [box.x - body.x, box.y - body.y, box.width, box.height];
     }),
     scrollBox: await table.evaluate((element) => {
       const box = element.parentElement;
@@ -168,6 +174,8 @@ test(
   'RF-428 RNF-010 the exact figure of a cost table amount moves nothing of the table or the page',
   visual,
   async ({ page }) => {
+    // Ten amounts, each opened twice and measured three times: longer than the default 30 s.
+    test.setTimeout(120_000);
     await openCostPage(page);
     for (const name of tables) {
       const table = page.getByRole('table', { name });
