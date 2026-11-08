@@ -192,7 +192,7 @@ describe('the checks workflow of the release merge in the delivery documents (DE
     for (const fact of [
       '`release-checks.yml`',
       'every push to `main`',
-      '`contents: read`, `packages: write`, `statuses: write` and `issues: write`',
+      '`contents: read`, `checks: read`, `packages: write`, `statuses: write` and `issues: write`',
       'workflow token',
     ]) {
       expect(text).toContain(fact);
@@ -209,5 +209,26 @@ describe('the checks workflow of the release merge in the delivery documents (DE
     expect(row).toContain('`tests/integration/tooling/release-checks-workflow.test.ts`');
     expect(release).toContain('`release-checks.yml`');
     expect(release).toContain('sha-<short>');
+  });
+});
+
+describe('release/ready in the delivery documents (DEC-207, P8-64)', () => {
+  it('DEC-207 docs/environments-and-delivery.md says the checks workflow confirms ZAP and staging and records release/ready', async () => {
+    const text = await read('docs/environments-and-delivery.md');
+
+    for (const fact of ['`release/ready`', '`zap-baseline`', 'ROSETTA_STAGING_ENABLED']) {
+      expect(section(text, '## 6. Continuous integration')).toContain(fact);
+    }
+    expect(section(text, '## 8.')).toContain('`release/ready`');
+  });
+
+  it('DEC-207 the deploy runbook says what release/ready on the release merge means and lists its tests', async () => {
+    const text = await read('docs/runbooks/deploy.md');
+    const release = section(text, '## Release to production');
+
+    expect(release).toContain('`release/ready`');
+    expect(release).toMatch(/`failure`[^\n]*names/u);
+    expect(text).toContain('`tests/integration/tooling/release-checks-ready.test.ts`');
+    expect(text).toContain('`tests/integration/tooling/release-ready-status.test.ts`');
   });
 });

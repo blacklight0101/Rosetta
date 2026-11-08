@@ -278,17 +278,13 @@ jobs:
           ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
           ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
       # RF-1304: one comment per live deploy on the open issue "Production deploys" (created when
-      # missing); the mention makes GitHub email the owner. The deploy is already live, so a failure
-      # here is reported in the log and never fails the job.
+      # missing), with scripts/production-deploys-comment.sh, which the failure comment of
+      # release-checks.yml shares; the mention makes GitHub email the owner. The deploy is already
+      # live, so a failure here is reported in the log and never fails the job.
       - name: Tell the owner the deploy is live
         continue-on-error: true
         run: |
-          issue="$(gh issue list --state open --search 'Production deploys in:title' --json number,title --jq '.[] | "\(.number)\t\(.title)"' | awk -F '\t' '$2 == "Production deploys" { print $1; exit }')"
-          if [ -z "$issue" ]; then
-            url="$(gh issue create --title 'Production deploys' --body 'The release workflow adds a comment here after each production deploy (RF-1304).')"
-            issue="${url##*/}"
-          fi
-          gh issue comment "$issue" --body "@$OWNER production now runs $IMAGE:$SHA_TAG (commit $GITHUB_SHA) at $ROSETTA_PUBLIC_URL. Run: $RUN_URL"
+          MESSAGE="production now runs $IMAGE:$SHA_TAG (commit $GITHUB_SHA) at $ROSETTA_PUBLIC_URL. Run: $RUN_URL" bash scripts/production-deploys-comment.sh
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
