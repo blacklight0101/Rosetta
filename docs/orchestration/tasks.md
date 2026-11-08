@@ -9480,7 +9480,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-99
 - **Gate**: none
-- **Status**: Blocked (waits for P8-139, DEC-226)
+- **Status**: Done (#1311)
 - **Evidence** (2026-11-04, P8-99 verifiers and DEC-222): "Where it is" reads the last run only, so the artboard's "Questions waiting" and "Deepen running" cannot show, "Understand running" also stands for a Deepen, and "Package ready" also stands for a package that is out of date. The limit is also worded too narrowly at `docs/spec/requirements.md:227` and in DEC-222: any newer understand run that did not complete changes the answer, not only a Deepen (P8-99 verifier round 3, MINOR).
 - **Reads**: `web/src/lib/journey/project-position.ts`, `src/application/use-cases/` (the overview and the journey read), `web/src/pages/ProjectRunsTable.tsx`, RF-010, RF-615, RF-1108, DEC-222.
 - **Do**: add the Givens first; red tests first.
