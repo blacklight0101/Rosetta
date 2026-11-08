@@ -162,7 +162,7 @@ few seconds of `test-picks`. Otherwise `node scripts/stress-tests.mjs` runs only
 A test that fails once fails the job (no retry). The check is not required; a red one means the new or changed test
 is not ready, and the pull request should not merge until it is green.
 
-- **Costs**: about 10 s on a pull request without test changes; otherwise `npm ci`, Chromium from its cache and five
-  runs of the changed tests only.
+- **Costs**: on a pull request without test changes only `test-picks` runs (one file checked out, one API call; not
+  measured yet); otherwise `npm ci`, Chromium from its cache and five runs of the changed tests only.
 - **What only a real flake shows**: that `flakeRun` really names a test the P8-54 report printed, and that a test
   that fails one run in five fails the stress check on GitHub, are only seen on a real run.
