@@ -60,7 +60,9 @@ describe('BuildPlan: a plan that covers the whole set', () => {
 
     expect(run.endState).toBe('Completed');
     const written = await h.handoffOf(run);
-    expect(written['checks.md']).toContain('Every item is built by at least one task card.');
+    expect(written['checks.md']).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(written['checks.md']).not.toMatch(/^\| (feature|table|operation|flow|screen) /mu);
   });
 
@@ -95,7 +97,7 @@ describe('BuildPlan: a plan with a gap', () => {
     for (const listed of ['operation:placeOrder', 'flow:FLOW-001', 'screen:SCRN-001']) {
       expect(checks).toContain(listed);
     }
-    expect(checks).not.toContain('Every item is built');
+    expect(checks).not.toContain('Every feature, table, operation, journey and screen is built');
   });
 
   it('RF-627 an answer that is not links leaves every item without a card but the tables', async () => {

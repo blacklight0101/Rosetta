@@ -40,7 +40,9 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
     expect(cards.map((each) => each.split('\n')[0])).toEqual([
       ...Array.from({ length: 16 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
-    expect(plain(written['checks.md'])).toContain('Every item is built by at least one task card.');
+    expect(plain(written['checks.md'])).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.message).join(' ')).not.toContain('of the gap');
