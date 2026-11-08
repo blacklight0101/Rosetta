@@ -352,10 +352,13 @@ jobs:
           npx playwright install chromium
           node -e "require('playwright').chromium.launch().then((browser) => browser.close())" || npx playwright install-deps chromium
       # One third of the Playwright project (RNF-005); the three shards together run every spec.
+      # A failed test runs once more (P8-54); one that passes then is reported as flaky, and the job
+      # stays green (tests/e2e/support/flaky-reporter.ts: the log, a warning and the job summary).
       - if: needs.changes.outputs.code != 'false'
         run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
         env:
           SHARD: ${{ matrix.shard }}
+          ROSETTA_E2E_RETRIES: 1
           ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
 
   # One stable check name for the ruleset: green only when every shard passed.
