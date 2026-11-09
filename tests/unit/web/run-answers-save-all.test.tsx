@@ -117,7 +117,9 @@ describe('RF-1007 one bar saves the answers of the list', () => {
       'Save answers (2)',
     );
   });
+});
 
+describe('RF-1007 one Save answers for several answers', () => {
   it('RF-1007 three changed answers are saved with one click, in one request, and move together', async () => {
     const page = render(three);
     await screen.findAllByTestId('open-question');
@@ -150,7 +152,9 @@ describe('RF-1007 one bar saves the answers of the list', () => {
       'Save answers (0)',
     );
   });
+});
 
+describe('RF-1007 what one Save answers does after it, and when it writes nothing', () => {
   it('RF-1007 the focus goes to the next question that waits after the save', async () => {
     render([...three, row('OQ-004')]);
     await screen.findAllByTestId('open-question');
@@ -167,7 +171,6 @@ describe('RF-1007 one bar saves the answers of the list', () => {
       );
     });
   });
-
   it('RF-1007 with nothing changed writes nothing and says so', async () => {
     const page = render(three);
     await screen.findAllByTestId('open-question');

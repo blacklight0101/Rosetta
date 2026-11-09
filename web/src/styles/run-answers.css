@@ -91,3 +91,20 @@
   outline: 2px solid var(--rst-focus, currentColor);
   outline-offset: 2px;
 }
+
+/* RF-1007, RF-647 (P8-86, P8Run artboard): one Save answers for the list and Accept the recommended
+   answers, under the questions that wait and above the Answered list, on a rule. */
+.rst-p139-save {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  padding-block-start: var(--rst-sp-2);
+  border-block-start: 1px solid var(--rst-rule);
+}
+
+.rst-p139-save__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
