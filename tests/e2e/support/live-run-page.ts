@@ -216,6 +216,8 @@ export async function chooseSecondSuggestedAnswer(question: Locator): Promise<vo
   // The choice is in answers.md: the page shows it again after a reload.
   await question.page().reload();
   await openRunTab(question.page(), 'Your questions');
+  // P8-85: the saved question is in the closed Answered list, where role queries find nothing.
+  await showQuestion(question);
   await expect(radios.nth(1)).toBeChecked();
 }
 
