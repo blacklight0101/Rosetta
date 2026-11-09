@@ -19,7 +19,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
 | P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
-| **Total**                    | **633** | **123**   | **461**    | **49**    | **0**              | **330** | **276** | **27** | **318**    | **24**    |
+| P9 Evaluation fixes, round 3 | 13      | 3         | 9          | 1         | 0                  | 13      | 0       | 0      | 0          | 0         |
+| **Total**                    | **646** | **126**   | **470**    | **50**    | **0**              | **343** | **276** | **27** | **318**    | **24**    |
 
 ## Conventions for every card
 
@@ -8050,7 +8051,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: In review (evaluation of 2026-11-09, Haiku only on the owner's word; done when the owner has read it)
 - **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Run Asset Manager end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask, driving the web for the Plan setup save of a typed architecture (EV-73) as well as the API.
@@ -8065,7 +8066,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: In review (evaluation of 2026-11-09, Haiku only on the owner's word; done when the owner has read it)
 - **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Run Invoice Generator end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
@@ -8080,7 +8081,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P7-35, P8-01, P8-02, P8-03, P8-04, P8-05, P8-06, P8-07, P8-08, P8-09, P8-10, P8-11, P8-12, P8-13, P8-14, P8-38, P8-39, P8-40, P8-41, P8-42, P8-44, P8-45
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: In review (evaluation of 2026-11-09, Haiku only on the owner's word; done when the owner has read it)
 - **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Run eShopModernizing end to end (scan, understand, Deepen, answers, plan) on a local Ollama model and on Haiku, one test user per provider, with the default caps and pause-and-ask.
@@ -8095,7 +8096,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-46, P8-47, P8-48
 - **Gate**: owner
-- **Status**: Todo
+- **Status**: In review (evaluation of 2026-11-09, Haiku only on the owner's word; done when the owner has read it)
 - **Reads**: the evaluation of 2026-11-02 (findings EV-82..EV-91 and the re-checked findings with their repros), `docs/verification/`, RNF-006, RNF-012.
 - **Do**:
   - Report each finding of the evaluation of 2026-11-02 as fixed, better or still present, with the file:line evidence of the three runs.
@@ -9635,3 +9636,189 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Delivers**: the small fixes and their tests.
 - **Done when**: each finding is fixed or dropped with its reason; CI green.
 - **Refs**: RF-1304, RF-615, RF-436, RF-1002; follow-ups of the cards merged on 2026-11-08; GitHub issue #1320
+
+## Phase 9 - Fixes from the evaluation of 2026-11-09 (held by the owner)
+
+Phase 9 comes from the evaluation of 2026-11-09 (P8-46..P8-49 run on Haiku only, as the owner asked: Asset Manager, Invoice Generator and eShopModernizing end to end on the evaluation stack `rosetta-eval2`, develop at `bbb696cd`, after Phase 8 wave 3). The evaluation found no Critical defect, so no card was added to Phase 8. The owner said to card every other finding here and not to start Phase 9 yet: no card starts until the owner clears the phase. Finding ids: EV-100..EV-108 are new (the highest earlier id was EV-99); EV-96, EV-85 and EV-89/EV-57/EV-69 are earlier findings the evaluation found still present or only better. EV-100 is Major, the rest are Minor. The evaluation report and its evidence (runs `p8w3-haiku-*`, screenshots `shots/p8w3/`) are in the private evaluation folder, outside the repository. Order: the Major first (P9-01, P9-02), then run states and events, then the plan, then page wording, then the carried findings. Two cards never edit the same file in one wave; Depends on carries the order where they would.
+
+### P9-01 - Continue at an approval pause raises the journey amount too
+
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-100, Major): after Continue (+N) at the approval pause of a Deepen, the run's approved amount rises by N but the journey's does not, so the journey reads "used up" (`remainingMicros 0` after $0.1288 spent of $0.10 + $0.0338) and the plan cannot start: Plan setup's options call answers RST-1600 and Start the plan answers RST-2311 "Press Analyse again", while the project page has no Analyse at that point. The only way on is to start an understand run and stop it at once ($0.0016), which writes a new journey record. `src/application/use-cases/continue-run.ts` (`raisedManifest`, about 80-92) raises only the manifest's `approvedAmount`; `src/domain/journey/journey-record.ts` (10-46) keeps `approved` fixed.
+- **Reads**: `continue-run.ts`, `journey-record.ts`, `src/application/journey/journey-budget.ts`, the journey store port and its PostgreSQL adapter, RF-011, RF-432, RF-435, ADR-026, ADR-027.
+- **Do**: add the Given to RF-432 and RF-435 first (a Continue of N on a journey step raises the journey's approved amount by the same N, within the administrator ceilings); red tests first. Record the raise on the journey record when the Continue is accepted, in the same transaction as the run's raise or in a way that cannot raise one without the other; a run with no journey (evaluation tools) keeps today's behaviour.
+- **Delivers**: the journey raise, unit and integration tests (Continue then plan start answers 202, not RST-2311), the spec Givens.
+- **Done when**: after a Continue of N the journey's remainder is the old remainder plus N, a plan starts from Plan setup without a new Analyse, and nothing can pass the administrator ceilings; CI green.
+- **Refs**: RF-011, RF-432, RF-435, ADR-026, ADR-027; evaluation of 2026-11-09, EV-100 (Major); GitHub issue #1336
+
+### P9-02 - Plan setup says what to do when the journey amount left is short
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P9-01
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-100): with the journey used up, Plan setup says "the run pauses and asks before it passes it" while its options call answers RST-1600 "Raise the run cap in the project settings, wait for the next UTC day, or ask the administrator" and Start the plan answers RST-2311 "Press Analyse again to approve a new amount", with no Analyse on the page.
+- **Reads**: the Plan setup page and its start bar under `web/src/pages/`, `src/application/use-cases/suggest-plan-options.ts`, `src/domain/errors/descriptions.ts`, RF-435, RF-613.
+- **Do**: add the Givens to RF-435 and RF-613 first. When the journey's remainder is below the plan estimate, Plan setup says so with both figures and offers the way on that the product has (approve more within the ceilings, or Analyse again, whichever RF-435 decides; ask the owner with a default if the spec has no answer). The RST-1600 of the options call and the RST-2311 of the plan start name that same way on.
+- **Delivers**: the page state, the two messages, unit and web tests.
+- **Done when**: a user whose journey is short reads on Plan setup what is short and one action that lets the plan start; CI green.
+- **Refs**: RF-435, RF-613, ADR-027; evaluation of 2026-11-09, EV-100; GitHub issue #1337
+
+### P9-03 - "Stop here" at the approval pause ends with its own reason and words
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-101): "Stop here" at the approval pause ends the run "Cap reached / stopped at its cap" with RST-1600 "Raise the run cap in the project settings ...", and Resume says "Raise the cap in the project settings first, then resume", although no cap stopped the run and Resume works unchanged. `web/src/pages/ResumeControl.tsx` (22-26), `src/domain/errors/budget-descriptions.ts` (10-14), `web/src/lib/live-run/run-title.ts` (22).
+- **Reads**: those files, the end-reason list in `docs/data-model.md`, RF-006, RF-432.
+- **Do**: add the Given to RF-432 first. A run the user stops at the approval pause ends with a reason of its own (stopped at the approved amount), with a title and a Resume line that say so; a run a real cap stopped keeps today's words. Check every reader of the end reason (history, index, strip, exports).
+- **Delivers**: the end reason, its words, unit and web tests.
+- **Done when**: Stop here reads as the user's stop at the approved amount everywhere and Resume does not ask to raise a cap; CI green.
+- **Refs**: RF-006, RF-432, ADR-026; evaluation of 2026-11-09, EV-101; GitHub issue #1338
+
+### P9-04 - A reader the user stopped is not counted as failed
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-104): a reader cut short by Stop or by Stop here is counted as failed: "1 of 2 agents done, 1 failed" on a stopped run and "9 of 10 agents done, 1 failed" on the Completed resumed Deepen; the event at the stop is `agent.ended {state: Failed}`. `web/src/lib/live-run/run-stepper.ts` (47-51).
+- **Reads**: `run-stepper.ts`, where `agent.ended` is written on a stop, the event list in `docs/data-model.md`, RF-1002.
+- **Do**: add the Given to RF-1002 first. An agent ended by the user's stop gets an interrupted state (or the stepper reads the run's stop), is shown as stopped, and is not counted as failed; an agent that really failed still is.
+- **Delivers**: the state or the reading, unit tests, the data-model line if an event changes.
+- **Done when**: a stopped run and a resumed run show no failed agent unless one failed; CI green.
+- **Refs**: RF-1002, RF-006; evaluation of 2026-11-09, EV-104; GitHub issue #1339
+
+### P9-05 - Cancelling a queued resumed run records its end
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-105; also a verifier follow-up of P8-84): cancel a resumed run while it waits in the queue. The index says Interrupted / QueueCancel, but the server logs `level error` "Could not record run.ended" RST-2105 and the run's `events.jsonl` keeps the first life's `run.ended {endReason: UserStop}` as its last line, because the event-order check refuses a second `run.ended`.
+- **Reads**: `src/application/runs/event-order.ts`, `src/application/use-cases/subscribe-run-events.ts`, the run lifecycle, RF-006, RF-1108.
+- **Do**: add the Given to RF-006 first; red test first. Let the event order accept the `run.ended` of a later life of a resumed run (after its `run.started` or its queue cancel), so the log ends with the end the index shows; keep refusing a second end within one life.
+- **Delivers**: the event-order rule, unit and integration tests.
+- **Done when**: cancelling a queued resumed run logs no error and its last event is the QueueCancel end; CI green.
+- **Refs**: RF-006, RF-1108; evaluation of 2026-11-09, EV-105; P8-84 verifier follow-up; GitHub issue #1340
+
+### P9-06 - A completed plan builds every requirement
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-108): the eShop plan completed first try with 2 requirements built by no task card (REQ-020 temporary image upload, REQ-024 request log) and without the three hi-lo tables BR-006 names, while its ADR-001 decides "Hi-lo ids generated in the application"; the Invoice web plan completed with 1 requirement built by no card. P8-96's second gap round covers unbuilt items, not unbuilt requirements.
+- **Reads**: `src/application/plan/gap-rounds.ts`, `plan-links.ts`, the coverage check that writes `checks.md`, RF-623, RF-627.
+- **Do**: add the Givens to RF-627 (and RF-623 for tables a decided ADR needs) first; red tests with a recorded plan first. Treat a requirement built by no card like an unbuilt item: it goes into the gap round, and one still unbuilt after the last round fails the plan the same way (RST-1806) or is named as not built, whichever RF-627 already says for items.
+- **Delivers**: the gap-round input and the check, unit and integration tests with recorded responses.
+- **Done when**: a plan never completes with a requirement silently built by no card; CI green.
+- **Refs**: RF-623, RF-627, ADR-018; evaluation of 2026-11-09, EV-108; GitHub issue #1341
+
+### P9-07 - The journey strip marks the scan done once the scan has run
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-102): after the automatic scan of an upload has completed, the strip shows Scan "Current - Start a run to map the code" until an understand run exists, while the code map's areas are already listed on the same page. `/api/projects/:id/journey` has `scanRunId`; `web/src/lib/journey/journey-steps.ts` (105-108) tests `source === null` instead.
+- **Reads**: `journey-steps.ts`, its tests, RF-615, RF-1020.
+- **Do**: red test first: the scan step is done when `facts.scanRunId` is set, and the next step is current.
+- **Delivers**: the step rule and its tests.
+- **Done when**: an uploaded and scanned project shows the scan done and the understand step current; CI green.
+- **Refs**: RF-615, RF-1020; evaluation of 2026-11-09, EV-102; GitHub issue #1342
+
+### P9-08 - The journey total counts every step and every Continue
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P9-01, P9-07
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-107): "Total so far" adds only the plan's source run and the plan, so after a Deepen it leaves out the understand ($0.1286 shown, $0.1609 spent on Invoice, the Cost page agrees with $0.1609), and "$0.00 left of $0.1000 approved" ignores the $0.0338 the user approved with Continue. `web/src/lib/journey/journey-steps.ts` (about 284).
+- **Reads**: `journey-steps.ts`, the journey API, `journey-record.ts`, RF-011, RF-1020.
+- **Do**: add the Given to RF-1020 first; red tests first. The strip's total is the journey's spend (every understand, Deepen and plan run of the journey) and its approved line includes the Continue amounts (from P9-01), so the strip, the Cost page and the journey API agree.
+- **Delivers**: the total and approved line, unit tests.
+- **Done when**: the strip's total equals the journey spend on the Cost page; CI green.
+- **Refs**: RF-011, RF-1020, RF-1003; evaluation of 2026-11-09, EV-107; GitHub issue #1343
+
+### P9-09 - The start page does not offer what cannot work while Ollama is unreachable
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-103): on a new project with the Ollama defaults and Ollama stopped, "Analyse · approve 4,143,716 tokens" is enabled before Apply although the page says a run would fail at its first call; after Apply to Anthropic, "Switch every role to Ollama (gemma4:e4b)" is still offered beside the Anthropic notice while Ollama is "not reachable".
+- **Reads**: the start page and its role warning (P8-74, P8-75) under `web/src/pages/`, RF-434, RF-436.
+- **Do**: add the Givens to RF-434 first; red tests first. Analyse is disabled, with the reason, while every role uses a provider the page knows cannot answer; the switch to Ollama is not offered while Ollama is not reachable.
+- **Delivers**: the two page rules and web tests.
+- **Done when**: with Ollama stopped the page offers only actions that can work; CI green.
+- **Refs**: RF-434, RF-436; evaluation of 2026-11-09, EV-103; GitHub issue #1344
+
+### P9-10 - The queue says which of the user's runs it waits for
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-106): a plan started while the same user's eShop understand ran read "Queued, position 1, no run ahead", so nothing seemed to hold it. `web/src/lib/live-run/queue-text.ts` (7).
+- **Reads**: `queue-text.ts`, the queue facts the run API returns, RF-1108.
+- **Do**: add the Given to RF-1108 first; red test first. When the user's own running run holds the queued one, say so and link that run ("Waits for your run ... to end").
+- **Delivers**: the text, its tests.
+- **Done when**: a run queued behind the user's own run names it; CI green.
+- **Refs**: RF-1108; evaluation of 2026-11-09, EV-106; GitHub issue #1345
+
+### P9-11 - The likely figure fits the approvable amount and holds still between reads
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: P9-01
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-96, still present): the eShop estimate reads likely $4.085 above the approvable $4.00; the Invoice approvable moved from $1.318 at the first estimate to $0.314 after the runs (`basis: history`).
+- **Reads**: the estimate use case and `approved-journey.ts`, RF-430, RF-434.
+- **Do**: add the Givens to RF-430 and RF-434 first; ask the owner with a default where the spec has no answer. When the likely figure is above the approvable, the page says so and what happens (the run pauses and asks); the figure a user approved is not silently replaced by a later read on the same page.
+- **Delivers**: the estimate wording and rule, unit tests.
+- **Done when**: no page shows a likely figure above the approvable without saying what follows; CI green.
+- **Refs**: RF-430, RF-434, ADR-027; evaluations of 2026-11-02 and 2026-11-09, EV-96; GitHub issue #1346
+
+### P9-12 - One cap sentence on the start page
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P9-09, P9-11
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-85, better): the live header now reads "$3.69 left of $4.00 approved", but the start page still says "Likely ... is 11% of the run token cap ... Change the caps in the project settings" above "Approved ... the run pauses and asks", so two different limits are named for one run.
+- **Reads**: the start page estimate block under `web/src/pages/`, RF-434, RF-435.
+- **Do**: add the Given to RF-434 first. The start page names the approved journey amount as the line the run works under; the project caps appear only where they apply.
+- **Delivers**: the wording and its web test.
+- **Done when**: the start page names one limit for the run; CI green.
+- **Refs**: RF-434, RF-435; evaluations of 2026-11-02 and 2026-11-09, EV-85; GitHub issue #1347
+
+### P9-13 - Fewer near-repeat questions and no "Yes, but" on an either-or question
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 held)
+- **Status**: Todo
+- **Evidence** (2026-11-09, EV-89, EV-57, EV-69, still present, rarely): eShop asked near-repeat pairs OQ-045/OQ-046 (0.77), OQ-050/OQ-053 and OQ-058/OQ-061 among 64 questions (an answered one is asked again in other words); OQ-062 "run by this application's team or by another system?" offers "Yes, but only as a shared catalog ...".
+- **Reads**: the question merge and suggested-answer code and prompts, RF-645, RF-646.
+- **Do**: add the Givens to RF-645 and RF-646 first; red tests with recorded questions first. Merge questions above a stated similarity, and keep a question that repeats an answered one out of the open list; suggested answers to an either-or question name one of its sides, not yes or no.
+- **Delivers**: the merge rule, the prompt or check change with a new prompt version, unit tests with recorded responses.
+- **Done when**: the recorded eShop questions give no pair above the threshold and no "Yes, but" on OQ-062; CI green.
+- **Refs**: RF-645, RF-646; evaluations of 2026-11-02 and 2026-11-09, EV-89, EV-57, EV-69; GitHub issue #1348
