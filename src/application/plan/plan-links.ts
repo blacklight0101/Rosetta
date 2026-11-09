@@ -6,7 +6,9 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import { settleDerivedRequirements } from '../../domain/planning/derived-requirements.js';
 import type { LeftOutCard } from '../../domain/planning/left-out-card.js';
-import { addGapTasks } from '../../domain/planning/plan-gap.js';
+import { linkGapItems, type GapLinked, type LinkedGap } from '../../domain/planning/gap-links.js';
+import type { PlanContent } from '../../domain/planning/plan-content.js';
+import { addGapTasks, type GapLeftOut } from '../../domain/planning/plan-gap.js';
 import { sourcesWithModules, type ModuleReason } from '../../domain/planning/module-coverage.js';
 import { titlePhases } from '../../domain/planning/phase-titles.js';
 import type { PromptFile } from '../agent/prompt-file.js';
@@ -15,7 +17,7 @@ import { gapMessage } from './gap-message.js';
 import { parseGapAnswer, type GapAnswer, type GapProblem } from './gap-answer.js';
 import { moduleReasons } from './module-reasons.js';
 import { gapRepairMessage, type GapRepair } from './gap-repair-message.js';
-import { entryWarnings, gapLeftOutItems } from './gap-round-notes.js';
+import { entryWarnings, gapLeftOutItems, linkWarnings } from './gap-round-notes.js';
 import type { HandoffPackage } from './handoff-package.js';
 import {
   checkedPlan,
@@ -32,7 +34,8 @@ import {
 // When that answer left out cards that named an item still uncovered (a position written as a text,
 // say), the planner gets one repair attempt: the same call for the items still uncovered, with the
 // problems listed, and its cards join the plan after the others. What is still uncovered is the gap
-// the run reports. Both calls go through the same guarded provider as every planner call, so the
+// the run reports. P8-95: an answer may link an item to a card the plan already has instead of
+// writing a card that repeats its work (gap-links.ts); that card then builds it. Both calls go through the same guarded provider as every planner call, so the
 // budget guard and the Ollama context guard (RST-1522) can refuse them; a refusal, like any failure
 // of the call, keeps the plan as the calls before it left it and is handed back for the caller to end
 // the run with its code. An answer that is unusable adds no card and is not a failure. Every card
@@ -71,6 +74,9 @@ interface Round {
   readonly answer: GapAnswer | undefined;
   /** Every card left out, unreadable or not taken by the plan, in the order of the answer. */
   readonly problems: readonly GapProblem[];
+  /** P8-95: the items the answer linked to cards of the plan, and the links it dropped. */
+  readonly linked: readonly GapLinked[];
+  readonly droppedLinks: readonly GapLeftOut[];
 }
 
 interface RoundOptions {
@@ -108,12 +114,31 @@ async function gapRound(
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
     itemSources: sourcesWithModules(documents),
   });
-  const grown = checkedPlan(taken.content, documents);
+  const linked = linkedItems(answer, content, taken.content, open);
+  const grown = checkedPlan(linked.content, documents);
   const closed = { ...planned, content: grown, report: coverageOf(report.items, grown.tasks) };
-  const problems = [...(answer?.problems ?? []), ...taken.leftOut].sort(
-    (left, right) => left.position - right.position,
-  );
-  return { planned: closed, answer, problems };
+  const problems = byPosition(answer?.problems, taken.leftOut);
+  const droppedLinks = byPosition(answer?.linkProblems, linked.dropped);
+  return { planned: closed, answer, problems, linked: linked.linked, droppedLinks };
+}
+
+/** P8-95: the plan with the items the answer linked; a link counts only for a card of `before`. */
+function linkedItems(
+  answer: GapAnswer | undefined,
+  before: PlanContent,
+  after: PlanContent,
+  open: readonly CoverageItem[],
+): LinkedGap {
+  const cards = before.tasks.map((task) => task.id);
+  return linkGapItems(after, answer?.links ?? [], open, cards);
+}
+
+/** What the answer could not read and what the plan did not take, in the order of the answer. */
+function byPosition(
+  unread: readonly GapProblem[] | undefined,
+  refused: readonly GapLeftOut[],
+): GapProblem[] {
+  return [...(unread ?? []), ...refused].sort((left, right) => left.position - right.position);
 }
 
 /** What to log about an answer: the cards left out, by position and field, or that it was no answer. */
@@ -129,6 +154,7 @@ function roundWarnings(round: Round, label: string, unreadable: string): string[
   return [
     ...ruled,
     ...entryWarnings(label, round.answer.salvaged === true, round.answer.entries),
+    ...linkWarnings(label, round.linked, round.droppedLinks),
     ...round.problems.map(
       ({ position, field, reason }) =>
         `Task card at position ${String(position)} of the ${label} was left out: the field "${field}" ${reason}.`,

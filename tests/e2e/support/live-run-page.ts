@@ -216,6 +216,8 @@ export async function chooseSecondSuggestedAnswer(question: Locator): Promise<vo
   // The choice is in answers.md: the page shows it again after a reload.
   await question.page().reload();
   await openRunTab(question.page(), 'Your questions');
+  // P8-85: the saved question is in the closed Answered list, where role queries find nothing.
+  await showQuestion(question);
   await expect(radios.nth(1)).toBeChecked();
 }
 
@@ -228,6 +230,15 @@ async function saveWithKeyboard(question: Locator): Promise<void> {
   await expect(question).toContainText('Answer saved in answers.md.');
 }
 
+/** RF-1007 (P8-85): a question with a saved answer is in the collapsed Answered list; open the list. */
+async function showQuestion(question: Locator): Promise<void> {
+  await expect(question).toHaveCount(1);
+  if (!(await question.isVisible())) {
+    await question.page().getByTestId('answered-questions').locator('summary').click();
+  }
+  await expect(question).toBeVisible();
+}
+
 /**
  * RF-645: the arrow keys reach "Type your own answer", Tab goes to its field, the text replaces
  * what the field holds and the answer is saved, all with the keyboard.
@@ -235,6 +246,7 @@ async function saveWithKeyboard(question: Locator): Promise<void> {
 export async function typeOwnAnswerWithKeyboard(question: Locator, answer: string): Promise<void> {
   const { keyboard } = question.page();
   const radios = question.getByRole('radio');
+  await showQuestion(question);
   await radios.first().focus();
   await keyboard.press('ArrowDown');
   await keyboard.press('ArrowDown');
