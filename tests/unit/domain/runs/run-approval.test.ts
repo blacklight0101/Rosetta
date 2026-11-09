@@ -14,13 +14,17 @@ import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
 
 describe('a run waiting for approval', () => {
   it('RF-432 pauses a running run and keeps the areas no reader started', () => {
-    const running = runningRun();
+    const running = runningRun({ startedAt: 5_000, spanStartedAt: 5_000 });
 
-    expect(pauseRun(running, { unreadAreas: 2 })).toEqual({
+    expect(pauseRun(running, 8_000, { unreadAreas: 2 })).toEqual({
       ok: true,
-      value: { ...running, queueState: 'AwaitingApproval', unreadAreas: 2 },
+      value: {
+        ...running,
+        ...{ queueState: 'AwaitingApproval', unreadAreas: 2 },
+        ...{ spanStartedAt: null, activeMs: 3_000 },
+      },
     });
-    expect(pauseRun(sampleRun(), {})).toEqual({ ok: false, error: 'not-running' });
+    expect(pauseRun(sampleRun(), 8_000, {})).toEqual({ ok: false, error: 'not-running' });
   });
 
   it('RF-432 Continue queues the paused run again at the end of the queue', () => {
@@ -28,7 +32,7 @@ describe('a run waiting for approval', () => {
 
     expect(continueRun(paused, 9_000)).toEqual({
       ok: true,
-      value: { ...paused, queueState: 'Queued', unreadAreas: 0, queuedAt: 9_000, startedAt: null },
+      value: { ...paused, queueState: 'Queued', unreadAreas: 0, queuedAt: 9_000 },
     });
     expect(continueRun(runningRun(), 9_000)).toEqual({
       ok: false,

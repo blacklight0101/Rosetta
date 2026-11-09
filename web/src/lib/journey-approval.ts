@@ -67,3 +67,45 @@ export function basisMovedText(before: RunEstimate, after: RunEstimate): string 
     ? 'The figures changed: they now come from the measured totals of earlier runs of this model, not from the fixed assumptions.'
     : 'The figures changed: they now come from the fixed assumptions, because no earlier run of this model is counted.';
 }
+
+/** DEC-210: says so when the likely total is above the approvable one; undefined when it is not. */
+// RF-434
+function likelyAboveText(estimate: RunEstimate): string | undefined {
+  const { journey } = estimate;
+  if (journey === undefined) return undefined;
+  const local = isLocalEstimate(estimate);
+  const above = local
+    ? journey.likely.tokens > journey.approvable.tokens
+    : BigInt(journey.likely.costMicros) > BigInt(journey.approvable.costMicros);
+  return above
+    ? `likely above what can be approved (likely ${figureText(estimate, journey.likely)})`
+    : undefined;
+}
+
+/** The journey figures as three short lines, in the words of the Deepen panel (P8-26, RF-434). */
+export interface EstimateLines {
+  readonly likely: string;
+  readonly approved: string;
+  readonly stops: string;
+}
+
+/**
+ * RF-434, DEC-210, P8-26: the likely total, the amount Analyse approves and what stops the run.
+ * When the likely total is above the approvable one, the likely line shows the approvable figure
+ * with the DEC-210 words and the run is said to pause and ask at the approved amount.
+ */
+// RF-434
+export function estimateLinesOf(estimate: RunEstimate): EstimateLines | undefined {
+  const likely = likelyText(estimate);
+  const approve = approvalText(estimate);
+  if (likely === undefined || approve === undefined) return undefined;
+  const above = likelyAboveText(estimate);
+  return {
+    likely: above === undefined ? likely : `${approve} (${above})`,
+    approved: approve,
+    stops:
+      above === undefined
+        ? 'the run pauses and asks before it goes past the approved amount'
+        : 'the run will pause and ask at the approved amount',
+  };
+}

@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { cloudProject } from './plan-setup-fixtures.js';
-import { base, press, ready, renderPlan, saves } from './plan-setup-helpers.js';
+import { base, press, ready, renderPlan, saves, typeHosting } from './plan-setup-helpers.js';
 
 // RF-608, RF-609, RF-143: the architecture and stack steps ask the planner for two options each,
 // grounded in the code map and the verified cards; a cloud planner waits for the consent.
@@ -100,7 +100,7 @@ describe('stack step', () => {
     const layer = screen.getByRole('radiogroup', { name: 'Database' });
     expect(within(layer).getByRole('radio', { name: /^database A/u })).not.toBeNull();
     expect(within(layer).getByRole('radio', { name: /^database B/u })).not.toBeNull();
-    expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
+    expect(within(layer).getByRole('radio', { name: 'Type your own answer' })).not.toBeNull();
     expect(screen.getAllByRole('radiogroup')).toHaveLength(7);
   });
 });
@@ -114,9 +114,7 @@ describe('stack step answers', () => {
     const database = screen.getByRole('radiogroup', { name: 'Database' });
 
     fireEvent.click(within(database).getByRole('radio', { name: /^database B/u }));
-    fireEvent.input(screen.getByLabelText('Your own for Hosting'), {
-      target: { value: 'On-premises Kubernetes' },
-    });
+    typeHosting('On-premises Kubernetes');
     press('Save and continue');
 
     await screen.findByRole('heading', { name: /What should the roadmap know/u, level: 2 });
@@ -139,6 +137,6 @@ describe('stack step answers', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
 
     expect(await screen.findByTestId('error-banner')).not.toBeNull();
-    expect(screen.getByLabelText('Your own for Database')).not.toBeNull();
+    expect(screen.getByRole('radiogroup', { name: 'Database' })).not.toBeNull();
   });
 });

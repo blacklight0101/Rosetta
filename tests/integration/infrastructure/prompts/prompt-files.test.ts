@@ -23,7 +23,7 @@ const readerPromptNames = [
   'cards/repair.v6.md',
   'reader/area.v12.md',
   'reader/read-first.v1.md',
-  'reader/read-more.v1.md',
+  'reader/read-more.v2.md',
   'reader/task.v2.md',
   'reader/turns-left.v2.md',
 ];
@@ -105,7 +105,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-206 refuses a read-more prompt that lost one of its placeholders', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'read-more.v1.md'), 'Read more: {{files}} {{turns}}');
+    await writeFile(join(temp.path, 'reader', 'read-more.v2.md'), 'Read more: {{files}} {{turns}}');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 

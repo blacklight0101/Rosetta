@@ -6,7 +6,8 @@ import { join } from 'node:path';
 // script. Every call is logged; `job start` answers an execution name; each `job execution show`
 // answers the next of the given end states; `secret show` answers a database URL of the role the
 // secret belongs to (or fails when the fake is told the secrets are missing); a plain `show` fails
-// when the fake is told every resource is missing; sleep returns at once. Nothing reaches Azure.
+// when the fake is told every resource is missing; sleep returns at once and logs its delay (DEC-227).
+// Nothing reaches Azure.
 
 export interface FakeAz {
   /** The shell functions to put before the step script. */
@@ -17,6 +18,8 @@ export interface FakeAz {
   readonly env: Readonly<Record<string, string>>;
   /** The az command lines the step ran, in order. */
   calls(): Promise<string[]>;
+  /** The delays, in seconds, the step slept, in order. */
+  sleeps(): Promise<number[]>;
   dispose(): Promise<void>;
 }
 
@@ -50,7 +53,7 @@ const prelude = [
   '    *" show "*) [ "$FAKE_AZ_MISSING" != true ] ;;',
   '  esac',
   '}',
-  'sleep() { :; }',
+  `sleep() { printf '%s\\n' "$1" >> "$FAKE_AZ_SLEEP_LOG"; }`,
 ].join('\n');
 
 /** A fake az; see the header for what each kind of call answers. */
@@ -64,6 +67,7 @@ export async function fakeAz(options: FakeAzOptions = {}): Promise<FakeAz> {
     prelude,
     env: {
       FAKE_AZ_LOG: log,
+      FAKE_AZ_SLEEP_LOG: `${folder}/sleeps.log`,
       FAKE_AZ_COUNT: count,
       FAKE_AZ_STATUSES: options.statuses ?? 'Succeeded',
       FAKE_AZ_MISSING: options.missing === true ? 'true' : 'false',
@@ -73,6 +77,11 @@ export async function fakeAz(options: FakeAzOptions = {}): Promise<FakeAz> {
     },
     calls: async () =>
       (await readFile(log, 'utf8').catch(() => '')).split('\n').filter((line) => line !== ''),
+    sleeps: async () =>
+      (await readFile(`${folder}/sleeps.log`, 'utf8').catch(() => ''))
+        .split('\n')
+        .filter((line) => line !== '')
+        .map(Number),
     dispose: () => rm(folder, { recursive: true, force: true }),
   };
 }

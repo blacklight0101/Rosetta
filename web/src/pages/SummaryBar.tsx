@@ -40,6 +40,14 @@ function Totals({ form }: { readonly form: StartForm }): JSX.Element | null {
   );
 }
 
+/** P8-26: the notice the reason points to may be off screen: bring it into view and focus its checkbox. */
+function goToNotice(id: string): void {
+  const box = document.getElementById(id);
+  if (box === null) return;
+  box.scrollIntoView({ block: 'center' });
+  box.focus();
+}
+
 // RF-1018
 export function SummaryBar({ form }: { readonly form: StartForm }): JSX.Element {
   const { actions, gate, choice, stage } = form;
@@ -55,6 +63,16 @@ export function SummaryBar({ form }: { readonly form: StartForm }): JSX.Element 
         )}
       </div>
       <div class="rst-start__actions">
+        {gate.notice === undefined ? null : (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              goToNotice(gate.notice ?? '');
+            }}
+          >
+            Go to the notice
+          </Button>
+        )}
         {canEstimate ? <Button onClick={choice.reestimate}>Re-estimate</Button> : null}
         <Button
           variant="primary"

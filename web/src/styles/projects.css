@@ -17,6 +17,30 @@
   display: block;
 }
 
+/* DEC-222: "Where it is", the position in the journey: a glyph and words, the colour is a second cue. */
+.rst-p1105-where {
+  display: inline-flex;
+  gap: var(--rst-sp-2);
+  align-items: center;
+  color: var(--rst-neutral-ink);
+}
+
+.rst-p1105-where--working {
+  color: var(--rst-info-ink);
+}
+
+.rst-p1105-where--done {
+  color: var(--rst-ok-ink);
+}
+
+.rst-p1105-where--attention {
+  color: var(--rst-warn-ink);
+}
+
+.rst-p1105-where--failed {
+  color: var(--rst-danger-ink);
+}
+
 .rst-p1105-notices {
   display: flex;
   flex-direction: column;

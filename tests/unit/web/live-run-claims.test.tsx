@@ -167,10 +167,8 @@ it('RF-008 offers no download while the run is queued or running and the zip whe
 
   const link = await screen.findByRole('link', { name: 'Download zip' });
   expect(link.getAttribute('href')).toBe(`/api/runs/${runUuid}/zip`);
-  expect(screen.queryByRole('link', { name: 'Download hand-off zip' })).toBeNull();
-  expect(
-    screen.getByRole('button', { name: 'Download hand-off zip' }).getAttribute('title'),
-  ).toMatch(/plan/u);
+  // P8-27: only a plan run has a hand-off folder, so no other run draws its download.
+  expect(screen.queryByText('Download hand-off zip')).toBeNull();
 });
 
 it('RF-008 offers the hand-off zip of a plan run once it has ended', async () => {

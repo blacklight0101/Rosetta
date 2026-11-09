@@ -31,7 +31,7 @@ describe('release.yml staging check: placement', () => {
     expect(String(at(input, 'description'))).toMatch(/emergenc/iu);
   });
 
-  it('DEC-175 checks staging after the ZAP baseline and before the Azure login, with full history', async () => {
+  it('DEC-175 DEC-227 checks staging after the ZAP baseline and before the Azure login, on the merge and its parents', async () => {
     const document = await release();
     const check = stepIndex(document, 'deploy', 'This tree passed staging');
     const steps = at(document, 'jobs', 'deploy', 'steps');
@@ -40,7 +40,7 @@ describe('release.yml staging check: placement', () => {
     expect(check).toBeGreaterThan(stepIndex(document, 'deploy', 'zap-baseline'));
     expect(check).toBeLessThan(stepIndex(document, 'deploy', 'azure/login@'));
     expect(String(at(checkout, 'uses'))).toMatch(/^actions\/checkout@/u);
-    expect(at(checkout, 'with', 'fetch-depth')).toBe(0);
+    expect(at(checkout, 'with', 'fetch-depth')).toBe(2);
   });
 });
 

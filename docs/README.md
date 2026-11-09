@@ -82,6 +82,7 @@ State each of these in its canonical place only; other documents link there.
 | `docs/golden-set.md`                                | P2, evaluation card       | how the golden set for the demo app was built and how runs are scored                                                                    |
 | `docs/providers.md`                                 | P1, cards P1-24 to P1-26  | how to set up Ollama, OpenAI, Anthropic and OpenAI-compatible providers, with tested models and the recommended default models (DEC-106) |
 | `docs/runbooks/local.md`, `docs/runbooks/deploy.md` | P1, cards P1-45 and P1-55 | local Compose and hosted deployment: deploy, rollback, backup, restore, roles, teacher account                                           |
+| `docs/runbooks/ci-throughput.md`                    | P8, card P8-50            | CI queue time against job time over 50 runs, and the picked changes with the saving of each                                              |
 
 ## How to add things
 

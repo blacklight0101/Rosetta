@@ -32,11 +32,13 @@ const technologySchema = z.strictObject({
     .min(1)
     .max(300)
     .refine((text) => !text.includes('\n'), 'must be one line'),
+  platform: z.string().trim().min(1).max(40).optional(),
 });
 
 const conditionSchema = z.union([
   z.strictObject({ on: z.literal('trait'), layer, trait, present: z.boolean() }),
   z.strictObject({ on: z.literal('contract'), present: z.boolean() }),
+  z.strictObject({ on: z.literal('platform') }),
 ]);
 
 const ruleSchema = z.strictObject({
@@ -49,7 +51,10 @@ const ruleSchema = z.strictObject({
     .trim()
     .min(1)
     .max(500)
-    .refine((text) => text.startsWith(keepLegacyDefault), 'must keep the legacy behaviour'),
+    .refine(
+      (text) => text.startsWith(keepLegacyDefault) || text.includes('{recommended}'),
+      'must keep the legacy behaviour or name the recommended technology',
+    ),
 });
 
 const kind = z.enum(['web', 'desktop', 'service']);
@@ -87,6 +92,7 @@ const legacySchema = z.strictObject({
 });
 
 const vagueSchema = z.strictObject({
+  label: z.string().trim().min(1).max(40).optional(),
   words: z.array(word).min(1).max(20),
   languages: z.array(word).max(10),
 });
@@ -169,5 +175,9 @@ export function parseStackProposals(
     if (!known) throw invalid(name, 'proposes a technology the table of its layer does not hold');
   }
   const vague = itemsOf(name, document.data.vague ?? [], vagueSchema);
+  const labels = vague.flatMap((each) => (each.label === undefined ? [] : [each.label]));
+  if (technologies.some((tech) => tech.platform !== undefined && !labels.includes(tech.platform))) {
+    throw invalid(name, 'has a technology whose platform no group of vague words names');
+  }
   return { signals, options, legacy, vague };
 }

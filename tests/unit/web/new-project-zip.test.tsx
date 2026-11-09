@@ -165,7 +165,7 @@ it('RF-128 a refused project creation shows the refusal and sends no archive', a
   expect(server.requests).toHaveLength(0);
 });
 
-it('RF-128 the new project appears in the list as name (zip, date) once the zip is in', async () => {
+it('RF-128 the new project appears in the list under its name, with the Zip badge, once the zip is in', async () => {
   const server = installFakeUploadServer();
   let stored = false;
   renderUploadTab({
@@ -178,7 +178,7 @@ it('RF-128 the new project appears in the list as name (zip, date) once the zip 
   stored = true;
   server.pending().respond(201, summaryBody);
 
-  const row = (await screen.findByText('OrderDesk (zip, 19 Oct 2026)')).closest('tr');
+  const row = (await screen.findByRole('link', { name: 'OrderDesk', exact: true })).closest('tr');
   expect(row).not.toBeNull();
   expect(within(row ?? document.body).queryByText(/github/iu)).toBeNull();
 });

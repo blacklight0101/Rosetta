@@ -2,6 +2,7 @@ import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
+import type { RunEndReason } from '../../domain/runs/run-states.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import type { EndDetail } from './run-lifecycle.js';
 
@@ -22,13 +23,32 @@ export function stoppedOutcome(signal: AbortSignal, outcome: RunOutcome): RunOut
 }
 
 /** The parts of the outcome `run.ended` carries besides the end state (RF-208). */
-export function endDetailOf(outcome: RunOutcome): EndDetail {
+export function endDetailOf(outcome: RunOutcome, endReason?: RunEndReason): EndDetail {
   const { errorCode, failedAreas, unreadAreas } = outcome;
   return {
+    ...(endReason === undefined ? {} : { endReason }),
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
     ...(unreadAreas === undefined || outcome.endState !== 'CapReached' ? {} : { unreadAreas }),
   };
+}
+
+/** P8-111: a cancel before the run started, or a Stop on a run that this process does not run. */
+export const cancelReasonOf = (run: Run): RunEndReason =>
+  run.queueState === 'Queued' ? 'QueueCancel' : 'UserStop';
+
+/**
+ * P8-111: why a run the queue ran ended `Interrupted`: its owner stopped it (even if a shutdown
+ * came after), or the server shut down under it. An `Interrupted` outcome that nobody caused has
+ * no reason, and neither has any other end state.
+ */
+export function interruptReasonOf(
+  outcome: RunOutcome,
+  stop: { readonly byOwner: boolean; readonly byShutdown: boolean },
+): RunEndReason | undefined {
+  if (outcome.endState !== 'Interrupted') return undefined;
+  if (stop.byOwner) return 'UserStop';
+  return stop.byShutdown ? 'Restart' : undefined;
 }
 
 /** RF-432: what `run.ended` of a paused run that is stopped says, as at a cap (RF-422). */

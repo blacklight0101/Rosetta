@@ -16,6 +16,7 @@ export type FixtureRepository =
   | 'webforms-shop'
   | 'php-shop'
   | 'cobol-ledger'
+  | 'python-inventory'
   | 'ide-backup-publish';
 
 const defaultMaxFileBytes = 1_000_000;

@@ -9,7 +9,8 @@ import type { AreaRead } from './agent-task-result.js';
 // of accepted. A read of a file outside the area, a failed call, a call that returned no file
 // line (a symbol query) and the statement lines a path query only lists (RF-209) do not count. An area with no readable file (only binary or skipped files)
 // has nothing to read, so the rule does not apply to it. An answer after a read of less than half
-// of the area's first-party tokens is refused once more, with the files still unread.
+// of the area's first-party tokens is refused again, up to three times while it keeps reading, with
+// the files still unread (P8-92, RF-210).
 
 /** Answers refused before an unread area's answer is accepted anyway (a refusal costs a turn). */
 const maxRefusals = 2;
@@ -18,6 +19,8 @@ const turnsNeeded = 2;
 const maxListedFiles = 20;
 /** Q-50: below this share of the area's first-party tokens a reader is asked to read more. */
 const enoughRead = 0.5;
+/** P8-92: how many times one reader is asked to read more (each ask costs a turn and a call). */
+const maxAsks = 3;
 
 /** What the reader is told when it is asked to read more. */
 export interface ReadMoreAsk {
@@ -41,7 +44,8 @@ export class ReadGate {
   private readonly reads: Citation[] = [];
   private hasRead = false;
   private refusals = 0;
-  private asked = false;
+  private asks = 0;
+  private readAtLastAsk = 0;
 
   constructor(readableFiles: readonly FileEntry[]) {
     this.entries = readableFiles;
@@ -75,20 +79,25 @@ export class ReadGate {
   }
 
   /**
-   * Q-50: what to tell a reader whose answer is to be refused for having read little of its area,
-   * else undefined. It looks only; `askedToReadMore` records that the reader was asked, once, so
-   * that its next answer is accepted whatever the coverage. A reader that is not asked because the
-   * conversation has no room (Q-55) is still to be asked while it has room.
+   * Q-50, P8-92: what to tell a reader whose answer is to be refused for having read little of its
+   * area, else undefined. It looks only; `askedToReadMore` records that the reader was asked. A
+   * reader is asked again, up to `maxAsks` times, while it read more since the last ask; an answer
+   * after an ask with no new read is accepted whatever the coverage. A reader that is not asked
+   * because the conversation has no room (Q-55) is still to be asked while it has room.
    */
   readMore(turnsLeft: number): ReadMoreAsk | undefined {
-    if (this.state() !== 'read' || this.asked || turnsLeft < turnsNeeded) return undefined;
+    if (this.state() !== 'read' || this.asks >= maxAsks || turnsLeft < turnsNeeded) {
+      return undefined;
+    }
     const { share, tokens, readTokens, unread } = readShare(this.entries, this.reads);
     if (share >= enoughRead || unread.length === 0) return undefined;
+    if (this.asks > 0 && readTokens <= this.readAtLastAsk) return undefined;
     const percent = Math.round(share * 100);
     return { percent, readTokens, tokens, files: listed(unread.map((file) => file.path)) };
   }
 
-  askedToReadMore(): void {
-    this.asked = true;
+  askedToReadMore(ask: ReadMoreAsk): void {
+    this.asks += 1;
+    this.readAtLastAsk = ask.readTokens;
   }
 }

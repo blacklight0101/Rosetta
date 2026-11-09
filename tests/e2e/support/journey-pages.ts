@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures.js';
+import { revealAreas } from './start-choices.js';
 import { openScanRun, openStartOf } from './live-run-page.js';
 
 // P1-46: the steps the milestone journeys share, written as a person does them: through the
@@ -17,7 +18,8 @@ export async function openProjectStart(page: Page, url: string): Promise<void> {
   await page.goto('/projects');
   await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible();
   await openStartOf(page, url);
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  // P8-26: a project with a run is titled with its name, not "Start a run".
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(url);
 }
 
@@ -30,7 +32,9 @@ export async function runScan(page: Page): Promise<string> {
 /** Chooses which areas the understand run reads: only the named ones, or all when none is named. */
 export async function chooseAreas(page: Page, names: readonly string[] | 'all'): Promise<void> {
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
-  await expect(areas.locator('label').first()).toBeVisible();
+  await revealAreas(page);
+  // The page lists them once its estimate is read; the first run of a replaced source may still be scanning.
+  await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
   for (const label of await areas.locator('label').allTextContents()) {
     const name = label.trim();
     await areas

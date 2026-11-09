@@ -13,9 +13,9 @@ import {
 } from '../../../support/agent-loop-harness.js';
 import { entry } from '../../../support/code-map-builders.js';
 
-// RF-206, Q-50, P3-78: a reader that answers with turns left after reading less than half of the
-// first-party tokens of its area is refused once, with the unread files (formulas, macros and the
-// largest first); the next answer is accepted whatever the coverage.
+// RF-206, Q-50, P3-78, P8-92: a reader that answers with turns left after reading less than half of
+// the first-party tokens of its area is refused, with the unread files (formulas, macros and the
+// largest first); an answer that follows an ask with no new read is accepted whatever the coverage.
 
 /** A workbook area of 30,000 first-party tokens: `workbook.md` is the only file read in the tests. */
 const workbookFiles: readonly FileEntry[] = [
@@ -68,18 +68,19 @@ function over(files: readonly FileEntry[], outcomes: Parameters<typeof loopSetup
 }
 
 describe('P3-78 an answer after reading little of the area', () => {
-  it('RF-206 refuses an answer at 3% once, ranks formulas then macros then the largest, and the agent reads more', async () => {
+  it('RF-206 refuses an answer at 3% with the unread files, ranks formulas then macros then the largest, and the agent reads more', async () => {
     const t = over(workbookFiles, [
       toolTurn([read('wb/workbook.md')]),
       textTurn(shippingCards),
       toolTurn([read('wb/Sheet1/formulas.md')]),
+      textTurn(shippingCards),
       textTurn(shippingCards),
     ]);
 
     const result = await t.run();
 
     expect(result.state).toBe('Done');
-    expect(result.turns).toBe(4);
+    expect(result.turns).toBe(5);
     const told = t.fake.requests[2]?.messages.at(-1);
     expect(told?.role).toBe('user');
     const text = told?.content ?? '';
@@ -100,7 +101,7 @@ describe('P3-78 an answer after reading little of the area', () => {
 });
 
 describe('P3-78 the answer that follows the refusal', () => {
-  it('RF-206 accepts a second answer at low coverage', async () => {
+  it('RF-206 accepts the answer at low coverage when no file was read since the ask', async () => {
     const t = over(workbookFiles, [
       toolTurn([read('wb/workbook.md')]),
       textTurn(shippingCards),

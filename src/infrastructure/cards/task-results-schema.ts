@@ -80,6 +80,7 @@ const coverageSchema = z.object({
   tokens: count,
   readTokens: count,
   readTokenShare: z.number().min(0).max(1),
+  firstPartyShare: z.number().min(0).max(1).optional(),
   failure: text.optional(),
   surface: surfaceShape.optional(),
   note: text.optional(),
@@ -142,9 +143,10 @@ export function parseTaskResults(value: unknown): readonly TaskResult[] | undefi
   const parsed = fileSchema.safeParse(value);
   if (!parsed.success) return undefined;
   return parsed.data.tasks.map((task): TaskResult => {
-    const { surface, failure, note, ...stored } = task.coverage;
+    const { surface, failure, note, firstPartyShare, ...stored } = task.coverage;
     const coverage: AreaCoverage = {
       ...stored,
+      ...(firstPartyShare === undefined ? {} : { firstPartyShare }),
       ...(failure === undefined ? {} : { failure }),
       ...surfaceOfStored(surface),
       ...(note === undefined ? {} : { note }),

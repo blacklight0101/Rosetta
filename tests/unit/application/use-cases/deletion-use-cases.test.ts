@@ -16,6 +16,7 @@ import { sampleProject } from '../../../support/project-fixtures.js';
 import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
 import { sampleCachedSnapshot } from '../../../support/snapshot-listing-fixtures.js';
+import { noQuestionCounts } from '../../../support/recording-journey-facts.js';
 
 // RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
 const uploads = new FakeUploadStore();
@@ -61,10 +62,12 @@ describe('DeleteRun', () => {
     const doomed = await ended();
     const kept = await ended();
 
-    const result = await new DeleteRun({ runs, folders, logger }).execute({
-      actor: userAmy,
-      runId: doomed.id,
-    });
+    const result = await new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }).execute(
+      {
+        actor: userAmy,
+        runId: doomed.id,
+      },
+    );
 
     expect(result).toEqual({ ok: true, value: { freedBytes: 100 } });
     expect(await runs.find(userAmy.userId, doomed.id)).toBeUndefined();
@@ -90,7 +93,12 @@ describe('DeleteRun refusals', () => {
       await runs.insert(live);
       folders.seed({ ...target, runKey: live.runKey }, { 'events.jsonl': '{}' });
 
-      const result = await new DeleteRun({ runs, folders, logger }).execute({
+      const result = await new DeleteRun({
+        runs,
+        folders,
+        logger,
+        counts: noQuestionCounts,
+      }).execute({
         actor: userAmy,
         runId: live.id,
       });
@@ -105,7 +113,7 @@ describe('DeleteRun refusals', () => {
   it("RF-1105 answers not found for another user's run and for an unknown id, removing nothing", async () => {
     const { runs, folders, logger, ended } = await setup();
     const run = await ended();
-    const deleteRun = new DeleteRun({ runs, folders, logger });
+    const deleteRun = new DeleteRun({ runs, folders, logger, counts: noQuestionCounts });
 
     const other = await deleteRun.execute({ actor: userBob, runId: run.id });
     const unknown = await deleteRun.execute({ actor: userAmy, runId: 'not-a-uuid' });

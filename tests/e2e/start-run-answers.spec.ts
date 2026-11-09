@@ -11,7 +11,7 @@ test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('start-run', info.project.name));
 });
 
-test('RF-241 the Re-run with answers option is reachable by keyboard and has no serious violation', async ({
+test('RF-241 the re-run with my answers option is reachable by keyboard and has no serious violation', async ({
   page,
 }) => {
   await page.route('**/api/projects/*/answered-questions', (route) =>
@@ -19,7 +19,7 @@ test('RF-241 the Re-run with answers option is reachable by keyboard and has no 
   );
   await openScannedStartPage(page);
 
-  const option = page.getByRole('checkbox', { name: /Re-run with answers/u });
+  const option = page.getByRole('checkbox', { name: /Re-run with my/u });
   await expect(option).toBeVisible();
   await option.focus();
   await page.keyboard.press('Space');

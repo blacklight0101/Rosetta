@@ -13,6 +13,8 @@ interface FieldError {
 interface FieldOption {
   readonly value: string;
   readonly label: string;
+  /** A select option that is shown but cannot be chosen; its label says why. */
+  readonly disabled?: boolean;
 }
 
 interface FieldBase {
@@ -37,7 +39,10 @@ interface TextField extends FieldBase {
   readonly placeholder?: string;
   /** The browser's `autocomplete` token, for example `username` or `new-password`. */
   readonly autoComplete?: string;
+  /** A number field only: text beside it, for example its value with thousands separators (P8-76). */
+  readonly suffix?: string | undefined;
   readonly onInput: (value: string) => void;
+  readonly onBlur?: (() => void) | undefined;
 }
 
 interface TextareaField extends FieldBase {
@@ -150,7 +155,7 @@ function SelectControl(props: SelectField): JSX.Element {
       }}
     >
       {props.options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <option key={option.value} value={option.value} disabled={option.disabled === true}>
           {option.label}
         </option>
       ))}
@@ -168,11 +173,18 @@ function InputControl(props: TextField): JSX.Element {
     onInput: (event: TargetedInputEvent<HTMLInputElement>) => {
       props.onInput(valueOf(event));
     },
+    onBlur: props.onBlur,
   };
   // Preact 11 types the `type` attribute per input kind, so each kind is written out with its literal.
   switch (props.kind) {
     case 'number':
-      return <input {...attributes} type="number" />;
+      if (props.suffix === undefined) return <input {...attributes} type="number" />;
+      return (
+        <span class="rst-field__row">
+          <input {...attributes} type="number" />
+          <span class="rst-field__suffix">{props.suffix}</span>
+        </span>
+      );
     case 'url':
       return <input {...attributes} type="url" />;
     case 'password':

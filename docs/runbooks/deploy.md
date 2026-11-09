@@ -13,17 +13,19 @@ DEC-171). The procedure follows `docs/environments-and-delivery.md` sections 10 
 Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
 the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
 
-| Piece                      | Where                                                        | Checked by                                                                            |
-| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Provisioning workflow      | `.github/workflows/azure-provision.yml`                      | `tests/integration/tooling/azure-provision-workflow.test.ts`                          |
-| Release and deploy         | `.github/workflows/release.yml`                              | `tests/integration/tooling/release-workflow.test.ts`, `release-staging-check.test.ts` |
-| Staging deploy             | `.github/workflows/staging.yml`                              | `tests/integration/tooling/staging-workflow.test.ts`                                  |
-| Release at 06:07 Madrid    | `.github/workflows/scheduled-release.yml`                    | `tests/integration/tooling/scheduled-release-workflow.test.ts`                        |
-| Smoke script               | `scripts/smoke.mjs`                                          | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI              |
-| HTTP to HTTPS redirect     | `src/presentation/web/https-redirect.ts`                     | `tests/integration/presentation/web/https-redirect.test.ts`                           |
-| OWASP ZAP baseline         | job `zap-baseline` of `.github/workflows/ci.yml`             | runs on every pull request and push to `main`; summary in the job summary             |
-| RNF-017 measurement        | `scripts/measure-rnf017.mjs`                                 | `tests/integration/scripts/measure-rnf017.test.ts`                                    |
-| Backup and restore scripts | `npm run backup`, `npm run restore` ([backup.md](backup.md)) | the local restore drill of backup.md section 4                                        |
+| Piece                       | Where                                                                                                   | Checked by                                                                                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Provisioning workflow       | `.github/workflows/azure-provision.yml`                                                                 | `tests/integration/tooling/azure-provision-workflow.test.ts`                                                                                                                                                                               |
+| Release and deploy          | `.github/workflows/release.yml`                                                                         | `tests/integration/tooling/release-workflow.test.ts`, `release-staging-check.test.ts`                                                                                                                                                      |
+| Staging deploy              | `.github/workflows/staging.yml`                                                                         | `tests/integration/tooling/staging-workflow.test.ts`                                                                                                                                                                                       |
+| Owner email on each deploy  | step `Tell the owner the deploy is live` of `release.yml`, with `scripts/production-deploys-comment.sh` | `tests/integration/tooling/release-notify.test.ts`                                                                                                                                                                                         |
+| Release at 06:07 Madrid     | `.github/workflows/scheduled-release.yml`                                                               | `tests/integration/tooling/scheduled-release-workflow.test.ts`                                                                                                                                                                             |
+| Checks of the release merge | `.github/workflows/release-checks.yml`                                                                  | `tests/integration/tooling/release-checks-workflow.test.ts`, `tests/integration/tooling/release-checks-ready.test.ts`, `tests/integration/tooling/release-ready-status.test.ts`, `tests/integration/tooling/release-checks-notify.test.ts` |
+| Smoke script                | `scripts/smoke.mjs`                                                                                     | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI                                                                                                                                                                   |
+| HTTP to HTTPS redirect      | `src/presentation/web/https-redirect.ts`                                                                | `tests/integration/presentation/web/https-redirect.test.ts`                                                                                                                                                                                |
+| OWASP ZAP baseline          | job `zap-baseline` of `.github/workflows/ci.yml`                                                        | runs on every pull request and push to `main`; summary in the job summary                                                                                                                                                                  |
+| RNF-017 measurement         | `scripts/measure-rnf017.mjs`                                                                            | `tests/integration/scripts/measure-rnf017.test.ts`                                                                                                                                                                                         |
+| Backup and restore scripts  | `npm run backup`, `npm run restore` ([backup.md](backup.md))                                            | the local restore drill of backup.md section 4                                                                                                                                                                                             |
 
 Names used below: resource group `rg-rosetta`, environment `cae-rosetta`, app `ca-rosetta`, migrate job
 `caj-rosetta-migrate`, Log Analytics workspace `log-rosetta`, share `rosetta-data`. The storage account
@@ -195,6 +197,35 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
 3. The owner checks the batch on the staging URL and merges the pull request with **Create a merge commit**, never
    squash or rebase: the deploy needs the merge commit, whose second parent is the `develop` commit staging deployed.
    For a version, the owner then tags that merge commit `vX.Y.Z` (section Release and image).
+   The merge is a push to `main`, so CI runs on the merge commit, `zap-baseline` included. When that CI run
+   completes, GitHub starts `release-checks.yml` (event `workflow_run`; no runner waits for the check, DEC-227,
+   P8-141). It builds the image of the merge commit, scans it with the Trivy gate of Release and pushes
+   `ghcr.io/blacklight0101/rosetta:sha-<short>`, with the workflow token only (DEC-207, P8-63). Then it makes the two
+   checks of the deploy job of Release on it, with the same steps (the ZAP baseline passed; the tree passed
+   staging, skipped with a warning while `ROSETTA_STAGING_ENABLED` is not `true`; there is no `skip-staging-check`
+   here), and then, whatever happened before, it sets the commit status `release/ready` on the merge commit (P8-64):
+   `success` when the image is pushed and both checks passed (its description says when the staging check was skipped
+   because staging is not enabled); `failure` otherwise, with a description that names the check that failed or did
+   not run (the image build, scan or push, the ZAP baseline, the staging check, or a cancelled or timed-out run). A
+   `zap-baseline` that a later push to `main` cancelled (CI cancels the older run) is named as such: re-run
+   `zap-baseline` on that commit; when that CI run completes, the checks run again by themselves. The status links to
+   the run; the run is red whenever `release/ready` is not `success`: read its log. Last, when `release/ready` is not
+   `success` (or could not be recorded), the checks comment on the open issue "Production deploys" with the owner
+   mentioned, the commit, the cause and the run, with the same script and issue lookup as the deploy notification
+   (`scripts/production-deploys-comment.sh`, P8-65), so GitHub emails the owner before the release hour; checks that
+   pass comment nothing. GitHub runs a `workflow_run` workflow from its file on the default branch (`develop`), so the
+   run is listed under `develop` and its check shows on the head commit of `develop`; the run checks out the merge
+   commit and records everything on it. A merge whose checks never record `release/ready` (CI that never finishes, an
+   event GitHub drops, a runner lost) is caught by the job `sweep` of the same workflow, which GitHub starts every
+   hour at minute 41 (`scripts/release-checks-sweep.sh`): for each commit of `main` of the last 24 hours with no
+   `release/ready`, it records `failure` and comments on "Production deploys" when `zap-baseline` had not finished 40
+   minutes after the merge ("zap-baseline did not finish on this commit within 40 minutes"), or when it had finished
+   but nothing was recorded 2 hours after the merge ("the release checks did not run"; re-run `zap-baseline` to start
+   them). A later run of the checks on that commit replaces that status. GitHub may start a scheduled job late under
+   load, so the sweep can be late too. Tests: `tests/integration/tooling/release-checks-sweep.test.ts` (the sweep) and
+   `tests/integration/tooling/workflow-waits.test.ts` (no workflow waits in a loop for another workflow's check, and
+   every remaining wait has a cap and a back-off). Release does not read `release/ready` yet: it still makes its own
+   checks at 06:07.
 4. At 06:07 Europe/Madrid the next morning (backups until 07:59), `scheduled-release.yml` starts Release on `main` (once per head commit
    of `main`; only while `ROSETTA_DEPLOY_ENABLED` is `true`). A slot GitHub starts after 07:59 still starts Release when the
    head commit of `main` was merged before 06:00 that day (P7-28, ADR-025); its step summary names the slot and its delay. A Release of that commit that failed or was cancelled is started again

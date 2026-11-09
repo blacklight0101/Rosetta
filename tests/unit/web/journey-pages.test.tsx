@@ -89,7 +89,9 @@ it('RF-615 RF-006 a stopped understand run shows Resume in the strip, which resu
       `POST ${runPath}/resume`,
     );
   });
-  expect(strip().textContent).toContain('Stopped at its cap (RST-1403)');
+  expect(strip().textContent).toContain('Stopped at its cap');
+  expect(strip().textContent).toContain('RST-1403');
+  expect(strip().textContent).not.toContain('Failed');
 });
 
 it('RF-615 the page of a run that is still running shows no strip and asks for no facts', async () => {
@@ -141,7 +143,7 @@ it('RF-615 answering a question on the page reads the journey again', async () =
   fireEvent.input(within(first).getByLabelText('Answer to OQ-001'), {
     target: { value: 'Staff only.' },
   });
-  fireEvent.click(within(first).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
   await waitFor(() => {
     const reads = page.calls.filter((call) => call.path === journeyPath);

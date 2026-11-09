@@ -7,7 +7,9 @@ import type {
 import type { RunEventHistory, RunEventSink } from '../../src/application/ports/run-events.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
+import type { RunEndFacts } from '../../src/application/journey/run-end-facts.js';
 import type { StartCaps } from '../../src/application/runs/run-start-caps.js';
+import type { StartParallelism } from '../../src/application/runs/run-start-parallelism.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import { StopRun } from '../../src/application/use-cases/stop-run.js';
@@ -25,6 +27,7 @@ import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
+import { noEndFacts } from './recording-journey-facts.js';
 
 // RF-1108, RF-003, RF-1006: the run queue over memory adapters and an executor the test controls.
 
@@ -106,6 +109,10 @@ export interface RunHarnessOptions {
   readonly wrapExecutor?: (inner: RunExecutor, stage: RunStage) => RunExecutor;
   /** The start caps `run.started` records (RF-1106); none when left out, as in a test without a project. */
   readonly startCaps?: Pick<StartCaps, 'of'>;
+  /** The parallelism `run.started` records (RF-1002, P8-59); none when left out. */
+  readonly parallelism?: Pick<StartParallelism, 'of'>;
+  /** P8-139: what records the journey facts of a run's end; nothing when left out. */
+  readonly endFacts?: Pick<RunEndFacts, 'record'>;
 }
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
@@ -139,6 +146,8 @@ function createStores(options: RunHarnessOptions): Stores {
     clock,
     logger,
     ...(options.startCaps === undefined ? {} : { startCaps: options.startCaps }),
+    ...(options.parallelism === undefined ? {} : { parallelism: options.parallelism }),
+    endFacts: options.endFacts ?? noEndFacts,
   });
   return { clock, logger, runs, manifests, events, broadcaster, lifecycle };
 }

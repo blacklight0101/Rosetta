@@ -9,11 +9,12 @@ import { NotFoundPage } from './NotFoundPage.js';
 import { buildNavigation } from './navigation.js';
 import { matchRoute, type RouteMatch } from './route-match.js';
 import { RouteParamsContext } from './route-params.js';
+import { RunProjectContext } from './run-project-signal.js';
 import { SignedInShell } from './SignedInShell.js';
 import type { RouteDefinition } from './route-types.js';
 import { useLocation } from './router.js';
 import { SessionContext } from './session-context.js';
-import { useNavProject } from './use-nav-project.js';
+import { useShellProject } from './use-nav-project.js';
 import { useSession } from './use-session.js';
 import { useTheme } from './use-theme.js';
 
@@ -55,7 +56,7 @@ function SignedInPage(props: SignedInProps): JSX.Element {
     assign(signInPath);
   }, [assign]);
   const state = useSession(client, goToSignIn);
-  const project = useNavProject(client, match.params['projectId']);
+  const { project, announce } = useShellProject(client, match.params['projectId'], location);
   if (state.status === 'loading') {
     return (
       <p class="rst-loading" role="status">
@@ -76,25 +77,22 @@ function SignedInPage(props: SignedInProps): JSX.Element {
   if (match.route.chrome === 'bare' && !denied) {
     return <SessionContext.Provider value={user}>{page}</SessionContext.Provider>;
   }
-  const navigation = buildNavigation({
-    routes,
-    role: user.role,
-    path: location,
-    project,
-  });
+  const navigation = buildNavigation({ routes, role: user.role, path: location, project });
   return (
     <SessionContext.Provider value={user}>
-      <SignedInShell
-        user={user}
-        path={location}
-        projectId={match.params['projectId']}
-        navigation={navigation}
-        theme={theme}
-        onTheme={onTheme}
-        actions={<SignOutButton />}
-      >
-        {page}
-      </SignedInShell>
+      <RunProjectContext.Provider value={announce}>
+        <SignedInShell
+          user={user}
+          path={location}
+          projectId={match.params['projectId']}
+          navigation={navigation}
+          theme={theme}
+          onTheme={onTheme}
+          actions={<SignOutButton />}
+        >
+          {page}
+        </SignedInShell>
+      </RunProjectContext.Provider>
     </SessionContext.Provider>
   );
 }

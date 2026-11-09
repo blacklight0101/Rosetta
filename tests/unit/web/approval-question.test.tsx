@@ -62,7 +62,7 @@ describe('the question on the run page', () => {
     connection.event(ev(1, 'run.started', startedData));
     connection.event(awaiting(2));
 
-    const button = await screen.findByRole('button', { name: 'Continue (+$0.60)' });
+    const button = await screen.findByRole('button', { name: 'Continue (+$0.6000)' });
     expect(screen.getByTestId('run-status').textContent).toContain('Waiting for your approval');
     expect(screen.queryByRole('button', { name: 'Stop run' })).toBeNull();
     fireEvent.click(button);

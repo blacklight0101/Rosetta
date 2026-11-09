@@ -76,7 +76,9 @@ describe('BuildPlan: a feature built through the requirements of a card', () => 
     expect(run.endState).toBe('Completed');
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const checks = plain((await h.handoffOf(run))['checks.md']);
-    expect(checks).toContain('Every item is built by at least one task card.');
+    expect(checks).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
   });
 });
 

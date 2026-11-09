@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { filesOf, readZip } from '../support/zip-reader.js';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
-import { openRunTab, runStatus } from './support/live-run-page.js';
+import { openRunTab, runStatus, RUN_DONE } from './support/live-run-page.js';
 import { replayRunId } from './support/seed-replay.js';
 import { expectNothingInjected, hostileTexts, watchDialogs } from './support/hostile-card.js';
 import { accountFor } from './support/seed.js';
@@ -73,7 +73,7 @@ test('RF-507 RF-1002 the hostile card of a recorded run is text on the page of t
 
   await page.goto(runPage(info.project.name));
 
-  await expect(runStatus(page)).toContainText('Completed');
+  await expect(runStatus(page)).toContainText(RUN_DONE);
   await openRunTab(page, 'Evidence');
   await transitionsDone(page);
   await expect(page.locator('body')).toContainText(hostileTexts.script);

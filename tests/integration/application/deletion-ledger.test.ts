@@ -19,6 +19,7 @@ import { MemoryWorkspaceFolders } from '../../support/memory-workspace-folders.j
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
 import { sampleProject } from '../../support/project-fixtures.js';
 import { sampleRun } from '../../support/run-fixtures.js';
+import { noQuestionCounts } from '../../support/recording-journey-facts.js';
 
 // RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
 const uploads = new FakeUploadStore();
@@ -76,10 +77,12 @@ describe.skipIf(!hasTestDatabase)('deleting a run on PostgreSQL', () => {
     await spend(kept, 300n);
     const before = await totals.projectGroups(amy, project.id);
 
-    const result = await new DeleteRun({ runs, folders, logger }).execute({
-      actor,
-      runId: doomed.id,
-    });
+    const result = await new DeleteRun({ runs, folders, logger, counts: noQuestionCounts }).execute(
+      {
+        actor,
+        runId: doomed.id,
+      },
+    );
 
     expect(result.ok).toBe(true);
     expect(await runs.find(amy, doomed.id)).toBeUndefined();
@@ -92,7 +95,7 @@ describe.skipIf(!hasTestDatabase)('deleting a run on PostgreSQL', () => {
   it('RF-1012 answers not found for a run that is already deleted', async () => {
     const { runs, folders, logger, ended } = await setup(database);
     const run = await ended();
-    const deleteRun = new DeleteRun({ runs, folders, logger });
+    const deleteRun = new DeleteRun({ runs, folders, logger, counts: noQuestionCounts });
 
     await deleteRun.execute({ actor, runId: run.id });
     const again = await deleteRun.execute({ actor, runId: run.id });

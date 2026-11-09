@@ -213,8 +213,7 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   'RST-1521': {
     message:
       'Code from an uploaded project was not sent to a cloud provider because the run lacks the second confirmation for private code.',
-    nextStep:
-      'Start the run again and tick the private code confirmation, or switch every role to a local Ollama model.',
+    nextStep: 'Give the private code confirmation for this project, then try again.',
   },
   'RST-1522': {
     message:

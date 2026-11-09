@@ -23,6 +23,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import {
   incompleteOverrideMessage,
   priceCall,
+  worstCaseOfCalls,
   type BudgetPricing,
 } from '../guards/budget-pricing.js';
 import { guardedProvider } from './guarded-provider.js';
@@ -139,8 +140,23 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       modelMaxOutputTokens: limits.modelMaxOutputTokens,
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
-      runCaps: runCapsOf(caps),
+      ...this.budgetOf(request, caps, { kind: config.kind, keySource: access.value.keySource }),
     });
+  }
+
+  /** What the readers' room reads of the role's budget: the run caps and the worst case of a call. */
+  private budgetOf(
+    request: ProviderSetRequest,
+    caps: readonly UsageCap[],
+    query: {
+      readonly kind: ProviderConfig['kind'];
+      readonly keySource: ProviderAccess['keySource'];
+    },
+  ): Pick<RoleProvider, 'runCaps' | 'worstCaseOf'> {
+    return {
+      runCaps: runCapsOf(caps),
+      worstCaseOf: worstCaseOfCalls(this.pricingOf(request), query),
+    };
   }
 
   /** Q-58: a model the shipped list marks as a reasoning model sends the role's effort. */

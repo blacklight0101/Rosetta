@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import { Button } from '../components/Button.js';
 import { Field } from '../components/Field.js';
+import { BreakableText } from '../components/BreakableText.js';
 import { libraryLine, LIBRARY_REASON, matchesFilter, type AreaChoice } from './area-selection.js';
 
 // RF-1018, P1-172, design-system.md section 14 (Start run): the areas of an understand run. Only
@@ -37,7 +38,7 @@ function AreaRow({ area, id, onArea }: Entry & Pick<AreaPickerProps, 'onArea'>):
         }}
       />
       <label for={id} class="rst-mono rst-start__area-name" title={area.name}>
-        {area.name}
+        <BreakableText text={area.name} />
       </label>
       {area.estimatedTokens === undefined ? null : (
         <span id={`${id}-tokens`} class="rst-table__sub rst-start__area-tokens">

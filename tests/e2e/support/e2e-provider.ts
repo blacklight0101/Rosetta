@@ -32,8 +32,8 @@ const WEBFORMS_SCRIPT = {
   '(root)': [0, 1],
   Catalog: [2, 3],
   Controllers: [4, 5],
-  Database: [6, 7],
-  Services: [8, 9, 10],
+  Services: [6, 7, 8],
+  Database: [9, 10],
 } as const;
 
 /** The recorded calls that answer each area of `understand-consolidate.json`, in turn order. */
@@ -41,9 +41,33 @@ const MERGING_SCRIPT = {
   '(root)': [0, 1],
   Catalog: [2, 3],
   Controllers: [4, 5],
-  Database: [6, 7],
-  Services: [8, 9],
+  Services: [6, 7],
+  Database: [8, 9],
 } as const;
+
+/**
+ * P8-120: the calls about the Python fixture `octo/inventory` replay `understand-python-inventory.json`
+ * (the plan, `planner-python-inventory.json`), so the run ends with cards that cite its files and
+ * Plan setup can start the plan. Each area is told by a file of the fixture its call lists, because
+ * `tests` and `sql` are area names other projects may share.
+ */
+const INVENTORY_SCRIPT = {
+  '(root)': [0, 1],
+  inventory: [2, 3],
+  sql: [4, 5],
+  tests: [6, 7],
+} as const;
+
+/** A file of each area of the Python fixture, which the reader's first message lists. */
+const INVENTORY_LISTING = {
+  '(root)': 'main.py',
+  inventory: 'inventory/stock.py',
+  sql: 'sql/schema.sql',
+  tests: 'tests/test_stock.py',
+} as const;
+
+/** Text only the Python fixture's cards and files carry: its modules and its schema (the webforms schema is Database/). */
+const INVENTORY_TEXT = /\bmain\.py\b|\binventory\/\w+\.py\b|\bsql\/schema\.sql\b/u;
 
 /** The first user message of a call, or an empty text. */
 function firstMessage(request: LlmRequest): string {
@@ -56,8 +80,8 @@ const VERDICT_SCRIPT: Readonly<Record<string, number>> = {
   'verifier-FEAT-001.c1': 0,
   'verifier-OQ-001.c1': 1,
   'verifier-BR-001.c1': 2,
-  'verifier-ENT-001.c1': 3,
-  'verifier-BR-002.c1': 4,
+  'verifier-BR-002.c1': 3,
+  'verifier-ENT-001.c1': 4,
 };
 
 /** The first recorded answer of a call, or undefined when it is a failure or there is none. */
@@ -80,9 +104,11 @@ function verdictOf(
   if (request.context.role !== 'verifier') return undefined;
   const { agentTaskId } = request.context;
   // P3-52: a claim about a rendered workbook has no recorded verdict of its own; it is Supported.
-  const workbook = /\.xls[xm]\b/u.test(firstMessage(request));
+  // P8-120: nor does a claim about the Python fixture, whose card ids repeat those of the webforms run.
+  const message = firstMessage(request);
+  const unrecorded = /\.xls[xm]\b/u.test(message) || INVENTORY_TEXT.test(message);
   const known =
-    Object.hasOwn(VERDICT_SCRIPT, agentTaskId) && !workbook
+    Object.hasOwn(VERDICT_SCRIPT, agentTaskId) && !unrecorded
       ? VERDICT_SCRIPT[agentTaskId]
       : undefined;
   return known === undefined ? answerOf(supported, 0) : answerOf(webforms, known);
@@ -114,6 +140,13 @@ function overviewOf(recording: Recording, request: LlmRequest): LlmResponse | un
   };
 }
 
+/** The recording that answers a planner call: the options, the plan of the Python run or the webforms plan. */
+function plannerRecordingOf(request: LlmRequest): 'options' | 'inventory' | 'package' {
+  if (request.context.agentTaskId === 'planner-options') return 'options';
+  // P8-120: the plan of the Python fixture's run cites the cards of that run.
+  return INVENTORY_TEXT.test(firstMessage(request)) ? 'inventory' : 'package';
+}
+
 /**
  * RF-608, RF-604: the planner. The options of Plan setup (`planner-options`) and the package of the
  * plan run (`planner-package`) are answered from their recordings; the options name the cards of the
@@ -124,8 +157,9 @@ function plannerOf(
   request: LlmRequest,
 ): LlmResponse | undefined {
   if (request.context.role !== 'planner') return undefined;
-  const options = request.context.agentTaskId === 'planner-options';
-  const attempt = recordings[options ? 'options' : 'package']?.calls[0]?.attempts[0];
+  const kind = plannerRecordingOf(request);
+  const options = kind === 'options';
+  const attempt = recordings[kind]?.calls[0]?.attempts[0];
   if (attempt === undefined || !('response' in attempt)) return undefined;
   // RF-615: this model answers the package in prose, which the plan run refuses (RST-1803).
   const prose = request.model === planFailsModel && !options;
@@ -147,6 +181,7 @@ interface Readers {
   readonly merging: ScriptedProvider;
   readonly rerun: ScriptedProvider;
   readonly workbooks: ScriptedProvider;
+  readonly inventory: ScriptedProvider;
 }
 
 /** RF-241, RF-250: the reader double that answers a call, by the model and by the answers it carries. */
@@ -154,6 +189,7 @@ function readerFor(readers: Readers, request: LlmRequest): ScriptedProvider | un
   if (request.context.role !== 'reader') return undefined;
   if (request.model === consolidateModel) return readers.merging;
   if (readers.workbooks.handles(request)) return readers.workbooks;
+  if (readers.inventory.handles(request)) return readers.inventory;
   const rerun = firstMessage(request).includes(answerMarker);
   return rerun ? readers.rerun : readers.webforms;
 }
@@ -161,13 +197,13 @@ function readerFor(readers: Readers, request: LlmRequest): ScriptedProvider | un
 async function scriptedFrom(
   file: string,
   script: ScriptedOptions['script'],
-  hold?: Pick<ScriptedOptions, 'hold' | 'holdModel'>,
+  extra?: Pick<ScriptedOptions, 'hold' | 'holdModel' | 'listing'>,
 ): Promise<ScriptedProvider> {
   return new ScriptedProvider({
     recording: await loadRecording(join('tests', 'recordings', 'fake', file)),
     script,
     delayMs: STEP_DELAY_MS,
-    ...hold,
+    ...extra,
   });
 }
 
@@ -181,6 +217,9 @@ export async function createE2eProvider(): Promise<LlmProvider> {
     merging: await scriptedFrom('understand-consolidate.json', MERGING_SCRIPT),
     rerun: await scriptedFrom('understand-csharp-answers.json', { '(root)': [0, 1] }),
     workbooks: await scriptedFrom('understand-workbook-journey.json', WORKBOOK_SCRIPT),
+    inventory: await scriptedFrom('understand-python-inventory.json', INVENTORY_SCRIPT, {
+      listing: INVENTORY_LISTING,
+    }),
   };
   const verdicts: Verdicts = {
     webforms: await loadRecording(join('tests', 'recordings', 'fake', 'verifier-csharp-full.json')),
@@ -197,6 +236,9 @@ export async function createE2eProvider(): Promise<LlmProvider> {
   const planner = {
     options: await loadRecording(join('tests', 'recordings', 'fake', 'plan-options.json')),
     package: await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json')),
+    inventory: await loadRecording(
+      join('tests', 'recordings', 'fake', 'planner-python-inventory.json'),
+    ),
   };
   return {
     complete: (request) => {

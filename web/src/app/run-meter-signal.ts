@@ -19,13 +19,14 @@ export function usePublishRunMeter(reading: RunMeterReading | undefined): void {
   const spent = reading?.spent;
   const cap = reading?.cap;
   const unit = reading?.unit;
+  const approvedText = reading?.approvedText;
   useEffect(() => {
-    publish(
-      spent === undefined || cap === undefined || unit === undefined
-        ? undefined
-        : { spent, cap, unit },
-    );
-  }, [publish, spent, cap, unit]);
+    if (spent === undefined || cap === undefined || unit === undefined) {
+      publish(undefined);
+      return;
+    }
+    publish(approvedText === undefined ? { spent, cap, unit } : { spent, cap, unit, approvedText });
+  }, [publish, spent, cap, unit, approvedText]);
   useEffect(
     () => () => {
       publish(undefined);

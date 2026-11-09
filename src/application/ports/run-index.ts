@@ -1,6 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import type { Result } from '../../domain/errors/result.js';
-import type { AreaCounts, Run, RunTotals } from '../../domain/runs/run.js';
+import type { AreaCounts, Run, RunEndDetail, RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, data-model.md section 4 (`runs`), RF-1108, RF-1105: the run rows. The
@@ -27,13 +27,6 @@ export interface SnapshotUsage {
   readonly lastUsedAt: EpochMs;
 }
 
-/** RF-1008: how many runs a project has and its newest one. */
-export interface ProjectRunSummary {
-  readonly projectId: string;
-  readonly runs: number;
-  readonly latest: Run;
-}
-
 export interface RunIndex {
   /** Stores a new run; refuses a run key the project already has. */
   insert(run: Run): Promise<Result<Run, 'run-key-taken'>>;
@@ -42,35 +35,37 @@ export interface RunIndex {
   /** The project's runs of that user, newest first. */
   list(userId: string, projectId: string): Promise<readonly Run[]>;
   /**
-   * RF-1008: the run count and the newest run of each asked project of that user, in one read
-   * however many projects are asked. A project without runs, and one of another user, has none.
+   * RF-1008, P8-137: every run of each asked project of that user, newest first within a project,
+   * in one read however many projects are asked, so the overview counts them and makes each
+   * journey (DEC-226). Another user's project and one that was not asked for have none.
    */
-  projectSummaries(
-    userId: string,
-    projectIds: readonly string[],
-  ): Promise<readonly ProjectRunSummary[]>;
+  listOfProjects(userId: string, projectIds: readonly string[]): Promise<readonly Run[]>;
   /** Every queued run of every user, in queue order. */
   listQueued(): Promise<readonly Run[]>;
   /** Every running run of every user, oldest start first. */
   listRunning(): Promise<readonly Run[]>;
-  /** `Queued` -> `Running`; undefined for an unknown run and for one that is not queued. */
+  /**
+   * `Queued` -> `Running`, a new span; the first start is kept by a run that started before
+   * (P8-88). Undefined for an unknown run and for one that is not queued.
+   */
   start(runId: string, at: EpochMs): Promise<Run | undefined>;
   /**
    * `Running` -> `Ended`, `Queued` -> `Ended` as `Interrupted`, or `AwaitingApproval` -> `Ended` as
-   * `CapReached` or `Interrupted` (RF-432); the end state is set once. Undefined for an unknown run,
+   * `CapReached` or `Interrupted` (RF-432); the end state is set once, with the reason of an `Interrupted` end (P8-111). Undefined for an unknown run,
    * one that has ended and a queued or paused run ended any other way.
    */
   end(
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    counts?: AreaCounts,
+    detail?: RunEndDetail,
   ): Promise<Run | undefined>;
   /**
-   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started; undefined for an
-   * unknown run and one that is not running.
+   * RF-432: `Running` -> `AwaitingApproval`, keeping the areas no reader started and ending the
+   * span the run was running in at `at` (P8-88); undefined for an unknown run and one that is not
+   * running.
    */
-  pause(runId: string, counts?: AreaCounts): Promise<Run | undefined>;
+  pause(runId: string, at: EpochMs, counts?: AreaCounts): Promise<Run | undefined>;
   /**
    * RF-432: `AwaitingApproval` -> `Queued` for the user's paused run, at the end of the queue;
    * undefined for an unknown id, another user's run and a run that is not paused.

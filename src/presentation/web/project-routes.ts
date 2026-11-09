@@ -9,6 +9,7 @@ import type { StoreUpload } from '../../application/use-cases/store-upload.js';
 import type { WorkbookRendererCheck } from '../../application/use-cases/workbook-renderer-check.js';
 import type { WorkbookBatches } from '../../application/use-cases/workbook-batches.js';
 import type { OpenWorkspace } from '../../application/use-cases/open-workspace.js';
+import type { RenameProject } from '../../application/use-cases/rename-project.js';
 import type { UpdateProjectSettings } from '../../application/use-cases/update-project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { FieldProblemsError } from '../../domain/errors/field-problems.js';
@@ -38,6 +39,8 @@ import { registerWorkbookBatchRoutes } from './workbook-batch-routes.js';
 //   field and error code (400). `If-Match: "<settingsVersion>"` (the ETag of a read) makes the save
 //   apply only if the settings were not saved since; otherwise 409 with RST-1007 and nothing is
 //   written (P1-106); a malformed value answers 400; without the header the save is unconditional.
+// - PUT /api/projects/:id/name `{ name }` renames the project (P8-134): the name is checked as at
+//   creation (400 RST-2000), another user's id answers 404 like an unknown one, 200 with the project.
 // - GET and PUT /api/projects/:id/planning-brief: the planning brief (planning-brief-routes.ts).
 // - GET /api/projects/:id/plan-estimate: the estimate of a plan run (plan-estimate-routes.ts).
 // - GET /api/projects/:id/plan-source: the understand run Plan setup plans from (plan-source-routes.ts).
@@ -59,6 +62,8 @@ export interface ProjectServices
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
   readonly updateProjectSettings: UpdateProjectSettings;
+  /** RF-010, P8-134: the new name of a project, from the row menu of the projects list. */
+  readonly renameProject: RenameProject;
   readonly openWorkspace: OpenWorkspace;
   /** RF-128: the zip of an upload project (source-upload-routes.ts). */
   readonly storeUpload: StoreUpload;
@@ -79,6 +84,9 @@ const uploadBody = z.strictObject({
   sourceKind: z.enum(['upload', 'workbook']),
   name: z.string(),
 });
+
+// RF-010, P8-134: the new name, checked by the use case with the rule of creation.
+const renameBody = z.strictObject({ name: z.string() });
 
 interface IdParams {
   readonly id: string;
@@ -216,13 +224,40 @@ function registerSettings(server: FastifyInstance, services: ProjectServices): v
       if (outcome.ok) {
         return reply
           .status(200)
-          .header('etag', etagOf(outcome.value))
-          .send(projectView(outcome.value));
+          .header('etag', etagOf(outcome.value.project))
+          .send({
+            ...projectView(outcome.value.project),
+            ...(outcome.value.parallelismChange === undefined
+              ? {}
+              : { parallelismChange: outcome.value.parallelismChange }),
+          });
       }
       const { error } = outcome;
       if (error.code === ERROR_CODES.notFound) throw notFound();
       if (error.code === ERROR_CODES.settingsVersionStale) throw new RosettaError(error.code);
       throw new FieldProblemsError(error.code, error.problems);
+    },
+  );
+}
+
+function registerRename(server: FastifyInstance, services: ProjectServices): void {
+  server.put<{ Params: IdParams }>(
+    '/api/projects/:id/name',
+    { bodyLimit: CREATE_BODY_LIMIT_BYTES, config: { access: 'user' } },
+    async (request, reply) => {
+      const body = renameBody.safeParse(request.body);
+      if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const outcome = await services.renameProject.execute({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+        name: body.data.name,
+      });
+      if (!outcome.ok)
+        throw outcome.error === ERROR_CODES.notFound ? notFound() : new RosettaError(outcome.error);
+      return reply
+        .status(200)
+        .header('etag', etagOf(outcome.value))
+        .send(projectView(outcome.value));
     },
   );
 }
@@ -251,6 +286,7 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerSourceUploadRoutes(server, services);
   registerWorkbookBatchRoutes(server, services);
   registerSettings(server, services);
+  registerRename(server, services);
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);
   registerPlanSourceRoutes(server, services);

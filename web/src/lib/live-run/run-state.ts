@@ -1,3 +1,5 @@
+import type { EndReason } from '../../api/end-reason.js';
+
 // RF-1002, RF-1003, RF-1004: what the live run page knows about a run, built from its events by
 // `reduce-run.ts`. Nothing here is HTML: every text is shown as text.
 
@@ -119,6 +121,8 @@ interface ScanState {
 interface EndedState {
   readonly endState: string;
   readonly errorCode: string | undefined;
+  /** P8-111: why an `Interrupted` run ended; undefined for a run that does not say. */
+  readonly endReason: EndReason | null | undefined;
   readonly costMicros: number | undefined;
   /** RF-208: how many areas gave no usable card; undefined for a run that does not say. */
   readonly failedAreas: number | undefined;
@@ -196,6 +200,22 @@ export interface DeepenProgress {
   readonly stop: { readonly reason: string; readonly roundsDone: number } | undefined;
 }
 
+/**
+ * RF-1002 (P8-60): the calls each role has in flight now, and the limit, from the run's events
+ * (data-model.md section 3.9, "Calls in flight"). The counts are the sizes of the id lists.
+ */
+interface CallsInFlight {
+  /** The reader tasks with an `agent.started` and no `agent.ended` yet. */
+  readonly reader: readonly string[];
+  /**
+   * The claims with a `verify.claim.started` and no `verify.claim.callEnded` yet; emptied at
+   * `verify.judgement.started`, `verify.judgement.ended` and `run.ended`.
+   */
+  readonly verifier: readonly string[];
+  /** The `parallelism` of `run.started`; undefined for a run stored without it (no limit). */
+  readonly limit: number | undefined;
+}
+
 export interface RunState {
   readonly lastSeq: number;
   /** The `at` of `run.started`; the event log shows times from it. */
@@ -215,6 +235,8 @@ export interface RunState {
    * `idle` before it starts and for runs that never judge.
    */
   readonly judgement: 'idle' | 'running' | 'ended';
+  /** RF-1002 (P8-60): the calls in flight per role and the limit. */
+  readonly inFlight: CallsInFlight;
   readonly log: readonly LogLine[];
   readonly roleCostMicros: Readonly<Record<string, number>>;
   /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */

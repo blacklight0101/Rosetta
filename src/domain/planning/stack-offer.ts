@@ -23,6 +23,17 @@ export interface LayerOffer {
   readonly proposals: readonly OfferedProposal[];
   readonly keepLegacy: boolean;
   /** P7-30: for each group of vague words, the layer's options for that platform, the recommended first. */
+  /** DEC-208: the technologies of the layer that belong to a platform. */
+  readonly technologies: readonly {
+    readonly name: string;
+    readonly aliases: readonly string[];
+    readonly platform: string;
+  }[];
+  /** DEC-208: for each platform, the layer's proposals for it, the recommended first. */
+  readonly platforms: readonly {
+    readonly platform: string;
+    readonly proposals: readonly OfferedProposal[];
+  }[];
   readonly vague: readonly {
     readonly words: readonly string[];
     readonly proposals: readonly OfferedProposal[];
@@ -58,14 +69,28 @@ export function matchingOptions(
   return found.filter((each, index) => found.findIndex((o) => o.choice === each.choice) === index);
 }
 
-/** P7-30: the catalogue's options of the layer for a platform, the recommended one first. */
+/**
+ * P7-30, DEC-208: the catalogue's options of the layer for a platform, the recommended one first. The
+ * options written for the platform's languages come first; then the options for any language whose
+ * technology belongs to no platform or to this one (PostgreSQL, Docker containers), so a Node.js
+ * framework is never offered to C# on .NET. A platform of no language takes the scanned languages.
+ */
 export function platformOptions(
   stack: StackData,
   want: { kind: ApplicationKind; layer: string; platform: VagueWords; scanned: readonly string[] },
 ): StackOption[] {
   const { kind, layer, platform, scanned } = want;
-  const languages = platform.languages.length === 0 ? scanned : platform.languages;
-  return matchingOptions(stack, kind, layer, languages);
+  if (platform.languages.length === 0) return matchingOptions(stack, kind, layer, scanned);
+  const all = matchingOptions(stack, kind, layer, platform.languages);
+  const own = (option: StackOption): boolean =>
+    option.legacy.some((id) => platform.languages.includes(id));
+  const neutral = (option: StackOption): boolean => {
+    const tag = stack.technologies.find(
+      (tech) => tech.layer === layer && tech.name === option.choice,
+    )?.platform;
+    return option.legacy.length === 0 && (tag === undefined || tag === platform.label);
+  };
+  return [...all.filter(own), ...all.filter((option) => !own(option) && neutral(option))];
 }
 
 /** P8-14: the signals of a legacy technology the code map shows, each counted once. */
@@ -93,6 +118,38 @@ function endOfLife(stack: StackData, layer: string, input: OfferInput): boolean 
   );
 }
 
+/** DEC-208: the technologies of the layer that belong to a platform. */
+function technologiesOf(stack: StackData, layer: string): LayerOffer['technologies'] {
+  return stack.technologies.flatMap((tech) =>
+    tech.layer === layer && tech.platform !== undefined
+      ? [{ name: tech.name, aliases: tech.aliases, platform: tech.platform }]
+      : [],
+  );
+}
+
+/** DEC-208: the layer's proposals for each platform of the catalogue; none for the language layer itself. */
+function platformsOf(
+  stack: StackData,
+  input: OfferInput,
+  layer: StackLayer,
+): LayerOffer['platforms'] {
+  if (layer === 'language-runtime') return [];
+  return stack.proposals.vague.flatMap((group) =>
+    group.label === undefined || group.languages.length === 0
+      ? []
+      : [
+          {
+            platform: group.label,
+            proposals: platformOptions(stack, {
+              ...{ kind: input.kind, layer, platform: group, scanned: input.languages },
+            })
+              .slice(0, MAX_PROPOSALS)
+              .map((option) => ({ choice: option.choice, why: option.why })),
+          },
+        ],
+  );
+}
+
 /** One offer for each of the seven layers, in the order of the brief. */
 export function stackOfferFor(input: OfferInput, stack: StackData): LayerOffer[] {
   const { kind, languages, workbook } = input;
@@ -101,6 +158,8 @@ export function stackOfferFor(input: OfferInput, stack: StackData): LayerOffer[]
     proposals: matchingOptions(stack, kind, layer, languages)
       .slice(0, MAX_PROPOSALS)
       .map((each) => ({ choice: each.choice, why: each.why })),
+    technologies: technologiesOf(stack, layer),
+    platforms: platformsOf(stack, input, layer),
     keepLegacy: !workbook && !endOfLife(stack, layer, input),
     vague: stack.proposals.vague
       .map((each) => ({

@@ -8,6 +8,7 @@ import { cloudRoles, isLocalEstimate, pricedTotal } from '../lib/estimate-math.j
 import { administratorRunCapBinds, effectiveRunCapMicros, usesServerKeys } from '../lib/run-cap.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
+import { useHeldConsent, type HeldConsentState } from './use-held-consent.js';
 import { usePrivateCode, type PrivateCode } from './use-private-code.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js';
@@ -27,6 +28,8 @@ interface CloudConsent {
   readonly names: string;
   readonly checked: boolean;
   readonly set: (checked: boolean) => void;
+  /** RF-143, DEC-209 (P8-81): the consent of the project that holds, shown as one line instead. */
+  readonly held: HeldConsentState;
 }
 
 /** RF-113: the estimate says the code map comes from an older scanner. */
@@ -209,6 +212,23 @@ function noSourceOf(project: Project): { noSource: boolean; noWorkbooks: boolean
   };
 }
 
+/**
+ * RF-143, DEC-209 (P8-81): the consent of the project that holds and, when none does, the roles whose
+ * notice must be confirmed. It is read again after a switch to Ollama or a refusal for the consent.
+ */
+function useConsentRoles(input: {
+  readonly project: Project;
+  readonly stage: RunStageChoice;
+  readonly estimate: EstimateLoad;
+  readonly refused: boolean;
+}) {
+  const { project, stage, estimate, refused } = input;
+  const held = useHeldConsent(project.id, 'understand', `${String(refused)}:${project.updatedAt}`);
+  const asked = stage === 'understand' && held.consent === undefined;
+  const roles = asked ? consentRoles(estimate, refused) : [];
+  return { held, roles, names: providerNames(roles.map((role) => role.provider)) };
+}
+
 // RF-1001, RF-143, DEC-108
 export function useStartForm(loaded: Project): StartForm {
   const [project, setProject] = useState(loaded);
@@ -222,8 +242,7 @@ export function useStartForm(loaded: Project): StartForm {
   const { estimate } = choice;
   // RF-1022: the page asks for no stage; with no scan yet only a scan can start, else it is the journey.
   const stage: RunStageChoice = estimate.status === 'none' ? 'scan' : 'understand';
-  const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
-  const names = providerNames(roles.map((role) => role.provider));
+  const { held, roles, names } = useConsentRoles({ project, stage, estimate, refused });
   const runCaps = runCapsOf({ stage, estimate, limits: useSpendLimits(), typed: fields.capMicros });
   const privateCode = usePrivateCode(project, roles.length > 0, (saved) => {
     setProject(saved);
@@ -253,7 +272,8 @@ export function useStartForm(loaded: Project): StartForm {
   });
   return {
     ...{ project, choice, stage, url, setUrl, ...fields, ...runCaps },
-    ...{ consent: { roles, names, checked, set: setChecked }, gate, actions, setProject, scan },
+    ...{ consent: { roles, names, checked, set: setChecked, held }, gate, actions, setProject },
+    scan,
     ...{ privateCode, rerun },
     library: { chosen: libraryChosen, ...confirmed.library },
     oldMap: { outdated: isOutdated(estimate), ...confirmed.oldMap },

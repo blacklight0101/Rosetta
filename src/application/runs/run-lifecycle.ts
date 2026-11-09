@@ -1,3 +1,4 @@
+import type { EpochMs } from '../../domain/accounts/user.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -7,7 +8,7 @@ import {
   recordManifestSource,
   type RunManifest,
 } from '../../domain/runs/run-manifest.js';
-import type { RunEndState } from '../../domain/runs/run-states.js';
+import type { RunEndReason, RunEndState } from '../../domain/runs/run-states.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunEventHistory, RunEventSink } from '../ports/run-events.js';
@@ -16,9 +17,11 @@ import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { continueAmountOf } from '../../domain/budget/approved-amount.js';
 import { readUnderstandOptions } from '../understand/understand-options.js';
+import type { RunEndFacts } from '../journey/run-end-facts.js';
 import { RunEventPublisher } from './run-event-publisher.js';
 import { scopeOf } from './run-scope.js';
 import { startCapsDataOf, type StartCaps } from './run-start-caps.js';
+import type { StartParallelism } from './run-start-parallelism.js';
 import type { RunStartCaps } from '../../domain/budget/budget.js';
 import type { ManifestCaps } from '../../domain/runs/run-manifest.js';
 
@@ -45,6 +48,13 @@ export interface RunLifecycleDependencies {
    * records the caps of its manifest only (a test without a project).
    */
   readonly startCaps?: Pick<StartCaps, 'of'>;
+  /**
+   * The parallelism the run uses (RF-1002, P8-59), recorded on `run.started` as the limit the page
+   * shows; a run without it records none (an older log, a test without a project).
+   */
+  readonly parallelism?: Pick<StartParallelism, 'of'>;
+  /** P8-139, DEC-226: stores the journey facts the end knows (required, so no composition forgets it). */
+  readonly endFacts: Pick<RunEndFacts, 'record'>;
 }
 
 export interface StartedRun {
@@ -75,6 +85,7 @@ export class RunLifecycle {
     const manifest = markManifestStarted(stored, now.toISOString());
     await manifests.write(scope, manifest);
     const effective = await this.deps.startCaps?.of(started, manifest);
+    const parallelism = await this.deps.parallelism?.of(started);
     const events = await RunEventPublisher.open({ scope, ...this.eventParts() });
     await events.emit('run.started', {
       stage: started.stage,
@@ -82,6 +93,7 @@ export class RunLifecycle {
       roles: manifest.roles,
       caps: effective === undefined ? manifest.caps : effectiveCapsOf(manifest.caps, effective),
       ...(effective === undefined ? {} : { effectiveCaps: startCapsDataOf(effective) }),
+      ...(parallelism === undefined ? {} : { parallelism }),
     });
     return { run: started, manifest, events };
   }
@@ -107,11 +119,23 @@ export class RunLifecycle {
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),
     );
-    await this.attempt(ended, 'run.ended', async () => {
+    const closed = await this.attempt(ended, 'run.ended', async () => {
       const events = await RunEventPublisher.open({ scope: scopeOf(ended), ...this.eventParts() });
       await events.emit('run.ended', endData(ended, endState, manifest, detail));
+      return true;
     });
+    await this.recordEndFacts(ended, closed === true ? (detail.errorCode ?? null) : null);
     return ended;
+  }
+
+  /**
+   * P8-122: ends a run an earlier process left `Running` as `Interrupted` by a restart. The server
+   * was down since its last sign of life, so the open span counts only up to it.
+   */
+  // RNF-002
+  async endOrphan(run: Run): Promise<Run | undefined> {
+    const activeUntil = await this.lastSignOfLife(run);
+    return this.finish(run, 'Interrupted', { endReason: 'Restart', activeUntil });
   }
 
   /**
@@ -122,7 +146,7 @@ export class RunLifecycle {
   // RF-432
   async pause(run: Run, detail: Pick<EndDetail, 'unreadAreas'> = {}): Promise<Run | undefined> {
     const counts = detail.unreadAreas === undefined ? {} : { unreadAreas: detail.unreadAreas };
-    const paused = await this.deps.runs.pause(run.id, counts);
+    const paused = await this.deps.runs.pause(run.id, this.deps.clock.now().getTime(), counts);
     if (paused === undefined) return undefined;
     await this.attempt(paused, 'run.awaitingApproval', async () => {
       const stored = await this.deps.manifests.read(scopeOf(paused));
@@ -141,6 +165,30 @@ export class RunLifecycle {
       });
     });
     return paused;
+  }
+
+  /**
+   * P8-122: the last instant a run left `Running` by an earlier process is known to have been
+   * alive: the time of the last event it recorded (there is no heartbeat). Without a readable event
+   * it is the start of the span, which proves no running time past it.
+   */
+  private async lastSignOfLife(run: Run): Promise<EpochMs> {
+    const { history } = this.deps;
+    const seen = await this.attempt(run, 'the last event', async () => {
+      const last = await history.lastSeq(scopeOf(run));
+      const [event] = last === 0 ? [] : await history.read(scopeOf(run), last - 1);
+      return event === undefined ? Number.NaN : Date.parse(event.at);
+    });
+    return seen === undefined || Number.isNaN(seen) ? (run.spanStartedAt ?? 0) : seen;
+  }
+
+  /**
+   * P8-139, DEC-226: the journey facts of the end, after `run.ended`: its code (none when the event
+   * could not be written, as the log then says), the Supported claims and the open questions.
+   */
+  private async recordEndFacts(run: Run, endCode: string | null): Promise<void> {
+    const { endFacts } = this.deps;
+    await this.attempt(run, 'the journey facts', () => endFacts.record(run, endCode));
   }
 
   private eventParts(): Pick<RunLifecycleDependencies, 'sink' | 'history' | 'clock'> {
@@ -184,6 +232,10 @@ export interface EndDetail {
   readonly errorCode?: ErrorCode;
   readonly failedAreas?: number;
   readonly unreadAreas?: number;
+  /** P8-111: why an `Interrupted` run ended; recorded on the row and said by `run.ended`. */
+  readonly endReason?: RunEndReason;
+  /** P8-122: the instant up to which the span the run ends in counts as running time. */
+  readonly activeUntil?: EpochMs;
 }
 
 function endData(
@@ -199,6 +251,7 @@ function endData(
     ...(errorCode === undefined ? {} : { errorCode }),
     ...(failedAreas === undefined ? {} : { failedAreas }),
     ...(unreadAreas === undefined ? {} : { unreadAreas }),
+    ...(run.endReason === null ? {} : { endReason: run.endReason }),
   };
 }
 

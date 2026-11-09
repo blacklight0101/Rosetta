@@ -1,3 +1,4 @@
+import { interruptedWord } from '../lib/interrupted-word.js';
 import type { GlyphName } from './Glyph.js';
 
 // design-system.md section 6 and architecture.md section 5: the presentation of every value of
@@ -40,6 +41,8 @@ export const stateLists = {
   RunQueueState: ['Queued', 'Running', 'AwaitingApproval', 'Ended'],
   /** P7-02, DEC-194: how a `CapReached` run that left areas unread is shown; not a domain state list. */
   RunPartlyRead: ['PartlyRead'],
+  /** P8-111, DEC-217: how an `Interrupted` run is shown when a restart or a queue cancel ended it; not a domain state list. */
+  RunInterruptedBy: ['Restart', 'QueueCancel'],
   Role: ['admin', 'user'],
   AccountState: ['Active', 'MustChangePassword', 'Locked', 'Disabled'],
   MapLevel: ['coarse', 'symbols'],
@@ -92,9 +95,13 @@ export const badgeSpecs: SpecTable = {
     Completed: badge('Completed', 'ok', 'solid', 'check'),
     CapReached: badge('Cap reached', 'warn', 'solid', 'square'),
     Failed: badge('Failed', 'danger', 'solid', 'exclamation'),
-    Interrupted: badge('Interrupted', 'neutral', 'solid', 'pause-bars'),
+    Interrupted: badge('Stopped by you', 'neutral', 'solid', 'pause-bars'),
   },
   RunPartlyRead: { PartlyRead: badge('Partly read', 'warn', 'solid', 'square') },
+  RunInterruptedBy: {
+    Restart: badge(interruptedWord('Restart'), 'neutral', 'solid', 'pause-bars'),
+    QueueCancel: badge(interruptedWord('QueueCancel'), 'neutral', 'solid', 'pause-bars'),
+  },
   RunQueueState: {
     Queued: badge('Queued', 'info', 'tint', 'clock'),
     Running: badge('Running', 'info', 'solid', 'live-dot'),

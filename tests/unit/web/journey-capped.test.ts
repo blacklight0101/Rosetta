@@ -6,13 +6,10 @@ import { facts, projectId, roadSigns, source, sourceId, step } from './journey-f
 // be planned from; Resume stays the action and the plan is offered beside it.
 
 describe('journeyOf: an understand run that stopped at a cap with Supported claims', () => {
-  it('RF-615 RF-614 P3-121 the brief, estimate and plan steps are open, and the understand step says it stopped', () => {
+  it('RF-615 RF-614 P3-121 the brief, estimate and plan steps are open, and the understand step says it stopped at its cap', () => {
     const view = journeyOf(roadSigns['cappedWithClaims'] ?? facts(), projectId);
 
-    expect(step(view, 'understand')).toMatchObject({
-      state: 'failed',
-      detail: 'Stopped at its cap (RST-1403)',
-    });
+    expect(step(view, 'understand')).toMatchObject({ state: 'capped', detail: 'RST-1403' });
     expect(step(view, 'brief')).toMatchObject({ state: 'upcoming', detail: 'Not saved yet' });
     expect(step(view, 'brief').href).toContain('/plan-setup');
     expect(step(view, 'package').state).toBe('locked');

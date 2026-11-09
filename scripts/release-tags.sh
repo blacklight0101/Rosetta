@@ -4,7 +4,9 @@
 # Always sha-<short>; for a tag also X.Y.Z, but only when the tag is exactly v<version of
 # package.json> and its commit is on origin/main. Any other tag stops the release, and nothing is
 # written to GITHUB_OUTPUT.
-# Environment: IMAGE, REF_TYPE (branch or tag), REF_NAME, GITHUB_SHA, GITHUB_OUTPUT.
+# Environment: IMAGE, REF_TYPE (branch or tag), REF_NAME, GITHUB_SHA, GITHUB_OUTPUT, and COMMIT when
+# the commit to tag is not GITHUB_SHA (release-checks.yml runs from a workflow_run, whose GITHUB_SHA is
+# the head of the default branch, DEC-227).
 set -euo pipefail
 
 refuse() {
@@ -12,7 +14,8 @@ refuse() {
   exit 1
 }
 
-short="${GITHUB_SHA::7}"
+commit="${COMMIT:-$GITHUB_SHA}"
+short="${commit::7}"
 tags="$IMAGE:sha-$short"
 if [ "$REF_TYPE" = tag ]; then
   version="${REF_NAME#v}"
@@ -21,7 +24,7 @@ if [ "$REF_TYPE" = tag ]; then
   printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
     refuse "The tag $REF_NAME is not vX.Y.Z."
   [ "$version" = "$package" ] || refuse "The tag $REF_NAME is not v$package, the version of package.json."
-  git merge-base --is-ancestor "$GITHUB_SHA" origin/main || refuse "The tag $REF_NAME is not on main."
+  git merge-base --is-ancestor "$commit" origin/main || refuse "The tag $REF_NAME is not on main."
   tags="$tags $IMAGE:$version"
 fi
 echo "Image tags: $tags"

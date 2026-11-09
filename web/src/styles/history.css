@@ -90,3 +90,183 @@ dialog.rst-p140-dialog::backdrop {
   justify-content: flex-end;
   gap: var(--rst-sp-3);
 }
+
+/*
+ * P8-136, RF-1008: from 641 px to 1279 px (1024 px leaves the Runs table a box about 760 px wide)
+ * the table fits its box with every column of the History artboard (with the wider fonts of Linux
+ * too). The cells sit closer together, and a heading, the run name (at its hyphens, as one block
+ * that is all link), the kind, the start, the running time, the share under a Partly read badge, a
+ * state badge ("Stopped by a restart") and the Resume button wrap instead of widening the table,
+ * and the Resume button stands above the row menu, so the widest row (Well covered, stopped by a
+ * restart, with Resume) fits; the commit, the coverage value and the figures stay on one line. They
+ * wrap only between words: the content column's `anywhere` would break inside them. From 1280 px
+ * the table is as before; on a phone it stacks (pages.css).
+ */
+@media (width > 40rem) and (width < 80rem) {
+  .rst-p140-runs th,
+  .rst-p140-runs td {
+    padding-inline: var(--rst-sp-1);
+  }
+
+  .rst-p140-runs th,
+  .rst-p140-runs td[data-label='Kind'],
+  .rst-p140-runs td[data-label='Started'],
+  .rst-p140-runs td[data-label='Running time'],
+  .rst-p140-runs .rst-table__sub--share,
+  .rst-p140-runs .rst-p140-run-name {
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  .rst-p140-runs .rst-p140-run-name {
+    display: inline-block;
+  }
+
+  .rst-p140-runs .rst-badge {
+    white-space: normal;
+    border-radius: var(--rst-radius-md);
+    padding-block: var(--rst-sp-1);
+  }
+
+  .rst-p140-runs td .rst-button {
+    padding-inline: var(--rst-sp-2);
+    white-space: normal;
+  }
+
+  .rst-p140-runs .rst-p140-row-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--rst-sp-1);
+  }
+}
+
+/*
+ * P8-89: the row menu ("More actions") and the box inside the actions cell that holds it, History
+ * artboard. The flex is on a box inside the cell, never on the td, which would leave the table
+ * layout and lose the row separator.
+ */
+
+.rst-p140-row-actions {
+  display: flex;
+  gap: var(--rst-sp-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rst-menu__button {
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 1px solid transparent;
+  border-radius: var(--rst-radius-md);
+  background: transparent;
+  color: var(--rst-ink-soft);
+  font: inherit;
+  font-size: var(--rst-fs-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rst-menu__button:hover,
+.rst-menu__button[aria-expanded='true'] {
+  border-color: var(--rst-rule);
+  background: var(--rst-surface-raised);
+}
+
+.rst-menu__panel {
+  position: fixed;
+  z-index: var(--rst-z-menu);
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 11rem;
+  max-inline-size: calc(100vw - var(--rst-sp-4) * 2);
+  padding: var(--rst-sp-1);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+}
+
+.rst-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 0;
+  border-radius: var(--rst-radius-sm);
+  background: transparent;
+  color: var(--rst-ink);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rst-menu__item:hover {
+  background: var(--rst-surface-2);
+}
+
+.rst-menu__item--danger {
+  color: var(--rst-danger-ink);
+}
+
+.rst-menu__item[aria-disabled='true'] {
+  color: var(--rst-ink-soft);
+  cursor: not-allowed;
+}
+
+.rst-menu__reason {
+  font-size: var(--rst-fs-sm);
+  color: var(--rst-ink-soft);
+}
+
+/*
+ * P8-89: a run name never wraps at its hyphens, so the whole link can be hit (the click point is
+ * its centre); below 1280 px it wraps as one inline block, whose whole box is the link (P8-136)
+ */
+
+.rst-p140-run-name {
+  white-space: nowrap;
+}
+
+/*
+ * P8-89: the Coverage value and its tooltip line, the overlay Tooltip of design-system.md section
+ * 5.1: out of the flow, so the table does not move, and fixed like the row menu panel, so its
+ * scrolling box does not clip it. useOverlayTip sets left and top.
+ */
+
+.rst-p889-coverage__value {
+  border-block-end: 1px dotted var(--rst-ink-soft);
+  cursor: help;
+}
+
+.rst-p889-coverage__line {
+  position: fixed;
+  z-index: var(--rst-z-menu);
+  display: none;
+  inline-size: max-content;
+  max-inline-size: min(28rem, calc(100vw - var(--rst-sp-4) * 2));
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-body);
+  text-align: start;
+  white-space: normal;
+}
+
+/* The pointer crosses the gap between the value and the tooltip without leaving either
+   (WCAG 1.4.13) */
+
+.rst-p889-coverage__line::before {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  inset: calc(var(--rst-sp-1) * -1 - 1px) 0;
+}
+
+.rst-p889-coverage[data-open]:not([data-dismissed]) .rst-p889-coverage__line {
+  display: block;
+}

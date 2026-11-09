@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>History and cost</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F4F6F6;color:#13201F;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums}
+a{color:#0E6B6B}a:hover{color:#0A5555}
+:focus-visible{outline:2px solid #1B5799;outline-offset:2px}
+.mono{font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+.more{width:32px;height:32px;border:1px solid transparent;border-radius:6px;background:transparent;color:#364644;font:inherit;font-size:18px;line-height:1;cursor:pointer}
+th,td{padding:9px 12px}
+</style>
+</helmet>
+<div style="min-height:100%;padding:32px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+  <section aria-labelledby="h-h" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-h" style="margin:0;font-size:20px;font-weight:650">History</h2>
+    <div style="overflow-x:auto;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;color:#56645F;background:#EAEFEE"><th>Run</th><th>Kind</th><th>State</th><th>Coverage</th><th>Started</th><th>Running time</th><th style="text-align:right">Tokens</th><th style="text-align:right">Cost</th><th><span style="position:absolute;width:1px;height:1px;overflow:hidden">Actions</span></th></tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-092504-plan</a></td><td>Plan</td><td style="color:#1C6E37">&#10003; Done</td><td style="color:#56645F">-</td><td>3 Nov, 09:25</td><td>2 min</td><td style="text-align:right">133,509</td><td style="text-align:right">$0.0242</td><td style="text-align:right"><button type="button" class="more" aria-label="More actions for this plan run">&#8943;</button></td></tr>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-091847-understand</a></td><td>Deepen, 3 rounds</td><td style="color:#1C6E37">&#10003; Done</td><td>[coverage]% read</td><td>3 Nov, 09:18</td><td>6 min</td><td style="text-align:right">[tokens]</td><td style="text-align:right">$0.0937</td><td style="text-align:right"><button type="button" class="more" aria-label="More actions for this Deepen run">&#8943;</button></td></tr>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-090851-understand</a></td><td>Understand</td><td style="color:#1C6E37">&#10003; Done</td><td style="color:#7A4A00">16% read</td><td>3 Nov, 09:08</td><td>2 min</td><td style="text-align:right">366,378</td><td style="text-align:right">$0.0371</td><td style="text-align:right"><button type="button" class="more" aria-label="More actions for this understand run">&#8943;</button></td></tr>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261102-185338-understand</a></td><td>Understand</td><td style="color:#45524F">&#9632; Stopped by you, then resumed</td><td>[coverage]% read</td><td>2 Nov, 18:53</td><td>66 min <span style="color:#56645F">(over 2 h 10 min)</span></td><td style="text-align:right">[tokens]</td><td style="text-align:right">[$x.xx]</td><td style="text-align:right"><button type="button" class="more" aria-label="More actions for this understand run">&#8943;</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="c-h" style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline">
+      <h2 id="c-h" style="margin:0;font-size:20px;font-weight:650">Cost by run</h2>
+      <span style="font-size:13px;color:#56645F">Prices of 21 Oct 2026, for every row below</span>
+    </div>
+    <div style="overflow-x:auto;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;color:#56645F;background:#EAEFEE"><th>Run</th><th>Kind</th><th style="text-align:right">Reader</th><th style="text-align:right">Verifier</th><th style="text-align:right">Planner</th><th style="text-align:right">Summariser</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-092504-plan</a></td><td>Plan</td><td style="text-align:right">-</td><td style="text-align:right">-</td><td style="text-align:right">$0.0242</td><td style="text-align:right">-</td><td style="text-align:right;font-weight:650">$0.0242</td></tr>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-091847-understand</a></td><td>Deepen, 3 rounds</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right">-</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right;font-weight:650">$0.0937</td></tr>
+          <tr style="border-top:1px solid #D8DFDE"><td><a href="#" class="mono">20261103-090851-understand</a></td><td>Understand</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right">-</td><td style="text-align:right">[$0.0xxx]</td><td style="text-align:right;font-weight:650">$0.0371</td></tr>
+          <tr style="border-top:2px solid #7A8987;background:#EAEFEE"><td colspan="6" style="font-weight:650">Project total</td><td style="text-align:right;font-weight:650">$0.1550</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

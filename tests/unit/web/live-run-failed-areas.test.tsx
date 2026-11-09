@@ -88,7 +88,10 @@ it('RF-208 a completed run with a failed area says so and names the area and why
   expect(banner.textContent).toContain('Completed with 1 area failed');
   expect(within(banner).getByText('Catalog: invalid output')).toBeTruthy();
   expect(within(banner).queryByText(/Services/u)).toBeNull();
-  expect(within(banner).getByRole('button', { name: 'Retry failed areas' })).toBeTruthy();
+  // RF-1021 (P8-84): secondary, so the page keeps its one primary action (Your turn or Resume).
+  expect(within(banner).getByRole('button', { name: 'Retry failed areas' }).className).toContain(
+    'rst-button--secondary',
+  );
 });
 
 it('RF-208 a run with several failed areas counts them', async () => {
@@ -142,7 +145,7 @@ it('RF-208 a stopped run shows no failed-areas notice, because stopped tasks are
   connection.event(runEnded(3, 'Interrupted'));
 
   await waitFor(() => {
-    expect(screen.getByTestId('run-status').textContent).toContain('Interrupted');
+    expect(screen.getByTestId('run-status').textContent).toContain('Stopped by you');
   });
   expect(screen.queryByTestId('failed-areas')).toBeNull();
 });

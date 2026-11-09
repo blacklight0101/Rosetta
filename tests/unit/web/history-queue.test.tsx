@@ -30,3 +30,35 @@ it('RF-1108 EV-80 a queued run in the history shows its place and the runs ahead
   expect(row).not.toBeNull();
   expect(within(row as HTMLElement).getByText('position 3, 2 runs ahead')).not.toBeNull();
 });
+
+it.each([
+  ['Restart', 'Stopped by a restart'],
+  ['QueueCancel', 'Cancelled while queued'],
+  [null, 'Stopped by you'],
+] as const)(
+  'RF-1008 P8-111 the history words an Interrupted run with reason %s as %s',
+  async (endReason, word) => {
+    const interrupted = {
+      ...{ id: 'r-6', runId: '20261011-091400-plan', stage: 'plan', queueState: 'Ended' },
+      ...{ endState: 'Interrupted', endReason, commitSha: null, position: null },
+      ...{ queuedAt: '2026-10-11T09:14:00.000Z', startedAt: null, endedAt: null, sizeBytes: 0 },
+      totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
+    };
+    renderPage(
+      <HistoryPage />,
+      {
+        'GET /api/projects/p-1/history': json(200, {
+          ...history,
+          runs: [interrupted, ...history.runs],
+        }),
+      },
+      undefined,
+      { projectId: 'p-1' },
+    );
+
+    const [cell] = await screen.findAllByText('20261011-091400-plan');
+    const row = cell?.closest('tr') ?? null;
+
+    expect(within(row as HTMLElement).getByText(word)).not.toBeNull();
+  },
+);

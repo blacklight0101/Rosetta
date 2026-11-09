@@ -1,17 +1,19 @@
 import type { JSX } from 'preact';
 import { mayDeepen } from '../lib/live-run/may-deepen.js';
-import { useEffect, useState } from 'preact/hooks';
-import { waitsForAnswer } from '../api/answers.js';
+import { useContext, useEffect, useState } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { reportFilePath } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
-import { Link } from '../components/Link.js';
+import { Rail, openQuestions } from './EndedRail.js';
 import { Tabs } from '../components/Tabs.js';
+import { endFactsOf } from '../lib/live-run/end-facts.js';
+import { primaryPlaceOf } from '../lib/live-run/primary-place.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { endedTabsOf } from './ended-tabs.js';
 import { ActivityTab } from './ActivityTab.js';
+import { AreaReadContext } from './area-read-context.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
 import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
@@ -21,17 +23,16 @@ import { PlanCalls } from './PlanCalls.js';
 import { RetryNotice } from './RetryNotice.js';
 
 import { RunAnswers } from './RunAnswers.js';
-import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
-import { RunReport } from './RunReport.js';
 import { RunStepper } from './RunStepper.js';
+import { ScanResult } from './ScanResult.js';
+import { belowTheBar } from './TurnPaths.js';
 import { useQuestionsFocus, type FocusRequest } from './use-focus-first-question.js';
-import { useRunAnswers, type AnswersLoad, type RunAnswersState } from './use-run-answers.js';
+import { useRunAnswers, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
-import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
+import type { UnderstandingLoad } from './use-understanding.js';
 import { UnderstandingSummary } from './UnderstandingSummary.js';
 import { VerificationNote } from './VerificationNote.js';
-import { YourTurn } from './YourTurn.js';
 
 // RF-1015, RF-1017, RF-264, RF-1007, DEC-137, design-system.md section 14, proposal
 // `docs/design/proposals/run-page-v2.html`: the page of a run that has ended, "after the run" mode.
@@ -51,6 +52,8 @@ export interface EndedBodyProps {
   readonly stage: string;
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
+  /** RF-231, P8-93: the understanding of the run, read once for the head and the overview. */
+  readonly understanding: UnderstandingLoad;
   readonly source: SourceState | undefined;
   /** RF-006: called once the server has queued the run again; the page follows it anew. */
   readonly onResumed: () => void;
@@ -135,7 +138,6 @@ interface PanelsProps extends EndedBodyProps {
   readonly answers: RunAnswersState;
   /** DEC-154: the first question without a saved answer is to take focus. */
   readonly focus: FocusRequest;
-  readonly understanding: UnderstandingLoad;
   readonly built: boolean;
 }
 
@@ -174,43 +176,24 @@ function Panels(props: PanelsProps): JSX.Element | null {
   );
 }
 
-interface RailProps {
-  readonly run: RunRow;
-  readonly stage: string;
-  readonly state: RunState;
-  readonly costMicros: number;
-  readonly failed: boolean;
-  readonly asks: boolean;
-  readonly answers: AnswersLoad;
-  /** RF-209: the run can be deepened (it ended Completed); undefined otherwise. */
-  readonly deepenRunId: string | undefined;
-  readonly overview: OverviewLoad;
-  readonly onResumed: () => void;
-  readonly report: { readonly onBuilt: () => void };
-  readonly onAnswer: () => void;
-}
-
-/** The Your turn panel, and the report, the downloads and the calls link, one click away. */
-function Rail(props: RailProps): JSX.Element {
-  const { run, stage } = props;
+/**
+ * RF-1021 (P8-84): the journey of an ended understand run. It reads the coverage as Your turn does, so
+ * both name the same next step, and its action is secondary unless the page has no other primary.
+ */
+function EndedJourney(
+  props: EndedBodyProps & { readonly open: number | undefined; readonly onAnswer: () => void },
+): JSX.Element {
+  const { run, stage, phase, shown } = props;
+  const { reading } = useContext(AreaReadContext);
+  const place = primaryPlaceOf(shown.ended?.endState, endFactsOf(shown).supportedClaims);
   return (
-    <aside class="rst-p170-rail">
-      <YourTurn {...props} />
-      <section class="rst-card rst-p170-downloads" aria-label="Report and downloads">
-        <RunReport runId={run.id} ended onBuilt={props.report.onBuilt} />
-        <RunDownloads runId={run.id} stage={stage} ended />
-        <p class="rst-p137-live-link">
-          <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
-        </p>
-      </section>
-    </aside>
+    <UnderstandJourney
+      {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
+      onAnswer={props.onAnswer}
+      belowBar={belowTheBar(reading)}
+      actionVariant={place === 'strip' ? 'primary' : 'secondary'}
+    />
   );
-}
-
-/** How many questions wait for an answer; none known until they are read. */
-function openQuestions(answers: AnswersLoad): number | undefined {
-  if (answers.status !== 'ready') return undefined;
-  return answers.questions.filter(waitsForAnswer).length;
 }
 
 /** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
@@ -235,10 +218,7 @@ function Header(
       />
       {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
-      <UnderstandJourney
-        {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
-        onAnswer={props.onAnswer}
-      />
+      <EndedJourney {...props} />
     </>
   );
 }
@@ -251,41 +231,42 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const report = useReportBuilt(run);
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
-  const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks, stage);
   const open = openQuestions(answers.load);
   const { focus, showQuestions } = useQuestionsFocus(() => {
     results.show('questions');
   });
+  // P8-27: a scan shows its code map and its download only; the panels are for an understand or plan run.
   return (
     <>
       <Header {...props} reportBuilt={report.built} open={open} onAnswer={showQuestions} />
-      <div class="rst-p170-grid">
-        <section class="rst-card rst-p170-main" aria-label="Results">
-          <Tabs
-            label="Results"
-            tabs={endedTabsOf({ stage, asks, open, state: shown })}
-            selected={results.tab}
-            onSelect={results.select}
-          >
-            <Panels
-              {...props}
-              {...{ results, overview, answers, understanding, focus }}
-              built={report.built}
-            />
-          </Tabs>
-        </section>
-        <Rail
-          {...{ run, stage, failed, asks }}
-          answers={answers.load}
-          {...{ overview, onResumed: props.onResumed }}
-          deepenRunId={asks && mayDeepen(state.ended, run) ? run.id : undefined}
-          state={shown}
-          costMicros={props.costMicros}
-          report={report}
-          onAnswer={showQuestions}
-        />
-      </div>
+      {stage === 'scan' ? (
+        <ScanResult run={run} state={shown} />
+      ) : (
+        <div class="rst-p170-grid">
+          <section class="rst-card rst-p170-main" aria-label="Results">
+            <Tabs
+              label="Results"
+              tabs={endedTabsOf({ stage, asks, open, state: shown })}
+              selected={results.tab}
+              onSelect={results.select}
+            >
+              <Panels {...props} {...{ results, overview, answers, focus }} built={report.built} />
+            </Tabs>
+          </section>
+          <Rail
+            {...{ run, stage, failed, asks }}
+            answers={answers.load}
+            {...{ overview, onResumed: props.onResumed }}
+            deepenRunId={asks && mayDeepen(state.ended, run) ? run.id : undefined}
+            state={shown}
+            costMicros={props.costMicros}
+            report={report}
+            onAnswer={showQuestions}
+            understanding={props.understanding}
+          />
+        </div>
+      )}
     </>
   );
 }

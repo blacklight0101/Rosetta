@@ -63,6 +63,12 @@
   border: 1px dashed var(--rst-rule-strong);
 }
 
+.rst-codemap__swatch--partly {
+  background: var(--rst-warn-bg);
+  border-color: var(--rst-warn-solid);
+  border-style: dashed;
+}
+
 .rst-codemap__swatch--gap {
   background: var(--rst-warn-bg);
   border-color: var(--rst-warn-solid);
@@ -126,6 +132,7 @@
   min-inline-size: 0;
   padding: var(--rst-sp-2) var(--rst-sp-3);
   overflow: hidden;
+  overflow-wrap: anywhere;
   border: 1px solid var(--rst-rule);
   border-radius: var(--rst-radius-md);
   background: var(--rst-surface-2);
@@ -234,6 +241,15 @@ button.rst-tile:hover {
 
 .rst-tile--done .rst-tile__meta {
   color: var(--rst-ink-soft);
+}
+
+.rst-tile--partly {
+  border-color: transparent;
+  background: var(--rst-warn-bg);
+}
+
+.rst-tile--partly .rst-tile__meta {
+  color: var(--rst-warn-ink);
 }
 
 .rst-tile--gap {

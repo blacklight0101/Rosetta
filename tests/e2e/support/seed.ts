@@ -56,7 +56,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * watches a run while it runs (P1-169), `api-calls` reads its calls and logs (RF-1011), `replay`
  * owns a recorded run (seed-replay.ts, RF-506), `history` browses and deletes runs (RF-1008,
  * RF-1012), `history-admin` deletes snapshots, `project-runs` reads the run columns (RF-1108) and
- * `plan` answers Plan setup after an understand run (RF-605). The `journey-*` accounts (P1-46)
+ * `plan` answers Plan setup after an understand run (RF-605) and `plan-non-dotnet` does so on the
+ * seeded Python project `octo/inventory` (P8-103, RF-609). The `journey-*` accounts (P1-46)
  * sign in, own a project and a run, play the other user, change a forced password, run the C# and
  * COBOL fixtures, create users and run on the server key. The visual sweep (RNF-010) has `sweep`,
  * which makes a project and its runs and opens every page, `sweep-admin` for the administration
@@ -96,7 +97,9 @@ export type E2eAccountKind =
   | 'sweep'
   | 'sweep-admin'
   | 'sweep-force'
-  | 'plan';
+  | 'plan'
+  | 'plan-non-dotnet'
+  | 'plan-python';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -133,6 +136,8 @@ const accountKinds: readonly E2eAccountKind[] = [
   'sweep-admin',
   'sweep-force',
   'plan',
+  'plan-non-dotnet',
+  'plan-python',
 ];
 
 const adminKinds: ReadonlySet<E2eAccountKind> = new Set([

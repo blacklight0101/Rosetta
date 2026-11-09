@@ -1,5 +1,6 @@
 import type { ApiClient, ApiResult } from './client.js';
 import { projectOverviewSchema, type ProjectOverviewRow } from './overview-schemas.js';
+import { z } from 'zod';
 import { projectSchema, type Project, type ProjectSettings } from './project-schemas.js';
 
 // RF-010, RF-002, RF-1105: the project calls of the projects and project settings pages. Every
@@ -10,6 +11,15 @@ export interface CreatedProject {
   /** False when the address was already a project of this user: the existing one comes back. */
   readonly created: boolean;
 }
+
+/** RF-436: the answer of a save, with the change the provider-switch rule made when it fired. */
+const savedSettingsSchema = projectSchema.extend({
+  parallelismChange: z
+    .object({ from: z.number().int().min(1), to: z.number().int().min(1) })
+    .optional(),
+});
+
+export type SavedSettings = z.output<typeof savedSettingsSchema>;
 
 /** The project in an answer body, or undefined when the body is not a project. */
 export function parseProject(body: unknown): Project | undefined {
@@ -79,12 +89,26 @@ export function saveProjectSettings(
   client: ApiClient,
   project: Pick<Project, 'id' | 'settingsVersion'>,
   settings: ProjectSettings,
-): Promise<ApiResult<Project>> {
+): Promise<ApiResult<SavedSettings>> {
   return client.request({
     method: 'PUT',
     path: `/api/projects/${encodeURIComponent(project.id)}/settings`,
     ifMatch: `"${String(project.settingsVersion)}"`,
     body: settings,
+    schema: savedSettingsSchema,
+  });
+}
+
+// RF-010, P8-134: the new name of a project, from the row menu of the projects list.
+export function renameProject(
+  client: ApiClient,
+  projectId: string,
+  name: string,
+): Promise<ApiResult<Project>> {
+  return client.request({
+    method: 'PUT',
+    path: `/api/projects/${encodeURIComponent(projectId)}/name`,
+    body: { name },
     schema: projectSchema,
   });
 }

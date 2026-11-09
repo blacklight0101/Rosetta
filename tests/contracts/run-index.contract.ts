@@ -94,7 +94,9 @@ function queueTests(name: string, fresh: FreshRuns): void {
 
     const started = await index.start(run.id, 5_000);
 
-    expect(started).toEqual({ ...run, queueState: 'Running', startedAt: 5_000 });
+    expect(started).toEqual({
+      ...{ ...run, queueState: 'Running', startedAt: 5_000, spanStartedAt: 5_000 },
+    });
     expect(await index.start(run.id, 6_000)).toBeUndefined();
     expect(await index.start(unknownId, 6_000)).toBeUndefined();
     expect(await index.listRunning()).toEqual([started]);
@@ -111,11 +113,8 @@ function endingTests(name: string, fresh: FreshRuns): void {
     const ended = await index.end(run.id, 'CapReached', 9_000);
 
     expect(ended).toEqual({
-      ...run,
-      queueState: 'Ended',
-      startedAt: 5_000,
-      endState: 'CapReached',
-      endedAt: 9_000,
+      ...{ ...run, queueState: 'Ended', startedAt: 5_000, activeMs: 4_000 },
+      ...{ endState: 'CapReached', endedAt: 9_000 },
     });
     expect(await index.end(run.id, 'Failed', 9_500)).toBeUndefined();
     expect(await index.find(runAmy, run.id)).toEqual(ended);

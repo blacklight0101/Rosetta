@@ -8,6 +8,18 @@
   min-inline-size: 0;
 }
 
+.rst-road__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-3);
+}
+
+.rst-road__head .rst-live-section__title {
+  margin: 0;
+}
+
 .rst-road__steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
@@ -75,6 +87,10 @@
 }
 
 .rst-road__step--awaiting .rst-road__state,
+.rst-road__step--stopped .rst-road__state,
+.rst-road__step--restarted .rst-road__state,
+.rst-road__step--cancelled .rst-road__state,
+.rst-road__step--capped .rst-road__state,
 .rst-road__step--out-of-date .rst-road__state,
 .rst-road__step--gaps .rst-road__state {
   background: var(--rst-warn-bg);
@@ -102,6 +118,88 @@
 .rst-road__cost {
   font-variant-numeric: tabular-nums;
   color: var(--rst-ink-muted);
+}
+
+.rst-road__body {
+  display: grid;
+  gap: var(--rst-sp-1);
+  min-inline-size: 0;
+}
+
+.rst-road__body[hidden] {
+  display: none;
+}
+
+/* P8-100: the compact row of the artboards (P8Project, P8Run): glyph, name and state of each step. The
+   columns follow the width of the strip itself (its container), not the window, because the navigation
+   narrows it: seven columns when they fit, then 4 + 3, then two, and never so narrow that a name breaks
+   inside a word (the narrowest column, 7.5rem, holds "Understand" at the design system's size). The
+   state word and the glyph keep the tone of the state (the same tokens as the pill of the cards). */
+.rst-road--compact {
+  container-type: inline-size;
+}
+
+.rst-road--compact .rst-road__steps {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rst-sp-1);
+}
+
+@container (min-width: 33rem) {
+  .rst-road--compact .rst-road__steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 56rem) {
+  .rst-road--compact .rst-road__steps {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.rst-road--compact .rst-road__step {
+  --rst-road-tone: var(--rst-neutral-ink);
+  padding: var(--rst-sp-2);
+  border-color: transparent;
+  background: transparent;
+}
+
+.rst-road--compact .rst-road__step--done {
+  --rst-road-tone: var(--rst-ok-ink);
+}
+
+.rst-road--compact .rst-road__step--current {
+  --rst-road-tone: var(--rst-info-ink);
+}
+
+.rst-road--compact .rst-road__step--failed {
+  --rst-road-tone: var(--rst-danger-ink);
+}
+
+.rst-road--compact .rst-road__step--awaiting,
+.rst-road--compact .rst-road__step--stopped,
+.rst-road--compact .rst-road__step--restarted,
+.rst-road--compact .rst-road__step--cancelled,
+.rst-road--compact .rst-road__step--capped,
+.rst-road--compact .rst-road__step--out-of-date,
+.rst-road--compact .rst-road__step--gaps {
+  --rst-road-tone: var(--rst-warn-ink);
+}
+
+.rst-road--compact .rst-road__step[aria-current='step'] {
+  border-width: 1px;
+  border-color: var(--rst-brand);
+  padding: var(--rst-sp-2);
+  background: var(--rst-brand-tint);
+}
+
+.rst-road--compact .rst-road__step .rst-road__state {
+  padding: 0;
+  background: transparent;
+  color: var(--rst-road-tone);
+}
+
+.rst-road--compact .rst-road__step .rst-road__mark {
+  color: var(--rst-road-tone);
 }
 
 .rst-road__links {

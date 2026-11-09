@@ -184,9 +184,10 @@ function documentCalls(
 }
 
 /**
- * RF-627, Q-45, Q-54: the calls after the documents are always counted, since whether an item is
- * left without a card is not known yet; the repair is the gap call again, with the repair prompt
- * and a problem for every card.
+ * RF-627, Q-45, Q-54, P8-96: the calls after the documents are always counted, since whether an
+ * item is left without a card is not known yet; the repair is the gap call again, with the repair
+ * prompt and a problem for every card, and the second gap round is the gap call once more, sized
+ * like the first (its block holds only the items still open, at most those of the first).
  */
 function closingCalls(files: {
   readonly coverage: PromptFile;
@@ -208,6 +209,11 @@ function closingCalls(files: {
       gapMessage(assumedGapInput(), () => TAG),
     ),
     whole('gapRepair', gap, repairing),
+    whole(
+      'gap',
+      gap,
+      gapMessage(assumedGapInput(), () => TAG),
+    ),
   ];
 }
 

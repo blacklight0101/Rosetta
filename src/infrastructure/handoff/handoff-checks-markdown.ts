@@ -1,5 +1,6 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { behavioursKeptByNoCard, behavioursOf } from '../../domain/planning/behaviours-to-keep.js';
+import { requirementsBuiltByNoCard } from '../../domain/planning/coverage-checks.js';
 import {
   coverageItems,
   coverageOf,
@@ -31,8 +32,18 @@ function rowOf(item: CoverageItem, esc: MarkdownEscaper): string {
   return `| ${item.kind} | ${esc.inline(item.id)} | ${esc.inline(item.name)} |`;
 }
 
+// P8-97, EV-95: the summary line says how many requirements no card lists, so it never reads as if
+// everything were built above the list of "Requirements built by no card".
+function unbuiltRequirements(handoff: HandoffPackage): string {
+  const count = requirementsBuiltByNoCard(handoff.content).length;
+  if (count === 0) return '';
+  return `${plural(count, 'requirement')} ${count === 1 ? 'is' : 'are'} built by no card`;
+}
+
 function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { items, uncovered } = coverageOf(coverageItems(handoff), handoff.content.tasks);
+  const requirements = unbuiltRequirements(handoff);
+  const also = requirements === '' ? '' : `; ${requirements}`;
   const head = [
     '## Plan coverage',
     '',
@@ -40,14 +51,19 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
     '',
   ];
   if (items.length === 0) {
-    return [...head, 'The package has no item to cover.', ''];
+    return [...head, `The package has no item to cover${also}.`, ''];
   }
   if (uncovered.length === 0) {
-    return [...head, 'Every item is built by at least one task card.', ''];
+    return [
+      ...head,
+      `Every feature, table, operation, journey and screen is built by at least one task card${also}.`,
+      '',
+    ];
   }
+  const and = requirements === '' ? '' : `, and ${requirements}`;
   return [
     ...head,
-    `${plural(uncovered.length, 'item')} of ${String(items.length)} ${uncovered.length === 1 ? 'is' : 'are'} built by no task card; the run is not complete.`,
+    `${plural(uncovered.length, 'item')} of ${String(items.length)} ${uncovered.length === 1 ? 'is' : 'are'} built by no task card${and}; the run is not complete.`,
     '',
     '| Kind | Id | Name |',
     '|---|---|---|',

@@ -4,9 +4,10 @@ import { ProjectSettingsPage } from '../../../web/src/pages/ProjectSettingsPage.
 import { json, renderPage } from './fake-api.js';
 import { projectOf, templateSettings } from './project-fixtures.js';
 
-// Q-57, RF-002, RF-405: a role whose output limit the project never set shows an empty field that
-// says so, saving leaves it out (so the role keeps the default of its model, whatever provider it
-// is changed to), and a number typed into it is stored.
+// Q-57, RF-002, RF-405, RF-436 (P8-76): a role whose output limit the project never set shows the
+// built-in default in its field and its slider, marked as the default; saving leaves it out (so the
+// role keeps the default of its model, whatever provider it is changed to), and a number typed into
+// it is stored.
 
 const route = '/api/projects/p-1';
 const settingsRoute = `${route}/settings`;
@@ -36,12 +37,18 @@ function inputOf(label: string): HTMLInputElement {
   return field;
 }
 
-it('Q-57 shows an empty field and says the role uses the default of its model', async () => {
+it('RF-436 an unset output field shows the built-in default, marked default, never "Not set"', async () => {
   renderSettings(withoutReaderLimit());
   await loaded();
 
-  expect(inputOf('Reader max output tokens').value).toBe('');
-  expect(screen.getAllByText(/Not set: the role uses the default of its model/u)).toHaveLength(1);
+  expect(inputOf('Reader max output tokens').value).toBe('4096');
+  expect(inputOf('Reader max output tokens slider').value).toBe('4096');
+  expect(
+    screen.getAllByText(
+      '4,096 is the default. The field and the slider always show the same value.',
+    ),
+  ).toHaveLength(1);
+  expect(screen.queryByText(/Not set/u)).toBeNull();
   expect(inputOf('Verifier max output tokens').value).toBe('2048');
 });
 
@@ -77,4 +84,21 @@ it('Q-57 the slider of an empty output field sits at the default, not at the bot
 
   const slider = screen.getByLabelText('Reader max output tokens slider');
   expect(slider instanceof HTMLInputElement && slider.value).toBe('4096');
+});
+
+it('RF-436 a field emptied by hand shows the default again when it loses focus and stays unset', async () => {
+  const { calls } = renderSettings(projectOf('p-1', 'octo/demo'));
+  await loaded();
+
+  const field = inputOf('Verifier max output tokens');
+  fireEvent.input(field, { target: { value: '' } });
+  expect(field.value).toBe('');
+  fireEvent.blur(field);
+  expect(field.value).toBe('2048');
+  expect(screen.getByText(/^2,048 is the default\./u)).toBeTruthy();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
+  await screen.findByText('Settings saved.');
+  const body = calls.findLast((call) => call.method === 'PUT')?.body;
+  expect(JSON.stringify(body)).not.toMatch(/"verifier":\{[^}]*maxOutputTokens/u);
 });

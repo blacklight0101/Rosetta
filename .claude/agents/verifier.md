@@ -15,6 +15,8 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
 
 1. Read `CLAUDE.md`, the card, every requirement id in Refs (`docs/spec/requirements.md`), every ADR in Refs,
    `docs/architecture.md` and `docs/conventions.md`.
+   Optionally, `graphify affected "<changed symbol>" --graph <main checkout>/graphify-out/graph.json` lists callers
+   of a symbol on `develop`; otherwise find them with a search (DEC-214).
 2. **Scope:** `git diff --stat develop...HEAD` (task branches are cut from `develop`, DEC-175); every Delivers item exists at its path; nothing outside the card changed;
    `docs/spec`, `docs/rfc`, `docs/adr` change only when the card or a behaviour change requires it (ADR-010).
 3. **Gates:** link `node_modules` to the main checkout's (never `npm install`, `npm ci` or `npm uninstall` through the

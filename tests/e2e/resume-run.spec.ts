@@ -28,10 +28,10 @@ test('RF-006 resumes an interrupted run from the history page: the same run, its
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openHistory(page);
   const row = runRow(page, '-understand');
-  await expect(row).toContainText('Interrupted');
+  await expect(row).toContainText('Stopped by you');
   await expect(row.getByRole('button', { name: /^Resume run /u })).toBeEnabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
@@ -56,7 +56,7 @@ test('RF-006 the run page offers Resume again when the resumed run is stopped', 
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 
   await expect(page.getByRole('button', { name: 'Resume run' })).toBeEnabled();
   await transitionsDone(page);

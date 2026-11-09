@@ -109,9 +109,9 @@ test('RF-405 lists the priced Anthropic models, keeps the choice and passes axe'
 
   expect(await optionTexts(model)).toEqual([
     'Choose a model',
+    'Claude Haiku 5.5',
     'Claude Opus 5.5',
     'Claude Sonnet 5.5',
-    'Claude Haiku 5.5',
     'Claude Fable 5.1',
     'Other model...',
   ]);
@@ -172,11 +172,21 @@ test('RF-405 the model select works from the keyboard', async ({ page }) => {
   const model = page.getByLabel('Summariser model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
 
+  // The options as the list orders them: the arrow keys move down them from "Choose a model".
+  const values = await model
+    .locator('option')
+    .evaluateAll((options) =>
+      options.map((option) => (option instanceof HTMLOptionElement ? option.value : '')),
+    );
+  expect(values.length).toBeGreaterThan(2);
+  await expect(model).toHaveValue(values[0] ?? '');
+
   await model.focus();
   await page.keyboard.press('ArrowDown');
+  await expect(model).toHaveValue(values[1] ?? '');
   await page.keyboard.press('ArrowDown');
 
-  await expect(model).toHaveValue('claude-sonnet-5-5');
+  await expect(model).toHaveValue(values[2] ?? '');
   await page.getByLabel('Summariser provider').selectOption('');
 });
 

@@ -8,7 +8,7 @@ import { ApprovalPause } from '../../domain/budget/cap-stop.js';
 import type { Card } from '../../domain/cards/card.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { LlmProvider } from '../ports/llm-provider.js';
+import type { LlmProvider, LlmRequest } from '../ports/llm-provider.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { roleBudgetOf } from '../projects/role-budget.js';
 import type { RoleProvider } from '../providers/provider-set.js';
@@ -37,6 +37,11 @@ export interface ReaderRoomSources {
    * pauses the run and asks, as a refused call does, instead of ending it `CapReached`.
    */
   readonly pause?: () => void;
+  /**
+   * P8-132: the worst case of a call, as the budget guard reserves it. With it the check counts the
+   * calls in flight; without it the check holds only its own lines, as before.
+   */
+  readonly worstCaseOf?: (request: LlmRequest) => Spend;
 }
 
 /** The claims waiting for the verifier, and those it has judged (a rule's verdict is no judgement). */
@@ -72,6 +77,8 @@ function roomLimitsOf(settings: ProjectSettings, reader: RoleProvider): RoomFact
   };
 }
 
+const NO_SPEND: Spend = { tokens: 0n, micros: 0n };
+
 export class ReaderRoom {
   private readonly sources: ReaderRoomSources;
   private readonly limits: RoomFacts['limits'];
@@ -79,6 +86,9 @@ export class ReaderRoom {
   private cards: () => readonly Card[] = () => [];
   private pending: () => number = () => 0;
   private readonly refusedTasks = new Set<string>();
+  /** P8-132: the worst case of each call in flight, which the budget guard holds as a reservation. */
+  private readonly inFlight = new Set<Spend>();
+  private waiting: (() => void)[] = [];
 
   constructor(sources: ReaderRoomSources, limits: RoomFacts['limits']) {
     this.sources = sources;
@@ -141,13 +151,58 @@ export class ReaderRoom {
   guard(inner: LlmProvider, agentTaskId: string): LlmProvider {
     return {
       complete: async (request, observer) => {
-        if (!(await this.admits())) {
-          this.refusedTasks.add(agentTaskId);
-          throw new RosettaError(ERROR_CODES.budgetCapReached);
+        const held = await this.holdRoomFor(request, agentTaskId);
+        try {
+          return await inner.complete(request, observer);
+        } finally {
+          this.release(held);
         }
-        return inner.complete(request, observer);
       },
     };
+  }
+
+  /**
+   * P8-132, RF-429, Q-67: the call is let through when the check admits it and the caps can pay for
+   * its worst case beside the calls in flight, as the budget guard reserves them; otherwise it waits
+   * for one of them to end and asks again, so a tiny cap is spent on a call that is answered and
+   * booked, not on two of which one is refused and the other cancelled. With no call in flight the
+   * budget guard decides, and refuses what the cap cannot pay for (RF-422).
+   */
+  private async holdRoomFor(request: LlmRequest, agentTaskId: string): Promise<Spend> {
+    for (;;) {
+      if (!(await this.admits())) {
+        this.refusedTasks.add(agentTaskId);
+        throw new RosettaError(ERROR_CODES.budgetCapReached);
+      }
+      // A copy, so each call in flight is its own entry however the source hands the figures out.
+      const worst = { ...(this.sources.worstCaseOf?.(request) ?? NO_SPEND) };
+      if (request.signal.aborted || this.inFlight.size === 0 || this.fitsBesideCalls(worst)) {
+        this.inFlight.add(worst);
+        return worst;
+      }
+      await new Promise<void>((resolve) => this.waiting.push(resolve));
+    }
+  }
+
+  /** Whether the run caps can pay for the call's worst case beside what is spent and in flight. */
+  private fitsBesideCalls(worst: Spend): boolean {
+    const run = this.sources.runSpend();
+    const held = [...this.inFlight].reduce(
+      (sum, each) => ({ tokens: sum.tokens + each.tokens, micros: sum.micros + each.micros }),
+      worst,
+    );
+    const { runTokens, runMicros } = this.limits;
+    return (
+      run.tokens + held.tokens <= runTokens &&
+      (runMicros === 0n || run.micros + held.micros <= runMicros)
+    );
+  }
+
+  private release(held: Spend): void {
+    this.inFlight.delete(held);
+    const waiting = this.waiting;
+    this.waiting = [];
+    for (const wake of waiting) wake();
   }
 }
 
@@ -193,6 +248,7 @@ function readerRoomOf(
     stoppedAtLine: (role: 'verifier') => parts.budget.stoppedAtLine(role),
     announce: (reason: ReadersStop, claims: number) =>
       announceReadersStopped(execution, reason, claims),
+    ...(parts.role.worstCaseOf === undefined ? {} : { worstCaseOf: parts.role.worstCaseOf }),
     ...(parts.role.runCaps?.approved === true
       ? {
           pause: () => {

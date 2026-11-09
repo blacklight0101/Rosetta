@@ -1,6 +1,12 @@
 import type { JSX } from 'preact';
 import type { SummaryRow } from '../api/call-schemas.js';
-import { costText, durationText, speedText, tokenText } from '../lib/api-calls/format.js';
+import { durationText, speedText, tokenText } from '../lib/api-calls/format.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1011, DEC-57: the summary per provider and role: calls, errors, P50 and P95 latency and time
@@ -9,6 +15,8 @@ import { ScrollRegion } from './ScrollRegion.js';
 export interface CallSummaryProps {
   readonly rows: readonly SummaryRow[];
 }
+
+const keyOf = (row: SummaryRow): string => `${row.provider}/${row.role}`;
 
 function errorsText(row: SummaryRow): string {
   const parts = [
@@ -19,7 +27,7 @@ function errorsText(row: SummaryRow): string {
   return parts.join(', ');
 }
 
-function Row({ row }: { readonly row: SummaryRow }): JSX.Element {
+function Row({ row, stop }: { readonly row: SummaryRow; readonly stop: AmountStop }): JSX.Element {
   return (
     <tr data-testid="summary-row">
       <th scope="row">{row.provider}</th>
@@ -52,7 +60,7 @@ function Row({ row }: { readonly row: SummaryRow }): JSX.Element {
         {tokenText(row.inputTokens + row.outputTokens)}
       </td>
       <td data-label="Cost" class="rst-table__num">
-        {costText(row.costMicros)}
+        <MoneyAmount micros={row.costMicros} {...stop} />
       </td>
     </tr>
   );
@@ -74,6 +82,9 @@ const heads = [
 
 // RF-1011
 export function CallSummary({ rows }: CallSummaryProps): JSX.Element {
+  const stops = useAmountTabStop(
+    rows.map((row) => ({ key: keyOf(row), exact: hasTooltip(row.costMicros) })),
+  );
   return (
     <section class="rst-card rst-p137-panel" aria-label="Summary per provider and role">
       <h2 class="rst-live-section__title">Summary per provider and role</h2>
@@ -93,7 +104,7 @@ export function CallSummary({ rows }: CallSummaryProps): JSX.Element {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <Row key={`${row.provider}/${row.role}`} row={row} />
+                <Row key={keyOf(row)} row={row} stop={stops.stopOf(keyOf(row))} />
               ))}
             </tbody>
           </table>

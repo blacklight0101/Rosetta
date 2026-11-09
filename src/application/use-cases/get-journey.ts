@@ -1,49 +1,24 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { err, ok, type Result } from '../../domain/errors/result.js';
-import { supportedCards } from '../../domain/planning/plan-sources.js';
-import { isBriefOutOfDate } from '../../domain/planning/brief-freshness.js';
+import { err, type Result } from '../../domain/errors/result.js';
 import { queuePositions } from '../../domain/runs/queue-rules.js';
-import type { Run } from '../../domain/runs/run.js';
-import type {
-  Journey,
-  JourneyBudget,
-  JourneyHandoff,
-  JourneyRun,
-  JourneySource,
-} from '../journey/journey.js';
-import { endCodeOf, planSourceKey } from '../journey/journey-lookup.js';
-import { journeyRemaining } from '../../domain/journey/journey-record.js';
+import type { Journey } from '../journey/journey.js';
+import { journeyOfFacts } from '../journey/journey-of-facts.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
-import type { AnswersFile } from '../ports/answers-file.js';
-import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
-import type { PriorCards } from '../ports/prior-cards.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
-import type { RunCards } from '../ports/run-cards.js';
-import type { RunEventHistory } from '../ports/run-events.js';
 import type { RunIndex } from '../ports/run-index.js';
-import type { RunManifestStore } from '../ports/run-manifest-store.js';
-import { scopeOf } from '../runs/run-scope.js';
-import { projectQuestions } from '../answers/project-questions.js';
-import { waitsForAnswer } from './question-states.js';
 
-// RF-615, RF-614, RF-1105, DEC-142, DEC-143: Get journey gives the journey strip the facts it is drawn
-// from: the understand run the package is written from, its open questions, whether a brief is
-// saved, the newest plan run written from that run and the package. Nothing is stored; the facts
-// come from the run index of the user, the manifests, the saved brief and the end of each run.
-// The page may be about an understand run, a plan run (its source is the run its manifest names)
-// or none (the newest completed understand run of the project, else its newest one). Another
-// user's project or run, a run of another project and a run of any other stage are not found.
+// RF-615, RF-614, RF-1105, DEC-142, DEC-143, DEC-226: Get journey gives the journey strip the facts it
+// is drawn from: the understand run the package is written from, its open questions, whether a brief
+// is saved, the newest plan run written from that run and the package. The facts are stored on the
+// run rows and the project row by the code that knows them (P8-139), so the read opens no run file:
+// the project, its runs, its journey record and, when one of its runs waits, the queue.
+// `journeyOfFacts` turns them into the journey. Another user's project or run, a run of another
+// project and a run of any other stage are not found.
 
 export interface GetJourneyDependencies {
-  readonly projects: ProjectRepository;
+  readonly projects: Pick<ProjectRepository, 'find'>;
   readonly runs: Pick<RunIndex, 'list' | 'listQueued'>;
-  readonly manifests: Pick<RunManifestStore, 'read'>;
-  readonly history: Pick<RunEventHistory, 'read' | 'lastSeq'>;
-  readonly briefs: Pick<PlanningBriefStore, 'read'>;
-  readonly cards: RunCards;
-  readonly answers: Pick<AnswersFile, 'questionsOf'>;
-  readonly priorCards: PriorCards;
   /** RF-1021: the journey record of the project; without it no amount is reported. */
   readonly journeys?: Pick<JourneyRecords, 'find'> | undefined;
 }
@@ -55,52 +30,7 @@ export interface GetJourneyRequest {
   readonly runId?: string | undefined;
 }
 
-/** A run that is not `Completed` asks no question and, for the journey, has no Deepen. */
-const NO_QUESTIONS = { openQuestions: 0, deepens: 0, isDeepen: false, deepening: false } as const;
-
 type NotFound = typeof ERROR_CODES.notFound;
-/** The understand run each plan run was written from, by the id of the plan run. */
-type PlanSources = ReadonlyMap<string, string | null>;
-
-const isUnderstand = (run: Run): boolean => run.stage === 'understand';
-const isCompleted = (run: Run): boolean => run.endState === 'Completed';
-const isJourneyRun = (run: Run): boolean => isUnderstand(run) || run.stage === 'plan';
-const claimsOf = (cards: readonly { readonly claims: readonly unknown[] }[]): number =>
-  cards.reduce((sum, card) => sum + card.claims.length, 0);
-const startOf = (run: Run): number => run.startedAt ?? run.queuedAt;
-
-/** The newest completed understand run of the project, else its newest understand run. */
-const newestSource = (list: readonly Run[]): Run | undefined =>
-  list.find((run) => isUnderstand(run) && isCompleted(run)) ?? list.find(isUnderstand);
-
-/** The understand run the journey is about: the named one, the one a named plan run came from, or the newest. */
-function chooseSource(list: readonly Run[], named: Run | undefined, sources: PlanSources) {
-  if (named !== undefined && isUnderstand(named)) return named;
-  const key = named === undefined ? undefined : sources.get(named.id);
-  const written = key === undefined ? undefined : list.find((run) => run.runKey === key);
-  return written !== undefined && isUnderstand(written) ? written : newestSource(list);
-}
-
-/**
- * Out of date when the brief was saved after the package began, when it was written from another
- * understand run, or when this run ended after it began (DEC-143 Q-C).
- */
-function handoffOf(
-  list: readonly Run[],
-  source: Run,
-  written: { readonly run: Run; readonly gaps: boolean },
-  parts: { readonly briefSavedAt: string | undefined; readonly sources: PlanSources },
-): JourneyHandoff {
-  const { briefSavedAt, sources } = parts;
-  const from = sources.get(written.run.id) ?? null;
-  const briefChanged = briefSavedAt !== undefined && isBriefOutOfDate(briefSavedAt, list);
-  const otherSource = from !== null && from !== source.runKey;
-  const sourceChanged = source.endedAt !== null && source.endedAt > startOf(written.run);
-  return {
-    ...{ runId: written.run.id, runKey: written.run.runKey },
-    ...{ outOfDate: briefChanged || otherSource || sourceChanged, gaps: written.gaps },
-  };
-}
 
 export class GetJourney {
   private readonly deps: GetJourneyDependencies;
@@ -113,115 +43,14 @@ export class GetJourney {
   async execute(request: GetJourneyRequest): Promise<Result<Journey, NotFound>> {
     const { userId } = request.actor;
     const { projectId, runId } = request;
-    if ((await this.deps.projects.find(userId, projectId)) === undefined) {
-      return err(ERROR_CODES.notFound);
-    }
-    const list = await this.deps.runs.list(userId, projectId);
-    const named = list.find((run) => run.id === runId);
-    if (runId !== undefined && (named === undefined || !isJourneyRun(named))) {
-      return err(ERROR_CODES.notFound);
-    }
-    const sources = await this.sourcesOfPlanRuns(list);
-    const brief = await this.deps.briefs.read({ userId, projectId });
-    const scan = list.find((run) => run.stage === 'scan' && isCompleted(run));
-    const budget = await this.budgetOf(userId, projectId, list);
-    const base = { scanRunId: scan?.id ?? null, briefSaved: brief !== undefined, budget };
-    const source = chooseSource(list, named, sources);
-    if (source === undefined) return ok({ ...base, source: null, plan: null, handoff: null });
-    const plan = list.find((run) => run.stage === 'plan' && sources.get(run.id) === source.runKey);
-    return ok({
-      ...base,
-      source: await this.sourceFacts(source),
-      plan: plan === undefined ? null : await this.runFacts(plan),
-      handoff: await this.handoffFor(list, source, { briefSavedAt: brief?.savedAt, sources }),
-    });
-  }
-
-  /**
-   * The package is the newest plan run of the project that wrote one: a run that ended `Completed`,
-   * or one that ended RST-1806 after writing the package with gaps (RF-627, Q-44).
-   */
-  private async handoffFor(
-    list: readonly Run[],
-    source: Run,
-    parts: { readonly briefSavedAt: string | undefined; readonly sources: PlanSources },
-  ): Promise<JourneyHandoff | null> {
-    for (const run of list.filter((each) => each.stage === 'plan')) {
-      if (isCompleted(run)) return handoffOf(list, source, { run, gaps: false }, parts);
-      if (run.endState !== 'Failed') continue;
-      const code = await endCodeOf(this.deps.history, run);
-      if (code === ERROR_CODES.planCoverageGap) {
-        return handoffOf(list, source, { run, gaps: true }, parts);
-      }
-    }
-    return null;
-  }
-
-  /** RF-1021: what the owner approved for the journey and what is left of it. */
-  private async budgetOf(
-    userId: string,
-    projectId: string,
-    list: readonly Run[],
-  ): Promise<JourneyBudget | null> {
+    const project = await this.deps.projects.find(userId, projectId);
+    if (project === undefined) return err(ERROR_CODES.notFound);
+    const runs = await this.deps.runs.list(userId, projectId);
     const record = await this.deps.journeys?.find(userId, projectId);
-    if (record === undefined) return null;
-    const left = journeyRemaining(record, list);
-    return {
-      approvedMicros: record.approved.costMicros,
-      remainingMicros: left.costMicros,
-      approvedTokens: record.approved.tokens,
-      remainingTokens: left.tokens,
-    };
-  }
-
-  private async sourcesOfPlanRuns(list: readonly Run[]): Promise<PlanSources> {
-    const plans = list.filter((run) => run.stage === 'plan');
-    const keys = await Promise.all(
-      plans.map((run) => planSourceKey(this.deps.manifests, run, list)),
-    );
-    return new Map(plans.map((run, index) => [run.id, keys[index] ?? null]));
-  }
-
-  /** EV-80: only a queued run has a place, counted over the server's queue. */
-  private async positionOf(run: Run): Promise<number | null> {
-    if (run.queueState !== 'Queued') return null;
-    return queuePositions(await this.deps.runs.listQueued()).get(run.id) ?? null;
-  }
-
-  private async runFacts(run: Run): Promise<JourneyRun> {
-    return {
-      ...{ id: run.id, runKey: run.runKey, queueState: run.queueState, endState: run.endState },
-      ...{ endedAt: run.endedAt, costMicros: run.totals.costMicros },
-      unreadAreas: run.unreadAreas,
-      position: await this.positionOf(run),
-      errorCode: await endCodeOf(this.deps.history, run),
-    };
-  }
-
-  /**
-   * The run, and for a run that ended `Completed` its Supported claims and its open questions; for a
-   * run that ended `CapReached` its Supported claims, which a plan can use (P3-121), and no question.
-   */
-  private async sourceFacts(run: Run): Promise<JourneySource> {
-    const facts = await this.runFacts(run);
-    if (run.endState === 'CapReached') {
-      const kept = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
-      return { ...facts, supportedClaims: claimsOf(kept), ...NO_QUESTIONS };
-    }
-    if (!isCompleted(run)) return { ...facts, supportedClaims: 0, ...NO_QUESTIONS };
-    const cards = supportedCards(await this.deps.cards.cardsOf(scopeOf(run)));
-    // RF-646, DEC-179: the project's one list, the run's questions and those of its Deepens.
-    const { questions, family } = await projectQuestions(
-      { ...this.deps, manifests: this.deps.manifests },
-      run,
-    );
-    return {
-      ...facts,
-      supportedClaims: claimsOf(cards),
-      openQuestions: questions.filter(waitsForAnswer).length,
-      deepens: family.deepens,
-      isDeepen: family.isDeepen,
-      deepening: family.deepening,
-    };
+    // EV-80: the queue is read only when a run of the project waits in it.
+    const waits = runs.some((run) => run.queueState === 'Queued');
+    const positions = waits ? queuePositions(await this.deps.runs.listQueued()) : new Map();
+    const briefSavedAt = project.briefSavedAt ?? null;
+    return journeyOfFacts({ runs, briefSavedAt, record, positions }, runId);
   }
 }

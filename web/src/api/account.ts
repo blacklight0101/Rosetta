@@ -2,11 +2,13 @@ import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
 import { limitsSchema, type SpendLimits } from './limits-schemas.js';
 import {
+  keyAccessSchema,
   keyAnswerSchema,
   keyListSchema,
   ownDailyCapSchema,
   providerTestSchema,
   sessionSchema,
+  type KeyAccess,
   type RoleTest,
   type KeyProvider,
   type KeySummary,
@@ -79,6 +81,20 @@ export async function listKeys(
     signal,
   });
   return result.ok ? { ok: true, value: result.value.keys } : result;
+}
+
+// RF-436, DEC-225
+export async function getKeyAccess(
+  client: ApiClient,
+  signal: AbortSignal,
+): Promise<ApiResult<readonly KeyAccess[]>> {
+  const result = await client.request({
+    method: 'GET',
+    path: '/api/account/key-access',
+    schema: keyAccessSchema,
+    signal,
+  });
+  return result.ok ? { ok: true, value: result.value.providers } : result;
 }
 
 // RF-1104

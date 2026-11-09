@@ -10,6 +10,7 @@ import {
   runStatus,
   startUnderstand,
   valueOf,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -60,7 +61,7 @@ async function waitingEvents(page: Page): Promise<number> {
   return Number(/(\d+) events? waiting/u.exec(shown ?? '')?.[1] ?? 0);
 }
 
-test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with its files and areas and leaves the other stages waiting', async ({
+test('RF-1002 RF-1015 the stepper of a scan run goes from the snapshot to the scan with its files and areas and has no understand or verify step', async ({
   page,
 }) => {
   await openStartPage(page);
@@ -69,8 +70,10 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
   await expect(step(page, 'Scan')).toContainText(/\d+ files, \d+ areas/u);
   await expect(step(page, 'Snapshot')).toContainText('done');
   await expect(step(page, 'Scan')).toContainText('done');
-  await expect(step(page, 'Understand')).toContainText('waiting');
-  await expect(step(page, 'Verify')).toContainText('waiting');
+  // P8-27: a scan has no understand or verify step to show as an empty circle.
+  await expect(pipeline(page).getByRole('listitem')).toHaveCount(2);
+  await expect(step(page, 'Understand')).toHaveCount(0);
+  await expect(step(page, 'Verify')).toHaveCount(0);
   await expect(step(page, 'Report')).toHaveCount(0);
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
   await transitionsDone(page);
@@ -80,8 +83,12 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
 test('RF-1002 RF-504 P8-11 the Report step of an ended run is absent until the report is built from the page, appears done at once and is done on load', async ({
   page,
 }) => {
+  // P8-27 (RF-1015): a scan has no report, so the report is built from an ended understand run.
+  test.setTimeout(120_000);
   await openStartPage(page);
   await openScanRun(page);
+  await startUnderstand(page, ['Catalog']);
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
   await expect(step(page, 'Report')).toHaveCount(0);
@@ -126,7 +133,7 @@ test('RF-1002 RF-1004 the journey of an understand run reads while it runs and t
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await expect(step(page, 'Understand')).toContainText('4 of 4 agents done');
   await expect(step(page, 'Understand')).toContainText('done');
   await expect(step(page, 'Verify')).toContainText('7 of 7 citations checked, 5 judged');
@@ -180,7 +187,7 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openRunTab(page, 'Activity');
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expectNoSeriousViolations(page);
@@ -214,7 +221,7 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
   expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(before.button);
   expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 });
 
 test('RF-1003 Stop run ends a run whose updates are paused, and Resume then shows how it ended', async ({
@@ -232,7 +239,7 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   // the poll that stopped the run before Controllers started, once Catalog took two calls).
   await page.getByRole('button', { name: 'Stop run' }).click();
 
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(0);
   await openRunTab(page, 'Evidence');
   expect(await agentPanel(page, 'Controllers').textContent()).toBe(held);
@@ -256,14 +263,15 @@ test(
 
     const group = page.getByTestId('topbar-run-meter');
     await expect(group).toBeVisible({ timeout: 30_000 });
-    await expect(group).toContainText('This run');
-    // P5-07: the e2e project reads on Ollama, so the meter counts tokens against the token cap.
-    await expect(group).toContainText(/[\d,]+ tokens of [\d,]+ tokens/u);
+    // P8-24: the run is a step of a journey, so the meter shows the approved amount left, not a cap.
+    // P5-07: the e2e project reads on Ollama, so the amount is counted in tokens.
+    await expect(group).toContainText(/[\d,]+ tokens left of [\d,]+ approved/u);
+    await expect(group).not.toContainText('This run');
     await expect(group).not.toContainText('$');
     await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
     await expect(runMeter(page)).toHaveAttribute(
       'aria-valuetext',
-      /^[\d,]+ tokens of [\d,]+ tokens \(\d+%\)/u,
+      /^[\d,]+ tokens left of [\d,]+ approved \(\d+%\)/u,
     );
     await expect(page.getByTestId('header-totals')).toBeVisible();
     const meterBox = await boxOf(group);
@@ -279,7 +287,7 @@ test(
 
     await page.getByRole('button', { name: 'Stop run' }).click();
 
-    await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+    await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
     await expect(group).toHaveCount(0);
     await expect(page.getByTestId('header-totals')).toBeVisible();
     await expectNoSeriousViolations(page);

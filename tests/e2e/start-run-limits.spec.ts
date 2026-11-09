@@ -39,7 +39,9 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   await second.getByLabel('Parallel readers', { exact: true }).fill('3');
   await second.getByRole('button', { name: 'Save settings' }).click();
 
-  await expect(second.getByRole('alert')).toContainText('RST-1007');
+  // RF-436, P8-74: the roles use Ollama, which the test server cannot reach, so the page also
+  // shows the warning on roles that cannot be used; the refusal is its own alert.
+  await expect(second.getByRole('alert').filter({ hasText: 'RST-1007' })).toBeVisible();
   await expect(second.getByText('Settings saved.')).toHaveCount(0);
   await expectNoSeriousViolations(second);
   await second.reload();
@@ -98,7 +100,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
 
   const warning = page.getByTestId('cap-warning');
   await expect(warning).toContainText('daily cap today');
-  await expect(warning).toContainText('$0.000001 left of $1.00');
+  await expect(warning).toContainText('<$0.0001 left of $1.00');
   await expect(page.getByRole('button', { name: /^Analyse/u })).toBeEnabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

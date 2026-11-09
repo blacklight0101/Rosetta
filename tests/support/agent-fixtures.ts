@@ -121,7 +121,7 @@ export const testReaderPrompts: ReaderPrompts = {
     'You have read no file of your area. Read before you answer.\n{{files}}\nTurns left: {{turns}}.',
   ),
   readMore: prompt(
-    'reader/read-more.v1.md',
+    'reader/read-more.v2.md',
     'You read {{percent}}% of your area ({{read}} of {{total}} tokens). Read more.\n{{files}}\nTurns left: {{turns}}.',
   ),
 };

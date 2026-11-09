@@ -60,7 +60,7 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
       expect(message).not.toContain(`"id": "${built}"`);
     }
     expect(message).toContain('"title": "Order placement"');
-    expect(request?.system).toBe(await readFile('prompts/planner/gap.v4.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/gap.v5.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     const all = [
       ...h.providers.requests(),
@@ -76,7 +76,7 @@ describe('BuildPlan: the call for the items no card builds is sent', () => {
     const manifest = await h.manifestOf(await h.plan());
 
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v4.md', 'planner/coverage.v2.md']),
+      expect.arrayContaining(['planner/gap.v5.md', 'planner/coverage.v2.md']),
     );
   });
 
@@ -98,7 +98,9 @@ describe('BuildPlan: gaps closed by the call', () => {
 
     expect(run.endState).toBe('Completed');
     const checks = plain((await h.handoffOf(run))['checks.md']);
-    expect(checks).toContain('Every item is built by at least one task card.');
+    expect(checks).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(checks).not.toMatch(/^\| (feature|table|operation|flow|screen) /mu);
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
   });
@@ -163,7 +165,8 @@ describe('BuildPlan: gaps left after the call', () => {
   });
 
   it('Q-45 RF-627 ends RST-1806 with only the gaps left, and the package says the same', async () => {
-    const h = await gappedPlan(gapRecordingOf(operationsOnly));
+    // P8-96: the second gap round builds nothing more.
+    const h = await gappedPlan(gapRecordingOfAll(operationsOnly, '{"tasks": []}'));
 
     const run = await h.plan();
 
@@ -202,20 +205,21 @@ describe('BuildPlan: answers that close nothing', () => {
     expect(warned.map((entry) => entry.message).join(' ')).toContain('task cards for the');
   });
 
-  it('Q-45 RF-627 a card that builds no gap adds nothing, and one repair is asked, not more', async () => {
+  it('Q-45 RF-627 P8-96 a card that builds no gap adds nothing; one repair and one second round are asked, not more', async () => {
     const nothing = {
       ...card,
       title: 'Nothing new',
       builds: ['feature:F-001', 'table:customer', 'operation:ghost'],
     };
     const none = JSON.stringify({ tasks: [] });
-    const h = await gappedPlan(gapRecordingOfAll(JSON.stringify({ tasks: [nothing] }), none));
+    const answers = gapRecordingOfAll(JSON.stringify({ tasks: [nothing] }), none, none);
+    const h = await gappedPlan(answers);
 
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
     expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain('Nothing new');
-    expect(h.providers.gapRequests()).toHaveLength(2);
+    expect(h.providers.gapRequests()).toHaveLength(3);
   });
 });
 
@@ -234,14 +238,17 @@ describe('BuildPlan: plans the call cannot serve', () => {
   });
 
   it('Q-45 a plan with phases but no card still asks, and the cards of the answer join it', async () => {
+    const closing = await closingGapRecording();
+    // P8-96: what the answer leaves open is asked for once more; that answer writes nothing.
+    const second = gapRecordingOf('{"tasks": []}').calls;
     const h = await seededUxPlan(temp.path, {
       recording: await withoutTasks(),
-      harness: { gapRecording: await closingGapRecording() },
+      harness: { gapRecording: { ...closing, calls: [...closing.calls, ...second] } },
     });
 
     const run = await h.plan();
 
-    expect(h.providers.gapRequests()).toHaveLength(1);
+    expect(h.providers.gapRequests()).toHaveLength(2);
     expect(plain((await h.handoffOf(run))['tasks.md'])).toMatch(/^## T-001\n/mu);
   });
 });

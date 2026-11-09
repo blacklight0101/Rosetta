@@ -114,8 +114,39 @@ select {
 
 .rst-header__user {
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: var(--rst-sp-2);
+  min-inline-size: 0;
+}
+
+/* P8-101: the name is the one part of the account group that gives way. It is cut with an ellipsis
+   (its full text is its tooltip); the role, Sign out and the theme toggle keep their words whole. */
+.rst-header__name {
+  min-inline-size: 0;
+  max-inline-size: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The selectors are as strong as `.rst-root .rst-button--ghost`, which sets white-space: normal. */
+.rst-root .rst-header__user > :not(.rst-header__name),
+.rst-root .rst-header__account > .rst-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* P8-101: the user, Sign out and the theme toggle are one group. On a phone it may wrap but never
+   grows wider than the window; from 640 px it stays on one row. */
+.rst-header__account {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .rst-shell__body {
@@ -311,9 +342,57 @@ select {
   }
 }
 
-/* The totals pill keeps one width while its figures grow, so the run meter beside it stays put. */
-@media (min-width: 900px) {
+/* P8-101: the run meter is the last thing of the header to be placed. Below 1280 px it does not fit
+   beside the totals, so it takes a row of its own under the wordmark and the account links stay on
+   the first row; from 1280 px the header is one line, the meter after the wordmark. */
+@media (min-width: 40rem) {
+  .rst-header > .rst-topbar-runmeter {
+    order: 10;
+  }
+
+  .rst-header__account {
+    flex-wrap: nowrap;
+  }
+}
+
+/* The pill is one line of figures. The split into input, output and cached tokens stands in it from
+   1280 px when no run is active; otherwise it is the tooltip of the figures, so a large total never
+   makes a second line of the header (RF-1010, P8-101). */
+@media (min-width: 64rem) {
   .rst-header__totals {
-    min-inline-size: 28rem;
+    flex: 0 0 auto;
+  }
+
+  .rst-header__totals .rst-p136-pill__split {
+    display: none;
+  }
+}
+
+@media (min-width: 80rem) {
+  .rst-header:not(.rst-header--run) .rst-header__totals .rst-p136-pill__split {
+    display: inline;
+  }
+}
+
+/* The administrator's server figure stands in the header from 1600 px; below that it is on the users
+   and caps page and in the cap banner (RF-1106). */
+.rst-header__totals .rst-p136-pill__server {
+  display: none;
+}
+
+@media (min-width: 100rem) {
+  .rst-header__totals .rst-p136-pill__server {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 80rem) {
+  .rst-header {
+    flex-wrap: nowrap;
+    column-gap: var(--rst-sp-4);
+  }
+
+  .rst-header > .rst-topbar-runmeter {
+    order: 0;
   }
 }

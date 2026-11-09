@@ -7,7 +7,12 @@ import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { fakeResponse } from '../../support/fake-recordings.js';
 import { cardsOfTexts, hold, settle } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  callsInFlight,
+  verifierHarness,
+  verifierRecording,
+  verdictEvents,
+} from '../../support/verifier-harness.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 
 // P5-15, RF-301, EV-06: the first calls of parallel judgements leave in claim order, a repeated
@@ -58,8 +63,8 @@ describe('P5-15 the first calls leave in claim order', () => {
       'verifier-FEAT-001.c1',
       'verifier-OQ-001.c1',
       'verifier-BR-001.c1',
-      'verifier-ENT-001.c1',
       'verifier-BR-002.c1',
+      'verifier-ENT-001.c1',
     ]);
   });
 });
@@ -117,6 +122,8 @@ describe('P5-15 a failing claim', () => {
       'Supported',
       'Supported',
     ]);
-    expect(h.events).toHaveLength(5);
+    expect(verdictEvents(h.events)).toHaveLength(5);
+    // P8-58: the claim whose call threw started and ended like the others.
+    expect(callsInFlight(h.events)).toEqual({ peak: 4, min: 0, final: 0 });
   });
 });

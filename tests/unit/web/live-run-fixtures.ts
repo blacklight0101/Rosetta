@@ -123,6 +123,14 @@ export const runEnded = (
     ...(failedAreas === undefined ? {} : { failedAreas }),
   });
 
+/** P8-111: `run.ended` of an interrupted run, with the reason it ended for. */
+export const runInterrupted = (seq: number, endReason: string): RunEvent =>
+  ev(seq, 'run.ended', {
+    endState: 'Interrupted',
+    endReason,
+    totals: { costMicros: 4_100, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, calls: 0 },
+  });
+
 /** The state after the events, applied in order from an empty run. */
 export function stateAfter(...events: readonly RunEvent[]): RunState {
   return events.reduce(applyEvent, initialRunState());

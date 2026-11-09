@@ -24,7 +24,8 @@ function runView(run: JourneyRun): Record<string, unknown> {
   return { ...run, endedAt: instantOrNull(run.endedAt) };
 }
 
-function journeyView(journey: Journey): Record<string, unknown> {
+/** The journey as the strip reads it; the projects overview sends the same shape (P8-137). */
+export function journeyView(journey: Journey): Record<string, unknown> {
   const { source, plan } = journey;
   return {
     ...journey,

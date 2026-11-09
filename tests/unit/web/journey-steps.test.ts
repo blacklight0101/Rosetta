@@ -56,8 +56,8 @@ describe('journeyOf: the seven steps', () => {
     const view = journeyOf(roadSigns['written'] ?? facts(), projectId);
 
     expect(step(view, 'scan').cost).toBe('No model cost');
-    expect(step(view, 'understand').cost).toBe('$0.12');
-    expect(step(view, 'plan').cost).toBe('$0.31');
+    expect(step(view, 'understand').cost).toBe('$0.1200');
+    expect(step(view, 'plan').cost).toBe('$0.3100');
     expect(step(view, 'package').cost).toBe('Included in the plan');
     expect(view.totalCostMicros).toBe(430_000);
   });
@@ -110,14 +110,17 @@ describe('journeyOf: the understand run (2)', () => {
   it('RF-615 a completed run is done and says how many Supported claims it holds', () => {
     const view = journeyOf(roadSigns['estimate'] ?? facts(), projectId);
 
-    expect(step(view, 'understand')).toMatchObject({ state: 'done', detail: '4 Supported claims' });
+    expect(step(view, 'understand')).toMatchObject({
+      state: 'done',
+      detail: '4 Supported claims of the journey',
+    });
     expect(step(view, 'scan')).toMatchObject({ state: 'done', detail: 'Code map ready' });
   });
 
   it('RF-615 one Supported claim is not plural', () => {
     const view = journeyOf(facts({ source: source({ supportedClaims: 1 }) }), projectId);
 
-    expect(step(view, 'understand').detail).toBe('1 Supported claim');
+    expect(step(view, 'understand').detail).toBe('1 Supported claim of the journey');
   });
 
   it('RF-615 the scan step links to the scan run when the project has one', () => {
@@ -130,18 +133,17 @@ describe('journeyOf: the understand run (2)', () => {
 
 describe('journeyOf: an understand run that stopped', () => {
   it.each([
-    ['CapReached', 'RST-1403', 'Stopped at its cap (RST-1403)'],
-    ['Failed', 'RST-1203', 'Failed (RST-1203)'],
-    ['Interrupted', null, 'Interrupted'],
+    ['CapReached', 'RST-1403', 'capped', 'RST-1403'],
+    ['Failed', 'RST-1203', 'failed', 'Failed (RST-1203)'],
   ] as const)(
-    'RF-615 RF-006 a run that ended %s fails the step and offers Resume',
-    (end, code, text) => {
+    'RF-615 RF-1020 RF-006 a run that ended %s with %s is a %s step and offers Resume',
+    (end, code, state, detail) => {
       const view = journeyOf(
         facts({ source: source({ endState: end, errorCode: code, supportedClaims: 0 }) }),
         projectId,
       );
 
-      expect(step(view, 'understand')).toMatchObject({ state: 'failed', detail: text, here: true });
+      expect(step(view, 'understand')).toMatchObject({ state, detail, here: true });
       expect(view.action).toEqual({ kind: 'resume', label: 'Resume this run', runId: sourceId });
     },
   );
@@ -223,7 +225,8 @@ describe('journeyOf: questions, brief and estimate', () => {
     const view = journeyOf(roadSigns['asking'] ?? facts(), projectId);
 
     expect(step(view, 'questions')).toMatchObject({
-      ...{ state: 'current', here: true, detail: '2 open questions', href: `/runs/${sourceId}` },
+      ...{ state: 'current', here: true, href: `/runs/${sourceId}` },
+      detail: '2 open questions, asked after the last Deepen',
     });
     expect(step(view, 'brief')).toMatchObject({ state: 'upcoming', here: false });
     expect(view.action).toEqual({
@@ -239,7 +242,7 @@ describe('journeyOf: questions, brief and estimate', () => {
       projectId,
     );
 
-    expect(step(view, 'questions').detail).toBe('1 open question');
+    expect(step(view, 'questions').detail).toBe('1 open question, asked after the last Deepen');
   });
 });
 
@@ -285,14 +288,12 @@ describe('journeyOf: the defaults (DEC-154)', () => {
 
   it('RF-615 with no open question the only action is Set up the plan', () => {
     const view = journeyOf(facts({ briefSaved: false }), projectId);
-
     expect(view.action).toMatchObject({ label: 'Set up the plan', href: setUp });
     expect(view.secondary).toBeUndefined();
   });
 
   it('RF-615 every question having a saved answer finishes the questions step', () => {
     const view = journeyOf(facts({ briefSaved: false }), projectId);
-
     expect(step(view, 'questions')).toMatchObject({ state: 'done', here: false });
     expect(step(view, 'brief')).toMatchObject({ state: 'current', here: true });
   });

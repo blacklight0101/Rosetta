@@ -1,11 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type {
-  ProjectRunSummary,
-  RunIndex,
-  RunSource,
-  SnapshotUsage,
-} from '../../application/ports/run-index.js';
+import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
 import {
   continueRun,
@@ -14,6 +9,7 @@ import {
   reopenRun,
   startRun,
   type AreaCounts,
+  type RunEndDetail,
   type Run,
   type RunTotals,
 } from '../../domain/runs/run.js';
@@ -73,23 +69,11 @@ export class MemoryRunIndex implements RunIndex {
   }
 
   // RF-1008
-  projectSummaries(
-    userId: string,
-    projectIds: readonly string[],
-  ): Promise<readonly ProjectRunSummary[]> {
-    const summaries = new Map<string, ProjectRunSummary>();
-    for (const run of this.runs.values()) {
-      if (run.userId !== userId || !projectIds.includes(run.projectId)) continue;
-      const known = summaries.get(run.projectId);
-      const newest =
-        known !== undefined && newestFirst(known.latest, run) <= 0 ? known.latest : run;
-      summaries.set(run.projectId, {
-        projectId: run.projectId,
-        runs: (known?.runs ?? 0) + 1,
-        latest: newest,
-      });
-    }
-    return Promise.resolve([...summaries.values()]);
+  listOfProjects(userId: string, projectIds: readonly string[]): Promise<readonly Run[]> {
+    const own = [...this.runs.values()].filter(
+      (run) => run.userId === userId && projectIds.includes(run.projectId),
+    );
+    return Promise.resolve(own.sort(newestFirst));
   }
 
   listQueued(): Promise<readonly Run[]> {
@@ -109,17 +93,17 @@ export class MemoryRunIndex implements RunIndex {
     runId: string,
     endState: RunEndState,
     at: EpochMs,
-    counts: AreaCounts = {},
+    detail: RunEndDetail = {},
   ): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    const ended = run === undefined ? undefined : endRun(run, endState, at, counts);
+    const ended = run === undefined ? undefined : endRun(run, endState, at, detail);
     return Promise.resolve(this.keep(ended));
   }
 
   // RF-432
-  pause(runId: string, counts: AreaCounts = {}): Promise<Run | undefined> {
+  pause(runId: string, at: EpochMs, counts: AreaCounts = {}): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, counts)));
+    return Promise.resolve(this.keep(run === undefined ? undefined : pauseRun(run, at, counts)));
   }
 
   // RF-432

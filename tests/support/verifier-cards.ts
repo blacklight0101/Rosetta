@@ -24,7 +24,8 @@ function draft(type: CardDraft['type'], area: string, text: string, citation: st
 
 /**
  * The five claims of the recorded understand run that pass the citation check, in card order:
- * FEAT-001.c1, OQ-001.c1, BR-001.c1, ENT-001.c1 and BR-002.c1.
+ * FEAT-001.c1, OQ-001.c1, BR-001.c1, BR-002.c1 and ENT-001.c1 (DEC-216: Services is read
+ * before Database, as in understand-csharp-full.json).
  */
 export function fixtureCards(): readonly Card[] {
   const root = [
@@ -44,13 +45,13 @@ export function fixtureCards(): readonly Card[] {
     ),
     single(
       'reader-003',
-      'Database',
-      draft('ENT', 'Database', 'CatalogItem has Id, Name, Price.', 'Database/schema.sql:2-6'),
+      'Services',
+      draft('BR', 'Services', 'Stock goes down by one.', 'Services/CatalogService.cs:12-12'),
     ),
     single(
       'reader-004',
-      'Services',
-      draft('BR', 'Services', 'Stock goes down by one.', 'Services/CatalogService.cs:12-12'),
+      'Database',
+      draft('ENT', 'Database', 'CatalogItem has Id, Name, Price.', 'Database/schema.sql:2-6'),
     ),
   ];
   const cards = assignCardIds(tasks);

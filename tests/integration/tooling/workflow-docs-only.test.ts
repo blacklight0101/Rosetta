@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { useTempRoot } from '../../support/temp-root.js';
@@ -57,18 +58,54 @@ async function commitFiles(root: string, paths: readonly string[], mark = ''): P
 
 const baseFiles = ['README.md', 'src/main.ts', 'prompts/reader/area.v1.md', 'scripts/run-e2e.mjs'];
 
-/** Runs the script of the changes job on a pull request from a base commit to `changed`. */
-async function classify(root: string, event: string, changed: readonly string[]): Promise<string> {
-  await git(root, 'init', '-q');
-  const base = await commitFiles(root, baseFiles);
-  const head = await commitFiles(root, changed, ' (changed)');
+interface Shape {
+  /** Files the base branch changes after the pull request branched off. */
+  readonly baseMoved?: readonly string[];
+  /** false: HEAD is the pull request's own commit, not GitHub's merge commit of it. */
+  readonly merge?: boolean;
+}
+
+/** The base branch, the pull request branch `pr` (not `head`, which is HEAD on a case-insensitive disk) that changes `changed`, and their merge. */
+async function pullRequest(
+  origin: string,
+  changed: readonly string[],
+  shape: Shape,
+): Promise<void> {
+  await git(origin, 'init', '-q', '-b', 'base');
+  await commitFiles(origin, baseFiles);
+  await git(origin, 'checkout', '-q', '-b', 'pr');
+  await commitFiles(origin, changed, ' (changed)');
+  await git(origin, 'checkout', '-q', 'base');
+  if ((shape.baseMoved ?? []).length > 0) await commitFiles(origin, shape.baseMoved ?? [], ' (b)');
+  if (shape.merge === false) return;
+  const identity = ['-c', 'user.name=ci', '-c', 'user.email=ci@example.invalid'];
+  await git(origin, ...identity, 'merge', '-q', '--no-ff', '-m', 'merge', 'pr');
+}
+
+/**
+ * Runs the script of the changes job on a pull request that changes `changed`, as the runner does
+ * (DEC-227): on GitHub's merge commit of the head into the base, in a clone that holds only that
+ * commit and its parents (`fetch-depth: 2`).
+ */
+async function classify(
+  root: string,
+  event: string,
+  changed: readonly string[],
+  shape: Shape = {},
+): Promise<string> {
+  const origin = join(root, 'origin');
+  const clone = join(root, 'clone');
+  await mkdir(origin);
+  await pullRequest(origin, changed, shape);
+  const url = pathToFileURL(origin).href;
+  const branch = shape.merge === false ? 'pr' : 'base';
+  await git(root, 'clone', '-q', '--depth', '2', '--branch', branch, url, clone);
   const output = join(root, 'github-output.txt');
   await writeFile(output, '');
-  const env = { ...process.env, EVENT: event, BASE_SHA: base, HEAD_SHA: head };
   const shell = await bashCommand();
   await run(shell, ['-eo', 'pipefail', '-c', await classifyScript()], {
-    cwd: root,
-    env: { ...env, GITHUB_OUTPUT: output },
+    cwd: clone,
+    env: { ...process.env, EVENT: event, GITHUB_OUTPUT: output },
   });
   return (await readFile(output, 'utf8')).trim();
 }
@@ -96,16 +133,16 @@ async function exists(path: string): Promise<boolean> {
 }
 
 describe('GitHub Actions workflows: the changes job', () => {
-  it('RNF-001 uses plain git with the whole history and no third-party action', async () => {
+  it('RNF-001 DEC-227 uses plain git on the merge commit and its parents only, no third-party action', async () => {
     const job = await ciJob('changes');
     const uses = job.split('\n').filter((line) => line.includes('uses:'));
 
-    expect(job).toContain('fetch-depth: 0');
+    expect(job).toMatch(/^ {10}fetch-depth: 2$/mu);
     expect(uses).toHaveLength(1);
     expect(uses[0]).toContain('uses: actions/checkout@');
     expect(job).toContain('code: ${{ steps.classify.outputs.code }}');
-    expect(job).toContain('BASE_SHA: ${{ github.event.pull_request.base.sha }}');
-    expect(job).toContain('git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA"');
+    expect(job).toContain("git diff --name-only --no-renames 'HEAD^1' HEAD");
+    expect(job).not.toContain('BASE_SHA');
   });
 });
 
@@ -129,6 +166,27 @@ describe('GitHub Actions workflows: the changes script', () => {
   ] as const)('RNF-001 a %s that changes %j sets %s', async (event, changed, expected) => {
     expect(await classify(repo.path, event, changed)).toBe(expected);
   });
+
+  // What the pull request changes, not what its base gained after it branched off (as base...head).
+  it.skipIf(process.platform === 'win32')(
+    'RNF-001 DEC-227 a pull request that changes only docs sets code=false while its base gained code',
+    async () => {
+      const shape = { baseMoved: ['src/other.ts', 'package.json'] };
+
+      expect(await classify(repo.path, 'pull_request', ['docs/guide.md'], shape)).toBe(
+        'code=false',
+      );
+    },
+  );
+
+  it.skipIf(process.platform === 'win32')(
+    'RNF-001 DEC-227 a pull request whose HEAD is not a merge commit fails closed with code=true',
+    async () => {
+      const shape = { merge: false };
+
+      expect(await classify(repo.path, 'pull_request', ['docs/guide.md'], shape)).toBe('code=true');
+    },
+  );
 });
 
 describe('GitHub Actions workflows: documentation-only gating', () => {

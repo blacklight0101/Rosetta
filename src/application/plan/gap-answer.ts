@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import type { GapLinkDraft } from '../../domain/planning/gap-links.js';
 import type { GapDraft } from '../../domain/planning/plan-gap.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
 import { gapTaskSchema } from './plan-answer.js';
-import { salvageTasks, UnreadableCard } from './gap-salvage.js';
+import { salvageLinks, salvageTasks, UnreadableCard } from './gap-salvage.js';
 import { readEntries } from './list-entries.js';
 
 // Q-45, Q-54, RF-627, RF-630, ADR-013: the planner's task cards for the items no card builds are
@@ -15,9 +16,11 @@ import { readEntries } from './list-entries.js';
 // is decided by the domain (plan-gap.ts), not here. An answer with no card (`"tasks": []`) is an
 // answer; one without a `tasks` list is not. P7-14: a `dependsOn` entry that does not read is
 // dropped and counted, never the card; an answer that is not JSON as a whole is read card by card
-// (gap-salvage.ts).
+// (gap-salvage.ts). P8-95: the answer may also link items to cards the plan has, in a `links` list
+// read link by link the same way; an answer without one reads as before.
 
 const MAX_CARDS = 50;
+const MAX_LINKS = 100;
 const MAX_BUILDS = 500;
 const ID = 300;
 
@@ -25,7 +28,16 @@ const gapTask = gapTaskSchema
   .omit({ needs: true })
   .extend({ builds: z.array(z.string().max(ID)).max(MAX_BUILDS) });
 
-const answer = z.object({ tasks: z.array(z.unknown()).max(MAX_CARDS) });
+const answer = z.object({
+  tasks: z.array(z.unknown()).max(MAX_CARDS),
+  links: z.unknown().optional(),
+});
+
+/** P8-95: a link of the answer: the `T-` id of a card of the plan and the item ids it builds. */
+const gapLink = z.object({
+  task: z.string().max(ID),
+  builds: z.array(z.string().max(ID)).max(MAX_BUILDS),
+});
 
 /** What a card that cannot be read still says: the ids it names, to see whether it named a gap. */
 const named = z.object({ builds: z.array(z.unknown()) });
@@ -59,6 +71,14 @@ export interface GapAnswer {
   readonly salvaged?: true;
   /** RF-627: set when the single-item rule gave the one card that named no builds the one item. */
   readonly singleItemRule?: string;
+  /** P8-95: the links to cards of the plan, set when the answer has a `links` list. */
+  readonly links?: GapLinkDraft[];
+  /** P8-95: the links that could not be read, by position in `links`, field and a fixed reason. */
+  readonly linkProblems?: GapProblem[];
+  /** P8-96: set when the answer's `links` value is not a list; it is dropped whole. */
+  readonly linksNotList?: true;
+  /** P8-96: how many links past the first 100 were dropped, when any were. */
+  readonly linksPastMax?: number;
 }
 
 function reasonOf(code: string): string {
@@ -77,10 +97,10 @@ function namedIds(card: unknown): string[] {
   return texts.slice(0, MAX_BUILDS);
 }
 
-function problemOf(position: number, error: z.ZodError, card: unknown): GapProblem {
+function problemOf(position: number, error: z.ZodError, card: unknown, whole = 'card'): GapProblem {
   const issue = error.issues[0];
   const first = issue?.path[0];
-  const field = typeof first === 'string' ? first : 'card';
+  const field = typeof first === 'string' ? first : whole;
   return { position, field, reason: reasonOf(issue?.code ?? ''), builds: namedIds(card) };
 }
 
@@ -143,14 +163,34 @@ function readCards(cards: readonly unknown[], uncoveredItem: string | undefined)
   return single === undefined ? answer : { ...answer, singleItemRule: single };
 }
 
-// Q-45, Q-54, RF-627, P7-14: `uncoveredItem` is the one item the block holds, when it holds exactly one.
+/** P8-95: the answer with its links read one by one; as it was when it has no `links` value. */
+// P8-95, P8-96: a `links` value that is not a list is dropped whole and noted, as are links past the bound.
+function withLinks(read: GapAnswer, list: unknown): GapAnswer {
+  if (list === undefined) return read;
+  if (!Array.isArray(list)) return { ...read, linksNotList: true };
+  const links: GapLinkDraft[] = [];
+  const linkProblems: GapProblem[] = [];
+  list.slice(0, MAX_LINKS).forEach((each: unknown, index) => {
+    const position = index + 1;
+    const link = gapLink.safeParse(each);
+    if (link.success) links.push({ position, ...link.data });
+    else linkProblems.push(problemOf(position, link.error, each, 'link'));
+  });
+  const past = list.length - MAX_LINKS;
+  return { ...read, links, linkProblems, ...(past > 0 ? { linksPastMax: past } : {}) };
+}
+
+// Q-45, Q-54, RF-627, P7-14, P8-95: `uncoveredItem` is the one item the block holds, when it holds exactly one.
 export function parseGapAnswer(output: string, uncoveredItem?: string): GapAnswer | undefined {
   const text = output.slice(0, cardLimits.maxOutputChars);
   for (const value of searchJson(text).values) {
     const parsed = answer.safeParse(value);
-    if (parsed.success) return readCards(parsed.data.tasks, uncoveredItem);
+    if (parsed.success) {
+      return withLinks(readCards(parsed.data.tasks, uncoveredItem), parsed.data.links);
+    }
   }
   const salvaged = salvageTasks(text, MAX_CARDS);
   if (salvaged === undefined) return undefined;
-  return { ...readCards(salvaged, uncoveredItem), salvaged: true };
+  const read = { ...readCards(salvaged, uncoveredItem), salvaged: true as const };
+  return withLinks(read, salvageLinks(text));
 }

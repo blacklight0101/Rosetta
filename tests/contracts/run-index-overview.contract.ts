@@ -9,44 +9,48 @@ import {
 } from './run-index.contract.js';
 import { sampleRun } from '../support/run-fixtures.js';
 
-// Architecture section 7: every RunIndex adapter passes these cases of `projectSummaries`.
-// RF-1008, RF-1108: one read gives the run count and the newest run of each of the user's projects;
-// RF-1105: only the user's own rows, and only the projects asked for.
+// Architecture section 7: every RunIndex adapter passes these cases of `listOfProjects`.
+// RF-1008, RF-010, P8-137: one read gives every run of each asked project, newest first within a
+// project, so the overview counts the runs and makes each journey (DEC-226) without a read per
+// project; RF-1105: only the user's own rows, and only the projects asked for.
+
+const ids = (runs: readonly { readonly id: string }[]): readonly string[] =>
+  runs.map((run) => run.id);
 
 export function runIndexOverviewContract(name: string, fresh: FreshRuns): void {
-  it(`RF-1008 ${name} gives each project its run count and its newest run in one read`, async () => {
+  it(`RF-1008 ${name} gives the runs of each asked project in one read, newest first`, async () => {
     const index = await fresh();
-    await index.insert(sampleRun({ userId: runAmy, projectId: amyProject, queuedAt: 1_000 }));
+    const oldest = sampleRun({ userId: runAmy, projectId: amyProject, queuedAt: 1_000 });
     const newest = sampleRun({ userId: runAmy, projectId: amyProject, queuedAt: 3_000 });
-    await index.insert(newest);
-    await index.insert(sampleRun({ userId: runAmy, projectId: amyProject, queuedAt: 2_000 }));
+    const middle = sampleRun({ userId: runAmy, projectId: amyProject, queuedAt: 2_000 });
     const other = sampleRun({ userId: runAmy, projectId: amySecondProject, queuedAt: 500 });
-    await index.insert(other);
+    for (const run of [oldest, newest, middle, other]) await index.insert(run);
 
-    const summaries = await index.projectSummaries(runAmy, [amyProject, amySecondProject]);
+    const runs = await index.listOfProjects(runAmy, [amyProject, amySecondProject]);
 
-    expect(summaries.toSorted((left, right) => left.runs - right.runs)).toEqual([
-      { projectId: amySecondProject, runs: 1, latest: other },
-      { projectId: amyProject, runs: 3, latest: newest },
-    ]);
+    expect(ids(runs.filter((run) => run.projectId === amyProject))).toEqual(
+      ids([newest, middle, oldest]),
+    );
+    expect(runs.filter((run) => run.projectId === amySecondProject)).toEqual([other]);
+    expect(runs.find((run) => run.id === newest.id)).toEqual(await index.find(runAmy, newest.id));
   });
 
-  it(`RF-1008 ${name} leaves out a project without runs and a project that was not asked for`, async () => {
+  it(`RF-1008 ${name} leaves out a project that was not asked for`, async () => {
     const index = await fresh();
     await index.insert(sampleRun({ userId: runAmy, projectId: amyProject }));
     await index.insert(sampleRun({ userId: runAmy, projectId: amySecondProject }));
 
-    const summaries = await index.projectSummaries(runAmy, [amyProject, bobProject]);
+    const runs = await index.listOfProjects(runAmy, [amyProject, bobProject]);
 
-    expect(summaries.map((summary) => summary.projectId)).toEqual([amyProject]);
-    expect(await index.projectSummaries(runAmy, [])).toEqual([]);
+    expect(runs.map((run) => run.projectId)).toEqual([amyProject]);
+    expect(await index.listOfProjects(runAmy, [])).toEqual([]);
   });
 
-  it(`RF-1105 ${name} never counts the runs of another user`, async () => {
+  it(`RF-1105 ${name} never lists the runs of another user`, async () => {
     const index = await fresh();
     await index.insert(sampleRun({ userId: runBob, projectId: bobProject }));
 
-    expect(await index.projectSummaries(runAmy, [bobProject])).toEqual([]);
-    expect(await index.projectSummaries(runBob, [bobProject])).toHaveLength(1);
+    expect(await index.listOfProjects(runAmy, [bobProject])).toEqual([]);
+    expect(await index.listOfProjects(runBob, [bobProject])).toHaveLength(1);
   });
 }

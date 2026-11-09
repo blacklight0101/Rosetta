@@ -12,6 +12,8 @@ export type BadgeChoice = {
 export type StatusBadgeProps = BadgeChoice & {
   /** Shown before the word, for example the HTTP status of a provider call. */
   readonly detail?: string;
+  /** Shown after the word, for example `: 16% of your code` (P8-93). */
+  readonly suffix?: string | undefined;
 };
 
 function specOf(choice: BadgeChoice): BadgeSpec {
@@ -31,6 +33,7 @@ export function StatusBadge(props: StatusBadgeProps): JSX.Element {
     >
       {glyph === undefined ? null : <Glyph name={glyph} />}
       {props.detail === undefined ? label : `${props.detail} ${label}`}
+      {props.suffix}
     </span>
   );
 }

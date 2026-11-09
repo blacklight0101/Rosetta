@@ -4,6 +4,7 @@ import { json } from './fake-api.js';
 import { unsavedBrief } from './plan-setup-fixtures.js';
 import type { RenderedPage } from './fake-api.js';
 import { base, press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
+import { typeHosting } from './plan-setup-helpers.js';
 
 // RF-645, RF-605, DEC-178: Plan setup offers the options of every question with the recommended one
 // first, and "Type your own answer", which is saved in the brief with the option that was chosen.
@@ -168,7 +169,7 @@ describe('the stack question', () => {
     await screen.findByRole('radio', { name: /^database A/u });
 
     fireEvent.click(within(layer()).getByRole('radio', { name: /^database B/u }));
-    fireEvent.input(screen.getByLabelText('Your own for Hosting'), { target: { value: 'Azure' } });
+    typeHosting('Azure');
     press('Save and continue');
 
     await saved(page);

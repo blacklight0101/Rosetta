@@ -7,6 +7,7 @@ import { balancedEnd, searchJson } from '../cards/extract-json.js';
 // guarded parser as any answer (no `__proto__`, bounded). An element that does not parse is kept as
 // unreadable, with the ids its `builds` list names when that list alone parses, so the run can log
 // it and ask the repair. More elements than an answer may hold, or no `tasks` list, is no answer.
+// P8-95: the `links` list of such an answer is read when it parses on its own.
 
 /** An element of the `tasks` list that is not JSON; `builds` holds the ids it named, if readable. */
 export class UnreadableCard {
@@ -18,6 +19,7 @@ export class UnreadableCard {
 }
 
 const TASKS = /"tasks"\s*:\s*\[/u;
+const LINKS = /"links"\s*:\s*\[/u;
 const BUILDS = /"builds"\s*:\s*\[/u;
 const ID = 300;
 const MAX_BUILDS = 500;
@@ -73,4 +75,16 @@ export function salvageTasks(text: string, maxCards: number): unknown[] | undefi
     at = skipSpaceAndCommas(text, end + 1);
   }
   return cards;
+}
+
+/** P8-95: the answer's `links` list when it parses on its own, or undefined. */
+// P8-95, RF-627
+export function salvageLinks(text: string): unknown {
+  const found = LINKS.exec(text);
+  if (found === null) return undefined;
+  const open = found.index + found[0].length - 1;
+  const end = balancedEnd(text, open);
+  if (end < 0) return undefined;
+  const [list] = searchJson(text.slice(open, end + 1)).values;
+  return Array.isArray(list) ? list : undefined;
 }

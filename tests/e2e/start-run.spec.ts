@@ -6,6 +6,7 @@ import { runStatus } from './support/live-run-page.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { giveCloudConsent, showStartChoices } from './support/start-choices.js';
 import { openStartPage, projectIdOf } from './support/start-run-page.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
@@ -31,7 +32,7 @@ test('RF-160 a project with no code map starts its scan by itself and passes axe
   page.on('console', (message) => {
     if (message.type() === 'error') logged.push(message.text());
   });
-  await openStartPage(page);
+  await openStartPage(page, 'scanning');
 
   await expect(page.getByTestId('scan-running')).toBeVisible();
   // P3-68: no estimate is asked for before a scan, so the browser logs no 409.
@@ -99,6 +100,8 @@ test('RF-1108 a second run waits in the queue, shows its position and can be can
   await expect(page.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0, {
     timeout: 30_000,
   });
+  // P8-111: the cancel of a queued run reads by its reason, never "Stopped by you".
+  await expect(runStatus(page)).toContainText('Cancelled while queued');
 });
 
 test('RF-143 a cloud reader needs the consent before Start and the notice names the provider', async ({
@@ -111,6 +114,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
+  await showStartChoices(page);
 
   const notice = page.getByRole('region', { name: 'Code will leave this machine' });
   await expect(notice).toContainText('OpenAI');
@@ -148,11 +152,11 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
     await page.getByRole('button', { name: 'Save settings' }).click();
     await expect(page.getByText('Settings saved.')).toBeVisible();
     await page.getByRole('link', { name: 'Start a run' }).click();
-    await page.getByLabel(consent).check();
+    await giveCloudConsent(page, consent);
 
     const warning = page.getByTestId('cap-warning');
     await expect(warning).toContainText('run cap');
-    await expect(warning).toContainText('$0.000001');
+    await expect(warning).toContainText('<$0.0001');
     await expect(page.getByRole('button', startButton)).toBeEnabled();
     await transitionsDone(page);
     await expectNoSeriousViolations(page);
@@ -196,7 +200,7 @@ test('RF-1001 an address the account already has opens that project and makes no
 }) => {
   const webformsUrl = 'https://github.com/octo/webforms';
   await page.goto('/projects');
-  const webforms = page.getByRole('link', { name: 'Start run for octo/webforms' });
+  const webforms = page.getByRole('link', { name: 'Open for octo/webforms' });
   if ((await webforms.count()) === 0) {
     await page.getByLabel('GitHub repository URL').fill(webformsUrl);
     await page.getByRole('button', { name: 'Create project' }).click();
@@ -270,12 +274,14 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByLabel(consent).check();
+  await giveCloudConsent(page, consent);
   await page.getByRole('button', { name: /^Analyse/u }).click();
 
   // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until
   // it has ended, so no other test's run waits behind it. The live page opened by itself (RF-1019).
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });

@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from './fixtures.js';
+import { revealAreas, showStartPage, type StartPageState } from './start-choices.js';
 
 // RF-1002, RF-1003, RF-1004, P1-35: what the live run journeys do on the start page and on the live
 // page, so the specs read as steps. The repository is `octo/webforms` (serve.ts), the C# fixture whose
@@ -10,7 +11,7 @@ const startButton = { name: /^Analyse/u } as const;
 
 /** The start link of the project of a repository address on the projects page. */
 function startLinkOf(page: Page, url: string): Locator {
-  return page.getByRole('link', { name: `Start run for ${new URL(url).pathname.slice(1)}` });
+  return page.getByRole('link', { name: `Open for ${new URL(url).pathname.slice(1)}` });
 }
 
 /** The heading of the start page of a project. */
@@ -48,12 +49,17 @@ export async function openStartOf(page: Page, url: string): Promise<void> {
   await page.goto((await link.getAttribute('href')) ?? '/projects');
 }
 
-/** Opens the start page of the account's `octo/webforms` project, creating the project once. */
-export async function openStartPage(page: Page): Promise<void> {
+/**
+ * Opens the start page of the account's `octo/webforms` project, creating the project once.
+ * `scanning` leaves the page while its own scan runs (RF-160); the default waits until it ended.
+ */
+export async function openStartPage(page: Page, state: StartPageState = 'settled'): Promise<void> {
   await page.goto('/projects');
   await openStartOf(page, webformsUrl);
-  await expect(startHeadingOf(page)).toBeVisible();
+  // P8-26: a project with a run is titled with its name, not "Start a run".
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
+  await showStartPage(page, state);
 }
 
 /** The area checkboxes of the start page. */
@@ -64,6 +70,7 @@ function areasOf(page: Page): Locator {
 /** Chooses which areas an understand run reads: only the ones named. */
 async function chooseAreas(page: Page, names: readonly string[]): Promise<void> {
   const areas = areasOf(page);
+  await revealAreas(page);
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {
     const name = label.trim();
@@ -78,7 +85,10 @@ async function chooseAreas(page: Page, names: readonly string[]): Promise<void> 
 export async function pressStart(page: Page): Promise<void> {
   await page.getByRole('button', startButton).click();
   const question = page.getByRole('dialog', { name: 'Start this run?' });
-  const live = page.getByRole('heading', { name: 'Live run', level: 1 });
+  const live = page.getByRole('heading', {
+    name: /^(Scan|Understand|Deepen|Plan|Run)\b/u,
+    level: 1,
+  });
   await expect(question.or(live)).toBeVisible();
   if (await question.isVisible()) {
     await page.getByRole('button', { name: 'Confirm and start' }).click();
@@ -91,7 +101,9 @@ export async function pressStart(page: Page): Promise<void> {
  */
 export async function startAndOpenLiveRun(page: Page): Promise<string> {
   await pressStart(page);
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   return new URL(page.url()).pathname;
 }
 
@@ -100,6 +112,7 @@ export async function startAndOpenLiveRun(page: Page): Promise<string> {
  * the areas are listed, then opens the live page of the scan run through the History page.
  */
 export async function openScanRun(page: Page): Promise<void> {
+  await revealAreas(page);
   await expect(areasOf(page).locator('label').first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('scan-running')).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();
@@ -107,7 +120,10 @@ export async function openScanRun(page: Page): Promise<void> {
     .getByRole('link', { name: /^View run .*-scan$/u })
     .first()
     .click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
+  // A scan run is never partly read, so its head reads "Completed" (P8-138).
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 }
 
@@ -125,6 +141,21 @@ export function agentPanel(page: Page, area: string): Locator {
 /** The value beside a label in a definition list, for example `Turns` of a panel. */
 export function valueOf(scope: Locator, label: string): Locator {
   return scope.locator(`dt:text-is("${label}") + dd`);
+}
+
+/**
+ * P8-93: how an ended understand run reads in the head of its page: "Completed", or, when the run
+ * read an area below the coverage bar (as the recorded small apps do), "Partly read: 67% of your code".
+ */
+export const RUN_DONE = /Completed|Partly read: \d+% of your code/u;
+
+/**
+ * P8-138: an understand run that ended `Completed`, every area finished. RUN_DONE alone also matches a
+ * run its cap stopped early with areas unread ("Partly read" too), so the end state is read as well.
+ */
+export async function expectCompleted(page: Page, timeout: number): Promise<void> {
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout });
+  await expect(runStatus(page)).toHaveAttribute('data-end-state', 'Completed');
 }
 
 export function runStatus(page: Page): Locator {
@@ -185,16 +216,40 @@ export async function chooseSecondSuggestedAnswer(question: Locator): Promise<vo
   // The choice is in answers.md: the page shows it again after a reload.
   await question.page().reload();
   await openRunTab(question.page(), 'Your questions');
+  // P8-85: the saved question is in the closed Answered list, where role queries find nothing.
+  await showQuestion(question);
   await expect(radios.nth(1)).toBeChecked();
 }
 
-/** RF-645: Tab leaves the group of choices (or the field) for "Save answer", and Enter saves. */
+/** RF-1007 (P8-86): the one "Save answers (N)" of the Your questions list. */
+export function saveAnswersButton(page: Page): Locator {
+  return page
+    .getByRole('region', { name: 'Open questions' })
+    .getByRole('button', { name: /^Save answers \(\d+\)$/u });
+}
+
+/** RF-1007 (P8-86): presses the list's Save answers, which saves every changed answer at once. */
+export async function saveAnswers(page: Page): Promise<void> {
+  await saveAnswersButton(page).click();
+}
+
+/** RF-645, P8-86: the one changed answer is counted, and Enter on "Save answers (1)" saves it. */
 async function saveWithKeyboard(question: Locator): Promise<void> {
   const page = question.page();
-  await page.keyboard.press('Tab');
-  await expect(question.getByRole('button', { name: 'Save answer' })).toBeFocused();
+  const save = saveAnswersButton(page);
+  await expect(save).toHaveText('Save answers (1)');
+  await save.focus();
   await page.keyboard.press('Enter');
   await expect(question).toContainText('Answer saved in answers.md.');
+}
+
+/** RF-1007 (P8-85): a question with a saved answer is in the collapsed Answered list; open the list. */
+async function showQuestion(question: Locator): Promise<void> {
+  await expect(question).toHaveCount(1);
+  if (!(await question.isVisible())) {
+    await question.page().getByTestId('answered-questions').locator('summary').click();
+  }
+  await expect(question).toBeVisible();
 }
 
 /**
@@ -204,6 +259,7 @@ async function saveWithKeyboard(question: Locator): Promise<void> {
 export async function typeOwnAnswerWithKeyboard(question: Locator, answer: string): Promise<void> {
   const { keyboard } = question.page();
   const radios = question.getByRole('radio');
+  await showQuestion(question);
   await radios.first().focus();
   await keyboard.press('ArrowDown');
   await keyboard.press('ArrowDown');

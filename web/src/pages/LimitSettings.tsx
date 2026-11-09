@@ -37,6 +37,7 @@ function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
         errorFor={errorFor}
         range={ranges.runTokens}
         unit="count"
+        noun="tokens"
         defaultValue={templateDefaults.runTokens}
         value={draft.runTokens}
         onInput={(runTokens) => {
@@ -139,6 +140,7 @@ function ScanNumbers({ editor, errorFor }: SectionProps): JSX.Element {
         errorFor={errorFor}
         range={ranges.maxFileBytes}
         unit="count"
+        noun="bytes"
         defaultValue={templateDefaults.maxFileBytes}
         value={draft.maxFileBytes}
         onInput={(maxFileBytes) => {
@@ -153,27 +155,39 @@ function ScanNumbers({ editor, errorFor }: SectionProps): JSX.Element {
         errorFor={errorFor}
         range={ranges.areaTokenBudget}
         unit="count"
+        noun="tokens"
         defaultValue={templateDefaults.areaTokenBudget}
         value={draft.areaTokenBudget}
         onInput={(areaTokenBudget) => {
           change({ areaTokenBudget });
         }}
       />
-      <LimitSetting
-        id="scan-excerpt-lines"
-        label="Excerpt length (lines)"
-        path="scan.excerptMaxLines"
-        help="The most lines of one file an agent may be shown at a time."
-        errorFor={errorFor}
-        range={ranges.excerptMaxLines}
-        unit="count"
-        defaultValue={templateDefaults.excerptMaxLines}
-        value={draft.excerptMaxLines}
-        onInput={(excerptMaxLines) => {
-          change({ excerptMaxLines });
-        }}
-      />
+      <ExcerptLength editor={editor} errorFor={errorFor} />
     </div>
+  );
+}
+
+/** The excerpt length, apart so that the scan numbers stay within the function size limit. */
+function ExcerptLength({
+  editor,
+  errorFor,
+}: Pick<SectionProps, 'editor' | 'errorFor'>): JSX.Element {
+  const { draft, change } = editor;
+  return (
+    <LimitSetting
+      id="scan-excerpt-lines"
+      label="Excerpt length (lines)"
+      path="scan.excerptMaxLines"
+      help="The most lines of one file an agent may be shown at a time."
+      errorFor={errorFor}
+      range={ranges.excerptMaxLines}
+      unit="count"
+      defaultValue={templateDefaults.excerptMaxLines}
+      value={draft.excerptMaxLines}
+      onInput={(excerptMaxLines) => {
+        change({ excerptMaxLines });
+      }}
+    />
   );
 }
 
@@ -189,7 +203,7 @@ function ParallelReaders({ editor, errorFor, kindOf }: SectionProps): JSX.Elemen
         id="agents-parallelism"
         label="Parallel readers"
         path="agents.parallelism"
-        help="Reader tasks that run at the same time."
+        help="Reader tasks that run at the same time. A local reader defaults to 1; switching to a hosted provider while it is still 1 makes it 4; a value other than 1 is never changed."
         errorFor={errorFor}
         range={ranges.parallelism}
         unit="count"

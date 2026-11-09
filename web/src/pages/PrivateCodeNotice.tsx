@@ -1,15 +1,14 @@
 import type { JSX } from 'preact';
 import type { ApiFailure } from '../api/client.js';
-import { Button } from '../components/Button.js';
-import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
-import { LOCAL_OLLAMA_MODEL } from './local-roles.js';
+import { OllamaSwitch } from './OllamaSwitch.js';
 
 // RF-132, RF-1001, design-system.md section 14 (Start run): the second notice, for a project of kind
 // `upload` whose roles would send code to a cloud provider. It names the project and every provider
 // in plain words, holds its own checkbox, separate from the cloud consent (CloudNotice.tsx), and
-// offers one button that switches every role to Ollama. The server enforces it too (RST-1521).
+// offers one button that switches every role to Ollama; Plan setup leaves the button out and draws it
+// in its roles summary (RF-605, P8-82). The server enforces it too (RST-1521).
 
 export interface PrivateCodeNoticeProps {
   readonly projectName: string;
@@ -21,10 +20,11 @@ export interface PrivateCodeNoticeProps {
   /** The server's refusal, shown next to the checkbox. */
   readonly error: { readonly code: string; readonly message: string } | undefined;
   readonly onConfirm: (checked: boolean) => void;
-  readonly onSwitch: () => void;
-  readonly switching: boolean;
+  /** Absent where the page offers the switch elsewhere (Plan setup's roles summary, P8-82). */
+  readonly onSwitch?: () => void;
+  readonly switching?: boolean;
   /** Why the switch to Ollama failed. */
-  readonly switchError: ApiFailure | undefined;
+  readonly switchError?: ApiFailure | undefined;
 }
 
 const titleId = 'private-code-title';
@@ -65,13 +65,13 @@ export function PrivateCodeNotice(props: PrivateCodeNoticeProps): JSX.Element {
             announce={false}
             onChange={props.onConfirm}
           />
-          <p>
-            <Button variant="ghost" busy={props.switching} onClick={props.onSwitch}>
-              {`Switch every role to Ollama (${LOCAL_OLLAMA_MODEL})`}
-            </Button>{' '}
-            Models then run on the Ollama server of this installation.
-          </p>
-          {props.switchError === undefined ? null : <ErrorBanner error={props.switchError} />}
+          {props.onSwitch === undefined ? null : (
+            <OllamaSwitch
+              onSwitch={props.onSwitch}
+              switching={props.switching ?? false}
+              switchError={props.switchError}
+            />
+          )}
         </div>
       </div>
     </section>

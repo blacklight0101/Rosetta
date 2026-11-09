@@ -17,7 +17,7 @@ import {
 // package baseline.
 
 describe('GitHub Actions workflows: files', () => {
-  it('RNF-001 ships the Azure provision, CI, CodeQL, Pages, pull request title, release, scheduled release and staging workflows and Dependabot configuration', async () => {
+  it('RNF-001 ships the Azure provision, CI, CodeQL, Pages, pull request title, release, release checks, scheduled release and staging workflows and Dependabot configuration', async () => {
     const names = (await load()).map((workflow) => workflow.name);
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
@@ -27,6 +27,7 @@ describe('GitHub Actions workflows: files', () => {
       'codeql.yml',
       'pages.yml',
       'pr-title.yml',
+      'release-checks.yml',
       'release.yml',
       'scheduled-release.yml',
       'staging.yml',
@@ -203,13 +204,20 @@ describe('GitHub Actions workflows: limits', () => {
     expect(found).toEqual([]);
   });
 
-  // release.yml (P1-55), azure-provision.yml (P1-184) and staging.yml (DEC-175) queue instead:
-  // cancelling a release, a staging deploy or a provisioning half-way could leave a pushed tag
-  // without its image, a deploy half done or a resource half made. azure-provision.yml has one
+  // release.yml (P1-55), release-checks.yml (P8-63), azure-provision.yml (P1-184) and staging.yml
+  // (DEC-175) queue instead: cancelling a release, the checks of a release merge, a staging deploy
+  // or a provisioning half-way could leave a pushed tag without its image, a deploy half done or a
+  // resource half made. azure-provision.yml has one
   // group for every branch (DEC-175): its production run (main) and its staging run (develop) both
   // converge the one shared PostgreSQL server, so they must never overlap.
-  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, scheduled release, staging and provision workflows cancel superseded runs', async () => {
-    const queued = ['release.yml', 'azure-provision.yml', 'staging.yml', 'scheduled-release.yml'];
+  it('RNF-001 every workflow has a concurrency group per branch (provision: one for all); all but the release, release checks, scheduled release, staging and provision workflows cancel superseded runs', async () => {
+    const queued = [
+      'release.yml',
+      'release-checks.yml',
+      'azure-provision.yml',
+      'staging.yml',
+      'scheduled-release.yml',
+    ];
     const found = await violations(({ name, lines }) => {
       const cancel = queued.includes(name) ? 'false' : 'true';
       const group = name === 'azure-provision.yml' ? 'azure-provision' : '.*github\\.ref.*';

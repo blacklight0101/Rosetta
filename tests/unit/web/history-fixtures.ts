@@ -15,6 +15,7 @@ export const liveKey = '20261011-091204-understand';
 export const scanKey = '20261011-091150-scan';
 export const capKey = '20261010-201533-understand';
 export const doneKey = '20261009-184012-understand';
+export const deepenKey = '20261012-100000-understand';
 
 /** Four runs, newest first: one in progress, a scan, a run stopped by its cap and a finished one. */
 export const history = {
@@ -22,6 +23,7 @@ export const history = {
     id: 'p-1',
     name: 'octo/webforms',
     sourceUrl: 'https://github.com/octo/webforms',
+    sourceKind: 'github',
     ref: '',
     subpath: '',
     folder: 'projects/p-1',
@@ -32,12 +34,14 @@ export const history = {
       ...{ id: 'r-4', runId: liveKey, stage: 'understand', queueState: 'Running', endState: null },
       ...{ commitSha: sha, queuedAt: '2026-10-11T09:12:03.000Z', endedAt: null },
       ...{ startedAt: '2026-10-11T09:12:04.000Z', totals: totals(410_000, 150_000, 46_102) },
+      ...{ runningMs: null, wallMs: null },
       sizeBytes: 900_000,
     },
     {
       ...{ id: 'r-3', runId: scanKey, stage: 'scan', queueState: 'Ended', endState: 'Completed' },
       ...{ commitSha: sha, queuedAt: '2026-10-11T09:11:49.000Z', totals: totals(0, 0, 0) },
       ...{ startedAt: '2026-10-11T09:11:50.000Z', endedAt: '2026-10-11T09:11:58.000Z' },
+      ...{ runningMs: 8_000, wallMs: 8_000 },
       sizeBytes: 1200,
     },
     {
@@ -46,6 +50,7 @@ export const history = {
       ...{ totals: totals(2_160_000, 600_000, 93_410) },
       ...{ queuedAt: '2026-10-10T20:15:30.000Z', startedAt: '2026-10-10T20:15:33.000Z' },
       ...{ endedAt: '2026-10-10T20:40:00.000Z', sizeBytes: 3_700_000 },
+      ...{ runningMs: 1_467_000, wallMs: 1_467_000 },
     },
     {
       ...{ id: 'r-1', runId: doneKey, stage: 'understand', queueState: 'Ended' },
@@ -53,8 +58,18 @@ export const history = {
       ...{ totals: totals(1_310_000, 380_000, 32_606) },
       ...{ queuedAt: '2026-10-09T18:40:10.000Z', startedAt: '2026-10-09T18:40:12.000Z' },
       ...{ endedAt: '2026-10-09T19:02:00.000Z', sizeBytes: 3_200_000 },
+      ...{ runningMs: 1_308_000, wallMs: 1_308_000 },
     },
   ],
+};
+
+/** P8-89: a Deepen run that finished three rounds, and one that was queued and has not finished any. */
+export const deepenRun = {
+  ...{ id: 'r-5', runId: deepenKey, stage: 'understand', queueState: 'Ended' },
+  ...{ endState: 'Completed', commitSha: olderSha, deepenRounds: 3 },
+  ...{ totals: totals(930_000, 100_000, 20_000), sizeBytes: 1_000 },
+  ...{ queuedAt: '2026-10-12T10:00:00.000Z', startedAt: '2026-10-12T10:00:02.000Z' },
+  ...{ endedAt: '2026-10-12T10:06:00.000Z', runningMs: 358_000, wallMs: 358_000 },
 };
 
 /** The same project once no run is in progress. */

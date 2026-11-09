@@ -6,10 +6,13 @@
 // With --ci and ROSETTA_E2E_OWN_JOB=1 it is skipped too: in CI the sharded e2e jobs run the project.
 // ROSETTA_E2E_DRY_RUN=1 with ROSETTA_E2E_DRY_RUN_ACK=1 prints the arguments Playwright would get
 // and stops (the tests use it); without the acknowledgement it refuses.
+// P8-142 (DEC-227): the Playwright tests of tests/quarantine.json are skipped (--test-list-invert);
+// with ROSETTA_QUARANTINE=only, the quarantine job, only they run (--test-list), from their spec files.
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { isPlaywrightFile, playwrightTestList, readQuarantine } from './quarantine.mjs';
 
 const require = createRequire(import.meta.url);
 const [, , ...args] = process.argv;
@@ -31,14 +34,34 @@ const QUEUE_TAG = '@queue';
 const QUEUE_PROJECT = 'queue';
 const QUEUE_OUTPUT = 'test-results/queue';
 
-/** The Playwright argument lists of one run: one, or two on the run that owns the queue spec. */
-function invocationsOf(passThrough, fullRun) {
-  if (!fullRun && !passThrough.includes(QUEUE_SPEC)) return [['test', ...passThrough]];
+// Flags of a stress run (P8-142) that the queue invocation keeps too; its workers stay at one.
+const QUEUE_KEEPS = ['--repeat-each=', '--retries='];
+
+/**
+ * The Playwright argument lists of one run: one, or two on the run that owns the queue spec; a run
+ * that names only the queue spec runs it alone, not every other spec. Each gets the quarantine flags.
+ */
+function invocationsOf(passThrough, fullRun, listFlags) {
+  if (!fullRun && !passThrough.includes(QUEUE_SPEC))
+    return [['test', ...passThrough, ...listFlags]];
   const others = passThrough.filter((arg) => arg !== QUEUE_SPEC);
-  return [
-    ['test', ...others, '--grep-invert', QUEUE_TAG],
-    ['test', QUEUE_SPEC, '--project', QUEUE_PROJECT, '--workers=1', '--output', QUEUE_OUTPUT],
-  ];
+  const kept = passThrough.filter((arg) => QUEUE_KEEPS.some((flag) => arg.startsWith(flag)));
+  const queue = ['test', QUEUE_SPEC, '--project', QUEUE_PROJECT, '--workers=1', '--output'];
+  const queueRun = [...queue, QUEUE_OUTPUT, ...kept, ...listFlags];
+  if (!fullRun && !others.some((arg) => arg.endsWith('.spec.ts'))) return [queueRun];
+  return [['test', ...others, '--grep-invert', QUEUE_TAG, ...listFlags], queueRun];
+}
+
+const QUARANTINE_LIST = 'test-results/quarantine.txt';
+const quarantineOnly = process.env.ROSETTA_QUARANTINE === 'only';
+
+/** Writes the Playwright entries of the quarantine list for --test-list; no flags when none. */
+async function quarantineFlags(entries) {
+  const list = playwrightTestList(entries);
+  if (list === '') return [];
+  await mkdir(dirname(QUARANTINE_LIST), { recursive: true });
+  await writeFile(QUARANTINE_LIST, list, 'utf8');
+  return [quarantineOnly ? '--test-list' : '--test-list-invert', QUARANTINE_LIST];
 }
 
 /** The spec files of the shard named by a --shard argument. */
@@ -56,7 +79,8 @@ async function shardSpecs(shardArgument) {
 const shardArgument = args.find((arg) => arg.startsWith(SHARD_PREFIX));
 const plainArgs = args.filter((arg) => arg !== shardArgument);
 // A run without a shard or file arguments runs the whole project.
-const fullRun = shardArgument === undefined && plainArgs.every((arg) => arg.startsWith('-'));
+const fullRun =
+  !quarantineOnly && shardArgument === undefined && plainArgs.every((arg) => arg.startsWith('-'));
 let passThrough = [];
 let shardError;
 try {
@@ -65,6 +89,18 @@ try {
   );
 } catch (error) {
   shardError = error;
+}
+
+let listFlags = [];
+let nothingQuarantined = false;
+if (shardError === undefined) {
+  const entries = await readQuarantine();
+  if (quarantineOnly) {
+    const specs = [...new Set(entries.map((entry) => entry.file).filter(isPlaywrightFile))];
+    nothingQuarantined = specs.length === 0;
+    passThrough = passThrough.filter((arg) => arg.startsWith('-')).concat(specs);
+  }
+  listFlags = await quarantineFlags(entries);
 }
 
 function runNode(script, scriptArgs) {
@@ -79,11 +115,13 @@ function runNode(script, scriptArgs) {
 if (shardError !== undefined) {
   process.stderr.write(`${shardError.message}\n`);
   process.exitCode = 1;
+} else if (nothingQuarantined) {
+  process.stdout.write('No quarantined Playwright tests: nothing to run.\n');
 } else if (process.env.ROSETTA_E2E_DRY_RUN === '1') {
   // Both flags are needed: a stray DRY_RUN variable must not pass as a run that tested nothing.
   if (process.env.ROSETTA_E2E_DRY_RUN_ACK === '1') {
     process.stderr.write('DRY RUN, no tests run.\n');
-    const plan = invocationsOf(passThrough, fullRun);
+    const plan = invocationsOf(passThrough, fullRun, listFlags);
     const printed = process.env.ROSETTA_E2E_DRY_RUN_PLAN === '1' ? plan : passThrough;
     process.stdout.write(`${JSON.stringify(printed)}\n`);
   } else {
@@ -114,7 +152,7 @@ if (shardError !== undefined) {
   } else {
     // Every invocation runs, even after a failed one; the run fails with the first failure.
     const codes = [];
-    for (const invocation of invocationsOf(passThrough, fullRun)) {
+    for (const invocation of invocationsOf(passThrough, fullRun, listFlags)) {
       codes.push(await runNode(playwright, invocation));
     }
     process.exitCode = codes.find((code) => code !== 0) ?? 0;

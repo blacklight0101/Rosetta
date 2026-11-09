@@ -42,7 +42,7 @@ describe('an understand run: the cards it merges', () => {
 
     const text = await cardText(folder, 'ENT', 'ENT-001');
     expect(text).toMatch(/mergedFrom:\n\s+- "ENT-001"\n\s+- "ENT-002"/u);
-    expect(text).toMatch(/mergedAreas:\n\s+- "Database"\n\s+- "Services"/u);
+    expect(text).toMatch(/mergedAreas:\n\s+- "Services"\n\s+- "Database"/u);
     const merged = h.logger.entries.filter((entry) => entry.message.includes('merged'));
     expect(merged.map((entry) => entry.message)).toEqual([
       expect.stringContaining('BR-001, BR-002'),

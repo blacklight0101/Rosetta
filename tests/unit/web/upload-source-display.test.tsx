@@ -23,19 +23,20 @@ const changed = projectOf('p-9', 'OrderDesk', {
 });
 
 function rowOf(text: string): HTMLElement {
-  const row = screen.getByText(text).closest('tr');
+  const row = screen.getByRole('link', { name: text, exact: true }).closest('tr');
   if (row === null) throw new Error(`No row for ${text}.`);
   return row;
 }
 
-it('RF-128 the list shows an upload as name (zip, date) and a GitHub project unchanged', async () => {
+it('RF-128 the list shows an upload under its name with a Zip badge, and a GitHub project unchanged', async () => {
   const github = projectOf('p-1', 'octo/demo', { ref: 'main' });
   renderPage(<ProjectsPage />, {
     'GET /api/projects/overview': overview(withSource, github),
   });
 
-  await screen.findByText('OrderDesk (zip, 19 Oct 2026)');
-  const zipRow = rowOf('OrderDesk (zip, 19 Oct 2026)');
+  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
+  const zipRow = rowOf('OrderDesk');
+  expect(within(zipRow).getByText('Zip')).not.toBeNull();
   expect(within(zipRow).queryByText('default branch')).toBeNull();
   expect(within(zipRow).queryByText(/whole repository/u)).toBeNull();
   const githubRow = rowOf('octo/demo');
@@ -48,15 +49,13 @@ it('RF-128 the list says the code changed since the last run, for an upload only
     'GET /api/projects/overview': overview(changed, projectOf('p-1', 'octo/demo')),
   });
 
-  await screen.findByText('OrderDesk (zip, 19 Oct 2026)');
+  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
 
-  expect(
-    within(rowOf('OrderDesk (zip, 19 Oct 2026)')).getByText(/code changed since the last run/iu),
-  ).not.toBeNull();
+  expect(within(rowOf('OrderDesk')).getByText(/code changed since the last run/iu)).not.toBeNull();
   expect(within(rowOf('octo/demo')).queryByText(/code changed/iu)).toBeNull();
 });
 
-it('RF-128 an upload with no source is listed as having none', async () => {
+it('RF-128 an upload with no source is listed as needing a zip', async () => {
   renderPage(<ProjectsPage />, {
     'GET /api/projects/overview': json(200, {
       projects: [overviewRow(sourceless)],
@@ -64,10 +63,10 @@ it('RF-128 an upload with no source is listed as having none', async () => {
     }),
   });
 
-  await screen.findByText('OrderDesk (zip, no source)');
-  const row = rowOf('OrderDesk (zip, no source)');
+  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
+  const row = rowOf('OrderDesk');
 
-  expect(within(row).getByText(/no source/iu)).not.toBeNull();
+  expect(within(row).getByText(/Upload a zip to start/u)).not.toBeNull();
 });
 
 function renderStartOf(project: Record<string, unknown>): void {

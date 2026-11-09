@@ -10,6 +10,8 @@ import type { ProviderSetFactory } from '../application/ports/provider-set-facto
 import { BootstrapAdmin } from '../application/use-cases/bootstrap-admin.js';
 import { ChangePassword } from '../application/use-cases/change-password.js';
 import { DeleteProviderKey } from '../application/use-cases/delete-provider-key.js';
+import { GetKeyAccess } from '../application/use-cases/get-key-access.js';
+import type { ServerKeyPresence } from '../application/ports/server-key-presence.js';
 import { ListProviderKeys } from '../application/use-cases/list-provider-keys.js';
 import { ReEncryptProviderKeys } from '../application/use-cases/re-encrypt-provider-keys.js';
 import { SaveProviderKey } from '../application/use-cases/save-provider-key.js';
@@ -54,6 +56,7 @@ import { createDummyHash } from '../infrastructure/security/dummy-password-hash.
 import { DnsPublicHostCheck } from '../infrastructure/security/public-host-check.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { composeProviders, type ProviderParts } from './compose-providers.js';
+import { serverKeyPresence } from './server-key-presence.js';
 import type { CapServices } from './web/cap-routes.js';
 import type { DefaultRoleServices } from './web/default-role-routes.js';
 import type { KeyServices } from './web/key-routes.js';
@@ -130,15 +133,18 @@ interface AccountAdapters {
   readonly clock: Clock;
   readonly testProviders: TestProviders;
   readonly template: ProjectSettings;
+  /** RF-436, DEC-225: which providers the server holds a key for. */
+  readonly serverKeys: ServerKeyPresence;
 }
 
 // RF-1104: the key use cases. Base URLs are checked through node:dns on save (DEC-112).
 function composeKeys(adapters: AccountAdapters): KeyServices {
-  const { pool, secretBox, auditLog, logger, clock } = adapters;
+  const { pool, secretBox, auditLog, logger, clock, users, serverKeys } = adapters;
   const keys = new PgProviderKeyRepository(pool);
   const base = { keys, auditLog, logger, clock };
   return {
     listProviderKeys: new ListProviderKeys({ keys }),
+    getKeyAccess: new GetKeyAccess({ keys, users, serverKeys }),
     saveProviderKey: new SaveProviderKey({
       ...base,
       box: secretBox,
@@ -241,6 +247,7 @@ export async function composeAuth(
           clock,
           testProviders,
           template,
+          serverKeys: serverKeyPresence(mode.environment, mode.doubles !== undefined),
         },
       }),
       signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),

@@ -21,6 +21,13 @@ it('RF-423 the log line of a role cap names the role and the cap', () => {
 
 it('RF-422 the log line of a run cap names only the cap', () => {
   expect(logText(capEvent({ scope: 'run-cost', capMicros: 9 }), '')).toBe(
-    'The run cap of $0.000009 in the project settings was reached. Raise it in the project settings to run further.',
+    'The run cap of <$0.0001 in the project settings was reached. Raise it in the project settings to run further.',
   );
+});
+
+it('RF-1002 the verbose log names the claim of a verifier call start and end, not raw data', () => {
+  const event = (type: string): RunEvent => ({ ...capEvent({ claimId: 'BR-001.c1' }), type });
+
+  expect(logText(event('verify.claim.started'), '')).toBe('BR-001.c1 sent to the verifier');
+  expect(logText(event('verify.claim.callEnded'), '')).toBe('BR-001.c1 verifier call ended');
 });

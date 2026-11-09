@@ -72,6 +72,15 @@ dispatching, the slot waits (up to a minute) until its run is listed, and the ne
 only then. The Madrid hour and day come from one date call, and the 05:59, 06:00 and 07:59 edges are tested on a summer
 day, a winter day and both DST change days.
 
+**Amended 2026-11-04 (P8-62, DEC-207).** The release hour is 06:00 Madrid, on time, with every check done before it. GitHub
+started the scheduled slots 5 to 7 hours late on every day from 2026-10-28 to 2026-11-02 (Q-63), so the schedule
+alone cannot keep the hour. ADR-028 (Proposed) chooses the scheduler that starts Release at 06:00 Europe/Madrid. The
+checks (the image build, scan and push, the ZAP baseline and the staging check) run when `main` changes, before that
+hour, and record their result on the commit; at 06:00 Release takes the restore point, migrates, switches the image and
+runs the smoke test, only for a commit whose checks all passed. A check that fails before 06:00 tells the owner through
+the "Production deploys" issue and nothing deploys. Until ADR-028 is accepted and built, the workflows above run as
+described: the 06:07 slots stay in force and the earlier notes of this section still apply.
+
 ## References
 
 - DEC-175 (this decision), DEC-96 (orchestrator merges), DEC-104 (deploy from `main`), DEC-171.

@@ -25,9 +25,9 @@ it('DEC-108 a server-key estimate above what is left of today warns with the amo
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('$0.20 left');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('$0.2000 left');
   });
-  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.19');
+  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.1900');
 });
 
 it('RF-1106 an estimate above what is left of the server month says so', async () => {
@@ -40,7 +40,7 @@ it('RF-1106 an estimate above what is left of the server month says so', async (
   await waitFor(() => {
     expect(screen.getByTestId('cap-warning').textContent).toContain('server');
   });
-  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.10 left');
+  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.1000 left');
 });
 
 it('DEC-107 an own-key estimate above what is left of the own daily cap names that cap', async () => {
@@ -51,7 +51,7 @@ it('DEC-107 an own-key estimate above what is left of the own daily cap names th
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('$0.30 left');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('$0.3000 left');
   });
   expect(screen.getByTestId('cap-warning').textContent).toContain('daily cap');
 });
@@ -83,7 +83,7 @@ it('RF-405 DEC-159 the start page warns before the run that the caps cannot hold
   await waitFor(() => {
     expect(screen.getByTestId('cap-warning').textContent).toContain('4 first reader calls');
   });
-  expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+  expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.5000');
 });
 
 it('P5-06 a first-call reservation on the project cap links the caps of the project settings', async () => {
@@ -105,7 +105,7 @@ it('P5-06 a first-call reservation on the project cap links the caps of the proj
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.30');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.3000');
   });
   expect(screen.getByTestId('cap-warning').textContent).toContain('the 1 first reader call:');
   expect(capsLink()).not.toBeNull();
@@ -123,7 +123,7 @@ it('P5-06 a run cap warning on the project cap links the caps', async () => {
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.30');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.3000');
   });
   expect(capsLink()).not.toBeNull();
 });
@@ -137,7 +137,7 @@ it("P5-06 a run cap warning on the administrator's run cap has no caps link", as
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.5000');
   });
   expect(capsLink()).toBeNull();
 });
@@ -237,7 +237,7 @@ it('P5-06 equal project and administrator run caps give the run warning no caps 
   await ready();
 
   await waitFor(() => {
-    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.50');
+    expect(screen.getByTestId('cap-warning').textContent).toContain('run cap of $0.5000');
   });
   expect(capsLink()).toBeNull();
 });

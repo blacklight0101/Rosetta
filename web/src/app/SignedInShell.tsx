@@ -50,7 +50,14 @@ export function SignedInShell(props: SignedInShellProps): JSX.Element {
           {...shell}
           runMeter={
             reading === undefined ? undefined : (
-              <TopbarRunMeter meter={topBarMeterOf(reading.spent, reading.cap, reading.unit)} />
+              <TopbarRunMeter
+                meter={topBarMeterOf(
+                  reading.spent,
+                  reading.cap,
+                  reading.unit,
+                  reading.approvedText,
+                )}
+              />
             )
           }
           totals={totals === undefined ? undefined : <TotalsPill totals={totals} href={href} />}

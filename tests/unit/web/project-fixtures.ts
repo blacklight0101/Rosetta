@@ -79,12 +79,12 @@ const zeroTotals = {
   priceTableVersions: [],
 };
 
-/** A row of `GET /api/projects/overview`: the project, its run count, totals and latest run. */
+/** A row of `GET /api/projects/overview`: the project, its run count, totals, latest run and journey. */
 export function overviewRow(
   project: Record<string, unknown>,
   overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
-  return { project, runs: 0, totals: zeroTotals, lastRun: null, ...overrides };
+  return { project, runs: 0, totals: zeroTotals, lastRun: null, journey: null, ...overrides };
 }
 
 /** The latest run of an overview row; a queued one carries its `position`. */

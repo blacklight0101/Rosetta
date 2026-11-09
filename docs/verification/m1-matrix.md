@@ -13,6 +13,9 @@ This is the evidence for the P1 exit criterion "every Must requirement of the ph
 RNF-009. It records what was checked, how, and what was found; it changes no code. Every gap and every MAJOR finding
 has a proposed card in section 10 for the orchestrator to file (orchestration README section 9).
 
+Line numbers in the Example column refer to the reviewed commit above; later edits to the tests move them, and no
+test guards them (the [R1 matrix](r1-matrix.md) names files, not lines).
+
 ## 1. Summary
 
 | Item                                                    | Result                                                                                                                                                                                                    |

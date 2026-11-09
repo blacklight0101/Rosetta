@@ -185,9 +185,12 @@ describe('UpdateProjectSettings', () => {
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.value.settings.budget.run.maxCostMicros).toBe(250_000);
-    expect(outcome.value.updatedAt).toBe(test.clock.now().getTime());
-    expect(await test.getProject.execute({ actor: amy, projectId: id })).toEqual(outcome);
+    expect(outcome.value.project.settings.budget.run.maxCostMicros).toBe(250_000);
+    expect(outcome.value.project.updatedAt).toBe(test.clock.now().getTime());
+    expect(await test.getProject.execute({ actor: amy, projectId: id })).toEqual({
+      ok: true,
+      value: outcome.value.project,
+    });
   });
 });
 

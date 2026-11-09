@@ -19,6 +19,8 @@ const coverageSchema = z.object({
     z.object({
       area: z.string(),
       files: z.array(z.object({ path: z.string(), read: z.array(lines) })),
+      /** P8-93: the share of the area's first-party tokens read; absent in older files. */
+      firstPartyShare: z.number().min(0).max(1).optional(),
       note: z.string().optional(),
       failure: z.string().optional(),
     }),
@@ -32,7 +34,8 @@ export interface ReadRunCoverageDependencies {
   readonly files: RunTextFiles;
 }
 
-function listingOf(text: string | undefined): CoverageListing {
+/** The areas of the text of a `coverage.json`; none for a missing, torn or foreign file. */
+export function listingOf(text: string | undefined): CoverageListing {
   if (text === undefined) return { areas: [] };
   try {
     const parsed = coverageSchema.safeParse(JSON.parse(text));

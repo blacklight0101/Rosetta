@@ -6,11 +6,14 @@ import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { JourneyPanel } from './JourneyPanel.js';
+import { ConsentLine } from './ConsentLine.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { providerLabel } from './provider-choices.js';
 import { PlanEstimateCard } from './PlanEstimateCard.js';
 import { PlanQuestionsSetup } from './PlanQuestionsSetup.js';
+import { PlanRoles } from './PlanRoles.js';
+import { PlanStartBar } from './PlanStartBar.js';
 import { useStackOffer } from './use-stack-offer.js';
 import { PlanStepBody } from './PlanStepBody.js';
 import { PlanStepButtons } from './PlanStepButtons.js';
@@ -22,7 +25,9 @@ import { usePlanSetupLoad } from './use-plan-setup-load.js';
 // RF-605, RF-608, RF-609, RF-613, RF-614, design-system.md section 14 (Plan setup): `/projects/:projectId/
 // plan-setup`, the interview Rosetta runs before it plans. Six steps, each question with its
 // default and the reason it matters; the options of the architecture and the stack come from the
-// planner; "What I recorded" and the estimate sit under the step; "Start the plan" starts `plan` (DEC-204).
+// planner; "What I recorded" and the estimate sit under the step; the roles summary holds the switch
+// to Ollama, and a bar at the bottom of the window holds the estimate and "Start the plan", which
+// starts `plan` (DEC-204, P8-82).
 
 const lead =
   'Rosetta writes the hand-off package from these choices. Every question has a default; answer what you know and the rest is listed as an open question in the package.';
@@ -68,9 +73,15 @@ interface BodyProps {
   readonly onSaved?: () => void;
 }
 
-/** RF-143, RF-132: the notice of the cloud planner and, for an upload, the private-code notice. */
+/**
+ * RF-143, RF-132: the notice of the cloud planner and, for an upload, the private-code notice; its
+ * switch to Ollama sits in the roles summary instead (RF-605, P8-82). While a consent of the project
+ * holds for the planner, one line with Withdraw shows instead of both (P8-81).
+ */
 function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
-  const { privateCode } = session;
+  const { privateCode, held } = session;
+  // RF-143, DEC-209 (P8-81): a consent of the project that holds shows as one line instead.
+  if (held.consent !== undefined) return <ConsentLine consent={held.consent} held={held} />;
   return (
     <>
       {session.cloud ? (
@@ -88,9 +99,6 @@ function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
           confirmed={privateCode.checked}
           error={undefined}
           onConfirm={privateCode.set}
-          onSwitch={privateCode.switchToOllama.run}
-          switching={privateCode.switchToOllama.switching}
-          switchError={privateCode.switchToOllama.error}
         />
       ) : null}
     </>
@@ -109,6 +117,28 @@ function Actions({ session }: { readonly session: PlanSession }): JSX.Element {
       onDefaults={session.useDefaults}
       onSave={session.save}
       onGoTo={session.goTo}
+    />
+  );
+}
+
+/** RF-605, P8-82: the bar at the bottom of the window, fed by the session. */
+function StartBar(props: {
+  readonly session: PlanSession;
+  readonly projectId: string;
+  readonly sourceRunId: string | undefined;
+  readonly sourceRefused: boolean;
+}): JSX.Element {
+  const { session } = props;
+  return (
+    <PlanStartBar
+      {...{ projectId: props.projectId, sourceRunId: props.sourceRunId }}
+      sourceRefused={props.sourceRefused}
+      load={session.estimate}
+      blockers={session.blockers}
+      consent={session.consent}
+      privateConfirmed={session.privateCode.confirmed}
+      stepReason={session.stepReason}
+      outOfDate={session.outOfDate}
     />
   );
 }
@@ -151,6 +181,7 @@ export function PlanSetupBody(props: BodyProps): JSX.Element {
       {props.embedded === true ? null : (
         <Top {...{ projectId, sourceRunId, source, sourceError }} version={session.savedVersion} />
       )}
+      <PlanRoles project={session.project} privateCode={session.privateCode} />
       {session.outOfDate ? <OutOfDate /> : null}
       <PlanQuestionsSetup runId={sourceRunId} session={session} catalogue={catalogue} />
       <PlanSteps current={session.step} onOpen={session.goTo} />
@@ -170,16 +201,10 @@ export function PlanSetupBody(props: BodyProps): JSX.Element {
         <Actions session={session} />
       </section>
       <Consents session={session} />
-      <PlanEstimateCard
-        projectId={projectId}
-        sourceRunId={sourceRunId}
+      <PlanEstimateCard load={session.estimate} blockers={session.blockers} />
+      <StartBar
+        {...{ session, projectId, sourceRunId }}
         sourceRefused={sourceError !== undefined}
-        load={session.estimate}
-        blockers={session.blockers}
-        consent={session.consent}
-        privateConfirmed={session.privateCode.confirmed}
-        stepReason={session.stepReason}
-        outOfDate={session.outOfDate}
       />
     </div>
   );

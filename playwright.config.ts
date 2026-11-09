@@ -26,6 +26,11 @@ import {
 //   runs on its own, so it must not depend on an earlier test of its file.
 // Tag a test with `test('RF-123 ...', { tag: '@visual' }, async (...) => ...)`, or a describe block.
 
+// P8-54 (RNF-005): the e2e-shard jobs of ci.yml set ROSETTA_E2E_RETRIES=1, so a failed test runs once
+// more there and one flake does not cost a full run; anywhere else a test runs once, so a flake stays
+// red. tests/e2e/support/flaky-reporter.ts names a test that passed only on the retry.
+const retries = process.env['ROSETTA_E2E_RETRIES'] === '1' ? 1 : 0;
+
 const origin = e2eOrigin();
 const visual = new RegExp(visualTag, 'u');
 const visualOrPhone = new RegExp(`${visualTag}|${phoneTag}`, 'u');
@@ -74,8 +79,8 @@ export default defineConfig({
   globalTeardown: './tests/e2e/support/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: true,
-  retries: 0,
-  reporter: [['list']],
+  retries,
+  reporter: [['list'], ['./tests/e2e/support/flaky-reporter.ts']],
   use: {
     baseURL: origin,
     launchOptions: { args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1'] },

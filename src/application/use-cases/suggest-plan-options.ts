@@ -7,7 +7,8 @@ import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { PlanOptions } from '../../domain/planning/plan-options.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import type { Run } from '../../domain/runs/run.js';
-import { rolesNeedPrivateConfirmation } from '../understand/understand-options.js';
+import { consentNeedOf } from '../consent/consent-need.js';
+import { settleConsent, type StartConsents } from '../consent/start-consent.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recommend-plan-options.js';
@@ -33,8 +34,9 @@ import { planSourceRun } from '../plan/plan-source.js';
 // (`recommendPlanOptions`). The call belongs to no run: it goes through the provider factory like
 // every model call, so it is masked and capped, and the ledger books it to the project at stage
 // `plan` with no run, the way the Test button of the settings page books its calls (RF-407). It
-// carries the consent the person gave on the page, because the cards and the scan summary leave
-// this machine for a cloud provider. Its egress line, provider-call record and masking counts go to a
+// carries the consent the person gave on the page, or runs under a consent of the project that holds
+// for the planner (DEC-209, P8-81), because the cards and the scan summary leave this machine for a
+// cloud provider; a consent it carries is given on the project like a start's. Its egress line, provider-call record and masking counts go to a
 // log of the project (`callSinks`), because it has no run folder (RF-142, RF-408).
 
 export interface SuggestPlanOptionsDependencies {
@@ -60,6 +62,8 @@ export interface SuggestPlanOptionsDependencies {
   readonly signals: TimeoutSignals;
   /** The host of the server's Ollama; an Ollama elsewhere counts as a cloud provider (DEC-118). */
   readonly ollamaHost?: string;
+  /** DEC-209 (P8-81): the consents of the project, shared with the starts; absent, every call asks. */
+  readonly consents?: StartConsents;
 }
 
 export interface SuggestPlanOptionsRequest {
@@ -74,6 +78,7 @@ export interface SuggestPlanOptionsRequest {
 }
 
 const TRACE_ID_LENGTH = 32;
+const PLANNER: readonly AgentRole[] = ['planner'];
 
 export class SuggestPlanOptions {
   private readonly deps: SuggestPlanOptionsDependencies;
@@ -87,13 +92,6 @@ export class SuggestPlanOptions {
     const { actor, projectId } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
-    // RF-132: refused before any call when the code of an upload would go to a cloud planner.
-    const roles: readonly AgentRole[] = ['planner'];
-    // The cloud consent is asked first; its refusal (RST-1515) comes from the egress guard.
-    const needsPrivate = rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles);
-    if (needsPrivate && request.cloudConsent && request.privateCodeConfirmed !== true) {
-      return err(ERROR_CODES.privateCodeNotConfirmed);
-    }
     const owner = { userId: actor.userId, projectId };
     const source = await planSourceRun(this.deps.runs, owner, request.sourceRunId);
     if (!source.ok) return err(source.error);
@@ -104,7 +102,25 @@ export class SuggestPlanOptions {
     if (supportedCards(cards).length === 0) return err(ERROR_CODES.planSourceMissing);
     const codeMap = await this.codeMapOf(scan);
     if (!codeMap.ok) return codeMap;
-    return this.ask(request, project, { cards, codeMap: codeMap.value });
+    // RF-143, RF-132, DEC-209: a consent of the project that holds for the planner stands for the
+    // boxes; without one the request must carry them, before the call, and then gives one.
+    const consent = await this.consentOf(request, project);
+    if (!consent.ok) return err(consent.error);
+    const consented = { ...request, cloudConsent: consent.value.cloudConsent };
+    return this.ask(consented, project, { cards, codeMap: codeMap.value });
+  }
+
+  /** RF-143, RF-132, DEC-209 (P8-81): the consent the options call runs under, as for a plan run. */
+  private consentOf(
+    request: SuggestPlanOptionsRequest,
+    project: Project,
+  ): ReturnType<typeof settleConsent> {
+    return settleConsent(this.deps.consents, {
+      ...{ actor: request.actor, projectId: project.id },
+      need: consentNeedOf(project, this.deps.ollamaHost, PLANNER),
+      cloudConsent: request.cloudConsent,
+      privateCodeConfirmed: request.privateCodeConfirmed === true,
+    });
   }
 
   /** The code map of the scan, or RST-1203 when there is no finished scan or its output is gone. */

@@ -12,19 +12,20 @@ import {
   startUnderstand,
   typeOwnAnswerWithKeyboard,
   valueOf,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { expectMeterFromUsage } from './support/meter-usage.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { showStartChoices } from './support/start-choices.js';
 
 // RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run page,
 // driven by real runs of the test server. The model double replays the recorded understand run of the C# fixture
 // (e2e-provider.ts); nothing of the API or the event stream is replaced. The steps run in order, sharing one run.
 
 test.describe.configure({ mode: 'serial' });
-
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('live-run', info.project.name));
 });
@@ -37,10 +38,12 @@ test('RF-1002 a scan run opens from the start notice, ends complete and offers i
 }) => {
   await openStartPage(page);
   await openScanRun(page);
-  await expect(page.getByText('This run has no agents')).toBeVisible();
-  await openRunTab(page, 'Activity');
-  await expect(page.getByRole('log', { name: 'Event log' })).toContainText('scan.completed');
-  await expect(page.getByRole('button', { name: 'Download hand-off zip' })).toBeDisabled();
+  // P8-27: a scan page is titled by its kind and state, shows its code map and its zip, and nothing of understand.
+  await expect(page.getByRole('heading', { name: 'Scan, done', level: 1 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Code map' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Your turn' })).toHaveCount(0);
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await expect(page.getByText('Download hand-off zip')).toHaveCount(0);
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
@@ -65,7 +68,7 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   // The run has ended: the page is in the after-the-run mode, and its agents are in the Evidence tab.
   await openRunTab(page, 'Evidence');
   const overview = page.getByRole('region', { name: 'Overview', exact: true });
@@ -78,8 +81,9 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(root).toContainText('OQ-001');
   await expectMeterFromUsage(page, finishedRun, areas);
   const meter = page.getByRole('region', { name: 'Run meter' });
-  await expect(meter.getByRole('meter', { name: 'Run tokens against cap' })).toBeVisible();
-  await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
+  // P8-24: a run of a journey has one bar, the approved amount used, and no run cap.
+  await expect(meter.getByRole('meter', { name: 'Approved amount used' })).toBeVisible();
+  await expect(meter).not.toContainText('against cap');
   await expect(meter).toContainText('Estimate');
   await openRunTab(page, 'Activity');
   const log = page.getByRole('log', { name: 'Event log' });
@@ -215,7 +219,7 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
 
   await page.getByRole('button', { name: 'Stop run' }).click();
 
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Stop run' })).toHaveCount(0);
   await expect(page.getByRole('tablist', { name: 'Results' })).toBeVisible();
   await openRunTab(page, 'Evidence');
@@ -242,7 +246,7 @@ test('RF-1006 a page opened on a run under way replays what happened and goes on
   await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Controllers')).not.toContainText('Running');
 });
@@ -253,7 +257,7 @@ test('RF-1006 a stream asked from an event number sends the stored events after 
   const runUuid = finishedRun.split('/').at(-1) ?? '';
 
   await page.goto(finishedRun);
-  await expect(runStatus(page)).toContainText('Completed');
+  await expect(runStatus(page)).toContainText(RUN_DONE);
   const reply = await page.evaluate(async (uuid) => {
     const response = await fetch(`/api/runs/${uuid}/events`, {
       headers: { 'last-event-id': '10' },
@@ -281,6 +285,7 @@ test('RF-1108 RF-431 RST-2302 a role without a usable key shows Key missing, whe
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
+  await showStartChoices(page);
   await page.getByLabel('I understand; send masked excerpts to Anthropic for this run').check();
 
   // RF-431 (P7-04): the estimate says the key is missing and Start stays disabled, so no run is

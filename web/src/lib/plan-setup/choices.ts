@@ -56,6 +56,23 @@ export function chooseLayer(
 }
 
 /**
+ * P8-21: the draft with a layer answered by typing. An empty text keeps "Type your own answer" chosen
+ * and takes the layer's choice back, so the field stays open while the person edits it.
+ */
+export function typeLayer(
+  draft: Draft,
+  layer: string,
+  text: string,
+  offered: readonly string[],
+): Draft {
+  if (text.trim() !== '') return chooseLayer(draft, layer, { choice: text, custom: true, offered });
+  const others = Object.fromEntries(Object.entries(draft.stack).filter(([key]) => key !== layer));
+  return withAnswered(chosen({ ...draft, stack: others }, `stack.${layer}`, TYPED), [
+    `stack.${layer}`,
+  ]);
+}
+
+/**
  * P7-29: after the consent a layer the person left unanswered takes the planner's recommended
  * option, the first of its options. Without the planner's options the draft is returned as it is and
  * the server takes the catalogue's recommendation for the layer.

@@ -1,10 +1,6 @@
-import {
-  areaCoverage,
-  type AreaCoverage,
-  type CoverageArea,
-  type CoverageFile,
-  type LineRange,
-} from './area-coverage.js';
+import type { FileEntry } from '../code-map/file-entry.js';
+import type { AreaCoverage, CoverageArea, LineRange } from './area-coverage.js';
+import { areaCoverageWithShare } from './read-share.js';
 
 // RF-230, RF-209: the coverage of a run whose areas were read by more than one task (a Deepen reads
 // the cited files of rejected claims and the files no task read again). The lines read of a file
@@ -40,7 +36,7 @@ function extrasOf(entry: AreaCoverage, recovered: boolean): Partial<AreaCoverage
 export function unionCoverage(
   entries: readonly AreaCoverage[],
   areas: readonly CoverageArea[],
-  files: readonly CoverageFile[],
+  files: readonly FileEntry[],
 ): readonly AreaCoverage[] {
   const reads = readsByPath(entries);
   const byName = new Map(areas.map((area) => [area.name, area]));
@@ -52,7 +48,10 @@ export function unionCoverage(
       (reads.get(path) ?? []).map((range) => ({ path, ...range })),
     );
     const recovered = entries.some((each) => each.area === area.name && each.failure === undefined);
-    listed.set(area.name, { ...areaCoverage(area, files, lines), ...extrasOf(entry, recovered) });
+    listed.set(area.name, {
+      ...areaCoverageWithShare(area, files, lines),
+      ...extrasOf(entry, recovered),
+    });
   }
   return [...listed.values()];
 }

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan setup - Stack</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F4F6F6;color:#13201F;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums}
+a{color:#0E6B6B}a:hover{color:#0A5555}
+:focus-visible{outline:2px solid #1B5799;outline-offset:2px}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #D8DFDE;border-radius:6px;background:#FFFFFF;cursor:pointer;min-width:0}
+.opt--on{border-color:#0E6B6B;background:#DDEFEE;box-shadow:0 0 0 1px #0E6B6B}
+.opt input{margin:3px 0 0;accent-color:#0E6B6B}
+.mono{font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;font-size:.92em}
+</style>
+</helmet>
+<div style="min-height:100%;display:flex;flex-direction:column">
+  <header style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:10px 24px;background:#FFFFFF;border-bottom:1px solid #D8DFDE">
+    <strong style="font-size:18px;font-weight:700;letter-spacing:-0.02em">Rosetta</strong>
+    <span style="color:#56645F">P9 UI run Asset Manager</span>
+    <span style="flex-grow:1"></span>
+    <span style="display:inline-flex;gap:8px;align-items:center;padding:4px 12px;border:1px solid #D8DFDE;border-radius:999px;font-size:13px"><span style="color:#56645F">Your total</span><strong>$3.15</strong><span style="color:#56645F">21.7M tokens</span></span>
+    <span style="font-size:13px;color:#364644">P8 Eval Haiku</span>
+    <a href="#" style="font-size:13px">Sign out</a>
+  </header>
+  <div style="display:flex;flex-wrap:wrap;flex-grow:1">
+    <nav aria-label="Main" style="flex:1 1 200px;max-width:240px;padding:20px 16px;border-right:1px solid #D8DFDE;background:#FFFFFF;display:flex;flex-direction:column;gap:4px;font-size:13px">
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Projects</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Settings and keys</a>
+      <div style="margin-top:12px;padding:0 8px;font-size:12px;color:#56645F;font-weight:500">Project: P9 UI run Asset Manager</div>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Project</a>
+      <a href="#" aria-current="page" style="padding:6px 8px;text-decoration:none;color:#0E6B6B;background:#DDEFEE;border-radius:4px;font-weight:500">Plan setup</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">History</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Cost</a>
+      <a href="#" style="padding:6px 8px;text-decoration:none;color:#364644">Project settings</a>
+    </nav>
+    <main style="flex:999 1 560px;min-width:0;padding:24px 32px 120px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:24px;font-weight:650;line-height:1.2">Plan setup</h1>
+        <p style="margin:0;color:#56645F">Step 3 of 7. Each layer you choose becomes an ADR, and the task cards use these technologies.</p>
+      </div>
+      <ol aria-label="Plan setup steps" style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px;font-size:13px">
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#E2F2E7;color:#1C6E37">&#10003; Principles</li>
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#E2F2E7;color:#1C6E37">&#10003; Architecture</li>
+        <li aria-current="step" style="padding:6px 12px;border:1px solid #0E6B6B;border-radius:999px;background:#DDEFEE;color:#0E6B6B;font-weight:500">Stack</li>
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#FFFFFF;color:#56645F">Context</li>
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#FFFFFF;color:#56645F">Method</li>
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#FFFFFF;color:#56645F">Migration</li>
+        <li style="padding:6px 12px;border:1px solid #D8DFDE;border-radius:999px;background:#FFFFFF;color:#56645F">Review</li>
+      </ol>
+
+      <section aria-labelledby="lang-h" style="display:flex;flex-direction:column;gap:12px;padding:20px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <h2 id="lang-h" style="margin:0;font-size:16px;font-weight:650">Language and runtime</h2>
+          <p style="margin:0;color:#56645F;font-size:13px">Choose this first: the layers below suggest technologies of the language you pick. The legacy code is Excel VBA, which is end of life, so keeping it is not offered.</p>
+        </div>
+        <div role="radiogroup" aria-labelledby="lang-h" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+          <sc-for list="{{langs}}" as="l" hint-placeholder-count="4">
+            <label class="{{l.cls}}">
+              <input type="radio" name="lang" checked="{{l.selected}}" onChange="{{l.pick}}">
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <span style="font-weight:650">{{l.title}}</span>
+                <span style="font-size:13px;color:#364644">{{l.desc}}</span>
+              </span>
+            </label>
+          </sc-for>
+        </div>
+      </section>
+
+      <div role="status" style="display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:6px;background:{{bannerBg}};color:{{bannerInk}};font-size:13px">
+        <span aria-hidden="true" style="font-weight:700">{{bannerGlyph}}</span>
+        <span>{{banner}}</span>
+      </div>
+
+      <sc-for list="{{layers}}" as="layer" hint-placeholder-count="6">
+        <section style="display:grid;grid-template-columns:minmax(160px,200px) minmax(0,1fr);gap:16px;padding:16px 20px;background:#FFFFFF;border:1px solid #D8DFDE;border-radius:10px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h3 style="margin:0;font-size:14px;font-weight:650">{{layer.name}}</h3>
+            <span style="font-size:12px;color:#56645F">{{layer.state}}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div role="radiogroup" aria-label="{{layer.name}}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px">
+              <sc-for list="{{layer.options}}" as="o" hint-placeholder-count="3">
+                <label class="{{o.cls}}">
+                  <input type="radio" name="{{layer.id}}" checked="{{o.selected}}" onChange="{{o.pick}}">
+                  <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                    <span style="font-weight:650">{{o.title}}<span style="font-weight:400;color:#0E6B6B">{{o.rec}}</span></span>
+                    <span style="font-size:13px;color:#364644">{{o.desc}}</span>
+                  </span>
+                </label>
+              </sc-for>
+            </div>
+            <sc-if value="{{layer.warn}}" hint-placeholder-val="{{false}}">
+              <p role="note" style="margin:0;padding:8px 12px;border-radius:6px;background:#FBEBD2;color:#7A4A00;font-size:13px"><span aria-hidden="true" style="font-weight:700">! </span>{{layer.warnText}}</p>
+            </sc-if>
+          </div>
+        </section>
+      </sc-for>
+    </main>
+  </div>
+  <footer style="position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 32px;background:#FFFFFF;border-top:1px solid #D8DFDE">
+    <span style="flex-grow:1;font-size:13px;color:#364644">Plan estimate: likely $0.03 &#183; $3.81 left of $4.00 approved</span>
+    <button type="button" style="height:32px;padding:0 14px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit;cursor:pointer">Back</button>
+    <button type="button" style="height:32px;padding:0 14px;border:1px solid #7A8987;border-radius:6px;background:#FFFFFF;color:#13201F;font:inherit;cursor:pointer">Use the recommended for the rest</button>
+    <button type="button" style="height:32px;padding:0 16px;border:1px solid #0E6B6B;border-radius:6px;background:#0E6B6B;color:#FFFFFF;font:inherit;font-weight:500;cursor:pointer">Save and continue</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lang: null, picks: {} };
+  }
+  renderVals() {
+    const C = {
+      none: { backend: [['Fastify', 'A small Node.js framework that serves pages or an API.']], front: [['React', 'A common browser component library.'], ['Angular', 'A full browser framework with its own tooling.']], db: [['PostgreSQL', 'An open-source relational database.']], data: [], test: [['Vitest', 'A fast test runner for TypeScript.']], host: [['Docker containers', 'One image runs the same locally and hosted.'], ['Azure App Service', 'Managed hosting with deployment slots.']] },
+      dotnet: { backend: [['ASP.NET Core Razor Pages', 'Page-based, the nearest match to WebForms and MVC pages.'], ['ASP.NET Core MVC', 'Controllers and views, the shape of a legacy MVC app.']], front: [['Razor Pages', 'Server-rendered pages, one per screen.'], ['Blazor', 'Interactive components in C#, server or WebAssembly.']], db: [['SQL Server', 'The usual database of .NET shops, with good tooling.'], ['PostgreSQL', 'Open source, with a mature .NET provider.']], data: [['Dapper', 'Plain SQL with light mapping; you write the queries.'], ['Entity Framework Core', 'An ORM with migrations and LINQ queries.']], test: [['xUnit', 'The common .NET test framework.'], ['NUnit', 'A long-standing .NET test framework.']], host: [['Azure App Service', 'Managed hosting for ASP.NET Core.'], ['IIS', 'Windows Server hosting, as most intranets run.']] },
+      java: { backend: [['Spring Boot', 'The common JVM framework for web apps and APIs.']], front: [['Thymeleaf', 'Server-rendered templates for Spring.'], ['React', 'A browser component library over an API.']], db: [['PostgreSQL', 'An open-source relational database.']], data: [['Spring Data JPA', 'Repositories over JPA and Hibernate.'], ['MyBatis', 'SQL you write, mapped to objects.']], test: [['JUnit 5', 'The standard JVM test framework.']], host: [['Docker containers', 'One image runs the same locally and hosted.']] },
+      node: { backend: [['Fastify', 'A small Node.js framework that serves pages or an API.']], front: [['React', 'A common browser component library.'], ['Angular', 'A full browser framework with its own tooling.']], db: [['PostgreSQL', 'An open-source relational database.']], data: [['Prisma', 'A typed ORM with migrations.'], ['Knex.js', 'A SQL query builder.']], test: [['Vitest', 'A fast test runner for TypeScript.']], host: [['Docker containers', 'One image runs the same locally and hosted.'], ['Azure App Service', 'Managed hosting with deployment slots.']] },
+      python: { backend: [['FastAPI', 'A typed Python framework for HTTP APIs.'], ['Django', 'A full web framework with admin and ORM.']], front: [['React', 'A browser component library over an API.'], ['Django templates', 'Server-rendered pages with Django.']], db: [['PostgreSQL', 'An open-source relational database.']], data: [['SQLAlchemy', 'The common Python ORM and SQL toolkit.']], test: [['pytest', 'The common Python test runner.']], host: [['Docker containers', 'One image runs the same locally and hosted.']] }
+    };
+    const langs = [['dotnet', 'C# on .NET', 'A typed runtime with a large standard library; the usual target for ASP.NET Core.'], ['java', 'Java', 'A typed language on the JVM for long-lived services.'], ['node', 'TypeScript on Node.js', 'One typed language for server and browser code.'], ['python', 'Python', 'A dynamic language strong for data and scripting work.']];
+    const names = { dotnet: 'C# on .NET', java: 'Java', node: 'TypeScript on Node.js', python: 'Python' };
+    const platformOf = { 'Vitest': 'node', 'Fastify': 'node', 'Prisma': 'node', 'Knex.js': 'node', 'xUnit': 'dotnet', 'NUnit': 'dotnet', 'Dapper': 'dotnet', 'Entity Framework Core': 'dotnet', 'Entity Framework Core 8': 'dotnet', 'pytest': 'python', 'JUnit 5': 'java' };
+    const lang = this.state.lang;
+    const cat = C[lang ?? 'none'];
+    const picks = this.state.picks;
+    const layerDefs = [['backend', 'Back-end framework'], ['front', 'Front end'], ['db', 'Database'], ['data', 'Data access'], ['test', 'Testing'], ['host', 'Hosting']];
+    const saved = { data: { title: 'Entity Framework Core 8', own: true }, test: { title: 'Vitest', own: false } };
+    const layers = layerDefs.map(([id, name]) => {
+      const list = cat[id];
+      const pick = picks[id] ?? saved[id];
+      const opts = list.map(([t, d], i) => ({ title: t, desc: d, rec: i === 0 ? ' (Recommended)' : '' }));
+      const own = !!pick && (pick.own || !opts.some((o) => o.title === pick.title));
+      opts.push({ title: own ? pick.title : 'Type your own', desc: own ? 'Your own answer, saved in the brief.' : 'A technology the list does not have.', rec: '', own: true });
+      const chosen = pick ? (own ? opts.length - 1 : opts.findIndex((o) => o.title === pick.title)) : (list.length ? 0 : -1);
+      const options = opts.map((o, i) => ({ ...o, selected: i === chosen, cls: i === chosen ? 'opt opt--on' : 'opt', pick: () => this.setState({ picks: { ...this.state.picks, [id]: { title: o.title, own: !!o.own } } }) }));
+      const chosenTitle = chosen >= 0 ? opts[chosen].title : null;
+      const plat = chosenTitle ? platformOf[chosenTitle] : undefined;
+      const warn = !!(lang && plat && plat !== lang);
+      const state = pick ? (own ? 'Your own answer' : 'Your choice, kept') : (list.length ? (lang ? 'Suggested for ' + names[lang] : 'Suggested from the legacy code') : 'No suggestion: type your own');
+      return { id, name, options, state, warn, warnText: warn ? chosenTitle + ' is a ' + names[plat] + ' technology, and the language is ' + names[lang] + '. Keep it only if that is intended; the package will list it as a clash.' : '' };
+    });
+    return {
+      langs: langs.map(([id, t, d]) => ({ title: t, desc: d, selected: lang === id, cls: lang === id ? 'opt opt--on' : 'opt', pick: () => this.setState({ lang: id }) })),
+      layers,
+      banner: lang ? 'The layers below suggest technologies for ' + names[lang] + '. Layers you answered keep your answer.' : 'Pick a language first. Until then the layers suggest from the legacy code, which is why they show Node.js tools.',
+      bannerBg: lang ? '#E2ECF8' : '#E8ECEB',
+      bannerInk: lang ? '#1B5799' : '#45524F',
+      bannerGlyph: lang ? 'i' : '-'
+    };
+  }
+}
+</script>
+</body>
+</html>

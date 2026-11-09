@@ -1,6 +1,6 @@
 import { expect, test } from '../support/fixtures.js';
 import { chooseAreas } from '../support/journey-pages.js';
-import { pressStart, runStatus } from '../support/live-run-page.js';
+import { expectCompleted, pressStart } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { fixtureZip, uploadFromNewProject } from '../support/zip-journey.js';
@@ -29,5 +29,5 @@ test('RF-160 RF-434 RF-1019 an upload reaches a finished understand run with the
 
   await expect(page).toHaveURL(/\/runs\//u);
   await expect(page.getByRole('link', { name: 'Open the live run' })).toHaveCount(0);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  await expectCompleted(page, 120_000);
 });

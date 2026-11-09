@@ -36,6 +36,8 @@ export interface UnderstandOptions {
   readonly cloudConsent: boolean;
   /** RF-132: the second confirmation, recorded for an uploaded project that needed it. */
   readonly privateCodeConfirmed?: boolean;
+  /** RF-142, DEC-209: the id of the consent of the project the run runs under. */
+  readonly consentId?: string;
   /** RF-241: run again the areas of the answered questions, with the answers as context. */
   readonly withAnswers?: boolean;
   /** RF-209: present only for a Deepen run. */
@@ -61,6 +63,7 @@ const optionsSchema = z.object({
   areas: z.array(z.string()).optional(),
   cloudConsent: z.boolean().optional(),
   privateCodeConfirmed: z.boolean().optional(),
+  consentId: z.string().optional(),
   withAnswers: z.boolean().optional(),
   deepen: z
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
@@ -90,6 +93,7 @@ export function understandOptionsOf(request: {
   readonly areas?: readonly string[] | undefined;
   readonly cloudConsent?: boolean | undefined;
   readonly privateCodeConfirmed?: boolean | undefined;
+  readonly consentId?: string | undefined;
   readonly withAnswers?: boolean | undefined;
   readonly deepen?: DeepenOptions | undefined;
   readonly retryOf?: string | undefined;
@@ -97,7 +101,11 @@ export function understandOptionsOf(request: {
   readonly overviewOnly?: boolean | undefined;
   readonly overviewEnded?: OverviewEnded | undefined;
 }): UnderstandOptions {
-  const consent = { cloudConsent: request.cloudConsent === true };
+  const { consentId } = request;
+  const consent = {
+    cloudConsent: request.cloudConsent === true,
+    ...(consentId === undefined ? {} : { consentId }),
+  };
   const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
   const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };

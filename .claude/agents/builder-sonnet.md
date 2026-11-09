@@ -14,6 +14,8 @@ orchestrator can promote it.
 1. Read `CLAUDE.md`, the task card, every document in its Reads list, every requirement id in Refs
    (`docs/spec/requirements.md`, with its Given/When/Then), every ADR in Refs, `docs/architecture.md` and
    `docs/conventions.md`. Derive behaviour only from the documents.
+   - The knowledge graph is optional: `graphify explain "<Symbol>" --graph <main checkout>/graphify-out/graph.json`
+     may find callers of a symbol that exists on `develop`; for anything else, search directly (DEC-214).
 2. **Spec first (ADR-010).** If the card needs behaviour the requirements do not describe, or two documents
    disagree, stop and report it under OPEN QUESTIONS; never invent the behaviour.
 3. Work on the branch the orchestrator created (`task/<card-id>-<slug>`, cut from `develop`, DEC-175); never
@@ -27,12 +29,19 @@ orchestrator can promote it.
 6. **Refactor** with the tests green: remove duplication, name things well, keep the size limits. Commit:
    `refactor(<scope>): ...`.
 7. Update `docs/architecture.md`, `docs/data-model.md` or `docs/conventions.md` in the same branch when the structure,
-   a file format or a rule changed. Never edit `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or
-   `CLAUDE.md`: behaviour the spec does not describe, or a spec change the card needs, goes under OPEN QUESTIONS in
+   a file format or a rule changed. Edit `docs/spec/` when the card asks for it ("add the Givens first", DEC-199, DEC-218). Never edit `docs/adr/`,
+   `docs/decision-log.md`, `docs/rfc/` or `CLAUDE.md`, or `docs/spec/` beyond what the card asks: behaviour the spec
+   does not describe, or a spec change the card does not ask for, goes under OPEN QUESTIONS in
    your report and the orchestrator raises it with the owner (ADR-010, README section 3.1).
 8. Run `npm run verify:local` (typecheck, lint with zero warnings, format, architecture rule, dead code, and the
    tests related to your changes; DEC-182). It must be green before you report; CI on the pull request runs the full
-   `npm run verify` and decides the merge. In a worktree, link `node_modules` to the main checkout's and never run
+   `npm run verify` and decides the merge.
+   Before you report a change to what a page shows or to a test file, search all of `tests/e2e` for assertions on
+   the text, headings and figures you changed and update every one; run the e2e specs of every page you changed,
+   not only the specs you edited, as one background command per set of specs (never a polling loop), and leave
+   the full suite to CI. Budget about 120 tool calls: when a card needs more, stop, push what you have and report
+   under OPEN QUESTIONS so the orchestrator can split the card (DEC-214).
+   In a worktree, link `node_modules` to the main checkout's and never run
    `npm install`, `npm ci` or `npm uninstall` through that link: it rewrites the folder every agent uses. Never weaken a gate to pass: no new `eslint-disable` without a
    `-- reason`, no lowered threshold, no `.skip`, no `@ts-expect-error` without a reason.
 9. Push the branch; the orchestrator opens the pull request. Commit messages follow Conventional Commits and end

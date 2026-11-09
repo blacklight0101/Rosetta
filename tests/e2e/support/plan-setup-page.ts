@@ -1,16 +1,38 @@
 import type { Locator, Page } from '@playwright/test';
 import { startCatalogRun, openScannedStartPage } from './cost-run.js';
 import { expect } from './fixtures.js';
-import { runStatus } from './live-run-page.js';
+import { openStartOf, pressStart, RUN_DONE, runStatus } from './live-run-page.js';
+import { revealAreas, showStartChoices } from './start-choices.js';
 
 // RF-605, RF-608, RF-609, RF-613: what the Plan setup specs do on the project's pages, so the specs
-// read as steps. The project is `octo/webforms` (serve.ts) and its recorded understand run.
+// read as steps. The project is `octo/webforms` (serve.ts) and its recorded understand run, or
+// `octo/inventory`, the Python project (P8-103, P8-104).
+
+const inventoryUrl = 'https://github.com/octo/inventory';
 
 /** Scans and understands the Catalog area of the account's project, then waits for the run. */
 export async function understandCatalog(page: Page): Promise<void> {
   await openScannedStartPage(page);
   await startCatalogRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
+}
+
+/**
+ * Scans and understands the account's Python project `octo/inventory` (a project that is not .NET),
+ * then waits for the run and opens the project's start page again.
+ */
+export async function understandInventory(page: Page): Promise<void> {
+  await page.goto('/projects');
+  await openStartOf(page, inventoryUrl);
+  await showStartChoices(page);
+  await revealAreas(page);
+  const areas = page.getByRole('group', { name: 'Areas from the code map' });
+  await expect(areas.locator('label').first()).toBeVisible({ timeout: 60_000 });
+  await pressStart(page);
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
+  await page.goto('/projects');
+  await openStartOf(page, inventoryUrl);
+  await showStartChoices(page);
 }
 
 /** Opens Plan setup from the project's navigation (the start page is open). */
@@ -56,3 +78,45 @@ export const estimate = (page: Page): Locator =>
 
 export const writeButton = (page: Page): Locator =>
   page.getByRole('button', { name: /^Start the plan/u });
+
+/**
+ * Presses a save button and waits until the brief was saved. The wait is bounded, so a save that
+ * never answers (one held behind the planner's options, #1202) fails here and names the save,
+ * instead of running into the timeout of the whole test; 30 s, the bound of the other waits on a
+ * loaded runner (P8-143).
+ */
+export async function saveBrief(page: Page, button: Locator): Promise<void> {
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
+    { timeout: 30_000 },
+  );
+  await button.click();
+  expect((await saved).ok()).toBe(true);
+}
+
+/** Holds the planner's options request until the returned function is called, then lets it through. */
+export async function holdPlanOptions(page: Page): Promise<() => void> {
+  let release = (): void => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/plan-options', async (route) => {
+    await held;
+    await route.continue();
+  });
+  return release;
+}
+
+/**
+ * RF-604: the live page of the plan run that Start the plan opened, waited on until the run ends
+ * Completed. The run may first wait for one of the server's two run slots (RF-1108), and until it
+ * ends it holds what is left of the journey's amount (RF-435, P8-03), so a later plan start of the
+ * same project would be refused meanwhile (RST-2311).
+ */
+export async function expectPlanCompleted(page: Page): Promise<void> {
+  const heading = /^(Scan|Understand|Deepen|Plan|Run)\b/u;
+  await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+}

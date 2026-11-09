@@ -22,6 +22,9 @@ export function NumberSetting(
     readonly onInput: (value: string) => void;
     /** Other text that describes this field, for example a hint about its range (P2-26). */
     readonly describedBy?: string | undefined;
+    /** Text beside the field, for example its value with thousands separators (P8-76). */
+    readonly suffix?: string | undefined;
+    readonly onBlur?: (() => void) | undefined;
   },
 ): JSX.Element {
   return (
@@ -34,7 +37,9 @@ export function NumberSetting(
       error={props.errorFor(props.path)}
       announce={false}
       onInput={props.onInput}
+      onBlur={props.onBlur}
       describedBy={props.describedBy}
+      suffix={props.suffix}
     />
   );
 }

@@ -69,7 +69,7 @@ it('RF-407 shows each role reachable or with its error, and the cost of the test
   expect(reader?.textContent).toContain('ollama');
   expect(reader?.textContent).toContain('gemma4:e4b');
   expect(reader?.textContent).toContain('Reachable');
-  expect(reader?.textContent).toContain('$0.00116');
+  expect(reader?.textContent).toContain('$0.0012');
   expect(planner?.textContent).toContain('Failed');
   expect(planner?.textContent).toContain('RST-2302');
   expect(planner?.textContent).toContain('No API key is available for this provider.');

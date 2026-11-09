@@ -1,4 +1,5 @@
 import type { Catalogue, PlanOptions, StackOffer, Wording } from '../../api/plan-schemas.js';
+import { platformProposals } from './stack-platform.js';
 import { STEP_IDS, questionsOf, STACK_LAYERS, STYLE_GROUP } from './steps.js';
 
 // RF-645, RF-605, DEC-178: the options of every Plan setup question, the way Claude Code asks: at
@@ -26,6 +27,8 @@ export interface OptionSources {
   readonly options: PlanOptions | undefined;
   /** P7-29: the catalogue's proposals of each layer; absent while they load or when they failed. */
   readonly offer?: StackOffer | undefined;
+  /** DEC-208: the platform of the language and runtime chosen; its proposals replace the others. */
+  readonly platform?: string | undefined;
 }
 
 /** The title with its "(Recommended)" mark. */
@@ -77,18 +80,24 @@ function describedOption(said: string | undefined, index: number): string {
     : 'The other proposal for this layer, derived from the legacy stack.';
 }
 
+/** The catalogue's proposals as options, the first recommended. */
+function catalogued(proposals: readonly { choice: string; why: string }[]): QuestionOption[] {
+  return proposals.map((proposal, index) => ({
+    id: index === 0 ? 'a' : 'b',
+    title: proposal.choice,
+    description: proposal.why,
+    recommended: index === 0,
+  }));
+}
+
 /** P7-29: the two proposals of a layer: the planner's after the consent, else the catalogue's. */
 function proposalsOf(layer: string, sources: OptionSources): QuestionOption[] {
+  const platform = platformProposals(sources.offer, layer, sources.platform);
+  if (platform !== undefined) return catalogued(platform);
   const found = sources.options?.stack.find((each) => each.layer === layer);
   const offered = found?.options ?? [];
   if (offered.length === 0) {
-    const catalogued = sources.offer?.layers.find((each) => each.layer === layer)?.proposals ?? [];
-    return catalogued.map((proposal, index) => ({
-      id: index === 0 ? 'a' : 'b',
-      title: proposal.choice,
-      description: proposal.why,
-      recommended: index === 0,
-    }));
+    return catalogued(sources.offer?.layers.find((each) => each.layer === layer)?.proposals ?? []);
   }
   return offered.map((choice, index) => ({
     id: index === 0 ? 'a' : 'b',

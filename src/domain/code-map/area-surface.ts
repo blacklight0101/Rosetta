@@ -82,23 +82,33 @@ function startsBehaviour(
   );
 }
 
-// RF-260, RF-261, Q-25
-export function surfaceOf(area: Pick<Area, 'files'>, map: Mapped): AreaSurface {
+/**
+ * RF-260, RF-261, Q-25, P8-124: the surface of any area of one code map. The files and the handler
+ * classes are indexed once, so ranking many areas costs the files of the map, not areas times files.
+ */
+export function surfaceReaderOf(map: Mapped): (area: Pick<Area, 'files'>) => AreaSurface {
   const known = new Map(map.files.map((file) => [file.path, file]));
   const handlers = handlerPaths(map);
-  const entryPoints: string[] = [];
-  const pages: string[] = [];
-  for (const path of area.files) {
-    const kinds = known.get(path)?.artefactKinds ?? [];
-    const extension = extensionOf(path);
-    const view = templateExtensions.has(extension) && !testFile.test(path);
-    const isPage = kinds.includes('page') || view;
-    if (isPage) pages.push(path);
-    if (startsBehaviour(path, kinds, handlers, view)) {
-      entryPoints.push(path);
+  return (area) => {
+    const entryPoints: string[] = [];
+    const pages: string[] = [];
+    for (const path of area.files) {
+      const kinds = known.get(path)?.artefactKinds ?? [];
+      const extension = extensionOf(path);
+      const view = templateExtensions.has(extension) && !testFile.test(path);
+      const isPage = kinds.includes('page') || view;
+      if (isPage) pages.push(path);
+      if (startsBehaviour(path, kinds, handlers, view)) {
+        entryPoints.push(path);
+      }
     }
-  }
-  return { entryPoints, pages };
+    return { entryPoints, pages };
+  };
+}
+
+// RF-260, RF-261, Q-25
+export function surfaceOf(area: Pick<Area, 'files'>, map: Mapped): AreaSurface {
+  return surfaceReaderOf(map)(area);
 }
 
 /**

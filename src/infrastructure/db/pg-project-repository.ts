@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type {
+  NameChange,
   ProjectRepository,
   SettingsChange,
   SettingsUpdate,
@@ -36,6 +37,10 @@ const UPDATE_SETTINGS =
 // workbooks; a GitHub project holds none. `$7` is the number of workbooks, null when there are none.
 const ATTACH_UPLOAD =
   "UPDATE projects SET source_snapshot_key = $3, source_file_name = $4, source_uploaded_at = $5, updated_at = $6, source_workbooks = $7::int WHERE user_id = $1 AND id = $2 AND source_kind IN ('upload', 'workbook') RETURNING " +
+  PROJECT_COLUMNS;
+// RF-010, P8-134: a new name changes the name and the update time only; the settings version stays.
+const RENAME =
+  'UPDATE projects SET name = $3, updated_at = $4 WHERE user_id = $1 AND id = $2 RETURNING ' +
   PROJECT_COLUMNS;
 const VERSION_OF = 'SELECT settings_version FROM projects WHERE user_id = $1 AND id = $2';
 
@@ -144,6 +149,14 @@ export class PgProjectRepository implements ProjectRepository {
         ...[new Date(upload.uploadedAt), new Date(change.updatedAt), upload.workbooks ?? null],
       ])
     ).rows;
+    return row === undefined ? undefined : toProject(row);
+  }
+
+  async rename(change: NameChange): Promise<Project | undefined> {
+    const { userId, projectId } = change;
+    if (!UUID.test(userId) || !UUID.test(projectId)) return undefined;
+    const values = [userId, projectId, change.name, new Date(change.updatedAt)];
+    const [row] = (await this.run(RENAME, values)).rows;
     return row === undefined ? undefined : toProject(row);
   }
 

@@ -155,7 +155,7 @@ it('RF-002 each slider marks the template default under it', async () => {
   await loaded();
 
   expect(screen.getByText('Default 1. Allowed 1 to 8.')).not.toBeNull();
-  expect(screen.getByText('Default $0.50. Allowed $0 to $100.')).not.toBeNull();
+  expect(screen.getByText('Default $0.5000. Allowed $0.00 to $100.00.')).not.toBeNull();
   expect(described(sliderOf('Parallel readers'))).toContain('Default 1. Allowed 1 to 8.');
 });
 
@@ -228,9 +228,8 @@ it('RF-002 a confirm threshold above its slider top shows the hint in dollars', 
   type('Run cost cap (USD)', '0.30');
   type('Ask before a run estimated above (USD)', '0.4');
 
-  expect(
-    screen.getByText('$0.40 is outside the allowed range of $0.00 to $0.30. Save will refuse it.'),
-  ).not.toBeNull();
+  const hint = '$0.4000 is outside the allowed range of $0.00 to $0.3000. Save will refuse it.';
+  expect(screen.getByText(hint)).not.toBeNull();
 });
 
 // RF-002, P2-26: the out-of-range hint is linked from the number field too, and is a polite live region.

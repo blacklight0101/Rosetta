@@ -18,10 +18,24 @@ import { load, runLines } from '../../support/workflow-files.js';
 const DIGEST = `sha256:${'a'.repeat(64)}`;
 
 describe('CI service images are pinned by digest', () => {
-  it('RNF-003 the four PostgreSQL service images of ci.yml carry a sha256 digest', async () => {
-    const images = await workflowImages('ci.yml');
+  it('RNF-003 the PostgreSQL service image of every ci.yml job that has one carries a sha256 digest', async () => {
+    const text = await readFile(join(process.cwd(), '.github', 'workflows', 'ci.yml'), 'utf8');
+    const jobs = z.object({ jobs: z.record(z.string(), z.unknown()) }).parse(parse(text)).jobs;
+    const withPostgres = Object.entries(jobs)
+      .filter(([, job]) => imagesIn(job).some((image) => image.startsWith('postgres')))
+      .map(([id]) => id);
 
-    expect(images.filter((image) => image.startsWith('postgres'))).toHaveLength(4);
+    // A job added with a database is a deliberate change of this list.
+    expect(withPostgres).toEqual([
+      'tests-shard',
+      'tests',
+      'e2e-shard',
+      'quarantine',
+      'stress',
+      'image',
+    ]);
+    const images = await workflowImages('ci.yml');
+    expect(images.filter((image) => image.startsWith('postgres'))).toHaveLength(6);
     expect(images.filter((image) => !isDigestPinned(image))).toEqual([]);
   });
 

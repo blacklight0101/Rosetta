@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import type { RunRow } from '../api/run-schemas.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
+import { focusPackage } from './focus-package.js';
 import { JourneyPanel } from './JourneyPanel.js';
 
 // RF-615, RF-1015: where the journey strip sits on the page of a run. An understand run that has
@@ -27,11 +28,15 @@ function focusDeepen(): void {
   button.focus();
 }
 
-// RF-615
+// RF-615, RF-1021
 export function UnderstandJourney(
   props: RunJourneyProps & {
     readonly open?: number | undefined;
     readonly onAnswer?: (() => void) | undefined;
+    /** RF-1021 (P8-84): the run read its own code below the coverage bar, as Your turn reads it. */
+    readonly belowBar?: boolean | undefined;
+    /** RF-1021 (P8-84): the page holds its one primary action elsewhere (Your turn or the head). */
+    readonly actionVariant?: 'primary' | 'secondary' | undefined;
   },
 ): JSX.Element | null {
   const { run, stage, phase, open } = props;
@@ -42,6 +47,8 @@ export function UnderstandJourney(
       refresh={`${phaseKey(phase)}:${String(open ?? '')}`}
       onAnswer={props.onAnswer}
       onDeepen={focusDeepen}
+      belowBar={props.belowBar}
+      actionVariant={props.actionVariant}
     />
   );
 }
@@ -54,6 +61,8 @@ function PlanJourney(props: RunJourneyProps): JSX.Element | null {
     <JourneyPanel
       {...{ projectId: run.projectId, runId: run.id, onResumed: props.onResumed }}
       refresh={phaseKey(phase)}
+      packageHere={`/runs/${run.id}`}
+      onPackage={focusPackage}
     />
   );
 }

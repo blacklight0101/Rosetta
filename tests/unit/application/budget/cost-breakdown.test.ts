@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { breakdownOf, totalsOf } from '../../../../src/application/budget/cost-breakdown.js';
+import {
+  breakdownOf,
+  totalsOf,
+  type BreakdownLine,
+  type CostBreakdown,
+} from '../../../../src/application/budget/cost-breakdown.js';
 import { costRunA, costRunB, groupOf } from '../../../support/cost-fixtures.js';
 
 // RF-428, RF-1010, DEC-49, P1-36: the ledger groups added up into the totals of the header and the
 // breakdown of the cost page.
+
+const sumOf = (values: readonly number[]): number => values.reduce((a, b) => a + b, 0);
 
 const later = new Date('2026-10-12T11:00:00.000Z');
 
@@ -103,5 +110,86 @@ describe('breakdownOf', () => {
 
   it('RF-428 has the same totals as the header for the same groups', () => {
     expect(breakdownOf(ledger).totals).toEqual(totalsOf(ledger));
+  });
+});
+
+const runA = [
+  groupOf(),
+  groupOf({ calls: 2, costMicros: 1_300n }),
+  groupOf({ role: 'verifier', stage: 'verify', costMicros: 400n }),
+  groupOf({ role: 'summariser', costKnown: false, costMicros: 0n }),
+];
+const runB = groupOf({ runId: costRunB, role: 'planner' });
+
+function sumOfRoles(lines: readonly BreakdownLine[]): Map<string, bigint> {
+  const sums = new Map<string, bigint>();
+  for (const { totals } of lines) {
+    for (const { currency, costMicros } of totals.cost) {
+      sums.set(currency, (sums.get(currency) ?? 0n) + costMicros);
+    }
+  }
+  return sums;
+}
+
+/** Calls and the three token counts of the lines added up (RF-428: nothing of a role is left out). */
+function countsOf(lines: readonly BreakdownLine[]): Record<string, number> {
+  const keys = ['calls', 'inputTokens', 'outputTokens', 'cachedInputTokens'] as const;
+  return Object.fromEntries(keys.map((key) => [key, sumOf(lines.map((line) => line.totals[key]))]));
+}
+
+/** The first run line; a missing one fails here instead of comparing two empty sums that agree. */
+function firstRunOf({ byRun }: CostBreakdown): CostBreakdown['byRun'][number] {
+  const [run] = byRun;
+  if (run === undefined) throw new Error('the breakdown has no run line');
+  return run;
+}
+
+describe('breakdownOf by role within a run', () => {
+  it('RF-428 gives each run line one line per role with calls, in code-unit order', () => {
+    const { byRun } = breakdownOf([...runA, runB]);
+
+    expect(byRun[0]?.byRole.map((line) => [line.key, line.totals.calls])).toEqual([
+      ['reader', 3],
+      ['summariser', 1],
+      ['verifier', 1],
+    ]);
+    expect(byRun[1]?.byRole.map((line) => line.key)).toEqual(['planner']);
+  });
+
+  it('RF-428 leaves out a role with no calls in the run instead of showing a cost of zero', () => {
+    const { byRun } = breakdownOf([...runA, runB]);
+
+    expect(byRun[0]?.byRole.map((line) => line.key)).not.toContain('planner');
+    expect(byRun[1]?.byRole.map((line) => line.key)).not.toContain('reader');
+  });
+
+  it('RF-428 adds the role costs of a run up to its total, per currency', () => {
+    const run = firstRunOf(
+      breakdownOf([...runA, groupOf({ currency: 'EUR', role: 'planner', costMicros: 9n })]),
+    );
+
+    expect(run.totals.cost).toEqual([
+      { currency: 'EUR', costMicros: 9n },
+      { currency: 'USD', costMicros: 2_400n },
+    ]);
+    expect([...sumOfRoles(run.byRole)].sort()).toEqual([
+      ['EUR', 9n],
+      ['USD', 2_400n],
+    ]);
+    expect(countsOf(run.byRole)).toEqual(countsOf([run]));
+  });
+
+  it('RF-428 reads a role whose calls are all unpriced as unknown cost, not as zero', () => {
+    const run = breakdownOf(runA).byRun[0];
+
+    const summariser = run?.byRole.find((line) => line.key === 'summariser');
+    expect(summariser?.totals.cost).toEqual([]);
+    expect(summariser?.totals.unknownCostCalls).toBe(1);
+  });
+
+  it('RF-428 gives the calls of no run a role split too', () => {
+    const { byRun } = breakdownOf(ledger);
+
+    expect(byRun[2]?.byRole.map((line) => line.key)).toEqual(['reader']);
   });
 });

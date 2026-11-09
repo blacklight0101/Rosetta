@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  lineNamesId,
+  fileNamesId,
   matrixProblems,
   matrixRows,
   releaseOneIds,
@@ -12,8 +12,8 @@ import {
 // RNF-005, P3-12, P3-35: the release 1 verification matrix (docs/verification/r1-matrix.md) stays
 // whole. Every release 1 requirement of the specification has a row; a Must row has evidence (three
 // whole-number test counts, a card that exists in docs/orchestration/tasks.md, or a card the matrix
-// proposes) and the priority the specification gives; every example points at a line inside a test
-// that names the id; and the requirements of the documentation set (P3-22: RF-260..RF-263, RF-508,
+// proposes) and the priority the specification gives; every example names a file (not a line, P8-34) with a test
+// or a describe that names the id; and the requirements of the documentation set (P3-22: RF-260..RF-263, RF-508,
 // RF-620..RF-627) are in it. The guard is also run on bad matrices, so it is seen to fail.
 
 const ROOT = process.cwd();
@@ -168,10 +168,12 @@ describe('the guard of the release 1 verification matrix', () => {
 });
 
 describe('the guard of the release 1 verification matrix on rows and examples', () => {
-  it('RNF-005 fails an example with no line number', async () => {
-    const bad = withRow('RF-003', (line) => line.replace(/:\d+`/u, '`'));
+  it('RNF-005 fails an example that still carries a line number', async () => {
+    const bad = withRow('RF-003', (line) =>
+      line.replace('pg-run-index.test.ts', 'pg-run-index.test.ts:45'),
+    );
 
-    expect(mentions(await matrixProblems(input(bad)), 'no line number')).toBe(1);
+    expect(mentions(await matrixProblems(input(bad)), 'names a file, not a line')).toBe(1);
   });
 
   it('RNF-005 fails a row that names a proposed card the matrix does not propose', async () => {
@@ -196,8 +198,10 @@ describe('the guard of the release 1 verification matrix on rows and examples', 
     expect(mentions(await matrixProblems(input(bad)), 'specification says Must')).toBe(1);
   });
 
-  it('RNF-005 fails an example that points at the first line of a file', async () => {
-    const bad = withRow('RF-003', (line) => line.replace(/(pg-run-index\.test\.ts):\d+/u, '$1:1'));
+  it('RNF-005 fails an example whose file has no test that names the id', async () => {
+    const bad = withRow('RF-003', (line) =>
+      line.replace('infrastructure/db/pg-run-index.test.ts', 'application/folder-sweep.test.ts'),
+    );
 
     expect(mentions(await matrixProblems(input(bad)), 'RF-003:')).toBeGreaterThan(0);
   });
@@ -209,7 +213,7 @@ describe('the guard of the release 1 verification matrix on rows and examples', 
   });
 });
 
-describe('the example line of the release 1 verification matrix', () => {
+describe('the example file of the release 1 verification matrix', () => {
   const source = [
     "import { it } from 'vitest';",
     '',
@@ -227,19 +231,23 @@ describe('the example line of the release 1 verification matrix', () => {
     '});',
   ].join('\n');
 
-  it('RNF-005 accepts a line inside a test that names the id', () => {
-    expect(lineNamesId(source, 5, 'RF-300')).toBe(true);
-    expect(lineNamesId(source, 11, 'RF-301')).toBe(true);
+  it('RNF-005 accepts a file with a test that names the id, wherever it sits', () => {
+    expect(fileNamesId(source, 'RF-300')).toBe(true);
+    expect(fileNamesId(source, 'RF-301')).toBe(true);
+    expect(fileNamesId(`\n\n\n${source}`, 'RF-301')).toBe(true);
   });
 
-  it('RNF-005 accepts a line inside a describe whose range names the id', () => {
-    expect(lineNamesId(source, 5, 'RF-624')).toBe(true);
+  it('RNF-005 accepts a file with a describe whose range names the id', () => {
+    expect(fileNamesId(source, 'RF-624')).toBe(true);
   });
 
-  it('RNF-005 refuses line 1, a test of another id and an id outside the range', () => {
-    expect(lineNamesId(source, 1, 'RF-300')).toBe(false);
-    expect(lineNamesId(source, 5, 'RF-301')).toBe(false);
-    expect(lineNamesId(source, 5, 'RF-628')).toBe(false);
-    expect(lineNamesId(source, 5, 'RNF-624')).toBe(false);
+  it('RNF-005 refuses a file with no title that names the id', () => {
+    expect(fileNamesId(source, 'RF-302')).toBe(false);
+    expect(fileNamesId(source, 'RF-628')).toBe(false);
+    expect(fileNamesId(source, 'RNF-624')).toBe(false);
+  });
+
+  it('RNF-005 refuses an id that only a comment or a call names', () => {
+    expect(fileNamesId("// RF-300\nrun('RF-300');", 'RF-300')).toBe(false);
   });
 });

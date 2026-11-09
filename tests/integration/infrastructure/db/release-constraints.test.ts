@@ -8,6 +8,7 @@ import {
   newId,
   outcomeOf,
   project,
+  projectConsent,
   providerKey,
   reservation,
   run,
@@ -57,6 +58,31 @@ const refusedByCheck: readonly Case[] = [
     'runs Running with an end_state',
     (p) => run(p.projectId, p.userId, { queue_state: 'Running', end_state: 'Failed' }),
   ],
+  [
+    'project_consent without providers',
+    (p) => projectConsent(p.projectId, p.userId, { providers: [] }),
+  ],
+  [
+    'project_consent.providers with fake',
+    (p) => projectConsent(p.projectId, p.userId, { providers: ['anthropic', 'fake'] }),
+  ],
+  [
+    'project_consent.providers with a null',
+    (p) => projectConsent(p.projectId, p.userId, { providers: [null] }),
+  ],
+  ['project_consent without kinds', (p) => projectConsent(p.projectId, p.userId, { kinds: [] })],
+  [
+    'project_consent.kinds unknown',
+    (p) => projectConsent(p.projectId, p.userId, { kinds: ['cloud', 'forever'] }),
+  ],
+  [
+    'project_consent withdrawn before it was given',
+    (p) =>
+      projectConsent(p.projectId, p.userId, {
+        given_at: new Date('2026-11-08T10:00:00.000Z'),
+        withdrawn_at: new Date('2026-11-08T09:59:59.999Z'),
+      }),
+  ],
   ['cost_ledger.stage unknown', (p) => ledgerRow(p.userId, { stage: 'deploy' })],
   ['cost_ledger.key_source unknown', (p) => ledgerRow(p.userId, { key_source: 'shared' })],
   ['cost_ledger.usage_source unknown', (p) => ledgerRow(p.userId, { usage_source: 'guessed' })],
@@ -80,6 +106,22 @@ const accepted: readonly Case[] = [
   [
     'runs Ended with Interrupted',
     (p) => run(p.projectId, p.userId, { queue_state: 'Ended', end_state: 'Interrupted' }),
+  ],
+  [
+    'project_consent with every provider and both kinds',
+    (p) =>
+      projectConsent(p.projectId, p.userId, {
+        providers: ['anthropic', 'ollama', 'openai', 'openai-compatible'],
+        kinds: ['cloud', 'private-code'],
+      }),
+  ],
+  [
+    'project_consent withdrawn at the time it was given',
+    (p) =>
+      projectConsent(p.projectId, p.userId, {
+        given_at: new Date('2026-11-08T10:00:00.000Z'),
+        withdrawn_at: new Date('2026-11-08T10:00:00.000Z'),
+      }),
   ],
   ['cost_ledger provider-test row', (p) => ledgerRow(p.userId, { stage: 'provider-test' })],
   [
@@ -200,5 +242,37 @@ describe.skipIf(!hasTestDatabase)('release-1 references', () => {
       [ownerId, projectId],
     );
     expect(left.rows).toEqual([{ sessions: '0', runs: '0' }]);
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('project_consent references', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
+  });
+
+  it("RF-1105 a consent's user is the owner of its project", async () => {
+    const otherId = newId();
+    await insert(pool, user({ id: otherId }));
+
+    expect(await outcomeOf(pool, projectConsent(parents.projectId, otherId))).toBe(
+      FOREIGN_KEY_VIOLATION,
+    );
+    expect(await outcomeOf(pool, projectConsent(parents.projectId, parents.userId))).toBe('ok');
+  });
+
+  it('RF-143 deleting a project deletes its consents', async () => {
+    const projectId = newId();
+    await insert(pool, project(parents.userId, { id: projectId }));
+    await insert(pool, projectConsent(projectId, parents.userId));
+
+    await pool.query('DELETE FROM projects WHERE id = $1', [projectId]);
+
+    const left = await pool.query<{ consents: string }>(
+      'SELECT count(*) AS consents FROM project_consent WHERE project_id = $1',
+      [projectId],
+    );
+    expect(left.rows).toEqual([{ consents: '0' }]);
   });
 });

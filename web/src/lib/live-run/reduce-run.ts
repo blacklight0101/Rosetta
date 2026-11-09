@@ -26,6 +26,7 @@ import { onRetryStarted } from './retry-events.js';
 import { LOG_LIMIT } from './log-count.js';
 import { withLine } from './log-lines.js';
 import type { RunState } from './run-state.js';
+import { onClaimCallEnded, onClaimCallStarted, withoutVerifierCalls } from './verifier-calls.js';
 import {
   onRunAwaitingApproval,
   onRunEnded,
@@ -69,8 +70,12 @@ const handlers: Readonly<Record<string, Handler>> = {
   // RF-208: the run a retry of failed areas starts from.
   'retry.started': onRetryStarted,
   // RF-1014: the judgement step's start and end; the claims wait for it only in between (or before).
-  'verify.judgement.started': (state) => ({ ...state, judgement: 'running' }),
-  'verify.judgement.ended': (state) => ({ ...state, judgement: 'ended' }),
+  // RF-1002: both empty the verifier calls in flight.
+  'verify.judgement.started': (state) => ({ ...withoutVerifierCalls(state), judgement: 'running' }),
+  'verify.judgement.ended': (state) => ({ ...withoutVerifierCalls(state), judgement: 'ended' }),
+  // RF-1002 (P8-58, P8-60): a claim's verifier call begins and ends.
+  'verify.claim.started': onClaimCallStarted,
+  'verify.claim.callEnded': onClaimCallEnded,
 };
 
 export function initialRunState(): RunState {
@@ -86,6 +91,7 @@ export function initialRunState(): RunState {
     cards: [],
     claims: [],
     judgement: 'idle',
+    inFlight: { reader: [], verifier: [], limit: undefined },
     log: [],
     roleCostMicros: {},
     roleTokens: {},

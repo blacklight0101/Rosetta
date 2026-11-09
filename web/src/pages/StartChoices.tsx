@@ -1,0 +1,125 @@
+import type { JSX } from 'preact';
+import { ErrorBanner } from '../components/ErrorBanner.js';
+import { localLikelyTokens } from '../lib/start-confirmation.js';
+import { CloudNotice } from './CloudNotice.js';
+import { ConsentLine } from './ConsentLine.js';
+import { EstimateSection } from './EstimateSection.js';
+import { PrivateCodeNotice } from './PrivateCodeNotice.js';
+import { StageAreasSection } from './StageAreasSection.js';
+import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
+import { StartConfirmDialog } from './StartConfirmDialog.js';
+import { SummaryBar } from './SummaryBar.js';
+import type { StartForm } from './use-start-form.js';
+
+// RF-1001, RF-143, RF-132, RF-425, RF-1018, RF-1022, P8-26: what starts a run from the project page: the
+// areas, the estimate with the run cap, the cloud notice with its consent (or the one line of a
+// consent that holds, P8-81), and the summary bar with
+// Analyse. The page holds it open while the journey has to start and collapsed under "Start another
+// run" once the project has a run to go on from.
+
+function Columns({ form }: { readonly form: StartForm }): JSX.Element {
+  const { choice, stage, actions, warnings } = form;
+  return (
+    <div class="rst-start__columns">
+      <StageAreasSection
+        areas={choice.areas}
+        areasError={actions.refusals.areas}
+        onArea={choice.toggle}
+        onChoose={choice.choose}
+        libraryConfirmed={form.library.confirmed}
+        onLibraryConfirm={form.library.set}
+      />
+      <EstimateSection
+        scanOnly={stage === 'scan'}
+        sourceKind={form.project.sourceKind}
+        estimate={choice.estimate}
+        warnings={warnings}
+        capsHref={`/projects/${form.project.id}/settings#caps`}
+        onRetry={choice.reestimate}
+        cap={{
+          capMicros: form.capMicros,
+          serverRunCap: form.serverRunCap,
+          capTokens: form.capTokens,
+        }}
+      />
+    </div>
+  );
+}
+
+/** RF-425: the question before an understand run whose likely cost is above the threshold. */
+function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { actions, choice } = form;
+  const { estimate } = choice;
+  if (!actions.confirmation.asking || estimate.status !== 'ready') return null;
+  const likelyTokens = localLikelyTokens(estimate.estimate);
+  const capTokens = form.capTokens;
+  const over = likelyTokens !== undefined && likelyTokens > capTokens;
+  return (
+    <StartConfirmDialog
+      overTokenCap={over ? { likelyTokens, capTokens } : undefined}
+      estimate={estimate.estimate}
+      thresholdMicros={form.thresholdMicros}
+      capMicros={form.runCapMicros}
+      busy={actions.busy}
+      onConfirm={actions.confirmation.confirm}
+      onCancel={actions.confirmation.cancel}
+    />
+  );
+}
+
+/** RF-132: the second notice of an uploaded project whose roles send code to a cloud provider. */
+function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { privateCode, consent, actions, project } = form;
+  if (!privateCode.needed) return null;
+  return (
+    <PrivateCodeNotice
+      projectName={project.name}
+      workbooks={privateCode.workbooks}
+      providers={consent.names}
+      confirmed={privateCode.checked}
+      error={actions.refusals.private}
+      onConfirm={privateCode.set}
+      onSwitch={privateCode.switchToOllama.run}
+      switching={privateCode.switchToOllama.switching}
+      switchError={privateCode.switchToOllama.error}
+    />
+  );
+}
+
+/**
+ * RF-143, DEC-209 (P8-81): the one line of the consent that holds, or the cloud notice; while the
+ * consent is read the notice shows, marked busy.
+ */
+function Consent({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { consent, actions, stage } = form;
+  const { held } = consent;
+  if (stage === 'understand' && held.consent !== undefined) {
+    return <ConsentLine consent={held.consent} held={held} />;
+  }
+  if (consent.roles.length === 0) return null;
+  return (
+    <CloudNotice
+      roles={consent.roles}
+      consent={consent.checked}
+      error={actions.refusals.consent}
+      reading={held.reading}
+      onConsent={consent.set}
+    />
+  );
+}
+
+// RF-1001
+export function StartChoices({ form }: { readonly form: StartForm }): JSX.Element {
+  const { actions } = form;
+  return (
+    <>
+      <StaleCodeMapNotice form={form} />
+      <Columns form={form} />
+      <Consent form={form} />
+      <PrivateCode form={form} />
+      {actions.refusals.start === undefined ? null : <ErrorBanner error={actions.refusals.start} />}
+      <SummaryBar form={form} />
+      <Confirmation form={form} />
+    </>
+  );
+}

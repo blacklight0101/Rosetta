@@ -47,7 +47,11 @@ it('RF-615 lists the seven steps in order', () => {
 
 it.each([
   ['written', 'Package', 'Done'],
-  ['capped', 'Understand', 'Failed'],
+  ['capped', 'Understand', 'Stopped at its cap'],
+  ['cappedPartly', 'Understand', 'Stopped at its cap'],
+  ['planCapped', 'Plan', 'Stopped at its cap'],
+  ['stoppedByYou', 'Understand', 'Stopped by you'],
+  ['planStoppedByYou', 'Plan', 'Stopped by you'],
   ['capped', 'Brief', 'Locked'],
   ['estimate', 'Plan', 'Not yet'],
   ['estimate', 'Estimate', 'Current'],
@@ -64,6 +68,23 @@ it('RF-615 every step has a glyph that assistive technology skips', () => {
   for (const each of within(journey()).getAllByRole('listitem')) {
     expect(each.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   }
+});
+
+it('RF-1020 P8-112 a run at its cap never reads Failed, is in the warn tone and keeps its next step', () => {
+  strip('cappedPartly');
+
+  const understand = item('Understand');
+  expect(understand.textContent).not.toContain('Failed');
+  expect(understand.getAttribute('data-state')).toBe('capped');
+  expect(understand.querySelector('.rst-road__detail')?.textContent).toBe('Partly read (RST-1403)');
+  expect(journey().textContent).toContain('Start the plan');
+});
+
+it('RF-1020 P8-112 a run at its cap with nothing to plan from still offers Resume', () => {
+  strip('capped');
+
+  expect(item('Understand').textContent).not.toContain('Failed');
+  expect(journey().textContent).toContain('Resume this run');
 });
 
 it('RF-615 the current step is marked by text and aria-current, not by colour alone', () => {
@@ -138,7 +159,12 @@ it('RF-615 the next action of a failed plan is Try the plan again, which opens P
 it('RF-615 a running plan offers no action', () => {
   strip('planning');
 
-  expect(within(journey()).queryByRole('button')).toBeNull();
+  // The only button is the one of the compact row (P8-100).
+  expect(
+    within(journey())
+      .getAllByRole('button')
+      .map((each) => each.textContent),
+  ).toEqual(['Show step details']);
 });
 
 it('RF-615 Answer questions calls the page when it can show them, else opens the run', () => {

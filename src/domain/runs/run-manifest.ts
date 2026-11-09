@@ -105,9 +105,9 @@ export interface ManifestCatalogue {
 
 export type ManifestProblem = 'already-ended';
 
-// RF-003
+// RF-003, P8-88: a resumed run keeps the instant of its first start.
 export function markManifestStarted(manifest: RunManifest, startedAt: string): RunManifest {
-  return { ...manifest, startedAt };
+  return { ...manifest, startedAt: manifest.startedAt ?? startedAt };
 }
 
 /** Sets the end state and time; refuses a manifest that already has an end state. */

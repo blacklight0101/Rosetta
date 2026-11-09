@@ -7,6 +7,7 @@ import {
 } from '../answers/project-questions.js';
 import { noManifests } from '../answers/run-family.js';
 import type { AnswersFile, ProjectRef } from '../ports/answers-file.js';
+import type { OpenQuestionCounts } from '../journey/open-question-counts.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { Logger } from '../ports/logger.js';
 import type { PriorCards, QuestionReopener } from '../ports/prior-cards.js';
@@ -27,6 +28,8 @@ export interface ReopenQuestionDependencies {
   readonly logger: Logger;
   /** Finds the Deepens linked to the run; without it the run is a family of one. */
   readonly manifests?: Pick<RunManifestStore, 'read'>;
+  /** P8-139, DEC-226: stores the open questions of the project once the question is reopened. */
+  readonly counts: Pick<OpenQuestionCounts, 'refresh'>;
 }
 
 export type ReopenQuestionProblem = 'not-found' | 'run-not-ended';
@@ -62,6 +65,7 @@ export class ReopenQuestion {
     if (run.queueState !== 'Ended') return err('run-not-ended');
     // RF-646: a question of the one list is answered in every version of it; each is opened.
     for (const member of question.members) await this.reopenIn(project, run, member);
+    await this.deps.counts.refresh(project);
     return ok((await projectQuestions(read, run)).questions);
   }
 

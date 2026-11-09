@@ -97,6 +97,18 @@ describe('the questions and the plan setup on one screen', () => {
     }
   });
 
+  it('RF-1007 RF-647 its list offers Save answers and the screen keeps one Accept the recommended answers', async () => {
+    render();
+    await ready();
+    await within(screenOf()).findAllByTestId('open-question');
+
+    expect(within(screenOf()).getByRole('button', { name: /^Save answers/u })).not.toBeNull();
+    expect(
+      within(screenOf()).getAllByRole('button', { name: 'Accept the recommended answers' }),
+    ).toHaveLength(1);
+    expect(within(screenOf()).queryByRole('button', { name: 'Save answer' })).toBeNull();
+  });
+
   it('RF-647 holds the Plan setup answers on their recommended values beside the questions', async () => {
     render();
     await ready();

@@ -30,17 +30,17 @@ describe('EstimatePlan: the target flows call', () => {
     const { assumptions, planner } = await estimateOf();
 
     const system = (await readFile('prompts/planner/flows.v2.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(7);
+    expect(assumptions.calls).toBe(8);
     expect(assumptions.flowsPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-625 does not count it when no FLOW card has a supported step, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf({ seed: { cards: planCards() } });
 
-    expect(assumptions).toMatchObject({ calls: 6, flowsPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 7, flowsPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
@@ -48,22 +48,15 @@ describe('EstimatePlan: the target flows call', () => {
 
     const reservation = (promptTokens: number): number =>
       3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
-    const plan =
-      assumptions.promptTokens -
-      assumptions.prdPromptTokens -
-      assumptions.dataModelPromptTokens -
-      assumptions.flowsPromptTokens -
-      assumptions.coveragePromptTokens -
-      assumptions.gapPromptTokens -
-      assumptions.gapRepairPromptTokens;
-    const sum =
-      reservation(plan) +
-      reservation(assumptions.prdPromptTokens) +
-      reservation(assumptions.dataModelPromptTokens) +
-      reservation(assumptions.flowsPromptTokens) +
-      reservation(assumptions.coveragePromptTokens) +
-      reservation(assumptions.gapPromptTokens) +
-      reservation(assumptions.gapRepairPromptTokens);
+    // P8-96: the gap call is counted twice, for the second gap round.
+    const named = [
+      ...[assumptions.prdPromptTokens, assumptions.dataModelPromptTokens],
+      ...[assumptions.flowsPromptTokens, assumptions.coveragePromptTokens],
+      ...[assumptions.gapPromptTokens, assumptions.gapRepairPromptTokens],
+      assumptions.gapPromptTokens,
+    ];
+    const plan = named.reduce((left, each) => left - each, assumptions.promptTokens);
+    const sum = [plan, ...named].map(reservation).reduce((total, each) => total + each, 0);
     expect(planner.points.high.inputTokens + planner.points.high.outputTokens).toBe(sum);
   });
 

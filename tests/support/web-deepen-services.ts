@@ -1,4 +1,5 @@
 import type { RoleKeyDependencies } from '../../src/application/runs/role-keys.js';
+import type { StartConsents } from '../../src/application/consent/start-consent.js';
 import { ALL_KEYS_SERVED } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import { EstimateDeepen } from '../../src/application/estimate/deepen-estimate.js';
@@ -21,6 +22,8 @@ export function deepenServices(
     readonly keys: MemoryProviderKeyRepository;
     /** RF-431: the key check; every role served when absent. */
     readonly roleKeys?: RoleKeyDependencies;
+    /** DEC-209: the consents of the project, shared with the start of a run; none kept when absent. */
+    readonly consents?: StartConsents;
   },
   results: readonly TaskResult[] = [],
 ): DeepenServices {
@@ -29,6 +32,7 @@ export function deepenServices(
   return {
     startDeepen: new StartDeepen({
       roleKeys: stores.roleKeys ?? ALL_KEYS_SERVED,
+      ...(stores.consents === undefined ? {} : { consents: stores.consents }),
       ...{ projects, runs: runs.runs, manifests: runs.manifests, submit: runs.submit },
     }),
     estimateDeepen: new EstimateDeepen({

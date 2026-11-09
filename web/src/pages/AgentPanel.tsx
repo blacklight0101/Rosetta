@@ -1,7 +1,8 @@
 import type { JSX } from 'preact';
 import { BreakableText } from '../components/BreakableText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
-import { costLabel, tokensLabel } from '../lib/live-run/format.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
+import { tokensLabel } from '../lib/live-run/format.js';
 import type { AgentPanelState, ToolNow } from '../lib/live-run/run-state.js';
 
 // RF-1002, design-system.md section 14 (live run): one panel per agent with its area, role, model,
@@ -55,7 +56,7 @@ function Facts({ agent }: { readonly agent: AgentPanelState }): JSX.Element {
             agent.costMicros === undefined ? 'The cost of an agent is not reported yet.' : undefined
           }
         >
-          {agent.costMicros === undefined ? '—' : costLabel(agent.costMicros)}
+          {agent.costMicros === undefined ? '—' : <MoneyAmount micros={agent.costMicros} tabStop />}
         </dd>
       </div>
     </dl>

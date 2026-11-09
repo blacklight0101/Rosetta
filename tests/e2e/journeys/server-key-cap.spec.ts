@@ -9,6 +9,7 @@ import {
   repositories,
   chooseAreas,
 } from '../support/journey-pages.js';
+import { runsTable } from '../support/history-page.js';
 import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
 import { expectNoFullKey } from '../support/no-full-key.js';
 import { filesHolding } from '../support/run-folder.js';
@@ -17,6 +18,7 @@ import { e2eServerOpenAiKey } from '../support/server-key.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
+import { saveHostedReaderWithOneParallelReader } from '../support/parallel-readers.js';
 
 // RF-1104, RF-1105, RF-1106, RF-428, RNF-005, P1-131: the administrator's caps bind only runs on a
 // server key. The user has no key of their own, so the run uses the server's (serve.ts holds a fake
@@ -69,6 +71,20 @@ async function expectKeyInNoLogOrReport(page: Page): Promise<void> {
   expect(held, 'no log, report or run file holds the server key').toEqual([]);
 }
 
+/**
+ * P8-130, RF-230: the History row of the capped run reads "Partly read" with the same share as the
+ * head of its page, both worked out by the test server from the real run (no mocked share).
+ */
+async function expectHistoryRowSaysTheSame(page: Page, head: string): Promise<void> {
+  const share = /(\d+)% of your code/u.exec(head)?.[1];
+  expect(share, 'the head of the capped run names its share').toBeDefined();
+  await openProjectStart(page, repositories.webforms);
+  await page.getByRole('navigation').getByRole('link', { name: 'History' }).click();
+  const row = runsTable(page).getByRole('row').filter({ hasText: '-understand' }).first();
+  await expect(row).toContainText('Partly read');
+  await expect(row).toContainText(`${share ?? ''}% of your code`);
+}
+
 async function userPicksTheReader(page: Page, user: Credentials): Promise<void> {
   await signIn(page, user);
   await openProjectStart(page, repositories.webforms);
@@ -82,10 +98,9 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   await chooseModel(page, 'Summariser', 'gpt-5-nano');
   await setOutputLimit(page, 'Reader', 4096);
   await setOutputLimit(page, 'Summariser', 2048);
-  // One reader at a time, so the first calls are answered and metered before one is refused.
-  await page.getByLabel('Parallel readers', { exact: true }).fill('1');
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  await expect(page.getByText('Settings saved.')).toBeVisible();
+  // One reader at a time, so the first calls are answered and metered before one is refused. The
+  // save that moves the reader to OpenAI makes it four (RF-436, P8-56), so one reader is saved after it.
+  await saveHostedReaderWithOneParallelReader(page);
   await signOut(page);
 }
 
@@ -113,13 +128,17 @@ test(
       await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
-      await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });
+      await expect(runStatus(page)).toContainText(/Partly read: \d+% of your code/u, {
+        timeout: 90_000,
+      });
+      const head = (await runStatus(page).innerText()).trim();
       await transitionsDone(page);
       await expectNoSeriousViolations(page);
       await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
       await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
       await expectNoFullKey(page, [e2eServerOpenAiKey()]);
       await expectKeyInNoLogOrReport(page);
+      await expectHistoryRowSaysTheSame(page, head);
     } finally {
       // However the run ended, the next sign-in starts clean and the caps go back to the shared figures.
       await page.context().clearCookies();

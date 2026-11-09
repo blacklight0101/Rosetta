@@ -6,7 +6,7 @@ import { endedWithoutCard } from './run-summary.js';
 // that the run did not take are drawn as library, left out. Names come from the repository and are
 // kept as plain strings; the page shows them as text.
 
-export type TileState = 'waiting' | 'reading' | 'done' | 'gap' | 'library';
+export type TileState = 'waiting' | 'reading' | 'done' | 'partly' | 'gap' | 'library';
 
 export interface CodeAreaInfo {
   readonly name: string;
@@ -30,6 +30,8 @@ export interface Tile {
   readonly progress: number | undefined;
   /** EV-16: set on every tile of a Deepen run, whose cards are the ones this run wrote. */
   readonly deepen?: boolean;
+  /** P8-93: the share of the area's first-party tokens read (0 to 1) of a `partly` tile. */
+  readonly readShare?: number;
 }
 
 interface Known {
@@ -88,10 +90,23 @@ function knownAreas(readers: readonly AgentPanelState[], areas: readonly CodeAre
   return [...listed, ...extra];
 }
 
-function tileOf(area: Known, readers: readonly AgentPanelState[], largest: number): Tile {
+/** P8-93: an area whose agents ended is partly read when the coverage puts it below the bar. */
+function readState(state: TileState, share: number | undefined): TileState {
+  return state === 'done' && share !== undefined ? 'partly' : state;
+}
+
+function tileOf(
+  area: Known,
+  readers: readonly AgentPanelState[],
+  largest: number,
+  partly: ReadonlyMap<string, number>,
+): Tile {
   const mine = readers.filter((agent) => agent.area === area.name);
-  const state =
-    mine.length > 0 ? stateOfAgents(mine) : stateWithoutAgents(area, readers.length > 0);
+  const share = partly.get(area.name);
+  const state = readState(
+    mine.length > 0 ? stateOfAgents(mine) : stateWithoutAgents(area, readers.length > 0),
+    share,
+  );
   const size = state === 'library' ? { columns: 4, rows: 1 } : sizeOf(area.tokens, largest);
   return {
     name: area.name,
@@ -102,6 +117,7 @@ function tileOf(area: Known, readers: readonly AgentPanelState[], largest: numbe
     agentTaskId: mine[0]?.agentTaskId,
     ...size,
     progress: state === 'reading' ? progressOf(mine, area.tokens) : undefined,
+    ...(state === 'partly' && share !== undefined ? { readShare: share } : {}),
   };
 }
 
@@ -109,6 +125,7 @@ function tileOf(area: Known, readers: readonly AgentPanelState[], largest: numbe
 export function tilesOf(
   state: RunState,
   areas: readonly CodeAreaInfo[] | undefined,
+  partly: ReadonlyMap<string, number> = new Map(),
 ): readonly Tile[] {
   const readers = readersOf(state);
   const known = knownAreas(readers, areas ?? []);
@@ -117,7 +134,7 @@ export function tilesOf(
   // The largest own area sets the size, so a big library does not shrink the others.
   const largest = Math.max(0, ...own.map((area) => area.tokens));
   const deepen = state.deepen === undefined ? {} : { deepen: true };
-  const tiles = known.map((area) => ({ ...tileOf(area, readers, largest), ...deepen }));
+  const tiles = known.map((area) => ({ ...tileOf(area, readers, largest, partly), ...deepen }));
   const left = (tile: Tile): boolean => tile.state === 'library';
   return [...tiles.filter((tile) => !left(tile)), ...tiles.filter(left)];
 }

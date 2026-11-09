@@ -30,6 +30,7 @@ import type { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-
 import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
 import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
 import { ListProviderKeys } from '../../src/application/use-cases/list-provider-keys.js';
+import { GetKeyAccess } from '../../src/application/use-cases/get-key-access.js';
 import { SaveProviderKey } from '../../src/application/use-cases/save-provider-key.js';
 import type { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
@@ -47,11 +48,12 @@ import { answerStore, observabilityStore } from './observability-store.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
-import { FakeUploadStore } from './fake-upload-store.js';
-import { FakeWorkbookStaging } from './fake-workbook-staging.js';
 import type { GitHubRefCheck } from '../../src/application/ports/github-ref-check.js';
-import { projectServices, type UploadParts } from './project-services.js';
-import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
+import { projectServices } from './project-services.js';
+import { uploadPartsOf } from './upload-parts-of.js';
+import type { PartlyReadReader } from './partly-read-doubles.js';
+import { historyServices } from './web-history-services.js';
+import { runServices, type RunOutputGiven } from './web-run-services.js';
 import {
   keyParts,
   memoryStores,
@@ -59,6 +61,7 @@ import {
   streamRoute,
   type HistoryDoubles,
   type KeyParts,
+  type ServerKeyDouble,
 } from './web-server-parts.js';
 import { modelServices } from './model-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
@@ -68,8 +71,6 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 export const testVersion = '1.2.3-test';
 
 /** RF-129: the upload limit of a test server that does not set one. */
-const DEFAULT_TEST_UPLOAD_MB = 5;
-const BYTES_PER_MB = 1024 * 1024;
 
 /** The public URL of the test servers; state-changing requests send it as their Origin. */
 export const testPublicUrl = 'http://127.0.0.1:8080';
@@ -115,6 +116,8 @@ export interface TestServer extends HistoryDoubles {
   readonly secretBox: AesGcmSecretBox;
   /** RF-1104: the DNS stand-in of the base-URL check; a test gives each host its addresses. */
   readonly resolver: FakeHostResolver;
+  /** RF-436, DEC-225: the providers the server holds a key for (`held`); none by default. */
+  readonly serverKeys: ServerKeyDouble;
   /** RF-407: the fake adapters the provider test was given, and the ledger it wrote to. */
   readonly providers: FakeAdapters;
   readonly providerLedger: SpyLedger;
@@ -141,6 +144,8 @@ export interface TestServerOptions
   readonly logDir?: string;
   /** EV-70: what GitHub says about the ref of a new project; none by default. */
   readonly refCheck?: GitHubRefCheck;
+  /** P8-130: what the history reads of each run's coverage; no run is partly read by default. */
+  readonly partlyRead?: PartlyReadReader;
 }
 
 interface AuthParts {
@@ -159,11 +164,12 @@ interface AuthParts {
 
 /** RF-1104: the key use cases over memory adapters and the fake resolver. */
 function keyServices(parts: AuthParts) {
-  const { keys, secretBox, resolver } = parts.keys;
+  const { keys, secretBox, resolver, serverKeys } = parts.keys;
   const base = { keys, auditLog: parts.auditLog, logger: parts.logger, clock: parts.clock };
   const hostCheck = new DnsPublicHostCheck({ resolver: resolver.resolve });
   return {
     listProviderKeys: new ListProviderKeys({ keys }),
+    getKeyAccess: new GetKeyAccess({ keys, users: parts.users, serverKeys }),
     saveProviderKey: new SaveProviderKey({ ...base, box: secretBox, hostCheck }),
     deleteProviderKey: new DeleteProviderKey(base),
   };
@@ -231,16 +237,10 @@ function fileDoubles(parts: {
   return { files, keys: keyParts(), stores: { ...parts, ...files } };
 }
 
-/** RF-128, RF-129: the store uploads go to (a fake by default) and the limit it is given. */
-function uploadPartsOf(options: TestServerOptions): UploadParts {
-  const { uploads = new FakeUploadStore(), uploadMaxMb = DEFAULT_TEST_UPLOAD_MB } = options;
-  const { workbookStaging = new FakeWorkbookStaging() } = options;
-  const limitBytes = uploadMaxMb * BYTES_PER_MB;
-  const { refCheck } = options;
-  return {
-    ...{ store: uploads, staging: workbookStaging, limitBytes },
-    ...(refCheck === undefined ? {} : { refCheck }),
-  };
+/** The options of a test server that do not depend on its stores. */
+function serverBase(logger: MemoryLogger, health: FakeDatabaseHealth) {
+  const [version, publicUrl] = [testVersion, testPublicUrl];
+  return { logger, databaseHealth: health, version, publicUrl, trustProxy: 0 };
 }
 
 /**
@@ -277,18 +277,17 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const upload = uploadPartsOf(options);
   const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
   const server = buildServer({
-    logger,
-    databaseHealth: health,
-    version: testVersion,
-    publicUrl: testPublicUrl,
-    trustProxy: 0,
+    ...serverBase(logger, health),
     auth: authServices({
       ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
     projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs, upload),
     runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
-    history: historyServices({ runs, projects, folders, snapshots, logger, costs, upload }),
+    history: historyServices({
+      ...{ runs, projects, folders, snapshots, logger, costs },
+      ...{ upload, options },
+    }),
     ...{ models: modelServices(), onRoute: recorder.onRoute },
     ...overrides,
   });

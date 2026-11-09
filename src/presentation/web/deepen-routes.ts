@@ -57,10 +57,14 @@ function rangeView(points: ByScenario<EstimatePoint>): Record<string, unknown> {
 }
 
 /** Costs travel as decimal strings of micro-dollars, as in the run estimate (RF-425). */
-function deepenEstimateView(estimate: DeepenEstimate): Record<string, unknown> {
+// RF-209
+export function deepenEstimateView(estimate: DeepenEstimate): Record<string, unknown> {
   const { priceTableVersion, currency, maxRounds, coveragePass, plan, cap, overCap } = estimate;
+  const { journey } = estimate;
   return {
     ...{ priceTableVersion, currency, maxRounds, coveragePass, plan, cap, overCap },
+    // RF-434, P8-24: the approved amount of the journey, when the project has one.
+    ...(journey === undefined ? {} : { journey }),
     roles: estimate.roles.map((role) => ({
       ...{ role: role.role, provider: role.provider, kind: role.kind, model: role.model },
       ...{ keySource: role.keySource, priced: role.priced },

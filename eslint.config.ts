@@ -127,12 +127,13 @@ export default defineConfig(
     rules: { 'no-console': 'off', '@typescript-eslint/explicit-module-boundary-types': 'off' },
   },
   {
-    // Tools load their configuration and Playwright its global teardown through a default export.
+    // Tools load their configuration and Playwright its global hooks and reporters through a default export.
     files: [
       '*.config.ts',
       'web/vite.config.ts',
       'tests/e2e/support/global-setup.ts',
       'tests/e2e/support/global-teardown.ts',
+      'tests/e2e/support/flaky-reporter.ts',
     ],
     rules: { 'no-restricted-exports': 'off' },
   },

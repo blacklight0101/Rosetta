@@ -75,7 +75,7 @@ describe('saving suggested answers on the answers page', () => {
     await screen.findAllByTestId('open-question');
 
     fireEvent.click(within(item('OQ-001')).getByRole('radio', { name: /No, hide it/u }));
-    fireEvent.click(within(item('OQ-001')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(within(item('OQ-001')).getByRole('status').textContent).toContain(
@@ -102,7 +102,7 @@ describe('saving suggested answers on the answers page', () => {
     fireEvent.input(within(item('OQ-001')).getByLabelText('Answer to OQ-001'), {
       target: { value: 'Staff only.' },
     });
-    fireEvent.click(within(item('OQ-001')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(page.calls.some((call) => call.method === 'PUT')).toBe(true);

@@ -7,7 +7,7 @@ import type { ClaimStatus } from '../../../src/domain/cards/card-vocabulary.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { recordingOf } from '../../support/fake-recordings.js';
-import { verifierHarness } from '../../support/verifier-harness.js';
+import { callEvents, verifierHarness, verdictEvents } from '../../support/verifier-harness.js';
 
 // RF-304, RF-301, RF-006: the judgement step of a resumed run. The claims a cap left `Unverified`
 // are judged; a claim that already has a verdict, or that was `Unverified` for its own reason, is
@@ -73,9 +73,11 @@ describe('the judgement step of a resumed run', () => {
       'Unverified',
     ]);
     expect(h.requests()).toHaveLength(1);
-    expect(h.events.map((event) => [event.data['claimId'], event.data['status']])).toEqual([
-      ['BR-001.c1', 'Supported'],
-    ]);
+    expect(
+      verdictEvents(h.events).map((event) => [event.data['claimId'], event.data['status']]),
+    ).toEqual([['BR-001.c1', 'Supported']]);
+    // P8-58: only the claim a cap left Unverified is judged, so only it starts and ends a call.
+    expect(callEvents(h.events)).toEqual(['start BR-001.c1', 'end BR-001.c1']);
     expect(card?.claims[2]?.verdict?.reason).toBe('The verifier call failed (RST-1505).');
   });
 
@@ -92,7 +94,9 @@ describe('the judgement step of a resumed run', () => {
     const [card] = await judgeClaims([before], h.step());
 
     expect(card).toEqual(before);
-    expect(h.events).toEqual([]);
+    expect(verdictEvents(h.events)).toEqual([]);
+    // P8-58: the refused call started and ended; the claim gets no verdict (it stays Unverified).
+    expect(callEvents(h.events)).toEqual(['start BR-001.c1', 'end BR-001.c1']);
   });
 
   it('RF-304 a claim a user Stop left Proposed is judged on resume like any Proposed claim', async () => {

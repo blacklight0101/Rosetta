@@ -25,6 +25,12 @@ describe('run manifest', () => {
     });
   });
 
+  it('RF-006 keeps the first start when a resumed run starts again (P8-88)', () => {
+    const manifest = sampleManifest({ startedAt: '2026-10-12T10:00:05.000Z' });
+
+    expect(markManifestStarted(manifest, '2026-10-12T12:00:00.000Z')).toEqual(manifest);
+  });
+
   it('RF-003 records the end state and time when the run ends', () => {
     const manifest = sampleManifest();
 

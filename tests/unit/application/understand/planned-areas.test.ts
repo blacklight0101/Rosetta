@@ -60,3 +60,15 @@ describe('plannedAreas', () => {
     expect(planned).toEqual([loan, root]);
   });
 });
+
+describe('plannedAreas: an area with no file', () => {
+  it('RF-155 plans no reader for an area with 0 files, in a zip and in a repository', () => {
+    const empty = area('(root)', []);
+    const planned = plannedAreas({
+      codeMap: { areas: [empty, helper] },
+      source: { snapshotKey: 'octo-demo-cccccccc' },
+    });
+
+    expect(planned.map((each) => each.name)).toEqual(['Tools']);
+  });
+});

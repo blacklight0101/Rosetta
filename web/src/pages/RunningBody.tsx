@@ -1,5 +1,5 @@
 import type { JSX, RefObject } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { useContext, useRef, useState } from 'preact/hooks';
 import type { CoverageListing } from '../api/coverage.js';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
@@ -23,8 +23,7 @@ import { RetryNotice } from './RetryNotice.js';
 import { RunJourney } from './RunJourney.js';
 import { RunStepper } from './RunStepper.js';
 import { SpendPanel } from './SpendPanel.js';
-import { useCodeAreas } from './use-code-areas.js';
-import { endedAgents, useRunCoverage } from './use-run-coverage.js';
+import { AreaReadContext } from './area-read-context.js';
 import { WorkingNow } from './WorkingNow.js';
 
 // RF-1015, DEC-137, design-system.md section 14 (live run): the page of a run while it runs (queued
@@ -209,9 +208,8 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
   const [tab, setTab] = useState<TabId>(stage === 'plan' ? 'calls' : 'cards');
   const [area, setArea] = useState<string | undefined>();
   const detailsRef = useRef<HTMLElement>(null);
-  const areas = useCodeAreas(run.projectId, stage);
-  const coverage = useRunCoverage(run.id, stage, endedAgents(state));
-  const tiles = tilesOf(state, areas);
+  const { areas, coverage, reading } = useContext(AreaReadContext);
+  const tiles = tilesOf(state, areas, reading.status === 'known' ? reading.partly : undefined);
   const open = (id: TabId, only?: string): void => {
     setTab(id);
     setArea(only);

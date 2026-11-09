@@ -129,7 +129,7 @@
 }
 
 .rst-topbar-runmeter-bar {
-  inline-size: 4.5rem;
+  inline-size: 3rem;
   block-size: 8px;
   overflow: hidden;
   border: 1px solid var(--rst-rule-strong);
@@ -179,15 +179,19 @@
   inline-size: 8.5rem;
 }
 
-.rst-topbar-runmeter-figures {
-  min-inline-size: 10rem;
+/* P8-101: the meter reserves no width for its figures. It stands after the wordmark, so figures
+   counting up move only the space to their right; from 1024 px it never breaks its own text, below
+   that it may wrap inside its own box. */
+.rst-topbar-runmeter {
+  gap: var(--rst-sp-1) var(--rst-sp-2);
 }
 
-/* Tokens grow in width as they count: room for "9,999,999 tokens of 9,999,999 tokens", so the bar
-   stays put. */
-.rst-topbar-runmeter--tokens .rst-topbar-runmeter-figures {
-  display: inline-block;
-  min-inline-size: 34ch;
+@media (min-width: 64rem) {
+  .rst-topbar-runmeter {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
 }
 
 .rst-live-stepper-step--stopped {

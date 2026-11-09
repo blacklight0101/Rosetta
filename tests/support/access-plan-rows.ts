@@ -3,7 +3,8 @@ import type { Context, Probe } from './access-probes.js';
 
 // RF-1105, RF-1009: the access matrix rows of the routes Plan setup adds (RF-605, RF-606, RF-608):
 // the catalogue every signed-in user reads and the options of a project, which only its owner asks
-// for. The planning brief and the plan estimate are in the projects area (access-matrix-rows.ts).
+// for; and the consent of a project its pages show as one line (RF-143, P8-81). The planning brief
+// and the plan estimate are in the projects area (access-matrix-rows.ts).
 
 const projectUrl = (suffix: string) => (context: Context) =>
   `/api/projects/${context.projectId}${suffix}`;
@@ -71,6 +72,27 @@ export const planRows: Readonly<Record<string, readonly Probe[]>> = {
       method: 'POST',
       url: () => '/api/projects/not-a-uuid/plan-options',
       payload: () => ({}),
+      expected: active(401, 404),
+    },
+  ],
+  // RF-143, P8-81: the consent a page shows as one line; the matrix project has none, so its owner
+  // reads `{ consent: null }` and withdraws none; another user's project is not found.
+  'GET /api/projects/:id/consent': [
+    { method: 'GET', url: projectUrl('/consent?for=understand'), expected: ownerOnly(200) },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/consent?for=plan',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/consent': [
+    { method: 'HEAD', url: projectUrl('/consent?for=plan'), expected: ownerOnly(200) },
+  ],
+  'DELETE /api/projects/:id/consent': [
+    { method: 'DELETE', url: projectUrl('/consent'), expected: ownerOnly(200) },
+    {
+      method: 'DELETE',
+      url: () => '/api/projects/not-a-uuid/consent',
       expected: active(401, 404),
     },
   ],

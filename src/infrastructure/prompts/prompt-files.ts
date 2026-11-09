@@ -24,7 +24,7 @@ const readerPromptNames = {
   repair: 'cards/repair.v6.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
-  readMore: 'reader/read-more.v1.md',
+  readMore: 'reader/read-more.v2.md',
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */
@@ -157,7 +157,7 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
 // RNF-004
 export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap.v4.md');
+  return loadPromptFile(promptsFolder, 'planner/gap.v5.md');
 }
 
 /** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */

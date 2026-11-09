@@ -20,6 +20,8 @@ export interface ResumeButtonProps {
   readonly onResumed: () => void;
   /** P7-26: write the overview alone ("Write the overview"). */
   readonly overviewOnly?: boolean;
+  /** RF-1021 (P8-84): secondary where another button is the panel's one primary action. */
+  readonly variant?: 'primary' | 'secondary';
 }
 
 // RF-006
@@ -39,7 +41,7 @@ export function ResumeButton(props: ResumeButtonProps): JSX.Element {
   return (
     <>
       <Button
-        variant="primary"
+        variant={props.variant ?? 'primary'}
         busy={busy}
         onClick={resume}
         {...(props.ariaLabel === undefined ? {} : { ariaLabel: props.ariaLabel })}

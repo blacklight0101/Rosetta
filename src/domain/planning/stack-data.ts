@@ -14,6 +14,8 @@ export interface StackTechnology {
   readonly traits: readonly StackTrait[];
   /** One line. */
   readonly description: string;
+  /** DEC-208: the label of the `vague` platform group the technology belongs to; absent: any platform. */
+  readonly platform?: string | undefined;
 }
 
 export type RuleCondition =
@@ -23,7 +25,9 @@ export type RuleCondition =
       readonly trait: StackTrait;
       readonly present: boolean;
     }
-  | { readonly on: 'contract'; readonly present: boolean };
+  | { readonly on: 'contract'; readonly present: boolean }
+  /** DEC-208: a layer holds a technology of another platform than the language and runtime; one clash for each. */
+  | { readonly on: 'platform' };
 
 export interface StackRule {
   readonly id: string;
@@ -83,6 +87,8 @@ export interface LegacyTechnology {
 /** P7-30: words that name a platform or nothing; the options of the platform's languages are offered. */
 export interface VagueWords {
   readonly words: readonly string[];
+  /** DEC-208: the name of the platform (".NET", "Java"); absent for the words that name no platform. */
+  readonly label?: string | undefined;
   /** Language ids of the scan; empty: the languages of the code map decide. */
   readonly languages: readonly string[];
 }

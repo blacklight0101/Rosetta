@@ -2,6 +2,7 @@ import { describe } from 'vitest';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryServerSettings } from '../../../../src/infrastructure/db/memory-server-settings.js';
 import { projectRepositoryContract } from '../../../contracts/project-repository.contract.js';
+import { projectRenameContract } from '../../../contracts/project-rename.contract.js';
 import { projectUploadSourceContract } from '../../../contracts/project-upload-source.contract.js';
 import {
   serverCapsContract,
@@ -13,6 +14,7 @@ describe('MemoryProjectRepository', () => {
   const fresh = () => Promise.resolve(new MemoryProjectRepository());
   projectRepositoryContract('MemoryProjectRepository', fresh);
   projectUploadSourceContract('MemoryProjectRepository', fresh);
+  projectRenameContract('MemoryProjectRepository', fresh);
 });
 
 describe('MemoryServerSettings', () => {

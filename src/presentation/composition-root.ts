@@ -164,7 +164,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     auth: auth.services,
     projects,
     runs: runs.services,
-    history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
+    history: composeHistory({ ...{ pool, logger, masker, runs }, dataDir: environment.dataDir }),
     models: composeModels({ environment, priceTable: auth.priceTable, list: auth.models }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
@@ -256,7 +256,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         auth,
       });
       close = closer({ server, runs, abortUploads, closeBatches });
-      const parts = { file, auth, pool, clock, runs: runs.queue, logger, environment };
+      const parts = { file, auth, pool, clock, runs, logger, environment };
       let address = '';
       await startUp({
         checkSchema: () => checkSchema(pool, logger),

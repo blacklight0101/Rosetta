@@ -9,15 +9,23 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import { runMeterReadingOf } from '../lib/live-run/run-meter-reading.js';
 import { runIsLocal } from '../lib/live-run/run-local.js';
+import { runTitleOf } from '../lib/live-run/run-title.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { roleTotalsOf } from '../lib/live-run/run-summary.js';
 import { EndedBody } from './EndedBody.js';
 import { RunJourneys, WorkingJourney } from './JourneyPlacement.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { RunAnswerControls } from './ApprovalControl.js';
-import { RunStatusBar } from './RunStatusBar.js';
+import type { ApprovedView } from '../lib/live-run/approved-line.js';
+import { ApprovedViewContext } from './approved-view-context.js';
+import { AreaReadContext } from './area-read-context.js';
+import { RunStatusBar, type PartlyRead } from './RunStatusBar.js';
+import type { AreaReadState } from './area-read-context.js';
 import { RunningBody } from './RunningBody.js';
 import { usePauseUpdates } from './use-pause-updates.js';
+import { useAreaRead } from './use-area-read.js';
+import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
+import { useApprovedView } from './use-approved-view.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
@@ -59,18 +67,35 @@ function tokensOf(state: RunState): number {
  */
 // RF-1003
 function meterOf(
-  state: RunState,
-  run: RunRow,
-  phase: RunPhase,
-  local: boolean,
+  page: { readonly state: RunState; readonly run: RunRow; readonly phase: RunPhase },
+  approved: ApprovedView | undefined,
 ): RunMeterReading | undefined {
+  const { state, run, phase } = page;
   if (phase.kind !== 'running') return undefined;
   return runMeterReadingOf({
+    approved,
     caps: state.caps,
     costMicros: costOf(state, run),
     tokens: tokensOf(state),
-    local,
+    local: runIsLocal(state),
   });
+}
+
+/** P8-24: the approved amount of the run's journey; the top bar meter reads it too. */
+function useApproved(page: {
+  readonly state: RunState;
+  readonly run: RunRow;
+  readonly phase: RunPhase;
+}): ApprovedView | undefined {
+  const { state, run, phase } = page;
+  const approved = useApprovedView({
+    projectId: run.projectId,
+    refresh: phase.kind === 'ended' ? phase.endState : phase.kind,
+    spent: { micros: costOf(state, run), tokens: tokensOf(state) },
+    local: runIsLocal(state),
+  });
+  usePublishRunMeter(meterOf(page, approved));
+  return approved;
 }
 
 function useStop(runId: string): {
@@ -107,38 +132,32 @@ function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | n
 }
 
 // RF-1002, RF-1015
-export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps): JSX.Element {
-  const { state } = stream;
-  const view = usePauseUpdates(state);
-  const stop = useStop(run.id);
-  const planned = state.agents.some((agent) => agent.state !== 'Planned');
-  const stage = state.stage ?? run.stage;
-  const estimate = useRunEstimate(
-    run.projectId,
-    stage,
-    planned ? state.agents.map((agent) => agent.area) : [],
-  );
-  usePublishRunMeter(meterOf(state, run, phase, runIsLocal(state)));
+export function LiveRunView(props: LiveRunViewProps): JSX.Element {
+  const { run, stream, phase } = props;
+  const approved = useApproved({ state: stream.state, run, phase });
   return (
-    <div class="rst-live">
-      <RunStatusBar
-        {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
-        failedAreas={state.ended?.failedAreas ?? run.failedAreas}
-        unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
-        {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
-        updatesNote={view.note}
-        resume={<RunAnswerControls {...{ phase, onResumed, runId: run.id, stage }} />}
-        controls={
-          view.paused || phase.kind === 'running' ? (
-            <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />
-          ) : null
-        }
-      />
-      <Connection stream={stream} />
-      <RunJourneys {...{ run, stage, phase, onResumed }} />
+    <ApprovedViewContext.Provider value={approved}>
+      <LiveRunContent {...props} />
+    </ApprovedViewContext.Provider>
+  );
+}
+
+function PageBody(props: {
+  readonly run: RunRow;
+  readonly state: RunState;
+  readonly phase: RunPhase;
+  readonly stage: string;
+  readonly estimate: ReturnType<typeof useRunEstimate>;
+  readonly understanding: UnderstandingLoad;
+  readonly onResumed: () => void;
+  readonly view: ReturnType<typeof usePauseUpdates>;
+}): JSX.Element {
+  const { run, state, phase, stage, estimate, onResumed, view, understanding } = props;
+  return (
+    <>
       {phase.kind === 'ended' ? (
         <EndedBody
-          {...{ run, state, phase, stage, estimate, onResumed }}
+          {...{ run, state, phase, stage, estimate, onResumed, understanding }}
           shown={view.shown}
           costMicros={costOf(state, run)}
           source={sourceOf(state, run)}
@@ -151,7 +170,84 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
           source={sourceOf(state, run)}
         />
       )}
-      <WorkingJourney {...{ run, stage, phase, onResumed }} />
-    </div>
+    </>
+  );
+}
+
+/**
+ * P8-93: the areas read below the coverage bar and the share of the first-party code the run read
+ * (the figure of its summary), for the "Partly read: 16% of your code" badge of the head.
+ */
+function partlyReadOf(read: AreaReadState, understanding: UnderstandingLoad): PartlyRead {
+  const areas = read.reading.status === 'known' ? read.reading.partly.size : 0;
+  const measures = understanding.status === 'ready' ? understanding.understanding.measures : null;
+  return { areas, share: measures?.firstPartyCoverage };
+}
+
+/**
+ * RF-230, RF-231, P7-02 (P8-130): an understand run that ended with no error, or stopped at its cap
+ * (RST-1600), has measures, so the head names the share for a capped run as the History row does.
+ */
+function hasMeasures(state: RunState): boolean {
+  const ended = state.ended;
+  return ended?.errorCode === undefined || ended.endState === 'CapReached';
+}
+
+/** P8-93: what the coverage and the summary of the run say, read once for the head and the body. */
+function useReading(
+  props: Pick<LiveRunViewProps, 'run' | 'phase'> & {
+    readonly state: RunState;
+    /** The state the panels show: the one frozen by Pause updates, which freezes the coverage too. */
+    readonly shown: RunState;
+  },
+  stage: string,
+): { readonly read: AreaReadState; readonly understanding: UnderstandingLoad } {
+  const { run, phase, state } = props;
+  const read = useAreaRead(run, stage, props.shown);
+  const asks = phase.kind === 'ended' && stage === 'understand' && hasMeasures(state);
+  return { read, understanding: useUnderstanding(run.id, asks) };
+}
+
+function LiveRunContent({ run, stream, phase, onResumed }: LiveRunViewProps): JSX.Element {
+  const { state } = stream;
+  const view = usePauseUpdates(state);
+  const stop = useStop(run.id);
+  const planned = state.agents.some((agent) => agent.state !== 'Planned');
+  const stage = state.stage ?? run.stage;
+  const { read, understanding } = useReading({ run, phase, state, shown: view.shown }, stage);
+  const estimate = useRunEstimate(
+    run.projectId,
+    stage,
+    planned ? state.agents.map((agent) => agent.area) : [],
+  );
+  return (
+    <AreaReadContext.Provider value={read}>
+      <div class="rst-live">
+        <RunStatusBar
+          title={runTitleOf({ stage, phase, state })}
+          {...{ phase, projectId: run.projectId, runKey: run.runId }}
+          failedAreas={state.ended?.failedAreas ?? run.failedAreas}
+          unreadAreas={state.ended?.unreadAreas ?? run.unreadAreas}
+          partlyRead={partlyReadOf(read, understanding)}
+          {...{
+            stopping: stop.stopping,
+            busy: stop.busy,
+            stopError: stop.error,
+            onStop: stop.stop,
+          }}
+          updatesNote={view.note}
+          resume={<RunAnswerControls {...{ phase, onResumed, runId: run.id, stage }} />}
+          controls={
+            view.paused || phase.kind === 'running' ? (
+              <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />
+            ) : null
+          }
+        />
+        <Connection stream={stream} />
+        <RunJourneys {...{ run, stage, phase, onResumed }} />
+        <PageBody {...{ run, state, phase, stage, estimate, onResumed, view, understanding }} />
+        <WorkingJourney {...{ run, stage, phase, onResumed }} />
+      </div>
+    </AreaReadContext.Provider>
   );
 }

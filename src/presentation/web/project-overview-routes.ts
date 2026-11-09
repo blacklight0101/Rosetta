@@ -4,6 +4,7 @@ import type {
   ProjectOverview,
 } from '../../application/use-cases/list-project-overview.js';
 import { totalsView } from './cost-routes.js';
+import { journeyView } from './journey-routes.js';
 import { projectView } from './project-routes.js';
 import { signedInOf } from './request-actor.js';
 import { runView } from './run-view.js';
@@ -11,7 +12,8 @@ import { runView } from './run-view.js';
 // RF-1008, RF-1108, RF-1010, RF-1105: GET /api/projects/overview gives the Projects page the
 // signed-in user's projects, newest first, each with `runs` (how many it has), `totals` (summed
 // from the cost ledger; amounts as decimal strings of micro-units) and `lastRun` (null without
-// one) with its `position` in the queue while it is queued (null otherwise). A queued run is
+// one) with its `position` in the queue while it is queued (null otherwise), and `journey`, the facts
+// of GET /api/projects/:id/journey for the project with `budget` null (RF-010, P8-137). A queued run is
 // cancelled with POST /api/runs/:runId/stop (run-routes.ts). The owner's id and the snapshot folder
 // never leave the server. The static path wins over `/api/projects/:id`, and no project id is
 // `overview` (ids are UUIDs).
@@ -21,12 +23,13 @@ export interface ProjectOverviewServices {
 }
 
 function overviewRow(row: ProjectOverview): Record<string, unknown> {
-  const { project, runs, totals, lastRun, position } = row;
+  const { project, runs, totals, lastRun, position, journey } = row;
   return {
     project: projectView(project),
     runs,
     totals: totalsView(totals),
     lastRun: lastRun === undefined ? null : { ...runView(lastRun), position: position ?? null },
+    journey: journey === undefined ? null : journeyView(journey),
   };
 }
 

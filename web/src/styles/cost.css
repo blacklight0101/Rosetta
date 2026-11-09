@@ -95,6 +95,54 @@
   text-align: start;
 }
 
+/* An amount and its exact figure (RF-428, DEC-217, P8-127): the figure is the overlay Tooltip of
+   design-system.md section 5.1, `position: fixed` under the amount (or above it at the foot of the viewport),
+   so opening it moves no cell of a table and a table's scroll region never clips it. It shows while the
+   pointer or the keyboard focus (a tap focuses it) is on the amount; Escape closes it at once, even while
+   the pointer rests on it (data-dismissed, WCAG 1.4.13). */
+.rst-p136-amount__value {
+  border-block-end: 1px dotted var(--rst-ink-soft);
+  cursor: help;
+}
+
+.rst-p136-amount__exact {
+  position: fixed;
+  z-index: var(--rst-z-menu);
+  display: none;
+  inline-size: max-content;
+  max-inline-size: calc(100vw - var(--rst-sp-4) * 2);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+  color: var(--rst-ink-muted);
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-body);
+  text-align: start;
+  white-space: nowrap;
+}
+
+/* The pointer crosses the gap between the amount and its figure without leaving either (WCAG 1.4.13) */
+.rst-p136-amount__exact::before {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  inset: calc(var(--rst-sp-1) * -1 - 1px) 0;
+}
+
+.rst-p136-amount[data-open]:not([data-dismissed]) .rst-p136-amount__exact {
+  display: block;
+}
+
+.rst-p136-pricenote {
+  margin-inline-start: var(--rst-sp-3);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-label);
+}
+
 .rst-p136-local {
   margin-inline-start: var(--rst-sp-2);
   padding: 0 var(--rst-sp-2);
@@ -103,4 +151,24 @@
   color: var(--rst-neutral-ink);
   font-size: var(--rst-fs-xs);
   font-weight: var(--rst-fw-label);
+}
+
+/* The breakdown by run (P8-109, DEC-211): the run's total in bold and the project total as a last row set
+   off by a heavier rule, as the P8HistoryCost artboard draws it. */
+.rst-p136-table .rst-p136-total {
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p136-table .rst-p136-projecttotal th,
+.rst-p136-table .rst-p136-projecttotal td {
+  border-block-start: 2px solid var(--rst-ink-soft);
+  background: var(--rst-surface-2);
+  font-weight: var(--rst-fw-head);
+}
+
+/* At 360 px the empty cells of the project total row, which keep its total under its column, take no room. */
+@media (max-width: 40rem) {
+  .rst-p136-table .rst-p136-projecttotal td:empty {
+    display: none;
+  }
 }

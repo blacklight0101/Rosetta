@@ -72,7 +72,7 @@ stateDiagram-v2
     Todo --> InProgress: dependencies Done and gates open
     InProgress --> InReview: builder reports, pull request opened
     InReview --> Done: verifier PASS, CI green, merged
-    InReview --> InProgress: FAIL 1 (same builder), FAIL 2 (fresh builder one band up) or FAIL 3 (fable, owner-approved)
+    InReview --> InProgress: FAIL 1 (fresh builder, same band), FAIL 2 (fresh builder one band up) or FAIL 3 (fable, owner-approved)
     InReview --> Blocked: FAIL 3 awaiting the owner, or any later FAIL (escalated)
     Todo --> Blocked: gate closed or open question without a safe default
     Blocked --> Todo: owner opens the gate or resolves the escalation
@@ -100,14 +100,17 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
    report format (section 6). One card per builder, one builder per card, each in its own worktree.
 4. **The builder reports** and pushes its branch. The orchestrator does not judge the report. It opens the pull
    request from the template (card, requirement, ADR and DEC ids, difficulty and builder, `Closes #<issue>`), labels the
-   issue `status:in-review` and spawns the verifier for the card's difficulty with the card, the report and the branch.
+   issue `status:in-review` and waits for CI. Red CI goes back to the builder (it is not a FAIL) and no verifier starts
+   until CI is green, except when the only red jobs are a carded develop-level failure, where the verifier may start
+   while they re-run and the merge still waits for green (DEC-218). Then it spawns the verifier for the card's difficulty with the card, the report and the branch.
 5. **The verifier returns** PASS or FAIL (section 5). The orchestrator posts the verdict block on the pull request
    as a comment, unchanged.
    - PASS: merge under section 3.1, then record the card as `Done`, its `handoff.md` line and every MINOR finding as
      a follow-up card (section 9) in the next `docs/build-status` pull request. Checks only the owner can make are
      listed by the verifier as "owner check pending"; they do not block the merge, and the orchestrator copies them to
      the owner's agenda in `handoff.md` (DEC-111).
-   - FAIL 1: send the findings back to the **same** builder (context intact) for a second round.
+   - FAIL 1: start a **fresh** builder of the same band with the card, the verdict and the branch for a second
+     round (DEC-214); a resumed builder re-reads its whole history on every call.
    - FAIL 2: re-run the card once with a fresh builder one band up (haiku to sonnet, sonnet to opus; an opus card
      stays on opus; never down). The verifier moves up with the builder (`verifier-opus` after a promotion to opus).
      The card's difficulty line is not edited; the pull request notes the promotion (DEC-115).
@@ -129,20 +132,25 @@ when **all** of these hold, and checks each one again right before the merge:
 
 1. CI is green on every required check (Windows and Linux; image and Compose jobs once they exist).
 2. The verifier's verdict is PASS with no BLOCKING or MAJOR finding, and it is posted on the pull request.
-3. The branch is up to date with `develop`. When `develop` moved, the orchestrator rebases the branch onto `develop`
-   (`git rebase origin/develop` in the card's worktree), pushes with `--force-with-lease` to the **task branch only**,
-   waits for CI again, and asks the same verifier to confirm the verdict when the rebase touched files of the card.
-4. The pull request does not change `CLAUDE.md`. A pull request that does gets the label `needs-owner`, the card is
-   set `Blocked (needs-owner - see #<pr>)`, and only the owner merges it. A task-card pull request that changes
-   `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` is merged under rules 1-3 like any other card
-   (DEC-199). Documentation pull requests outside a card (`docs/<topic>`) are `needs-owner`, except a
-   `docs/build-status` pull request that changes only Status lines, follow-up cards and the totals of `tasks.md` and
-   lines of `handoff.md`; it needs no verifier and is merged once CI is green.
+3. The branch merges into `develop` without a conflict, and its CI ran after the last change to the branch. Until
+   P8-34 is `Done`, the branch must also be up to date with `develop` (DEC-213). To catch up, the orchestrator
+   merges `develop` into the task branch (`git merge origin/develop` in the card's worktree; no rebase, no
+   force-push), pushes, waits for CI again, and asks the same verifier to confirm the verdict when the merge
+   touched files of the card. The CI run on `develop` after each merge must go green; a red `develop` stops every
+   merge until it is fixed.
+4. A task-card pull request that changes `CLAUDE.md`, `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or
+   `docs/rfc/` is merged under rules 1-3 like any other card (DEC-199, DEC-212). Documentation pull requests
+   outside a card (`docs/<topic>`, `docs/build-status`), including ones that change `CLAUDE.md`, need no verifier
+   and are merged under rules 1, 3 and 5 (DEC-212). Releases into `main` stay the owner's.
 5. The merge is `gh pr merge <pr> --squash --delete-branch` with the pull request title as the squash title, and the
-   command's exit code is 0. Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
+   command's exit code is 0; the orchestrator removes the card's worktree first, because the local branch delete
+   otherwise makes the command exit 1 (DEC-219). Never an admin override, never a bypass of the `develop` ruleset, never a push to `develop` or `main`.
 
 After each merge the orchestrator fast-forwards its local `develop` (`git pull --ff-only`) and confirms the card's
-issue is closed. Releases, tags and gates stay with the owner.
+issue is closed. Then it checks every other open card branch with `git merge-tree --write-tree origin/develop <branch>`
+and merges `develop` into a branch only when that reports a conflict or the merged change touched the branch's code
+files (a clean merge in a document needs no CI run; DEC-213 as changed by DEC-215 and DEC-218: each merge starts a CI run, and being behind is no longer a reason since P8-34); a
+conflict goes to a fresh fixer with the card and the branch (DEC-214). Releases, tags and gates stay with the owner.
 
 **P1-01 exception.** CI does not exist until P1-01 delivers it, so rule 1 cannot hold for that card: the orchestrator
 merges P1-01 when the verifier's PASS includes `npm ci`, `npm run verify` and the CI workflow's steps run locally on
@@ -184,11 +192,19 @@ emergency skip are in `docs/runbooks/deploy.md`, section Release to production.
   card does not ask for.
 - Every new behaviour cites its requirement id at the implementing type (section 1). Every structural change updates
   `docs/architecture.md` in the same branch; every schema or file-format change updates `docs/data-model.md`.
+- Before pushing, run the end-to-end specs of every page you changed as one background command against your own
+  throwaway PostgreSQL: `docker run -d --rm --name <card-id>-e2e-pg -e POSTGRES_PASSWORD=<any> -p <free port>:5432 postgres:17`,
+  then `ROSETTA_TEST_DATABASE_URL=postgres://postgres:<any>@127.0.0.1:<port>/postgres ROSETTA_E2E_PORT=<free port> node scripts/run-e2e.mjs <specs>`,
+  and `docker stop` the container afterwards. Never use or touch the containers `rosetta-app-*`, `rosetta-db-*`,
+  `rosetta-eval-*` or `rosetta-latest-*`, and never read `.env` (DEC-215).
 - Run `npm run verify:local` before reporting and paste its last lines and exit code; CI on the pull request runs
   the full `npm run verify` (DEC-182). Tests run without external systems (fakes,
   recordings, a disposable PostgreSQL).
-- Do not touch `docs/spec`, `docs/rfc`, `docs/adr` or `docs/decision-log.md` unless the card says so; such a change
-  makes the pull request `needs-owner` (section 3.1).
+- Do not touch `docs/rfc`, `docs/adr` or `docs/decision-log.md` unless the card says so. Edit `docs/spec` when the card
+  asks for it ("add the Givens first"): a verified card pull request that changes the spec is merged by the
+  orchestrator (section 3.1, DEC-199, DEC-218).
+- Other agents share the machine: run the tests you touched with `--maxWorkers=2` and leave the full suite to CI; if
+  the vitest step of `npm run verify:local` times out, report the static gates and the touched tests (DEC-218).
 - Commit on your branch only (cut from `develop`). Never merge and never push to `develop` or `main`.
 - Report in the format of section 6. Be exact about what was not done.
 
@@ -253,8 +269,11 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Phases run in order (P1, P2, P3), but cards inside a phase run in parallel whenever their dependencies allow. A
   card of a later phase may start early only when every card it depends on is `Done` and the owner said so in
   `handoff.md`.
-- Two cards run at the same time only when their _Delivers_ paths are disjoint and they share no serialized resource
-  (section 1). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
+- Two cards run at the same time only when the files they will edit are disjoint, judged from their _Reads_, _Do_
+  and _Delivers_, and they share no serialized resource (section 1). On the Phase 8 build two cards that both
+  edited `LiveRunView.tsx` without listing it conflicted. After each builder's first push, compare
+  `git diff --name-only origin/develop...` of the open branches and serialize any overlap (DEC-213). When a card is
+  split, chain its siblings only where they edit the same file (DEC-215). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
 - Keep at most four builders in flight at the same time (DEC-181), plus one API-billed verifier (DEC-128); agents already running finish and none is paused. One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,

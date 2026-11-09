@@ -1,5 +1,5 @@
 import type { RoleEstimate, RunEstimate, Scenario } from '../api/estimate-schemas.js';
-import { microsToDollars } from './usd.js';
+import { moneyText } from './money.js';
 
 // RF-425, RF-143, DEC-108, DEC-54: what the start page works out of an estimate. Costs stay
 // micro-dollars in a bigint until they are shown; a role whose model has no price (`priced` false)
@@ -18,9 +18,9 @@ export const tokensText = (tokens: number | bigint): string =>
 
 export const scenarios: readonly Scenario[] = ['low', 'likely', 'high'];
 
-/** `$0.39`: dollars with at least the cents and no trailing zeros beyond them. */
+/** `$0.3900` or `$12.40`: the one money formatter (DEC-54, DEC-217). */
 export function dollars(micros: bigint): string {
-  return `$${microsToDollars(micros.toString())}`;
+  return moneyText(micros);
 }
 
 /**

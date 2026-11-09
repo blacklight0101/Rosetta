@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { judgeClaims } from '../../../src/application/understand/claim-judgement.js';
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { blockExcerpts, blockTexts, fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness, verifierRecording } from '../../support/verifier-harness.js';
+import {
+  callEvents,
+  verdictEvents,
+  verifierHarness,
+  verifierRecording,
+} from '../../support/verifier-harness.js';
 
 // RF-301, ADR-005, ADR-008, DEC-57: step 2 of the verifier with recorded answers. The fake replays
 // the verifier recordings; the cited lines are the files of the webforms-csharp fixture.
@@ -28,27 +33,35 @@ describe('verifier judgement', () => {
       ['FEAT-001.c1', 'Supported'],
       ['OQ-001.c1', 'Supported'],
       ['BR-001.c1', 'Supported'],
-      ['ENT-001.c1', 'Supported'],
       ['BR-002.c1', 'Rejected'],
+      ['ENT-001.c1', 'Supported'],
     ]);
-    expect(claims.at(-1)?.verdict).toEqual({
+    expect(claims.find((claim) => claim.claimId === 'BR-002.c1')?.verdict).toEqual({
       step: 'judgement',
       reason:
         'Line 12 only assigns the UPDATE text to a variable that List returns; nothing in the lines runs it.',
       model: 'judge-model',
       at: '2026-10-12T10:00:00.000Z',
     });
-    expect(h.events.map((event) => [event.type, event.agentTaskId, event.data['status']])).toEqual([
+    const verdicts = verdictEvents(h.events);
+    expect(verdicts.map((event) => [event.type, event.agentTaskId, event.data['status']])).toEqual([
       ['verify.claim.judged', 'reader-001', 'Supported'],
       ['verify.claim.judged', 'reader-001', 'Supported'],
       ['verify.claim.judged', 'reader-002', 'Supported'],
-      ['verify.claim.judged', 'reader-003', 'Supported'],
-      ['verify.claim.judged', 'reader-004', 'Rejected'],
+      ['verify.claim.judged', 'reader-003', 'Rejected'],
+      ['verify.claim.judged', 'reader-004', 'Supported'],
     ]);
-    expect(h.events[4]?.data).toEqual({
+    // P8-58: five model calls one after another: each claim starts and ends before the next.
+    expect(callEvents(h.events)).toEqual(
+      ['FEAT-001.c1', 'OQ-001.c1', 'BR-001.c1', 'BR-002.c1', 'ENT-001.c1'].flatMap((id) => [
+        `start ${id}`,
+        `end ${id}`,
+      ]),
+    );
+    expect(verdicts[3]?.data).toEqual({
       claimId: 'BR-002.c1',
       status: 'Rejected',
-      reason: claims.at(-1)?.verdict?.reason,
+      reason: claims.find((claim) => claim.claimId === 'BR-002.c1')?.verdict?.reason,
     });
   });
 });
@@ -61,7 +74,7 @@ describe('verifier judgement: what the verifier sees', () => {
 
     await judgeClaims(fixtureCards(), h.step());
 
-    const request = h.requests()[4];
+    const request = h.requests()[3];
     expect(request?.context).toMatchObject({ role: 'verifier', agentTaskId: 'verifier-BR-002.c1' });
     expect(request?.system).toBe(h.prompts.system.text);
     expect(request?.tools).toEqual([]);

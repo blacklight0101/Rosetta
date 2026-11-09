@@ -104,6 +104,15 @@ const deepenEstimateSchema = z.looseObject({
   allRounds: z.object(range),
   cap: z.looseObject({ maxCostMicros: count, maxTokens: count }),
   overCap: z.looseObject({ round: z.boolean(), allRounds: z.boolean() }),
+  /** RF-434, P8-24: the approved amount of the project's journey and what is left of it. */
+  journey: z
+    .object({
+      approvedMicros: count,
+      remainingMicros: count,
+      approvedTokens: count,
+      remainingTokens: count,
+    })
+    .nullish(),
 });
 
 export type DeepenEstimate = z.output<typeof deepenEstimateSchema>;

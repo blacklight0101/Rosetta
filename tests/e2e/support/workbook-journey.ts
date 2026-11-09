@@ -1,9 +1,10 @@
 import type { Page } from '@playwright/test';
 import { buildZip } from '../../support/zip-fixtures.js';
 import { expect } from './fixtures.js';
+import { openReplaceSource, showStartChoices } from './start-choices.js';
 import { downloadedRunFiles } from './full-run-pages.js';
 import { chooseAreas, runScan } from './journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from './live-run-page.js';
 import { citationLinksIn, expectCitationOpensEvidence } from './zip-journey.js';
 import { discountsWorkbook, pricingWorkbook } from './workbook-fixtures-journey.js';
 
@@ -39,6 +40,7 @@ export async function journeyWorkbooks(retailRate?: number): Promise<readonly Wo
 
 /** Chooses the files in the form on the page and presses Upload workbooks; waits for what was read. */
 export async function uploadWorkbooks(page: Page, files: readonly WorkbookFile[]): Promise<void> {
+  await openReplaceSource(page);
   await page.getByLabel('Workbook files').setInputFiles([...files]);
   await page.getByRole('button', { name: 'Upload workbooks' }).click();
   const read = `${String(files.length)} workbooks read`;
@@ -63,8 +65,9 @@ export async function uploadFromNewProject(
 /** Opens the start page of the account's workbook project from the projects list. */
 export async function openWorkbookStart(page: Page, projectName: string): Promise<void> {
   await page.goto('/projects');
-  await page.getByRole('link', { name: `Start run for ${projectName}` }).click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: `Open for ${projectName}` }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await showStartChoices(page);
 }
 
 /** From the start page: a scan, then an understand run of the named areas; returns the run's path. */
@@ -73,7 +76,7 @@ export async function scanAndUnderstand(page: Page, areas: readonly string[]): P
   await page.getByRole('link', { name: 'Start page' }).click();
   await chooseAreas(page, areas);
   const path = await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   return path;
 }
 

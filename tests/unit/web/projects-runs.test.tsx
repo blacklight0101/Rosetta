@@ -2,10 +2,11 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
 import { failure, json, renderPage, type Answer } from './fake-api.js';
+import { facts, source } from './journey-fixtures.js';
 import { lastRunOf, overviewRow, projectOf } from './project-fixtures.js';
 
 // RF-1008, RF-1108, RF-1010, design-system.md section 14 (Projects, queue notice): each project row
-// shows its last run, state, runs, tokens and cost from GET /api/projects/overview, and a queued
+// shows its position, last run and cost from GET /api/projects/overview, and a queued
 // latest run gets the queue notice with its position and Cancel queued run.
 
 const demo = projectOf('p-1', 'octo/demo');
@@ -32,6 +33,12 @@ const queuedRun = lastRunOf({
   position: 2,
 });
 
+/** The journey the server sends with `queuedRun`: its understand run waits in the queue. */
+const queuedJourney = facts({
+  source: source({ id: 'r-9', queueState: 'Queued', endState: null, endedAt: null, position: 2 }),
+  briefSaved: false,
+});
+
 const renderProjects = (answers: Readonly<Record<string, Answer>>) =>
   renderPage(<ProjectsPage />, answers);
 
@@ -44,7 +51,7 @@ async function rowOf(name: string): Promise<HTMLElement> {
   throw new Error(`No row for ${name}.`);
 }
 
-it('RF-1008 shows the last run, its state, the runs, tokens and cost of each project', async () => {
+it('RF-1008 shows the position, the last run and the cost of each project, in the columns of the artboard', async () => {
   renderProjects({
     [overviewPath]: json(200, {
       projects: [
@@ -58,23 +65,23 @@ it('RF-1008 shows the last run, its state, the runs, tokens and cost of each pro
   const row = await rowOf('octo/demo');
   const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent);
 
-  expect(headers).toEqual(
-    expect.arrayContaining(['Repository', 'Last run', 'State', 'Runs', 'Tokens', 'Cost']),
-  );
-  expect(row.textContent).toContain('scan · 2026-10-12');
-  expect(within(row).getByText('Completed')).not.toBeNull();
-  expect(within(row).getByText('6')).not.toBeNull();
-  expect(within(row).getByText('1,284,903')).not.toBeNull();
+  expect(headers).toEqual(['Project', 'Source', 'Where it is', 'Last run', 'Cost', 'Actions']);
+  expect(row.textContent).toContain('12 Oct, 09:31');
+  expect(row.textContent).not.toContain('scan ·');
+  expect(within(row).getByText('Start a run')).not.toBeNull();
+  expect(within(row).queryByText('Completed')).toBeNull();
+  expect(within(row).queryByText('1,284,903')).toBeNull();
   expect(within(row).getByText('$3.47')).not.toBeNull();
   const empty = await rowOf('acme/shop');
   expect(empty.textContent).toContain('No run yet');
+  expect(within(empty).getByText('Scan not started')).not.toBeNull();
   expect(within(empty).getByText('$0.00')).not.toBeNull();
 });
 
 it('RF-1108 a queued latest run shows its position in the row and the queue notice', async () => {
   renderProjects({
     [overviewPath]: json(200, {
-      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })],
+      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun, journey: queuedJourney })],
       truncated: false,
     }),
   });
@@ -82,7 +89,8 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   const row = await rowOf('octo/demo');
   const notice = screen.getByTestId('queue-notice');
 
-  expect(within(row).getByText('Queued')).not.toBeNull();
+  // P8-137: the words of the project page's title, with the place in the queue under them.
+  expect(within(row).getByText('Understand running')).not.toBeNull();
   expect(row.textContent).toContain('position 2, 1 run ahead');
   expect(notice.textContent).toContain(
     'Your understand run of octo/demo is queued, position 2, 1 run ahead.',
@@ -93,12 +101,39 @@ it('RF-1108 a queued latest run shows its position in the row and the queue noti
   );
 });
 
+it('RF-1108 a queued scan before any understand run reads its newest run, with its position', async () => {
+  const scan = lastRunOf({
+    ...{ queueState: 'Queued', endState: null, startedAt: null },
+    position: 3,
+  });
+  renderProjects({
+    [overviewPath]: json(200, {
+      projects: [
+        overviewRow(demo, {
+          runs: 1,
+          lastRun: { ...scan, endedAt: null },
+          journey: facts({ source: null }),
+        }),
+      ],
+      truncated: false,
+    }),
+  });
+
+  const row = await rowOf('octo/demo');
+
+  expect(within(row).getByText('Scan queued')).not.toBeNull();
+  expect(row.textContent).toContain('position 3, 2 runs ahead');
+});
+
 it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and reads the list again', async () => {
   let cancelled = false;
   const { calls } = renderProjects({
     [overviewPath]: () => {
       const lastRun = cancelled
-        ? lastRunOf({ id: 'r-9', queueState: 'Ended', endState: 'Interrupted', position: null })
+        ? lastRunOf({
+            ...{ id: 'r-9', queueState: 'Ended', endState: 'Interrupted', position: null },
+            endReason: 'QueueCancel',
+          })
         : queuedRun;
       return json(200, { projects: [overviewRow(demo, { runs: 1, lastRun })], truncated: false });
     },
@@ -120,7 +155,8 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
     csrf: 'csrf-0',
     body: undefined,
   });
-  expect(within(await rowOf('octo/demo')).getByText('Interrupted')).not.toBeNull();
+  // P8-111: a run cancelled while it waited never reads "Stopped by you".
+  expect(within(await rowOf('octo/demo')).getByText('Cancelled while queued')).not.toBeNull();
   expect(calls.filter((call) => call.path === '/api/projects/overview')).toHaveLength(2);
 });
 

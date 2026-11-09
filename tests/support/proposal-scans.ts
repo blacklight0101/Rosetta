@@ -47,3 +47,8 @@ export const winFormsFiles: readonly FileEntry[] = [
 export const oneStatement: CodeMap['sqlStatements'] = [
   { path: 'App/MainInterface.cs', line: 3, verb: 'SELECT', text: 'SELECT 1' },
 ];
+
+export const javascriptFiles: readonly FileEntry[] = [
+  fileOf('web/index.js', 'javascript', ['page']),
+  fileOf('web/server.js', 'javascript'),
+];

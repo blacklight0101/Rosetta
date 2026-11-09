@@ -1,8 +1,14 @@
 import type { JSX } from 'preact';
 import type { CallRow } from '../api/call-schemas.js';
+import {
+  hasTooltip,
+  MoneyAmount,
+  useAmountTabStop,
+  type AmountStop,
+} from '../components/MoneyAmount.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { isProblem } from '../lib/api-calls/call-filter.js';
-import { clockText, costText, durationText, tokenText } from '../lib/api-calls/format.js';
+import { clockText, durationText, tokenText } from '../lib/api-calls/format.js';
 
 // RF-1011, RF-408, Q-58: the rows of the "API calls" panel. A retried, failed or refused attempt is
 // highlighted by its row, its badge and its error code; colour is never the only sign. A call that
@@ -66,7 +72,9 @@ function TranscriptCell(props: {
   );
 }
 
-function Row(props: CallsTableProps & { readonly call: CallRow }): JSX.Element {
+function Row(
+  props: CallsTableProps & { readonly call: CallRow; readonly stop: AmountStop },
+): JSX.Element {
   const { call, selected } = props;
   const answered = call.status === 'ok';
   return (
@@ -101,7 +109,7 @@ function Row(props: CallsTableProps & { readonly call: CallRow }): JSX.Element {
         ) : null}
       </td>
       <td data-label="Cost" class="rst-table__num">
-        {costText(call.costMicros)}
+        <MoneyAmount micros={call.costMicros} {...props.stop} />
       </td>
       <StatusCell call={call} />
       <TranscriptCell call={call} transcriptHref={props.transcriptHref} onSelect={props.onSelect} />
@@ -125,6 +133,9 @@ const heads = [
 
 // RF-1011
 export function CallsTable(props: CallsTableProps): JSX.Element {
+  const stops = useAmountTabStop(
+    props.calls.map((call) => ({ key: String(call.seq), exact: hasTooltip(call.costMicros) })),
+  );
   return (
     <div class="rst-table-scroll">
       <table class="rst-table rst-table--stack">
@@ -139,7 +150,7 @@ export function CallsTable(props: CallsTableProps): JSX.Element {
         </thead>
         <tbody>
           {props.calls.map((call) => (
-            <Row key={call.seq} {...props} call={call} />
+            <Row key={call.seq} {...props} call={call} stop={stops.stopOf(String(call.seq))} />
           ))}
         </tbody>
       </table>

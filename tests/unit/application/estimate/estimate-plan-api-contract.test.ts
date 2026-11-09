@@ -29,17 +29,17 @@ describe('EstimatePlan: the API contract call', () => {
     const { assumptions, planner } = await estimateOf({ seed: { briefAnswers: frontEnd } });
 
     const system = (await readFile('prompts/planner/api-contract.v1.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(7);
+    expect(assumptions.calls).toBe(8);
     expect(assumptions.apiContractPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-624 does not count it when the brief names no front end, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf();
 
-    expect(assumptions).toMatchObject({ calls: 6, apiContractPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 7, apiContractPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-624 does not count it when no FEAT or FLOW card is verified', async () => {
@@ -47,7 +47,7 @@ describe('EstimatePlan: the API contract call', () => {
 
     const { assumptions } = await estimateOf({ seed: { cards, briefAnswers: frontEnd } });
 
-    expect(assumptions).toMatchObject({ calls: 6, apiContractPromptTokens: 0 });
+    expect(assumptions).toMatchObject({ calls: 7, apiContractPromptTokens: 0 });
   });
 
   it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
@@ -60,6 +60,7 @@ describe('EstimatePlan: the API contract call', () => {
       ...[assumptions.apiContractPromptTokens, assumptions.coveragePromptTokens],
       assumptions.gapPromptTokens,
       assumptions.gapRepairPromptTokens,
+      assumptions.gapPromptTokens,
     ];
     const plan = named.reduce((left, each) => left - each, assumptions.promptTokens);
     const sum = [plan, ...named].map(reservation).reduce((total, each) => total + each, 0);

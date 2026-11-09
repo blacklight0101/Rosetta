@@ -35,7 +35,8 @@ export interface ScheduledParts {
   readonly pool: DatabasePool;
   readonly environment: { readonly dataDir: string };
   readonly clock: Clock;
-  readonly runs: RunQueue;
+  /** The run queue, and (DEC-226, P8-139) the backfill of the journey facts. */
+  readonly runs: { readonly queue: RunQueue; readonly journeyFactsBackfill: ScheduledJob };
   readonly logger: Logger;
 }
 
@@ -69,7 +70,7 @@ export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] 
         await reservations.purgeExpired(clock.now());
       },
     },
-    { intervalMs: minuteMs, job: () => runs.recover() },
+    { intervalMs: minuteMs, job: () => runs.queue.recover() },
     auditRetentionTask({ retention: new PgAuditRetention(pool), clock, logger }),
     refusalCountTask(auth.services.refusals),
     folderSweepTask({
@@ -79,7 +80,16 @@ export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] 
       clock,
       logger,
     }),
+    journeyFactsTask(runs.journeyFactsBackfill),
   ];
+}
+
+/**
+ * P8-139, DEC-226: the journey facts of the rows from before they were stored are filled at
+ * start-up, in the background, so the server starts at once; the daily run finds nothing left.
+ */
+function journeyFactsTask(job: ScheduledJob): ScheduledTask {
+  return { intervalMs: dayMs, runAtStart: true, job };
 }
 
 /**

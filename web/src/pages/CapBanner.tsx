@@ -2,7 +2,7 @@ import type { JSX } from 'preact';
 import type { Caps, Money } from '../api/admin-schemas.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
-import { microsToDollars } from '../lib/usd.js';
+import { moneyText } from '../lib/money.js';
 import { serverMonthOf } from './admin-month.js';
 
 // RF-1106, design-system.md section 14 (cap banner): from 80% of the server's monthly cap every
@@ -20,8 +20,8 @@ export interface CapBannerProps {
 export function CapBanner({ spent, caps, onCapsPage = false }: CapBannerProps): JSX.Element | null {
   const month = serverMonthOf(spent, BigInt(caps.serverMonthMicros));
   if (!month.warn) return null;
-  const used = `$${microsToDollars(month.usedMicros.toString())}`;
-  const cap = `$${microsToDollars(caps.serverMonthMicros)}`;
+  const used = moneyText(month.usedMicros);
+  const cap = moneyText(caps.serverMonthMicros);
   return (
     <div class="rst-cap-banner" role="status">
       <Glyph name="warning-triangle" />

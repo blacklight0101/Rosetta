@@ -14,6 +14,9 @@ hands-on review, and the gaps with their follow-up cards. It narrows the [R1 mat
 phase 2 and brings it up to the commit above; it does not repeat its method notes, its journeys or its security
 review.
 
+Line numbers in the Example column refer to the reviewed commit above; later edits to the tests move them, and no
+test guards them (the [R1 matrix](r1-matrix.md) names files, not lines).
+
 ## 1. Summary
 
 | Item                                 | Result                                                                                                                                                                    |

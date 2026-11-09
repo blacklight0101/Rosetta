@@ -15,14 +15,17 @@ import type { RunPhase } from '../lib/live-run/run-phase.js';
 // cancelled; after the request the page says it is stopping until the run's own end arrives.
 
 export interface RunStatusBarProps {
+  /** P8-27: the run and its state, for example `Scan, done` (runTitleOf). */
+  readonly title: string;
   readonly runKey: string;
-  readonly stage: string;
   readonly projectId: string;
   readonly phase: RunPhase;
   /** RF-208: the areas of the run that gave no usable card, shown next to an ended state. */
   readonly failedAreas?: number;
   /** P7-02: the planned areas no reader started, for "Partly read". */
   readonly unreadAreas?: number;
+  /** P8-93: the areas read below the coverage bar and the share of the code read, for "Partly read". */
+  readonly partlyRead?: PartlyRead;
   readonly stopping: boolean;
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
@@ -38,12 +41,19 @@ export interface RunStatusBarProps {
   readonly resume?: ComponentChildren;
 }
 
+export interface PartlyRead {
+  readonly areas: number;
+  readonly share: number | null | undefined;
+}
+
 function Badge({
   phase,
   unreadAreas,
+  partlyRead,
 }: {
   readonly phase: RunPhase;
   readonly unreadAreas?: number | undefined;
+  readonly partlyRead?: PartlyRead | undefined;
 }): JSX.Element {
   if (phase.kind === 'queued') return <StatusBadge list="RunQueueState" value="Queued" />;
   if (phase.kind === 'running') return <StatusBadge list="RunQueueState" value="Running" />;
@@ -54,7 +64,12 @@ function Badge({
   return endState === undefined ? (
     <StatusBadge list="RunQueueState" value="Ended" />
   ) : (
-    <RunEndBadge endState={endState} unreadAreas={unreadAreas} />
+    <RunEndBadge
+      {...{ endState, unreadAreas }}
+      endReason={phase.endReason}
+      partlyReadAreas={partlyRead?.areas}
+      readShare={partlyRead?.share}
+    />
   );
 }
 
@@ -70,6 +85,11 @@ function QueuePlace({ phase }: { readonly phase: RunPhase }): JSX.Element | null
   );
 }
 
+/** P8-138: the end state of an ended run, for tests; no user sees it. */
+function endStateOf(phase: RunStatusBarProps['phase']): string | undefined {
+  return phase.kind === 'ended' ? phase.endState : undefined;
+}
+
 // RF-1003, RF-1108
 export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
   const { phase, stopping } = props;
@@ -77,13 +97,17 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
     <>
       <div class="rst-live-head">
         <div class="rst-live-head__title">
-          <h1 class="rst-page__title">Live run</h1>
-          <span class="rst-mono rst-live-head__key">{props.runKey}</span>
-          <span class="rst-live-head__stage">{props.stage}</span>
+          <h1 class="rst-page__title">{props.title}</h1>
           <Link href={`/projects/${encodeURIComponent(props.projectId)}`}>Start page</Link>
+          <span class="rst-mono rst-live-head__key">{props.runKey}</span>
         </div>
-        <span role="status" data-testid="run-status" class="rst-live-head__state">
-          <Badge phase={phase} unreadAreas={props.unreadAreas} />
+        <span
+          role="status"
+          data-testid="run-status"
+          data-end-state={endStateOf(phase)}
+          class="rst-live-head__state"
+        >
+          <Badge phase={phase} unreadAreas={props.unreadAreas} partlyRead={props.partlyRead} />
           <QueuePlace phase={phase} />
           {phase.kind === 'ended' ? (
             <FailedAreasNote count={props.failedAreas ?? 0} class="rst-live-head__note" />

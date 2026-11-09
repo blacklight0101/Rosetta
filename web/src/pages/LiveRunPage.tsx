@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { useRouteParams } from '../app/route-params.js';
+import { useAnnounceRunProject } from '../app/run-project-signal.js';
 import { useAnnounceUsage } from '../app/usage-signal.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { phaseOf } from '../lib/live-run/run-phase.js';
@@ -37,6 +38,8 @@ function LiveRun({ onResumed }: { readonly onResumed: () => void }): JSX.Element
   // RF-1010: the totals pill of the header follows the run's model calls.
   useAnnounceUsage(progress);
   const status = load.status;
+  // P8-27: the side menu shows the pages of the run's project, also when the page is opened by its address.
+  useAnnounceRunProject(load.status === 'ready' ? load.run.projectId : undefined);
   useEffect(() => {
     if (status === 'ready') setKnown(true);
   }, [status]);

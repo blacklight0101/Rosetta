@@ -29,17 +29,24 @@ export function sampleRun(overrides: Partial<Run> = {}): Run {
     endState: null,
     queuedAt: fixtureNow + runCount * 1000,
     startedAt: null,
+    spanStartedAt: null,
+    activeMs: 0,
     endedAt: null,
     totals: noTotals,
     failedAreas: 0,
     unreadAreas: 0,
+    endReason: null,
     ...overrides,
   };
 }
 
 /** A run that is running for the given user. */
 export function runningRun(overrides: Partial<Run> = {}): Run {
-  return sampleRun({ queueState: 'Running', startedAt: fixtureNow + 500, ...overrides });
+  const startedAt = fixtureNow + 500;
+  return sampleRun({
+    ...{ queueState: 'Running', startedAt, spanStartedAt: startedAt },
+    ...overrides,
+  });
 }
 
 /** The reader role of a manifest: an Ollama model whose context size is not chosen yet. */

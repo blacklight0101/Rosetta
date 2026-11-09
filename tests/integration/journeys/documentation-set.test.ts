@@ -145,7 +145,9 @@ describe('the documentation set journey: coverage of the plan', () => {
     const { plan, documents } = current();
 
     expect(plan.endState).toBe('Completed');
-    expect(documents['checks.md']).toContain('Every item is built by at least one task card.');
+    expect(documents['checks.md']).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(documents['checks.md']).not.toMatch(/^\| (feature|table|operation|flow|screen) /mu);
   });
 
@@ -168,12 +170,12 @@ describe('the documentation set journey: screen claims', () => {
   it('RF-626 a screen detail the verifier rejected reaches neither the planner nor the wireframe', () => {
     const { specification, documents, providers } = current();
 
-    expect(specification['spec.md']).toContain('SCRN-003.c7 [Rejected] Field PromoCode');
+    expect(specification['spec.md']).toContain('SCRN-001.c7 [Rejected] Field PromoCode');
     const call = providers.requests().find((each) => each.context.agentTaskId === 'planner-ux');
     const sent = call?.messages.map((message) => message.content).join('\n') ?? '';
     expect(sent).toContain('EmailBox');
     expect(sent).not.toContain('PromoCode');
-    const wireframe = documents['ux/wireframes/SCRN-003.html'] ?? '';
+    const wireframe = documents['ux/wireframes/SCRN-001.html'] ?? '';
     expect(wireframe).toContain('EmailBox (text, required)');
     expect(wireframe).not.toContain('PromoCode');
   });

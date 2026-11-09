@@ -5,6 +5,7 @@ Instructions for any coding agent working on Rosetta (Codex, Claude or another t
 1. Read [`CLAUDE.md`](CLAUDE.md) first. Despite its name, its rules bind every agent: source-of-truth order, the stack rules, tests first, file and function limits, branches and commits, and what you must never do.
 2. Read [`handoff.md`](handoff.md), starting with its resume point: the current state, the build order and the owner's open questions.
 3. Follow the build protocol in [`docs/orchestration/README.md`](docs/orchestration/README.md) and take work only from the cards in [`docs/orchestration/tasks.md`](docs/orchestration/tasks.md): one card per branch (`task/<card>-<slug>`), a pull request per card, and a verifier's PASS before a merge.
+4. The knowledge graph is optional (see the "Knowledge graph" section of `CLAUDE.md`, DEC-214).
 
 Rules worth repeating:
 

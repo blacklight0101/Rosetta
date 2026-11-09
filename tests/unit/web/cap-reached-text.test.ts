@@ -14,7 +14,7 @@ it('RF-1106 a run cap of the administrator names the administrator as the one wh
       spentMicros: 340_000,
     }),
   ).toBe(
-    'The run cap of $0.50, set by the administrator, was reached at $0.34 spent. Only the administrator can raise it.',
+    'The run cap of $0.5000, set by the administrator, was reached at $0.3400 spent. Only the administrator can raise it.',
   );
 });
 
@@ -40,7 +40,7 @@ it('RF-1106 the daily cap of the account names the administrator for the account
       spentMicros: 700_000,
     }),
   ).toBe(
-    'Your daily cap of $0.75 on server keys was reached at $0.70 spent today. The administrator can raise it for your account.',
+    'Your daily cap of $0.7500 on server keys was reached at $0.7000 spent today. The administrator can raise it for your account.',
   );
 });
 
@@ -59,7 +59,7 @@ it('RF-422 a role cap names the role and the project settings', () => {
       spentMicros: 300_000,
     }),
   ).toBe(
-    "The reader role's cost cap of $0.30 in the project settings was reached. The other roles go on.",
+    "The reader role's cost cap of $0.3000 in the project settings was reached. The other roles go on.",
   );
 });
 

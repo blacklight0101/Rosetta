@@ -4,10 +4,9 @@ import type { RunEstimate } from '../api/estimate-schemas.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import {
-  approvalText,
   basisMovedText,
   ceilingNoteText,
-  likelyText,
+  estimateLinesOf,
   missingKeyProviders,
 } from '../lib/journey-approval.js';
 import { providerNames } from './provider-choices.js';
@@ -64,21 +63,43 @@ function useBasisMoved(estimate: RunEstimate): string | undefined {
 const CAP_SENTENCE =
   'A step of the journey runs under this amount, which replaces the project run cap; the administrator caps and the day and month caps still stop a run for good. Pressing Analyse again later starts a new approval: the amount approved before no longer applies and the spend counts from zero.';
 
-// RF-430
+// RF-430, RF-434, P8-26: the journey as three short lines (likely, approved, what stops it), the
+// ceiling and the reason a figure moved under them, and the longer explanation collapsed.
 function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Element | null {
   const { journey } = estimate;
-  const likely = likelyText(estimate);
-  const approve = approvalText(estimate);
+  const lines = estimateLinesOf(estimate);
   const moved = useBasisMoved(estimate);
-  if (journey === undefined || likely === undefined || approve === undefined) return null;
+  if (journey === undefined || lines === undefined) return null;
   const basis =
     journey.basis === 'history'
       ? 'From the measured totals of earlier runs of this model.'
       : 'From fixed assumptions: no earlier run of this model yet.';
   return (
-    <p class="rst-settings__note" data-testid="journey-total">
-      {`The whole journey (understand with claim checking, ${String(journey.deepenRounds)} Deepen rounds and the plan): likely ${likely}. Analyse approves ${approve}: the run asks before it goes past it. ${ceilingNoteText(estimate) ?? ''} ${basis} ${moved ?? ''} ${CAP_SENTENCE}`}
-    </p>
+    <div class="rst-p826-journey" data-testid="journey-total">
+      <p class="rst-settings__note">
+        The whole journey: understand with claim checking, {String(journey.deepenRounds)} Deepen
+        rounds and the plan.
+      </p>
+      <dl class="rst-p241-measures">
+        <div class="rst-p241-measure" data-testid="journey-likely">
+          <dt>Likely</dt>
+          <dd>{lines.likely}</dd>
+        </div>
+        <div class="rst-p241-measure" data-testid="journey-approved">
+          <dt>Approved</dt>
+          <dd>{lines.approved}</dd>
+        </div>
+        <div class="rst-p241-measure" data-testid="journey-stops">
+          <dt>What stops it</dt>
+          <dd>{lines.stops}</dd>
+        </div>
+      </dl>
+      {moved === undefined ? null : <p class="rst-settings__note">{moved}</p>}
+      <details class="rst-p826-more">
+        <summary>How these figures are worked out</summary>
+        <p class="rst-settings__note">{`${ceilingNoteText(estimate) ?? ''} ${basis} ${CAP_SENTENCE}`}</p>
+      </details>
+    </div>
   );
 }
 

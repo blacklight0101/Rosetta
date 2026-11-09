@@ -53,12 +53,12 @@ it('RF-425 shows tokens and cost per role as low, likely and high with the assum
 
   const reader = screen.getByRole('row', { name: /reader/u });
   expect(within(reader).getByText('openai / gpt-5-nano')).not.toBeNull();
-  expect(within(reader).getByText('$0.12')).not.toBeNull();
-  expect(within(reader).getByText('$0.39')).not.toBeNull();
-  expect(within(reader).getByText('$0.80')).not.toBeNull();
+  expect(within(reader).getByText('$0.1200')).not.toBeNull();
+  expect(within(reader).getByText('$0.3900')).not.toBeNull();
+  expect(within(reader).getByText('$0.8000')).not.toBeNull();
   expect(within(reader).getByText('22,000 tokens')).not.toBeNull();
   const total = screen.getByRole('row', { name: /Total/u });
-  expect(within(total).getByText('$0.39')).not.toBeNull();
+  expect(within(total).getByText('$0.3900')).not.toBeNull();
   expect(screen.getByText(/2 areas.*price table/su).textContent).toContain(
     'price table 2026-10-11',
   );
@@ -131,13 +131,13 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   expect(notice?.textContent).toContain('OpenAI');
   expect(notice?.textContent).toContain('reader');
   expect(start().disabled).toBe(true);
-  expect(start().title).toBe('Confirm the OpenAI notice above to start the run');
+  expect(start().title).toBe('Confirm the OpenAI notice just above this bar to start the run');
   expect(start().textContent).toBe('Analyse (confirm the OpenAI notice)');
 
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
   fireEvent.click(start());
-  // RF-425: the likely cost ($0.39) is above the project's $0.25 threshold, so the run is confirmed.
+  // RF-425: the likely cost ($0.3900) is above the project's $0.2500 threshold, so the run is confirmed.
   fireEvent.click(await screen.findByRole('button', { name: 'Confirm and start' }));
 
   await opened();
@@ -171,8 +171,8 @@ it('RF-1001 a likely estimate above the run cap warns, names the cap and keeps S
 
   const warning = screen.getByTestId('cap-warning');
   expect(warning.textContent).toContain('run cap');
-  expect(warning.textContent).toContain('$0.25');
-  expect(warning.textContent).toContain('$0.14');
+  expect(warning.textContent).toContain('$0.2500');
+  expect(warning.textContent).toContain('$0.1400');
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
 });
@@ -187,7 +187,7 @@ it('RF-1001 a likely cost above the daily cap on the own keys warns and names th
   await waitFor(() => {
     expect(screen.getByTestId('cap-warning').textContent).toContain('daily cap');
   });
-  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.09');
+  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.0900');
 });
 
 it('RF-425 an estimate that cannot be read shows its error and Start stays off for understand', async () => {

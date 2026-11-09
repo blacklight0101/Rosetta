@@ -1,7 +1,15 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { json } from './fake-api.js';
-import { base, press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
+import {
+  base,
+  press,
+  ready,
+  renderPlan,
+  saves,
+  stepName,
+  typeHosting,
+} from './plan-setup-helpers.js';
 import { projectOf } from './project-fixtures.js';
 
 // RF-648, RF-649, RF-650, RF-645, DEC-150: the three questions of a project of workbooks on the
@@ -50,9 +58,8 @@ describe('the workbook questions', () => {
     renderPlan(asWorkbook);
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    fireEvent.input(await screen.findByLabelText('Your own for Hosting'), {
-      target: { value: 'IIS on Windows Server' },
-    });
+    await screen.findByRole('radiogroup', { name: 'Hosting' });
+    typeHosting('IIS on Windows Server');
     fireEvent.click(screen.getByRole('button', { name: 'Project context' }));
 
     const group = await screen.findByRole('radiogroup', { name: SIGN_IN });

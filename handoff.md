@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-30. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Left: phase 6 (P6-01), the owner check of P2-53 and the follow-up cards P2-55 and P2-56. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second and third rounds are merged into `develop` and nothing is released; Phase 9 is carded and held. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,239 @@ _Last updated 2026-10-30. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-09, evaluation after Phase 8 wave 3; Phase 9 carded and held).** On the owner's word the evaluation was re-run on Haiku only (P8-46..P8-48, compared by P8-49; the cards read In review until the owner has read the report): Asset Manager, Invoice Generator and eShopModernizing end to end on the evaluation stack `rosetta-eval2`, rebuilt from `develop` at `bbb696cd`. **Critical defects: none**, so nothing was added to Phase 8. Every journey completed, no call passed an approved amount or a cap, and 48 page loads at 375, 768 and 1280 px, light and dark, showed no overflow, console error or HTTP error. Cost $2.85 for the whole session (2026-11-02: $3.02), 21.6M tokens in and 2.05M out, 1 h 58 min. The eShop plan completed first try and every eShop module has a task card. Findings fixed since 2026-11-02: EV-82, EV-83, EV-86..EV-88, EV-90..EV-95, EV-97, EV-99, EV-32, EV-73 through the web, EV-44; EV-84 now pauses, continues and stops as designed.
+
+The owner said to card every other finding in Phase 9 and not to start it: P9-01..P9-13 (#1336..#1348), counts in the [tasks.md totals](docs/orchestration/tasks.md). EV-100 (Major, P9-01 and P9-02): after Continue (+N) at an approval pause the journey's approved amount is not raised, so the plan cannot start without a workaround (start and at once stop an understand run). The Minors: EV-101 "Stop here" ends as "Cap reached" (P9-03), EV-104 a stopped reader counts as failed (P9-04), EV-105 cancelling a queued resumed run cannot record its end (P9-05), EV-108 a completed plan can leave a requirement built by no card (P9-06), EV-102 and EV-107 the journey strip's scan step and total (P9-07, P9-08), EV-103 the start page with Ollama unreachable (P9-09), EV-106 queue wording (P9-10), and the carried EV-96 (P9-11), EV-85 (P9-12) and EV-89/EV-57/EV-69 (P9-13). The report and its evidence are in the private evaluation folder (`Rosetta-wt/eval2/_eval/p8w3-evaluation.md`, `p8w3-haiku-report.md`), outside the repository.
+
+Owner agenda from this evaluation:
+
+- **The evaluation stack's key.** `_eval/eval2.env` carries no `ANTHROPIC_API_KEY`; as in the 2026-11-02 run the stack got it from the main checkout's git-ignored `.env`, passed to compose as a second `--env-file` (no one read or printed it). Confirm this is how the evaluation stack should get its key, or say where it should come from.
+- **EV-84 needed the administrator.** A user cannot lower the approved amount, so the pause was reached by setting the user day cap to $0.10 around the start (restored to $10). Say if a user should be able to approve less than the approvable amount.
+- **Clear Phase 9** when you want it built; P8-49's compare is the report above.
+
+**Resume (2026-11-09, Phase 8 wave 3 round 3: every buildable Phase 8 card is built).** Fifteen more cards are merged into `develop` and none is released: P8-55 #1319, P8-75 #1318, P8-76 #1322, P8-143 #1323, P8-80 #1324, P8-135 #1325, P8-78 #1326, P8-82 #1327, P8-81 #1328, P8-83 #1329, P8-85 #1330, P8-84 #1331, P8-95 #1332, P8-86 #1333 and P8-96 #1334. Nothing is in flight. What is left in Phase 8 needs the owner: P8-46..P8-49, P8-51 (merge queue) and the live parts of P8-61 and P8-66..P8-71 (ADR-028). Counts are in the [tasks.md totals](docs/orchestration/tasks.md).
+
+Product fix found by the stress job (P8-84 round 3): a resumed run waiting in the queue was sent the stale `run.ended` of its first life when a reader subscribed (`subscribe-run-events.ts`, `run-phase.ts` now read `queuedAt`). Look at a resumed run that waits for a slot on the next release.
+
+Owner questions from this round, each with the default the builder applied (say if one should change):
+
+- **P8-55:** Q1-Q3 as written in #1319, defaults kept.
+- **P8-75 and P8-76:** P8-75 Q1-Q4 and P8-76 Q1-Q3 as written in #1318 and #1322, defaults kept.
+- **P8-143:** the fold is left as it is, and the rename is not announced.
+- **P8-135:** limits stay in the Roles section; the states No key and Reachable are added; the rows stack below 640 px; the icons are glyphs.
+- **P8-78:** the read and withdraw routes came with P8-81 and SuggestPlanOptions is done; consent names provider kinds, not endpoints; consent is stored before the key check; a queued run is not checked again after consent is withdrawn.
+- **P8-81:** the wording follows the artboard, workbook projects included; Withdraw is a link-style button; no hint line; the consent line takes the boxes' slot; the boxes show while the consent loads.
+- **P8-82:** the P8Stack footer wording; the Roles summary always shows; the step buttons stay in the card; the reason is visible; the bar reuses the `rst-start__` classes.
+- **P8-83:** the Verification lines of RF-143 and RF-209 should name the e2e that covers them (not done here).
+- **P8-85:** the title "Open questions" is kept; the forms are full and editable; the tab is kept; focus moves to the next question.
+- **P8-84:** Resume is the primary action on a stopped run; below the bar the strip says Deepen even with a brief saved, which overrides RF-615 Q-44 on that page; Retry is secondary.
+- **P8-86:** nothing is selected at the start; Save (0) is enabled; answered questions stay editable; Plan setup's Save is secondary; answers are saved in batches of 50.
+- **P8-95:** a dropped link is not repaired; linked items are not listed in `checks.md`; coverage.v2 is a follow-up; the gap.v4 line stays as history.
+- **P8-96:** no repair in round 2; modules alone do not start round 2; an unreadable repair skips round 2; the estimate adds one gap call (which may cause one RST-2310); no web log writer.
+- **Stress capacity (choose):** the heavy journey e2e specs ran close to the stress job's limit (5 repeats on 4 workers against a server with 2 run slots); P8-84 needed three rounds. Options: tag such specs `@queue` and run them serially, give the e2e server more run slots, or use fewer stress workers. Default: keep, and fix the waits per spec.
+
+Follow-ups found by the verifiers. They block nothing and are not cards yet:
+
+- `web/src/lib/plan-setup/estimate.ts:22`: a remote Ollama reads `needsConsent` false.
+- P8-76: the control has no `aria-describedby` for its note.
+- The RF-132 trace row does not list P8-98.
+- `docs/orchestration/README.md` section 3.1 does not say that a red stress check holds a merge (P8-142 default).
+- P8-78: a `givenAt` in the future is accepted; no test that one user's consent does not count for another; a retry with the parent's consent skips the checks.
+- P8-81: Plan setup does not read the consent again after RST-1515; FailedAreas sends its own consent; the `aria-busy` timing of the consent read; the fold forgets its state after a trip to Settings; the `giveCloudConsent` JSDoc.
+- P8-82: `plan-setup.css` is at 301 lines; the reason is announced twice.
+- P8-85: `focusControlOf`; an id put in a selector without escaping; the moved status is not announced.
+- P8-84: the RF-615 note does not mention the Q-44 override; no tests for failed areas or a running Deepen; no primary action when the journey fails to load; cancelling a queued resumed run has its `run.ended` refused by `event-order.ts`.
+- P8-86: no test above 50 answers; focus after a refused save; no refresh after a refusal mid-batch (RecordAnswers is not atomic); a change from an option to typed text is not counted.
+- P8-95: the gap.v5 example ids T-004 and FLOW-009 look real (a gap.v6 with T-900); linked items in `checks.md`; refuse module and deployment links; a fixed rule for requirement to flow; a live Haiku eval of gap.v5.
+- P8-84 round 3: the SSE stream can close without `run.ended` if the row ends just before the second find and the end is written after the replay (milliseconds, older than the fix); no HTTP integration test for a requeued resumed run; `full-understand.spec.ts` and `plan-setup.spec.ts` are at 300 lines.
+- P8-96: the "asked once more" log line is written even when the guard refuses round 2; no direct test that an unreadable repair skips round 2; the kind de-duplication in `plan-window-facts.ts` has no test (its mutation survived); `tests/recordings/fake/README.md` does not list the 2 new recordings, and `planner-gap-eshop-ev95.json` is used by no test; no Continue test for round 2's answer-book key; no release note about the one-time RST-2310 after the deploy.
+
+**Resume (2026-11-08, Phase 8 wave 3 round 2; the build goes on in a fresh orchestrator session, DEC-214).** Twenty-three more cards are merged into `develop` today and none is released: P8-63 #1283, P8-64 #1288, P8-59 #1286, P8-125 #1292, P8-54 #1293, P8-128 #1289, P8-65 #1294, P8-73 #1287, P8-129 #1290, P8-98 #1297, P8-97 #1291, P8-60 #1296, P8-126 #1306, P8-138 #1308, P8-133 #1307, P8-127 #1305, P8-77 #1304, P8-134 #1310, P8-74 #1309, P8-79 #1298, P8-136 #1295, P8-139 #1303 and P8-137 #1311 (last, on P8-139's facts). Nothing is in flight. Counts are in the [tasks.md totals](docs/orchestration/tasks.md); the follow-ups below are not cards yet.
+
+**Before the next release into `main`, read which deploy cards are on `develop`:** P8-62, P8-63, P8-64 and P8-65 are. `release-checks.yml` runs on every push to `main` and pushes `sha-<short>` to GHCR, then waits for ZAP and staging and sets `release/ready`; it reads no secret and nothing reads `release/ready` yet (P8-66). Until P8-66, Release rebuilds the same commit and re-pushes the same tag, so the image is built twice per release. Migration 0024 (P8-139) ships with the same release.
+
+Test stack: the stack named in the entry below is older than today's cards, so what they change must not be judged there.
+
+The CI cards of DEC-227 are merged too, after a PC restart: P8-141 #1313 (the release checks start from CI completing on `main`; the hourly sweep names a ZAP check that never finished; every Azure poll is capped with a back-off), P8-142 #1314 (the quarantine list `tests/quarantine.json`, empty, and the non-required `quarantine` and `stress` jobs) and P8-140 #1315 (each checkout fetches only the history its job reads). Owner questions with the defaults applied: P8-141 keeps its RF-1304 edit, sweeps hourly at :41 over 24 h with 40 min and 2 h thresholds, and leaves a failed checks run red on the head of `develop`; P8-142 counts a red `stress changed tests (not required)` check as holding the merge although the ruleset does not require it (`docs/orchestration/README.md` section 3.1 does not say so yet: confirm or reject), a Vitest flake proves itself by a failed run on a commit that passed on a rerun, and stress runs 5 times on 4 workers; P8-140 leaves gitleaks scanning 0 commits on a push to `main` (upstream `--first-parent --no-merges`) and the 30-commit page of gitleaks-action on long pull requests. Only the next release merge shows P8-141, P8-140's `deploy` and `checks` at depth 2, and a tag run; the runbook's "after" checkout times are still to be measured. Follow-ups: the RF-1304 notify Given still says "within the wait" (`docs/spec/requirements.md`, about line 2159); the sweep reads only the first page of commit statuses; on a one-commit push to `develop` gitleaks now scans the whole tree of that commit (wider, never narrower).
+
+Next, in this order: P8-61, P8-66..P8-71 as far as they need no live setup, P8-75, P8-76, P8-78, P8-80..P8-83, P8-84..P8-86, P8-95, P8-96, P8-135; CI cards P8-52 and P8-55 last. P8-46..P8-49 stay the owner's, and P8-51 stays blocked on the owner.
+
+Owner agenda from this round:
+
+- **P8-138 (#1308), rows left to you.** The builder counted 10 owner rows but lists 9 (numbers are the builder's), each with a default:
+  1. `log-text.ts` writes three log lines per verifier call against `LOG_LIMIT` 1000; RF-1002 says the verbose log lists every event. Default: keep the lines, accepted knowingly.
+  2. `lastSignOfLife` streams the whole log (performance only). Default: a small separate card (a history port method that reads the last line from the end of the file).
+  3. `code-map-tiles.ts:93` draws finished tiles as "read" before the coverage loads. Default: keep "read" and reword the RF-230 Given so the Areas figure is what gives no verdict while it checks.
+  4. `read-run-partly-read.ts` reads `task-results.json` with no size cap. Default: no cap, because Rosetta writes the file itself (a cap in `FileTaskResults` would be its own card).
+  5. `TotalsPill.tsx:39`: the exact figure is a `title` on the `strong`. Default: link title "<split> · $3.113515" and drop the `strong` title.
+  6. `ServerMeter.tsx:41` and `RunMeter.tsx:79` show plain amounts. Default: design-system section 10 says meter text is a sentence; the exact figure is in the header pill and the role table.
+  7. `cap-warnings.ts`: the daily and monthly "left" amounts round up. Default: round every "left" amount down and widen the RF-428 scenario.
+  8. The P8-101 screenshots exist only as Playwright attachments. Default: CI attachments are enough, no PNG files in the repo.
+  9. The user's name can shrink to 0 px at 1280 px. Default: a floor of about 4rem on the name, with the meter's note dropping first.
+
+  Also from P8-138: migration 0023's header was dropped because migration files are checksummed, and `ProviderTest.tsx:81` was left to P8-73.
+
+- **P8-74 (#1309): five points** where the builder applied a default:
+  1. Some wording is the builder's own, written as Givens because the artboard draws only the Ollama plus own-key case: the no-key line ("X has no key you can use. ... so a run would be refused (RST-2302)."), "You may use the server's X key.", "Ollama can be reached." and the sentence for when nothing is usable.
+  2. The every-role control moves into the warning instead of appearing twice. After Apply, focus goes to "Provider for every role" in Models per role.
+  3. The warning follows the form's current, unsaved roles, so it goes away on Apply, before Save.
+  4. "Ollama (not reachable)" is shown disabled, and only for an Ollama that answered unreachable. Providers with no key are not listed (DEC-225 A).
+  5. The artboard's "All four roles use it" contradicts its own table, so the warning names the roles that actually use the provider.
+
+  Plus: OpenAI is preselected before Anthropic (the artboard lists Anthropic first). Look at the page at the viewports of the orchestration README section 1, light and dark (no page walk was run).
+
+- **P8-139 (#1303):** open questions are stored per understand-run family, not per project; the count lags while a Deepen runs until a family member ends (default for both: keep). On the deploy that ships 0024, compare the journey strip of a project with a Completed understand run, a Deepen and a plan written from it, before and after the start-up pass: it must read the same. After a rollback to an image from before 0024, run the rollback SQL of `environments-and-delivery.md` section 11 before rolling forward. More than one app replica does not serialise the refresh across processes; the next refresh heals it, and it matters only if the hosted app scales past one replica.
+- **P8-137:** a queued run reads "running" in the overview, and the overview has no budget. Say if either should change.
+- **P8-73 (#1287):** look at the "Use for every role" row at 375, 768 and 1280 px, light and dark, with a real Anthropic key and Ollama stopped (the verifier did not run the page walk).
+- **P8-65 (#1294):** confirm on a real failing release run that the owner is notified.
+- **P8-63 and P8-64:** their effect on the next release (the Release checks run starts on the merge push, pushes the image with the workflow token, and gives the merge commit `release/ready` within an hour; cancel one run during the wait once to see `release/ready` = failure). The double image build holds until P8-66.
+- **Carried over:** the administrator's server figure shows only from 1600 px (default: keep); ADR-028 is still Proposed and needs your acceptance; P8-51 (merge queue); P8-46..P8-49; Q-67; staging is not enabled (`ROSETTA_STAGING_ENABLED`), so `release/ready` reads "Ready" without a staging check until you enable it.
+
+Follow-ups found by the verifiers of these cards. They block nothing; the small ones are filed as card P8-143 (#1320), and the list stays here for reference:
+
+- P8-126: the 15 s `saveBrief` timeout in the test should be 30 s.
+- P8-98: the card should have named RF-132.
+- P8-124: its Refs and the RF-210 trace row should read RF-210, not RF-231.
+- P8-142 (note for the builder, before it starts): `vitest --changed` misses tests that read documents, so a docs change can pass `verify:local` and fail in CI.
+- P8-60: the reader list is not reset.
+- P8-77: the memory adapter accepts a duplicate id, and the arrays allow duplicates.
+- P8-127: the order of `shards.json`.
+- P8-134: no live region or success announcement after a rename.
+- P8-137: `pg-run-index.ts` `LIST_OF_PROJECTS` reads every run of up to 100 projects on each 5 s poll; it is one statement, but the payload grows with run history.
+- P8-137: in `tests/e2e/visual/sweep-runs.spec.ts` the "Understand done" assertion became a looser five-way regex.
+- P8-128: `web/src/pages/use-fold.ts:21-26`: a fold the user opens in the same task as the page opens it closes when the page releases it (the single toggle is read as the page's own change, so no user choice is recorded).
+- P8-74: the every-role control lists OpenAI before Anthropic where the artboard has Anthropic first; the test "Apply does not save" asserts immediately and would miss a delayed save; the build adds a warning icon and splits the "You have an Anthropic key." sentence into its own paragraph, both unlike the artboard.
+- P8-139: a race guard on `ended_at` in the backfill (`src/application/journey/journey-facts-backfill.ts:59-66`); the RF-615 backfill Given (`docs/spec/requirements.md`, about line 1454) says it fills "only from before ... at start-up", but it now fills every row once, at start-up or in the daily pass; `environments-and-delivery.md` section 11 should say when to run the rollback SQL on the 0024 deploy; the test name at `question-count-refresh.test.ts:52` lacks an RF id.
+
+**Resume (2026-11-05, Phase 8 wave 3 stopped on the owner's order; start a fresh orchestrator session).** The owner said on 2026-11-04 to finish what was running and start nothing new, and to write this handoff when it had merged. All of it has: 38 cards are merged into `develop` and none is released. No card pull request is open and no agent is running.
+
+Merged: P8-50 #1254, P8-56 #1251, P8-57 #1263, P8-58 #1255, P8-62 #1264, P8-72 #1269, P8-88 #1217, P8-89 #1229, P8-91 #1253, P8-93 #1244, P8-94 #1216, P8-99 #1270, P8-100 #1272, P8-101 #1274, P8-102 #1273, P8-104 #1215, P8-105 #1228, P8-106 #1206, P8-107 #1227, P8-108 #1213, P8-109 #1252, P8-110 #1214, P8-111 #1234, P8-112 #1226, P8-114 #1235, P8-115 #1231, P8-116 #1230, P8-117 #1233, P8-118 #1232, P8-119 #1265, P8-120 #1249, P8-121 #1268, P8-122 #1245, P8-123 #1262, P8-124 #1250, P8-130 #1271, P8-131 #1266, P8-132 #1267. Withdrawn: P8-33, P8-53, P8-113. Blocked: P8-51 on the owner.
+
+**Before the next release into `main`, read which deploy cards are on `develop`:** P8-62 is, and a release carries its workflow changes even if the owner has not provisioned the scheduler.
+
+Test stack: compose project `rosetta-wave3-final` on <http://127.0.0.1:18096>, image `rosetta:wave3-final`, worktree `Rosetta-wt/test-wave3`, local tag `test/wave3-final` at `6981f20c9` (the final `develop`, CI green). Its database is empty, the first sign-in is in a file outside the repository and unused, and no model run has been made on it. The older stack, project `rosetta-wave3` at `bb6292e6b`, is stopped and kept: its volumes hold the owner's project with four ended runs, and its generated settings are `.env.wave3-old` and `compose.wave3-old.yaml` in that worktree. Both use port 18096, so only one can run. Never remove its volumes unless the owner says so.
+
+Next, when the owner says to build again, in this order: P8-59, then P8-60 and P8-61 (its counting rule is corrected in the card: a set of claim ids, RF-1002); P8-73..P8-76, then P8-135; P8-77..P8-83; P8-84..P8-86; P8-95..P8-98; P8-63..P8-71 as far as they need no live setup (read each trigger first: P8-63 pushes an image); follow-ups P8-125..P8-129, P8-133, P8-134, P8-136, P8-137, P8-138; CI cards P8-52, P8-54 and P8-55 last. New cards from this wave: P8-134 Rename (#1275), P8-135 Roles table (#1276), P8-136 History table at 1024 px (#1277), P8-137 full position in the overview (#1278), P8-138 wave minors (#1279). P8-46..P8-49 stay the owner's. Counts are in the [tasks.md totals](docs/orchestration/tasks.md). Weekly window at the stop: 82%, against the 85% stop for new cards (DEC-220).
+
+Owner agenda from this wave:
+
+- **Choose:** the administrator's "Server, this month" figure now shows in the header only from 1600 px, run or not. That number is the builder's, not yours. On most laptops (1280, 1366, 1440, 1536 px) the figure is then only on the users and caps page and in the cap banner from 80%. Default: keep. Alternatives the verifier names: always show it in the banner, a second header line for the administrator, or a popover on the pill.
+- **Choose:** the journey strip wraps to four and three steps at 1024 px with the side navigation open (726 px of room against 780 px needed). With the glyph above the name all seven would fit one row. Default: keep.
+- **Choose:** "Partly read: 83%" can sit beside "Well covered: 83%" when one area is below the bar (P8-93). Default: keep.
+- **Choose:** with local models the run page reads "$0.00 left of $0.00 approved". Default: keep; say if the wording should change.
+- **Choose:** the Kind column reads "-" for a deleted run and for the Plan setup options row (P8-109), and $0.0020 gets the tooltip $0.002. Default: keep.
+- **Q-67:** should a call in flight finish and be booked at a tiny cap? Default: no.
+- **ADR-028 is Proposed:** accept the Container Apps job or a Logic App as the scheduler; a fine-grained token as the job's secret, 90 days, rotated by hand; the GitHub schedule stays as the backup until two mornings run on time. P8-63..P8-71 need this for their live parts.
+- **CI:** 10 of 19 `develop` runs were cancelled by the next merge, so merge rule 3 (the `develop` run after a merge goes green) cannot be checked for those commits; the next finished run covers their tree. The P8-50 picks need you: dropping the Windows coverage-merge job (saves 2.5 min) and the merge queue (needs an organisation-owned repository, P8-51). The `Staging` workflow also reads skipped on `develop` pushes; this was seen and not investigated, so check it before relying on staging.
+- **Migration 0023** clears a reason on a run with no end state; none should exist. Say if you want that checked on production data before the release.
+- **Try by hand:** P8-110 tap on a real phone and a screen-reader read-out; P8-88 History on a stopped and resumed run after the migration; P8-112 dark and 360 px views; P8-93 an ended understand run of a small app.
+- **P8-46..P8-49:** the evaluation re-run spends money and stays yours.
+
+Method notes from this wave, not rule changes yet: every builder brief asked for the Givens in the spec first, after that gap cost P8-92 and P8-90 a FAIL round each in wave 2 (the effect was not measured), and several cards were green locally and red on CI because the local font is narrower than the Linux runner's (P8-101) or a test depended on order (P8-72). Agents handed back while their own work still ran until the brief said not to. If you want these as rules, they become a DEC and go to the blueprint skill and its repository.
+
+Cost since the checkpoint below, in the harness's subagent tokens and tool calls (no USD figures were computed). "Fixes" sums every fix or CI-fix run, "Verifiers" every verifier round. A dash means no such run; "?" means the figure was not recorded, so the total is what is known. Resumed agents report tokens across their runs, so the P8-101 fix figures are the last reading and the call counts are added by hand.
+
+| Card   | Builder                             | Fixes                     | Verifiers     | Total known  |
+| ------ | ----------------------------------- | ------------------------- | ------------- | ------------ |
+| P8-50  | 137.3k, 33                          | 92.6k, 20                 | 212.6k, 42    | 442.5k, 95   |
+| P8-57  | 130.1k, 40                          | 95.4k, 27                 | ? + 89.9k, 17 | 315.4k, 84   |
+| P8-58  | 135.9k, 45                          | 312.2k, 108               | 471.1k, 189   | 919.2k, 342  |
+| P8-62  | 105.3k, 19                          | -                         | ?             | 105.3k, 19   |
+| P8-72  | 187.2k, 69                          | 98.9k, 28                 | 266.0k, 93    | 552.1k, 190  |
+| P8-91  | 194.3k, 90                          | 259.5k, 122               | 368.5k, 131   | 822.3k, 343  |
+| P8-93  | 405.3k, 137 with its first verifier | 335.7k, 215 + merge fix ? | 181.4k, 58    | 922.4k, 410  |
+| P8-99  | 216.6k, 87                          | 615.0k, 305               | 550.0k, 221   | 1381.6k, 613 |
+| P8-100 | 151.3k, 57                          | 160.8k, 54                | 359.0k, 126   | 671.1k, 237  |
+| P8-101 | 236.9k, 85 with its first fix       | 238.4k, 104               | 411.0k, 127   | 886.3k, 316  |
+| P8-102 | 132.0k, 52                          | -                         | 118.6k, 43    | 250.6k, 95   |
+| P8-119 | 230.5k, 88 with a stopped run       | -                         | 109.3k, 28    | 339.8k, 116  |
+| P8-120 | 226.4k, 90                          | 119.2k, 40                | 242.4k, 72    | 588.0k, 202  |
+| P8-121 | 148.9k, 54                          | -                         | 133.2k, 48    | 282.1k, 102  |
+| P8-123 | 112.2k, 42                          | -                         | 114.5k, 38    | 226.7k, 80   |
+| P8-130 | 255.9k, 122                         | 318.4k, 167               | 394.6k, 160   | 968.9k, 449  |
+| P8-131 | 107.4k, 31                          | -                         | 102.3k, 30    | 209.7k, 61   |
+| P8-132 | 276.8k, 145                         | 248.4k, 95                | 287.3k, 124   | 812.5k, 364  |
+
+Those 18 cards cost at least 10,696.5k, about 594k per card; all 38 of the wave cost at least 18,190.6k, about 479k per card, against about 304k per card in wave 2. The four with no fix round and all figures known (P8-102, P8-121, P8-123, P8-131) cost about 242k on average, the same as the earlier cards with no fix round, so the rise is again fix rounds, above all on P8-99, P8-130, P8-93 and P8-58. These fixes found real defects (a parse crash on the Projects list at `AwaitingApproval`, row menu bugs, a header that wrapped on the Linux runner), and several of the verdicts turned on an artboard or a spec line that had not been settled first.
+
+**Resume (2026-11-04, Phase 8 wave 3, second checkpoint at 60% of context; the session keeps building).** Twenty cards are merged into `develop` and none is released: P8-88 #1217, P8-89 #1229, P8-94 #1216, P8-104 #1215, P8-105 #1228, P8-106 #1206, P8-107 #1227, P8-108 #1213, P8-109 #1252, P8-110 #1214, P8-111 #1234, P8-112 #1226, P8-114 #1235, P8-115 #1231, P8-116 #1230, P8-117 #1233, P8-118 #1232, P8-122 #1245, P8-124 #1250 and P8-56 #1251. Withdrawn: P8-33 (DEC-220, Q-66), P8-113 (not reproducible), P8-53 (already in `ci.yml`). Blocked: P8-119 on P8-120, P8-51 on the owner. Open: P8-91 #1253, P8-93 #1244 (round 2), P8-120 #1249 (round 2), P8-50 #1254, P8-58 #1255; building: P8-57, P8-123.
+
+The owner answered in chat (DEC-220, DEC-221): the wait on P8-49 is dropped, so P8-50..P8-61, P8-72..P8-86 and P8-95..P8-98 run before the evaluation; the parallelism rule is confirmed; the deploy cards P8-62..P8-71 are built as far as they need no live setup, with ADR-028 left Proposed; three builders until 85% of the weekly window. **Before the next release into `main`, read which deploy cards are on `develop`: a release carries their workflow changes even if the owner has not yet provisioned the scheduler.**
+
+Next, in order: P8-59 after P8-58; P8-99..P8-102 after P8-91; P8-119 after P8-120; P8-60, P8-61; P8-72..P8-76; P8-77..P8-83; P8-84..P8-86; P8-95..P8-98; P8-62..P8-71 as above; follow-ups P8-121, P8-125..P8-133; CI cards P8-52, P8-54 and P8-55 last, because the P8-50 note shows they save little without the merge queue.
+
+Owner agenda from this wave:
+
+- Try by hand: P8-110 tap on a real phone and a screen-reader read-out; P8-88 History on a stopped and resumed run after the migration; P8-112 dark and 360 px views; P8-93 an ended understand run of a small app (badge, tile, Read step and Areas figure agree).
+- Q-67: should a call in flight finish and be booked at a tiny cap? Default: no, and P8-132 lets a tiny cap read one area.
+- P8-91 (if it merges as built): "remaining" lines now round half up, so they can show a rounding step more than is left.
+- P8-109: Kind reads "-" for a deleted run and for the Plan setup options row.
+- P8-50 picks that need you: dropping the Windows coverage-merge job (saves 2.5 min) and the merge queue (needs an organisation-owned repository). 10 of 19 `develop` runs were cancelled by the next merge, so those commits have no finished `develop` run.
+- P8-89: a pointer leaving the tooltip diagonally closes it (P8-129 fixes it; the verdict comment on #1229 calls this owner-accepted, but the owner did not rule on it).
+
+Incident: Docker Desktop's CLI hung from at least 22:23 on 2026-11-03 with the containers still serving. On the owner's word it was restarted: stop all Docker processes, `wsl --shutdown`, delete the five run sockets through `wsl -d docker-desktop -- rm -f`, `wsl --shutdown`, then `Start-Process` of `Docker Desktop.exe`. `docker desktop restart` hung, and `Stop-Job` on a job running `docker desktop start` re-orphaned a socket. All 8 containers came back healthy. Never choose "Reset to factory defaults".
+
+Cost of wave 3 so far, in the harness's subagent tokens and tool calls (no USD figures were computed). "Fixes" sums every fix or CI-fix run, "Verifiers" every verifier round.
+
+| Card   | Builder     | Fixes       | Verifiers   | Total        |
+| ------ | ----------- | ----------- | ----------- | ------------ |
+| P8-108 | 113.7k, 33  | -           | 94.8k, 19   | 208.5k, 52   |
+| P8-104 | 107.8k, 28  | -           | 109.7k, 25  | 217.5k, 53   |
+| P8-110 | 137.6k, 62  | 111.2k, 44  | 242.3k, 62  | 491.1k, 168  |
+| P8-88  | 220.3k, 113 | -           | 159.1k, 66  | 379.4k, 179  |
+| P8-94  | 334.3k, 222 | 92.8k, 36   | 152.4k, 50  | 579.5k, 308  |
+| P8-112 | 114.9k, 31  | -           | 122.9k, 29  | 237.8k, 60   |
+| P8-107 | 99.1k, 22   | -           | 107.4k, 32  | 206.5k, 54   |
+| P8-116 | 84.0k, 15   | -           | 86.0k, 12   | 170.0k, 27   |
+| P8-115 | 183.4k, 51  | -           | 93.1k, 21   | 276.5k, 72   |
+| P8-118 | 106.7k, 34  | -           | 106.1k, 25  | 212.8k, 59   |
+| P8-106 | -           | 391.1k, 166 | 219.4k, 45  | 610.5k, 211  |
+| P8-105 | 125.2k, 46  | 98.1k, 18   | 203.2k, 49  | 426.5k, 113  |
+| P8-111 | 276.1k, 140 | 83.5k, 11   | 202.8k, 107 | 562.4k, 258  |
+| P8-114 | 119.7k, 49  | -           | 93.9k, 18   | 213.6k, 67   |
+| P8-117 | 116.8k, 36  | 180.8k, 35  | 195.4k, 40  | 493.0k, 111  |
+| P8-89  | 233.7k, 101 | 342.9k, 126 | 464.0k, 161 | 1040.8k, 388 |
+| P8-124 | 103.6k, 27  | -           | 96.9k, 22   | 200.5k, 49   |
+| P8-122 | 137.4k, 63  | -           | 104.1k, 29  | 241.5k, 92   |
+| P8-109 | 174.0k, 56  | -           | 167.9k, 78  | 341.9k, 134  |
+| P8-56  | 119.9k, 47  | 145.6k, 46  | 118.3k, 40  | 383.8k, 133  |
+
+Those 20 merged cards cost 7,494.1k, about 375k per card, against about 304k per card in wave 2. The 12 cards with no fix round cost about 242k on average (2,906.5k), so the rise comes from fix rounds: P8-89 alone took three verifier rounds and an opus fixer. Cards that stopped without merging: P8-33 126.3k, 26; P8-113 124.3k, 33; P8-119 110.3k, 32. Open so far: P8-93 741.0k, 352 (its fix round 335.7k, 215 is the costliest fix of the wave); P8-120 493.4k, 181; P8-91 194.3k, 90; P8-50 137.3k, 33; P8-58 135.9k, 45.
+
+**Resume (2026-11-04, Phase 8 wave 3 checkpoint; the wave continues in the same session).** Merged into `develop`: P8-108 #1213 (the cost route splits each run by role), P8-104 #1215 (the C# on .NET walk runs on the non-.NET project) and P8-110 #1214 (exact zero and tiny amounts; the verifier failed round 1 because Escape did not close a figure under the pointer, round 2 passed). Not released. In flight: P8-106 #1206 (a fixer is on the two 60x repeat sets), P8-94 #1216 (builder done, CI fixer done; recordings depend on the order cards are read in), P8-88 #1217 (builder done), and P8-107, P8-112 and P8-105 (started, see the pull requests on GitHub). P8-33 is `Blocked (Q-66)`: its premise does not hold on `develop` (a project run cap does not lower the approvable figure, and a pause is reachable only by writing the `journeys` row), so Q-66 asks the owner and its default withdraws the card in favour of `approval-pause.spec.ts`. The owner approved the Docker restart and asked in chat to keep working through the night without being asked; DEC-219 records the method change (checkpoint at 60% of context and keep building, a failed premise is blocked with a Q-nn, cards read by id, verdicts in a file, worktree removed before the merge). Next, in this order: P8-89 after P8-88 merges; then P8-91 (after P8-89, P8-110 is merged) and P8-109 (after P8-89, P8-108 is merged); P8-111 after P8-88 and P8-112 (run-lifecycle and journey-context files); P8-105 after P8-112 (journey-steps tests); then the follow-ups P8-113 (a defect: the project page posts a scan on every load; failing test first), P8-114, P8-115, P8-116, P8-117, P8-118 and P8-119, filed in the docs pull request that carries this entry (issues #1218..#1224). Owner checks: P8-110, tap an amount on a real phone (iOS Safari and Android Chrome) and listen to a screen reader read an amount. Owner agenda question (P8-94, default keep): in a two-workbook project the `(root)` area with `dependencies.md` is read last under DEC-216, while RF-231 says it is read; say if the order or the text should change. Docker incident: the Docker Desktop CLI hung from at least 22:23 on 2026-11-03 (its backend log stopped at 21:35) while the containers kept serving, and `docker desktop restart` hung too, as did stopping a job that ran `docker desktop start`, which killed its backend and orphaned `sailor-ingest.sock` again. What worked, on the owner's word: stop everything, `wsl --shutdown`, remove the five orphaned run sockets (`dockerInference`, `userAnalyticsOtlpHttp.sock`, `sailor-ingest.sock`, `dockerEthernetVfkit`, `docker-secrets-engine/engine.sock`) with `wsl -d docker-desktop -- rm -f`, `wsl --shutdown` again, then start `Docker Desktop.exe` detached. All eight `rosetta-*` containers came back healthy; never click "Reset to factory defaults" in the dialog.
+
+Cost of wave 3 so far, in the harness's subagent tokens and tool calls (no USD figures were computed; a dash means no such run). Open cards show what they cost until now.
+
+| Card   | Builder          | Fix round      | Verifier round 1 | Verifier round 2 | Total known       |
+| ------ | ---------------- | -------------- | ---------------- | ---------------- | ----------------- |
+| P8-108 | 113.7k, 33       | -              | 94.8k, 19        | -                | 208.5k, 52        |
+| P8-104 | 107.8k, 28       | -              | 109.7k, 25       | -                | 217.5k, 53        |
+| P8-110 | 137.6k, 62       | 111.2k, 44     | 142.0k, 41       | 100.3k, 21       | 491.1k, 168       |
+| P8-94  | 334.3k, 222      | 92.8k, 36 (CI) | -                | -                | 427.1k, 258, open |
+| P8-106 | stopped (wave 2) | 191.4k, 113    | -                | -                | 191.4k, 113, open |
+| P8-88  | 220.3k, 113      | -              | -                | -                | 220.3k, 113, open |
+
+Wave 3 against wave 2: the three merged cards average about 306k per card (208.5k, 217.5k and 491.1k, the last with a FAIL round and a fixer), against about 304k for the six wave 2 cards with a known builder cost, so the method change did not cut the cost of a card yet; P8-108 and P8-104, with no fix round, cost less than any wave 2 card with a known total. The costliest runs are the P8-94 builder (334.3k, 222 calls, the most of either wave) and the P8-106 fixer (191.4k, 113 calls for two repeat sets of 60 runs). The orchestrator wrote this checkpoint at 60% of its context, as DEC-219 asks, instead of ending the wave.
+
+**Resume (2026-11-03, Phase 8 wave 2 merged except P8-106; start a fresh orchestrator session, DEC-214).** Merged into `develop`: P8-26 #1187 (project page after the journey), P8-36 #1194 (the Plan setup flake was a timing race in the test, not shared state), P8-103 #1203 (a Python project in the e2e seed), P8-87 #1205 ("Stopped by you"), P8-92 #1193 (a reader is asked to read on, up to three times), P8-90 #1204 (one money formatter on the Cost page), P8-22 #1197 (Plan setup shows the saved stack), and the docs #1188 (DEC-214 split: P8-37..P8-104, 14 parents withdrawn), #1198 and this one. Not released. **First job: P8-106 #1206 (issue #1201).** Its commit 3b9c53607 fixes a real page defect: a stored replacement source read as `idle` until the history answered, so the old areas and an enabled Analyse were shown and a run could read the old scan. The two replace journeys now pass. CI at dc371e3a3 still fails `tests/e2e/journeys/workbook-project.spec.ts:111` at line 122 (the notice "Your workbook data is private." is not visible; intermittent since P8-26 folded the start choices). Two agents on this card stopped when the app process exited and neither reported, so its worktree `Rosetta-wt/p8-106` is clean at that head with nothing further done. Next: a fresh fixer finds why the notice can be hidden (a person must see it before Analyse is usable, RF-157), runs both specs with `--repeat-each=20`, then CI, then a verifier. Until it merges, re-run a shard 3 failure on these specs once. Next ready after it: P8-94 (DEC-216), P8-104, P8-88, P8-91, P8-105, P8-107, P8-108, P8-110, P8-111, P8-112; P8-33 reads P8-87 as its dependency (done) with P8-24 done, so it is ready too; P8-89 then P8-109. P8-72 onward wait on the chain from P8-57. Gated on the owner: P8-46..P8-49 (evaluation re-run, spends money), which also hold P8-50..P8-61; P8-62..P8-71 (accept ADR-028 and run the provisioning). The split repeated finished work: P8-15 (#1155) and P8-16 (#1156) were merged but read Todo, so P8-37..P8-45 are withdrawn with a pointer back (issues #1189 and #1190 closed), and a dependency on them reads as the parent, which is `Done`. Method changes under the owner's approval: DEC-215 and DEC-218 (check the git log before a split; merge `develop` into a branch only on a conflict or a shared code file; chain split siblings only on a shared file; builders run their e2e specs on their own throwaway PostgreSQL; builders edit `docs/spec` when the card asks, after that gap cost P8-92 and P8-90 a FAIL round each; a verifier may start while a carded develop-level flake re-runs; touched tests with `--maxWorkers=2`, because several agents running vitest at once crash its workers). Owner decisions: DEC-216 (reader order), DEC-217 (cards P8-108..P8-112, zero and tiny amounts, artboard P8Stack updated). Owner checks: P8-26 the three project-page states against P8Project in light, dark and phone, a live run one click away, the sticky bar never covering the last control; P8-87 the stopped tone and glyph on the strip, which the artboard does not draw; P8-90 the Cost page with a deleted run and two price table versions; P8-22 pick "Keep the legacy technology", save, reload; P8-92 re-run Asset Manager on Haiku and confirm the first-party share read rises above 16%, with the stop reasons in #1193 (the 2026-11-02 run events are outside the repository, so the card's measurement is drawn from the code). Leftover folder `Rosetta-wt/p8-27` from wave 1 may still be locked.
+
+Cost of wave 2, in the harness's subagent tokens and tool calls (no USD figures were computed; "stopped" means the agent died with the process and reported no usage). The weekly window went from 46% to 52% for 7 merged cards; wave 1 went from 37% to 46% for 4.
+
+| Card   | Builder                                | Fix round | Verifier round 1 | Verifier round 2 | Total known    |
+| ------ | -------------------------------------- | --------- | ---------------- | ---------------- | -------------- |
+| P8-26  | about $40, 250+ calls (wave 1 session) | -         | 105k, 13         | -                | 105k + builder |
+| P8-36  | 128k, 55                               | -         | 81k, 15          | -                | 209k, 70       |
+| P8-103 | 145k, 66                               | -         | 89k, 20          | -                | 234k, 86       |
+| P8-87  | 156k, 63                               | -         | 111k, 37         | -                | 267k, 100      |
+| P8-90  | 149k, 46                               | stopped   | 112k, 25         | 78k, 8           | 339k, 79 + fix |
+| P8-22  | 135k, 55                               | stopped   | 118k, 27         | 82k, 9           | 335k, 91 + fix |
+| P8-92  | 121k, 35                               | 113k, 43  | 116k, 38         | 89k, 19          | 439k, 135      |
+| P8-106 | stopped                                | stopped   | -                | -                | not merged     |
+
+Not tied to a merged card: the split 229k, 40; P8-45 94k, 31 and P8-41 (stopped), both repeats of P8-16; P8-94 86k, 9 (stopped correctly on a contradiction with RF-210). The orchestrator session reached about 430k of context, which is too long: end a wave at about 60%.
+
+**Resume (2026-11-03, Phase 8 wave 1 merged; start a fresh orchestrator session, DEC-214).** Merged into `develop`: P8-24 #1177 (one approved amount on every run page), P8-21 #1176 (stack layers follow the chosen language), P8-27 #1178 (run page fits the kind of run), P8-34 #1185 (matrix examples name a test file), and the docs #1179, #1180, #1184 and this one (graph step, green CI before a verifier, cheaper parallel merges DEC-212/DEC-213, cost rules DEC-214). Not released. In flight: P8-26 (branch `task/p8-26-project-page-after-the-journey`, builder finishing; open its pull request, wait for green CI, then a verifier). Status lines of P8-21, P8-24, P8-27 and P8-34 read `Done`. Next, in this order: (1) split every Todo P8 card that is not S into S cards per DEC-214 before starting any (P8-22, P8-23, P8-25, P8-28..P8-33, P8-19, P8-20 if still open); (2) then ready cards by dependency, at most four builders, under section 8.1. Follow-ups: P8-35 (non-.NET e2e project), P8-36 (Plan setup flake); possible ones from verdicts: skipped and `.todo` tests count as matrix evidence (P8-34 finding 1), substring id match (finding 2), "Partly read" has no percentage and the scan page has no per-area list (P8-27). Owner checks: the Stack step with C# on .NET on a non-.NET project and the .NET hosting order against the artboard (IIS, Docker vs Azure App Service, IIS); a finished scan and Deepen run page. Cost of wave 1 (API prices, for comparison): P8-24 $23, P8-21 $31, P8-27 $49, P8-34 $3, orchestrator about $52; weekly window 37% to 46%. Leftover folder `Rosetta-wt/p8-27` is locked by a process; delete it when free (it holds no junction).
 
 **Resume (2026-10-30, Phase 6 in production, Phase 7 merges, owner decisions).** Production runs Phase 6 (`sha-86174d9`, release #1035): GitHub had not started Scheduled release by 06:09 Madrid, so it was started by hand on the owner's word and Release deployed at 06:14 with the smoke test green. Merged on the owner's approval: P7-01 #1061, P7-08 #1067, P7-10 #1066, P7-15 #1068, P7-13 #1069 (round 3 PASS) and P7-12 #1070; with P7-03, P7-07, P7-11, P7-14 and P7-16 that is 11 of the Phase 7 cards. The owner decided DEC-199..DEC-202 (this pull request): verified card pull requests that change the spec are merged by the orchestrator; Codex default models and one model catalogue file (P7-23); a local verifier with a warning (P7-24); a late upload attach is refused. The owner asked to start no new card on 2026-10-30. Next wave: P7-02, P7-04, P7-09, P7-20; P7-19 (evaluation re-run) last. Follow-ups to card: the P7-13 prose rule keeps some service classes as tables, the eShop ENT-088 service tables, price 19,4, and a release trigger that GitHub can delay past the 06:00-07:59 window.
 
@@ -239,6 +472,8 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-11-08 (Phase 8 wave 3 round 2)** - docs pull request `docs/build-status-2026-11-08`: 23 cards merged into `develop` (none released), Status lines set to Done, follow-ups of the verdicts and the owner agenda written in the first entry of the resume point.
+- **2026-11-05 (Phase 8 wave 3 stopped)** - docs pull request `docs/build-status-wave3-final`: the owner stopped new cards; 38 cards of the wave are merged into `develop` and none is released. DEC-223 (Q-68 answered) and DEC-224 recorded, follow-up cards P8-134..P8-138 appended, Status lines and totals updated, the P8-60 counting rule and the row menu's scroll rule corrected. Owner agenda, next cards and costs are in the first entry of the resume point.
 - **2026-10-30 (owner decisions, Phase 7 merges)** - docs pull request `docs/owner-decisions-2026-10-30` (`needs-owner`): DEC-199..DEC-202 applied to `CLAUDE.md`, the orchestration README, the spec (RF-639, RF-641, RF-645) and `tasks.md` (Status lines of the merged Phase 7 cards, new cards P7-23 and P7-24, totals and waves); production deployed Phase 6 at 06:14 Madrid after a manual start of Scheduled release.
 - **2026-10-27 (release flow)** - docs and workflows pull request `docs/develop-staging-release` (`needs-owner`): the owner decided DEC-175 (ADR-025 Accepted): `develop` becomes the integration and default branch, every push to it deploys to a staging app (`staging.yml`) that shares the Azure environment, storage account and PostgreSQL server, a release is a pull request `develop` -> `main` merged by the owner with a merge commit, and production deploys at 06:00 Europe/Madrid (`scheduled-release.yml`), refusing a tree that did not pass staging. Owner and switch-over steps: agenda item 47.
 - **2026-10-25 (status)** - docs-only status pull request `docs/build-status-2026-10-25`: P2-34 Done (first live evaluation, figures in the resume point), P3-132 appended as Done (#924), totals recounted (P3 132 cards, total 401, 394 Done).

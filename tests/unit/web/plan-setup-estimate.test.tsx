@@ -36,9 +36,9 @@ describe('plan estimate', () => {
     await ready();
 
     const card = screen.getByRole('region', { name: 'Plan estimate' });
-    expect(card.textContent).toContain('$0.18 likely');
-    expect(card.textContent).toContain('$0.09');
-    expect(card.textContent).toContain('$0.40');
+    expect(card.textContent).toContain('$0.1800 likely');
+    expect(card.textContent).toContain('$0.0900');
+    expect(card.textContent).toContain('$0.4000');
     expect(within(card).getByText('Run cost cap')).not.toBeNull();
     expect(card.textContent).toContain('$2.00');
   });
@@ -88,7 +88,7 @@ describe('plan estimate before a brief is saved', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use the defaults for the rest' }));
 
     await waitFor(() => {
-      expect(card.textContent).toContain('$0.18 likely');
+      expect(card.textContent).toContain('$0.1800 likely');
     });
     expect(page.calls.some((call) => call.path.startsWith(`${base}/plan-estimate`))).toBe(true);
   });
@@ -203,7 +203,7 @@ describe('write the package with consent', () => {
 
 // P8-01, EV-82: the plan estimate of the evaluation's Haiku eShop project, synthetic in its names:
 // 14 planner calls (the plan, the PRD, six data-model batches, flows, the API contract, the user
-// interface, coverage, the gap and its repair) under the project defaults of $0.50 per run.
+// interface, coverage, the gap and its repair) under the project defaults of $0.5000 per run.
 const evaluated = (runLine: 'journey' | 'project', approved: boolean) => ({
   ...planEstimate,
   planner: {
@@ -238,10 +238,10 @@ describe('plan estimate of the evaluated 14-call plan', () => {
 
     const card = screen.getByRole('region', { name: 'Plan estimate' });
     expect(card.textContent).toContain('14 planner calls');
-    expect(card.textContent).toContain('$0.33 likely');
-    expect(card.textContent).toContain('low $0.21, high $1.72');
+    expect(card.textContent).toContain('$0.3300 likely');
+    expect(card.textContent).toContain('low $0.2100, high $1.72');
     expect(card.textContent).toContain(
-      'The high estimate ($1.72) does not fit the run cap ($0.50 left)',
+      'The high estimate ($1.72) does not fit the run cap ($0.5000 left)',
     );
     expect(card.textContent).not.toMatch(/\bfits\b/u);
     expect(screen.getByTestId('plan-run-line').textContent).toContain('the project run caps apply');
@@ -284,7 +284,7 @@ describe('plan estimate of the evaluated plan under the journey amount', () => {
     await ready();
 
     expect(screen.getByRole('region', { name: 'Plan estimate' }).textContent).toContain(
-      'The high estimate ($1.72) does not fit what is left of the approved amount ($0.90): the run pauses and asks before it passes it.',
+      'The high estimate ($1.72) does not fit what is left of the approved amount ($0.9000): the run pauses and asks before it passes it.',
     );
   });
 });

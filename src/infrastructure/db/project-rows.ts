@@ -10,7 +10,7 @@ import { projectSettingsSchema } from '../../application/projects/project-settin
 
 /** Every column, in table order. */
 export const PROJECT_COLUMNS =
-  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, source_snapshot_key, source_file_name, source_uploaded_at, source_workbooks, (SELECT r.snapshot_key FROM runs r WHERE r.project_id = projects.id AND r.snapshot_key IS NOT NULL ORDER BY r.queued_at DESC, r.id DESC LIMIT 1) AS last_run_snapshot_key, settings, settings_version, created_at, updated_at';
+  'id::text AS id, user_id::text AS user_id, name, source_kind, source_url, ref, subpath, source_snapshot_key, source_file_name, source_uploaded_at, source_workbooks, (SELECT r.snapshot_key FROM runs r WHERE r.project_id = projects.id AND r.snapshot_key IS NOT NULL ORDER BY r.queued_at DESC, r.id DESC LIMIT 1) AS last_run_snapshot_key, settings, settings_version, created_at, updated_at, brief_saved_at';
 
 const instant = z.date().transform((date) => date.getTime());
 
@@ -49,6 +49,7 @@ const projectRowSchema = z
     settings_version: z.number().int().min(1),
     created_at: instant,
     updated_at: instant,
+    brief_saved_at: instant.nullable().default(null),
   })
   // RF-128, RF-150: the source is all there or all null, and only an upload or workbook project has one.
   .refine(hasValidUpload)
@@ -91,5 +92,7 @@ export function toProject(row: unknown): Project {
     settingsVersion: parsed.settings_version,
     createdAt: parsed.created_at,
     updatedAt: parsed.updated_at,
+    // P8-139, DEC-226: when the brief was saved; absent while none is.
+    ...(parsed.brief_saved_at === null ? {} : { briefSavedAt: parsed.brief_saved_at }),
   };
 }

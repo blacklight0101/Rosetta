@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { moneyText } from '../lib/money.js';
 import { microsToDollars } from '../lib/usd.js';
 import type { ServerMonth } from './admin-month.js';
 
@@ -7,11 +8,14 @@ import type { ServerMonth } from './admin-month.js';
 // never carries the meaning alone.
 
 const dollars = (micros: bigint): string => microsToDollars(micros.toString());
+const shown = (micros: bigint): string => moneyText(micros);
 
 // RF-1106
 export function ServerMeter({ month }: { readonly month: ServerMonth }): JSX.Element {
   const used = dollars(month.usedMicros);
   const cap = dollars(month.capMicros);
+  const usedText = shown(month.usedMicros);
+  const capText = shown(month.capMicros);
   return (
     <div
       class="rst-meter"
@@ -20,12 +24,12 @@ export function ServerMeter({ month }: { readonly month: ServerMonth }): JSX.Ele
       aria-valuemin={0}
       aria-valuemax={Number(cap)}
       aria-valuenow={Number(used)}
-      aria-valuetext={`$${used} of $${cap}`}
+      aria-valuetext={`${usedText} of ${capText}`}
     >
       <div class="rst-meter__figures">
         <span>Server, this month</span>
         <span>
-          <strong>{`$${used}`}</strong> <span class="rst-meter__of">{`of $${cap}`}</span>
+          <strong>{usedText}</strong> <span class="rst-meter__of">{`of ${capText}`}</span>
         </span>
       </div>
       <div class="rst-meter__track">

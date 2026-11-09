@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-601..RF-604, P8-120: the planner answers the plan of the hand-off package for the python-inventory run of understand-python-inventory.json: three requirements that cite its FEAT, BR and OQ cards, two components, a decision, the item entity, two phases and two task cards over the stock module. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"summary\": \"A stock-keeping service that lists low stock and records received goods, rebuilt in one piece with its database.\",\n  \"requirements\": [\n    {\n      \"title\": \"List low-stock items\",\n      \"statement\": \"Staff see the items whose quantity on hand is below the threshold, ordered by name.\",\n      \"sources\": [\n        \"FEAT-001\",\n        \"BR-002\"\n      ]\n    },\n    {\n      \"title\": \"Receive goods\",\n      \"statement\": \"Staff add a received quantity to an item; a quantity of zero or less is refused.\",\n      \"sources\": [\n        \"FEAT-002\",\n        \"BR-001\"\n      ]\n    },\n    {\n      \"title\": \"Low-stock threshold\",\n      \"statement\": \"The threshold that flags low stock is decided by the owner before the rewrite.\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ],\n  \"components\": [\n    {\n      \"name\": \"Stock service\",\n      \"responsibility\": \"Serves the low-stock list and the receipt of goods.\",\n      \"dependsOn\": [\n        \"Database\"\n      ]\n    },\n    {\n      \"name\": \"Database\",\n      \"responsibility\": \"Keeps the items and their quantity on hand.\",\n      \"dependsOn\": []\n    }\n  ],\n  \"decisions\": [\n    {\n      \"title\": \"Keep the stock rules in one module\",\n      \"context\": \"The legacy service keeps the low-stock and receipt rules in one module.\",\n      \"decision\": \"One stock module owns both rules.\",\n      \"consequences\": \"The routes only call the module.\",\n      \"sources\": [\n        \"BR-001\",\n        \"BR-002\"\n      ]\n    }\n  ],\n  \"entities\": [\n    {\n      \"legacy\": \"items\",\n      \"target\": \"Item\",\n      \"notes\": \"The quantity on hand starts at zero.\",\n      \"sources\": [\n        \"ENT-001\"\n      ]\n    }\n  ],\n  \"phases\": [\n    {\n      \"name\": \"Low-stock list\",\n      \"goal\": \"The low-stock list runs on the new system.\",\n      \"exitCriteria\": [\n        \"The low-stock list matches the legacy list for the same data.\"\n      ]\n    },\n    {\n      \"name\": \"Receive goods\",\n      \"goal\": \"Receiving goods runs on the new system.\",\n      \"exitCriteria\": [\n        \"A receipt raises the quantity on hand and a zero receipt is refused.\"\n      ]\n    }\n  ],\n  \"tasks\": [\n    {\n      \"title\": \"Low-stock list\",\n      \"phase\": 1,\n      \"requirements\": [\n        1,\n        3\n      ],\n      \"acceptanceCriteria\": [\n        \"Given items with 3 and 12 on hand and a threshold of 5, when staff ask for the low-stock list, then only the item with 3 is listed.\"\n      ],\n      \"invariant\": \"An item is listed exactly when its quantity on hand is below the threshold.\",\n      \"riskClass\": \"data loss\",\n      \"adds\": [\n        \"check\"\n      ],\n      \"probes\": [\n        \"An item with exactly 5 on hand, with 4 and with 6.\",\n        \"Two items with the same name.\"\n      ],\n      \"files\": [\n        \"src/stock/\",\n        \"tests/stock/\"\n      ]\n    },\n    {\n      \"title\": \"Receive goods\",\n      \"phase\": 2,\n      \"requirements\": [\n        2\n      ],\n      \"acceptanceCriteria\": [\n        \"Given an item with 3 on hand, when 4 are received, then 7 are on hand; when 0 are received, then the receipt is refused.\"\n      ],\n      \"invariant\": \"A receipt raises the quantity on hand by exactly the quantity received, and a quantity of zero or less changes nothing.\",\n      \"riskClass\": \"data loss\",\n      \"adds\": [\n        \"check\"\n      ],\n      \"probes\": [\n        \"A quantity of 0, of -1 and of 1.\",\n        \"The same receipt sent twice.\",\n        \"A receipt for an item that does not exist.\"\n      ],\n      \"files\": [\n        \"src/stock/\",\n        \"tests/stock/\"\n      ],\n      \"dependsOn\": [\n        1\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"The low-stock threshold is fixed in the route, so the owner must say whether it varies per item.\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3200,
+              "outputTokens": 900,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-9",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

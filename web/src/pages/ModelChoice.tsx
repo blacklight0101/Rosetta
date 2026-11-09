@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { Field } from '../components/Field.js';
 import type { ModelListState, ModelOption } from './model-lists.js';
 
-// RF-405, RF-427, DEC-156, design-system.md section 14: the model of a role. With a list, a select
+// RF-405, RF-427, RF-436, DEC-156, design-system.md section 14: the model of a role. With a list, a select
 // of the listed models (a model without a price says "no price") that ends with "Other model...",
 // which shows a text field; a saved model that is not listed stays selected there. Without a list,
 // or when Ollama cannot be asked, the plain text field stays, with a note, so saving still works.
@@ -20,6 +20,8 @@ export interface ModelChoiceProps {
   readonly list: ModelListState | undefined;
   readonly error: { readonly code?: string; readonly message: string } | undefined;
   readonly placeholder?: string;
+  /** RF-436: the model that choosing the provider selects for this role; its option says so. */
+  readonly recommended?: string | undefined;
   readonly onChange: (model: string) => void;
 }
 
@@ -44,12 +46,15 @@ function noToolsNote(chosen: ModelOption | undefined, needsTools: boolean): stri
   return `The model ${chosen.model} cannot call tools on Chat Completions, and this role calls tools, so a run would be refused (RST-1523). Choose another model.`;
 }
 
-function optionsOf(models: readonly ModelOption[]): readonly { value: string; label: string }[] {
+function optionsOf(
+  models: readonly ModelOption[],
+  recommended: string | undefined,
+): readonly { value: string; label: string }[] {
   return [
     { value: '', label: 'Choose a model' },
     ...models.map(({ model, label, priced }) => ({
       value: model,
-      label: priced ? label : `${label} (no price)`,
+      label: `${priced ? label : `${label} (no price)`}${model === recommended ? ' (recommended)' : ''}`,
     })),
     { value: OTHER, label: 'Other model...' },
   ];
@@ -93,7 +98,7 @@ function Listed(
         id={id}
         label={props.label}
         value={showText ? OTHER : value}
-        options={optionsOf(models)}
+        options={optionsOf(models, props.recommended)}
         help={
           showText
             ? undefined

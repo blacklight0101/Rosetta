@@ -1,4 +1,5 @@
 import type {
+  NameChange,
   ProjectRepository,
   SettingsChange,
   SettingsUpdate,
@@ -89,6 +90,14 @@ export class MemoryProjectRepository implements ProjectRepository {
     const project = this.owned(change.userId, change.projectId);
     if (project === undefined || project.sourceKind === 'github') return undefined;
     const updated = { ...project, upload: change.upload, updatedAt: change.updatedAt };
+    this.projects.set(project.id, updated);
+    return this.withLastRun(updated);
+  }
+
+  async rename(change: NameChange): Promise<Project | undefined> {
+    const project = this.owned(change.userId, change.projectId);
+    if (project === undefined) return undefined;
+    const updated = { ...project, name: change.name, updatedAt: change.updatedAt };
     this.projects.set(project.id, updated);
     return this.withLastRun(updated);
   }

@@ -184,7 +184,10 @@ describe('CI image job', () => {
 
     expect(job).toContain('runs-on: ubuntu-latest');
     expect(job).toMatch(/timeout-minutes: \d+/u);
-    expect(job).toMatch(/docker build\b/u);
+    // BuildKit through docker/build-push-action (P8-55, the layer cache): the Dockerfile at the root.
+    expect(job).toMatch(/uses: docker\/build-push-action@[0-9a-f]{40} # v\d+\.\d+\.\d+/u);
+    expect(job).toMatch(/^ {10}context: \.$/mu);
+    expect(job).not.toMatch(/^ {10}file: /mu);
   });
 
   it('RF-1300 scans the image with Trivy and fails on high and critical findings that have a fix', async () => {

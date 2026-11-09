@@ -19,7 +19,17 @@ export function serialiseCoverage(
   objects: readonly ObjectCoverage[] = [],
 ): string {
   const areas = coverage.map(
-    ({ area, files, tokens, readTokens, readTokenShare, failure, surface, note }) => ({
+    ({
+      area,
+      files,
+      tokens,
+      readTokens,
+      readTokenShare,
+      firstPartyShare,
+      failure,
+      surface,
+      note,
+    }) => ({
       area,
       files: files.map(({ path, read }) => ({
         path,
@@ -28,6 +38,7 @@ export function serialiseCoverage(
       tokens,
       readTokens,
       readTokenShare,
+      firstPartyShare,
       failure,
       surface,
       note,

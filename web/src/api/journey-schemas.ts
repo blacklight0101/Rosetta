@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { endReasonField } from './end-reason.js';
 
 // RF-615, journey-routes.ts: the wire shape of `GET /api/projects/:id/journey`, the facts the journey
 // strip is drawn from. Every answer is parsed before use. Instants are ISO text; a cost is micro-dollars.
@@ -11,6 +12,8 @@ const journeyRun = z.object({
   runKey: z.string(),
   queueState: z.enum(['Queued', 'Running', 'AwaitingApproval', 'Ended']),
   endState: z.string().nullable(),
+  /** P8-111: why an `Interrupted` run ended. */
+  endReason: endReasonField,
   endedAt: z.string().nullable(),
   costMicros: count,
   /** The `RST` code the run ended with, if any. */

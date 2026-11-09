@@ -27,7 +27,10 @@ jobs:
   # a *.md file at the repository root. Markdown anywhere else (src/, tests/, prompts/, templates/...)
   # is code. --no-renames lists both paths of a move. A push to main always counts as code. Plain
   # git, no third-party action. The other jobs fail closed: their heavy steps run unless code is
-  # exactly 'false'.
+  # exactly 'false'. A pull request is checked out as GitHub's merge commit of its head into its base,
+  # whose first parent is the base: HEAD^1..HEAD is what the pull request changes in the tree CI
+  # tests, so the job fetches that commit and its parents only (DEC-227). A HEAD that is not a merge
+  # commit counts as code.
   changes:
     name: changes
     runs-on: ubuntu-latest
@@ -37,14 +40,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           persist-credentials: false
       - name: Classify the changed files
         id: classify
         run: |
           code=true
-          if [ "$EVENT" = pull_request ]; then
-            files="$(git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA")"
+          if [ "$EVENT" = pull_request ] && git rev-parse --verify --quiet 'HEAD^2^{commit}' > /dev/null; then
+            files="$(git diff --name-only --no-renames 'HEAD^1' HEAD)"
             printf 'Changed files:\n%s\n' "$files"
             code=false
             [ -n "$files" ] || code=true
@@ -63,8 +66,6 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
         env:
           EVENT: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
   # The static gates (P1-177): typecheck, lint, format, architecture and dead code, in parallel with
   # the tests. They give the same answer on every operating system, so they run once, on Linux.
@@ -352,10 +353,13 @@ jobs:
           npx playwright install chromium
           node -e "require('playwright').chromium.launch().then((browser) => browser.close())" || npx playwright install-deps chromium
       # One third of the Playwright project (RNF-005); the three shards together run every spec.
+      # A failed test runs once more (P8-54); one that passes then is reported as flaky, and the job
+      # stays green (tests/e2e/support/flaky-reporter.ts: the log, a warning and the job summary).
       - if: needs.changes.outputs.code != 'false'
         run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
         env:
           SHARD: ${{ matrix.shard }}
+          ROSETTA_E2E_RETRIES: 1
           ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
 
   # One stable check name for the ruleset: green only when every shard passed.
@@ -369,6 +373,148 @@ jobs:
       - run: test "$RESULT" = success
         env:
           RESULT: ${{ needs.e2e-shard.result }}
+
+  # P8-142 (DEC-227): three jobs outside the required checks (their names say so), so none of them
+  # holds a merge; docs/runbooks/ci-throughput.md section 6. `test-picks` decides cheaply whether the
+  # other two have work: it reads only the quarantine list and, on a pull request, the pull request's
+  # own file list from the API, so it needs no history. It does not use `vitest --changed`, which
+  # follows imports and misses tests that read the documents.
+  test-picks:
+    name: pick quarantined and changed tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      quarantined: ${{ steps.quarantine.outputs.count }}
+      changed: ${{ steps.changed.outputs.files }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tests/quarantine.json
+          sparse-checkout-cone-mode: false
+      - name: Count the quarantined tests
+        id: quarantine
+        run: echo "count=$(jq length tests/quarantine.json)" >> "$GITHUB_OUTPUT"
+      # The test files the pull request adds, changes or renames (new path), as one JSON line.
+      - name: List the added or changed test files
+        id: changed
+        shell: bash
+        run: |
+          files='[]'
+          if [ "$EVENT" = pull_request ]; then
+            files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq "$PICK" | jq -Rsc 'split("\n") | map(select(. != ""))')"
+          fi
+          echo "Test files to stress: $files"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          PICK: '.[] | select(.status != "removed") | .filename | select(test("^tests/((unit|integration|e2e)/.+\\.test\\.ts|unit/web/.+\\.test\\.tsx|e2e/.+\\.spec\\.ts)$"))'
+
+  # The quarantined tests (tests/quarantine.json) still run and are reported here; `verify` and `e2e`
+  # skip them. Red while a quarantined test fails; not required, so it blocks nothing.
+  quarantine:
+    name: quarantined tests (not required)
+    needs: [changes, test-picks]
+    if: needs.changes.outputs.code != 'false' && needs.test-picks.outputs.quarantined != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      # Disposable database for the quarantined tests; the credentials are throwaway.
+      postgres:
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rosetta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - name: Install Chromium
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node -e "require('playwright').chromium.launch().then((browser) => browser.close())" || npx playwright install-deps chromium
+      - name: Run the quarantined tests, list them in the job summary
+        run: node scripts/quarantine-run.mjs
+        env:
+          ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
+
+  # The test files a pull request adds or changes, five times each, in parallel and shuffled, with no
+  # retry: one failed run fails this check, so a new test proves itself before it becomes required.
+  # Skipped when no test file changed.
+  stress:
+    name: stress changed tests (not required)
+    needs: test-picks
+    if: needs.test-picks.outputs.changed != '[]' && needs.test-picks.outputs.changed != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      # Disposable database for the stressed tests; the credentials are throwaway.
+      postgres:
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rosetta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - name: Install Chromium
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node -e "require('playwright').chromium.launch().then((browser) => browser.close())" || npx playwright install-deps chromium
+      - name: Run each changed test five times, shuffled, in parallel
+        run: node scripts/stress-tests.mjs
+        env:
+          ROSETTA_STRESS_FILES: ${{ needs.test-picks.outputs.changed }}
+          ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
 
   audit:
     name: audit
@@ -396,9 +542,29 @@ jobs:
       contents: read
       pull-requests: read
     steps:
+      # gitleaks-action scans <first commit of the pull request>^..<its last commit> on a pull request
+      # (in the merge commit checked out: the pull request's commits plus the merge and that parent),
+      # and on a push of one commit (every squash merge to develop) that commit alone (DEC-227); it
+      # fetches its parent too, or the commit is a shallow root and `git log -p -1` adds the whole tree.
+      - name: History the scan reads
+        id: history
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            depth=$((PR_COMMITS + 2))
+          elif [ -z "$SECOND_PUSHED" ]; then
+            depth=2
+          else
+            depth=0
+          fi
+          echo "depth=$depth"
+          echo "depth=$depth" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_COMMITS: ${{ github.event.pull_request.commits }}
+          SECOND_PUSHED: ${{ github.event.commits[1].id }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ steps.history.outputs.depth }} # 0 for a push of several commits (a release merge to main): its range <first pushed>^..<head> walks main's first parents back to where develop was cut
           persist-credentials: false
       # Personal account: no licence key needed. github.token is the run's automatic token.
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
@@ -457,11 +623,40 @@ jobs:
           cache: npm
       - if: needs.changes.outputs.code != 'false'
         run: npm ci
-      # The runtime image is the default target; the test image must build too (compose.ci.yaml, P1-45).
+      # P8-55: the layers are kept in the GitHub Actions cache (docs/runbooks/ci-throughput.md
+      # section 6). BuildKit keys each layer on its instruction and the content of the files it copies
+      # (package-lock.json for npm ci, src and web for the build) and the base on its digest, so a
+      # cached layer is never stale. The runtime stage upgrades the system packages, which no file
+      # pins, so it is always rebuilt. A pull request reads the cache of its base branch and never
+      # writes one. The builder's own image is pinned like every image CI starts (RNF-003).
       - if: needs.changes.outputs.code != 'false'
-        run: docker build --tag "$ROSETTA_IMAGE" .
-      - if: needs.changes.outputs.code != 'false'
-        run: docker build --target test --tag rosetta:ci-test .
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: image=moby/buildkit:v0.34.1@sha256:99368f3e46177c6405b9740e4461d91cee004128daeecca78d4ceac50ec1da5c
+      # The runtime image is the default target, loaded for the container test and Trivy.
+      - name: Build the runtime image
+        if: needs.changes.outputs.code != 'false'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          tags: ${{ env.ROSETTA_IMAGE }}
+          load: true
+          provenance: false
+          no-cache-filters: runtime
+          cache-from: type=gha,scope=rosetta-image
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=rosetta-image' || '' }}
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+      # The test image must build too (compose.ci.yaml, P1-45); it reuses the build stage above.
+      - name: Build the test image
+        if: needs.changes.outputs.code != 'false'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: test
+          provenance: false
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
       # Starts the image against the service database and calls /healthz (RF-1300, Linux only).
       - if: needs.changes.outputs.code != 'false'
         run: npx vitest run --project integration tests/integration/image

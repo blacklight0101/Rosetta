@@ -25,6 +25,13 @@ export function runRow(page: Page, suffix: string): Locator {
   return runsTable(page).getByRole('row').filter({ hasText: suffix });
 }
 
+/** P8-89: opens the "More actions" menu of a run's row and returns its item (`Zip` or `Delete`). */
+export async function rowMenuItem(row: Locator, name: 'Zip' | 'Delete'): Promise<Locator> {
+  const button = row.getByRole('button', { name: /^More actions for run / });
+  if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+  return row.getByRole('menuitem', { name });
+}
+
 /** The confirmation dialog that is open. */
 export function confirmation(page: Page): Locator {
   return page.getByRole('dialog');

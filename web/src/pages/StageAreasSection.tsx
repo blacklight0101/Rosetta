@@ -14,12 +14,6 @@ export interface StageAreasProps {
   /** RF-1018: library areas are chosen and the user said they are wanted. */
   readonly libraryConfirmed: boolean;
   readonly onLibraryConfirm: (confirmed: boolean) => void;
-  /** RF-241: the questions with an answer; the option to re-run with them is offered when any. */
-  readonly rerun: {
-    readonly answered: number;
-    readonly checked: boolean;
-    readonly onChange: (checked: boolean) => void;
-  };
 }
 
 function Areas(props: StageAreasProps): JSX.Element {
@@ -44,25 +38,6 @@ function Areas(props: StageAreasProps): JSX.Element {
   );
 }
 
-/** RF-241: re-run the areas of the answered questions with the answers. */
-function Rerun({ rerun }: Pick<StageAreasProps, 'rerun'>): JSX.Element | null {
-  if (rerun.answered === 0) return null;
-  const noun = rerun.answered === 1 ? 'answered question' : 'answered questions';
-  return (
-    <label class="rst-start__choice">
-      <input
-        type="checkbox"
-        checked={rerun.checked}
-        onChange={(event) => {
-          rerun.onChange(event.currentTarget.checked);
-        }}
-      />
-      Re-run with answers ({rerun.answered} {noun} waiting; areas no longer in the code map are
-      skipped)
-    </label>
-  );
-}
-
 // RF-1001
 export function StageAreasSection(props: StageAreasProps): JSX.Element {
   return (
@@ -70,7 +45,6 @@ export function StageAreasSection(props: StageAreasProps): JSX.Element {
       <h2 id="stage-heading" class="rst-settings__heading">
         Areas
       </h2>
-      <Rerun rerun={props.rerun} />
       <Areas {...props} />
     </section>
   );

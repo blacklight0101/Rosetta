@@ -35,7 +35,9 @@ async function openWithCloudReader(page: Page): Promise<void> {
 
 /** Stops the run the notice names (or cancels it when queued) and waits until it has ended. */
 async function endTheRun(page: Page): Promise<void> {
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible();
   const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
   if (await endOfRun.isVisible()) await endOfRun.click();
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });

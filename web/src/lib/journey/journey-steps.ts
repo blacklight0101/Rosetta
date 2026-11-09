@@ -1,15 +1,20 @@
-import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
+import type {
+  JourneyFacts,
+  JourneyRunFacts,
+  JourneySourceFacts,
+} from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
-import { costLabel } from '../live-run/format.js';
+import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
+import { NO_COST, leftText, stepCostsOf } from './journey-costs.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
   deepenRunning,
-  endText,
   lockReason,
   phaseOf,
-  workingText,
+  unfinishedStep,
   type Context,
+  type JourneyExtras,
   type StepKey,
 } from './journey-context.js';
 
@@ -28,7 +33,14 @@ export type StepState =
   /** RF-1020: the questions were left on their defaults when the brief was saved. */
   | 'skipped'
   /** RF-627: the package was written but some items are built by no task card. */
-  | 'gaps';
+  | 'gaps'
+  /** P8-87, RF-006: the user pressed Stop; the run can be resumed, so it is not a failure. */
+  | 'stopped'
+  /** P8-111, DEC-217: the server restarted under the run, or it was cancelled while queued; it can be resumed. */
+  | 'restarted'
+  | 'cancelled'
+  /** P8-112, DEC-217: the run reached its cap; it is not a failure, and it still offers its next step. */
+  | 'capped';
 
 /** A file or a download a step offers besides its page. */
 export interface StepLink {
@@ -43,6 +55,8 @@ export interface JourneyStep {
   /** The reason a step is locked, the code a step failed with, or what the step did. */
   readonly detail: string;
   readonly cost: string;
+  /** The micro-dollars behind `cost` when it is an amount, so the page can give the exact figure. */
+  readonly costMicros: number | undefined;
   /** The page of the step; none for a step the user may not open. */
   readonly href: string | undefined;
   /** Files and downloads of the step, apart from its page; none for most steps. */
@@ -52,7 +66,7 @@ export interface JourneyStep {
 }
 
 export type { JourneyAction, JourneyLink } from './journey-action.js';
-export type { StepKey } from './journey-context.js';
+export type { JourneyExtras, StepKey } from './journey-context.js';
 
 export interface JourneyView {
   readonly projectId: string;
@@ -64,6 +78,10 @@ export interface JourneyView {
   readonly totalCostMicros: number;
   /** RF-1021: what is left of the amount approved for the journey; none without a journey record. */
   readonly left: string | undefined;
+  /** P8-26: the approved amount as a figure with the spend against it; none without a journey record. */
+  readonly approved: ApprovedView | undefined;
+  /** P8-26: the facts the view was made from, for the sections of the project page. */
+  readonly facts: JourneyFacts;
 }
 
 type Draft = Omit<JourneyStep, 'here'>;
@@ -72,7 +90,6 @@ type Part = Pick<Draft, 'state' | 'detail'> & {
   readonly links?: readonly StepLink[];
 };
 
-const NO_COST = 'No cost';
 const plural = (count: number, one: string): string =>
   `${String(count)} ${one}${count === 1 ? '' : 's'}`;
 const runPage = (run: { readonly id: string }): string => `/runs/${run.id}`;
@@ -82,12 +99,7 @@ const locked = (detail: string): Part => ({ state: 'locked', detail });
 function ofRun(run: JourneyRunFacts, completed: Part): Part {
   const phase = phaseOf(run);
   if (phase === 'completed') return completed;
-  if (phase === 'working' && run.queueState === 'AwaitingApproval') {
-    return { state: 'awaiting', detail: workingText(run), href: runPage(run) };
-  }
-  if (phase === 'working')
-    return { state: 'upcoming', detail: workingText(run), href: runPage(run) };
-  return { state: 'failed', detail: endText(run), href: runPage(run) };
+  return { ...unfinishedStep(run), href: runPage(run) };
 }
 
 function scanPart({ source, facts }: Context): Part {
@@ -100,11 +112,22 @@ function understandPart({ source }: Context): Part {
   if (source === null) return locked('Needs a run: start one');
   const claims = source.supportedClaims;
   const detail =
-    claims === 0 ? 'No Supported claim to plan from' : plural(claims, 'Supported claim');
+    claims === 0
+      ? 'No Supported claim to plan from'
+      : `${plural(claims, 'Supported claim')} of the journey`;
   return ofRun(source, { state: 'done', detail, href: runPage(source) });
 }
 
-function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part {
+/** P8-26: a live run makes the step that waits for it a link to its run page. */
+const liveHref = (liveRunId: string | undefined, fallback: string): string =>
+  liveRunId === undefined ? fallback : `/runs/${liveRunId}`;
+
+/** RF-1007 (P8-85): who asked the open questions: the understand, until a Deepen of it has ended. */
+const askedBy = (source: Pick<JourneySourceFacts, 'deepens' | 'isDeepen'>): string =>
+  source.isDeepen || source.deepens > 0 ? 'asked after the last Deepen' : 'asked by the understand';
+
+function questionsBase(c: Context): Part {
+  const { source, facts, liveRunId } = c;
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -123,16 +146,34 @@ function questionsPart({ source, facts, skippedDeepen: skipped }: Context): Part
         : `${String(open)} questions left on their defaults`;
     return { state: 'skipped', detail: left, href };
   }
-  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
-  if (deepenRunning({ source, skippedDeepen: skipped })) {
+  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by the Deepen.
+  if (deepenRunning(c)) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
+    // P8-26: a live Deepen makes this step a link to its run page.
+    return {
+      state: 'upcoming',
+      detail,
+      href: liveHref(liveRunId, href),
+    };
+  }
+  // RF-1007 (P8-85): "after the last Deepen" only once a Deepen has ended; before, the understand asked.
+  const asked = `${plural(open, 'open question')}, ${askedBy(source)}`;
+  if (deepenFirst(c)) {
+    const detail = `${asked}: answers given now will be used by the Deepen`;
     return { state: 'upcoming', detail, href };
   }
-  if (deepenFirst({ source, skippedDeepen: skipped })) {
-    const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
-    return { state: 'upcoming', detail, href };
+  return { state: 'upcoming', detail: asked, href };
+}
+
+/** RF-241, P8-26: the strip counts the questions with an answer too, and never says none are open while one waits. */
+function questionsPart(c: Context): Part {
+  const part = questionsBase(c);
+  const answered = c.answered ?? 0;
+  if (answered === 0) return part;
+  if (part.detail === 'No open questions') {
+    return { ...part, detail: `${plural(answered, 'answered question')} waiting for a re-run` };
   }
-  return { state: 'upcoming', detail: plural(open, 'open question'), href };
+  return { ...part, detail: `${part.detail} (${String(answered)} answered)` };
 }
 
 function briefPart(c: Context): Part {
@@ -203,16 +244,6 @@ function packagePart(c: Context): Part {
   return { state: 'done', detail: earlier ? 'An earlier package is kept' : 'Ready to open', href };
 }
 
-function costsOf(c: Context): Readonly<Record<string, string>> {
-  const { source, plan } = c;
-  return {
-    scan: 'No model cost',
-    understand: source === null ? NO_COST : costLabel(source.costMicros),
-    plan: plan === null ? 'No cost yet' : costLabel(plan.costMicros),
-    package: 'Included in the plan',
-  };
-}
-
 const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['scan', 'Scan', scanPart],
   ['understand', 'Understand', understandPart],
@@ -222,13 +253,6 @@ const parts: readonly (readonly [StepKey, string, (c: Context) => Part])[] = [
   ['plan', 'Plan', planPart],
   ['package', 'Package', packagePart],
 ];
-
-/** RF-1021: "$0.60 left of $1.00 approved". */
-function leftText(facts: JourneyFacts): string | undefined {
-  const { budget } = facts;
-  if (budget === null || budget === undefined) return undefined;
-  return `${costLabel(budget.remainingMicros)} left of ${costLabel(budget.approvedMicros)} approved`;
-}
 
 /** A step that is open and holds the next action is the current one. */
 const stateOf = (part: Part, here: boolean): StepState =>
@@ -240,18 +264,20 @@ export function journeyOf(
   projectId: string,
   /** RF-646: the user chose not to Deepen the source run. */
   skippedDeepen = false,
+  extras: JourneyExtras = {},
 ): JourneyView {
   const { source, plan } = facts;
   const setUp = source === null ? undefined : `/projects/${projectId}/plan-setup?run=${source.id}`;
-  const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen };
+  const context: Context = { facts, projectId, source, plan, setUp, skippedDeepen, ...extras };
   const next = nextOf(context);
-  const costs = costsOf(context);
+  const costs = stepCostsOf(context.source, context.plan);
   const steps = parts.map(([key, title, partOf]): JourneyStep => {
     const part = partOf(context);
     const here = key === next.here;
     return {
       ...{ key, title, detail: part.detail, href: part.href, here },
-      ...{ state: stateOf(part, here), cost: costs[key] ?? NO_COST },
+      ...{ state: stateOf(part, here), cost: costs[key]?.text ?? NO_COST },
+      costMicros: costs[key]?.micros,
       links: part.links ?? [],
     };
   });
@@ -263,5 +289,7 @@ export function journeyOf(
     secondary: next.secondary,
     totalCostMicros: spent,
     left: leftText(facts),
+    approved: approvedViewOf(approvedLineOf(facts.budget), 'micros'),
+    facts,
   };
 }

@@ -50,6 +50,71 @@ describe('restart recovery', () => {
   });
 });
 
+describe('the running time of a run a restart interrupted', () => {
+  it('P8-122 counts as running time only what ran up to the last event, not the downtime', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    h.clock.advance(20_000);
+    await h.executor.started[0]?.events.emit('agent.started', {});
+    h.clock.advance(3_600_000);
+
+    await h.restart().recover();
+
+    const ended = await h.runs.find(userAmy.userId, run.id);
+    expect(ended).toMatchObject({ endReason: 'Restart', activeMs: 20_000 });
+    expect(ended?.endedAt).toBe(Date.parse('2026-10-12T11:00:20.000Z'));
+  });
+
+  it('P8-122 counts nothing past the start for a run that left no event but run.started', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    h.clock.advance(3_600_000);
+
+    await h.restart().recover();
+
+    expect((await h.runs.find(userAmy.userId, run.id))?.activeMs).toBe(0);
+  });
+});
+
+describe('the running time of a resumed run a restart interrupted', () => {
+  it('P8-131 keeps the running time of the earlier spans and adds its last span up to its last event', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    h.clock.advance(20_000);
+    h.executor.settle(run.id, { endState: 'CapReached' });
+    await h.ended(run);
+    h.clock.advance(600_000);
+    await h.runs.reopen(run.userId, run.id, h.clock.now().getTime());
+    await h.queue.dispatch();
+    h.clock.advance(7_000);
+    await h.executor.started[1]?.events.emit('agent.started', {});
+    h.clock.advance(3_600_000);
+
+    await h.restart().recover();
+
+    expect(await h.runs.find(userAmy.userId, run.id)).toMatchObject({
+      endReason: 'Restart',
+      activeMs: 27_000,
+    });
+  });
+
+  it('P8-131 counts nothing of the last span for a resumed run that recorded no event after it started', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    h.clock.advance(20_000);
+    h.executor.settle(run.id, { endState: 'CapReached' });
+    await h.ended(run);
+    h.clock.advance(600_000);
+    await h.runs.reopen(run.userId, run.id, h.clock.now().getTime());
+    await h.queue.dispatch();
+    h.clock.advance(3_600_000);
+
+    await h.restart().recover();
+
+    expect((await h.runs.find(userAmy.userId, run.id))?.activeMs).toBe(20_000);
+  });
+});
+
 describe('shutting down', () => {
   it('RNF-002 stops the running runs so they end as Interrupted, and starts no queued run', async () => {
     const h = createRunHarness({ maxRunning: 1 });

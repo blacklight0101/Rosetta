@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. P3-22: the verifier of the documentation-set journey over the webforms-shop demo (understand-shop-journey.json). It answers Supported to every claim it is asked except two: the second step of the first flow (FLOW-001.c2) and the free statement of the first screen (SCRN-001.c1), which it rejects. The derived field claims (\"Field X is on the screen\") are decided by their cited lines without a model call (P3-122), so it holds no answer for them; the field PromoCode of the checkout screen (SCRN-003.c7) is not in its cited lines and is rejected by that rule, so the journey can check that a rejected screen detail never reaches the wireframes (RF-626, P3-29).",
+  "description": "Written by hand for this repository; no real provider was called. P3-22: the verifier of the documentation-set journey over the webforms-shop demo (understand-shop-journey.json). It answers Supported to every claim it is asked except two: the second step of the Browse the catalogue flow (FLOW-003.c2) and the free statement of the Catalogue list screen (SCRN-004.c1), which it rejects. The derived field claims (\"Field X is on the screen\") are decided by their cited lines without a model call (P3-122), so it holds no answer for them; the field PromoCode of the checkout screen (SCRN-001.c7) is not in its cited lines and is rejected by that rule, so the journey can check that a rejected screen detail never reaches the wireframes (RF-626, P3-29).",
   "calls": [
     {
       "attempts": [
@@ -25,7 +25,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -63,7 +63,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -443,7 +443,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,
@@ -481,7 +481,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,

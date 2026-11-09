@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { filesOf, readZip } from '../../support/zip-reader.js';
 import { expect, test } from '../support/fixtures.js';
 import { chooseAreas, openProjectStart, repositories, runScan } from '../support/journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from '../support/live-run-page.js';
 import { writeButton } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -23,7 +23,7 @@ test('RF-1020 RF-1021 from a finished understand to a downloaded package without
   await openProjectStart(page, repositories.webforms);
   await chooseAreas(page, ['Catalog']);
   await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 
   await openProjectStart(page, repositories.webforms);
   const projectPage = page.url();
@@ -46,10 +46,12 @@ test('RF-1020 RF-1021 from a finished understand to a downloaded package without
   expect(page.url()).toBe(projectPage);
 
   await writeButton(page).click();
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible({
     timeout: 30_000,
   });
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('link', { name: 'Download hand-off zip' }).click(),

@@ -58,19 +58,26 @@ function mapStep(input: JourneyInput): Core {
   return { status: 'done', detail: `${plural(own, 'area', 'areas')}${left}` };
 }
 
+/** P8-93: whether the tile of the area says it was read below the coverage bar. */
+function isPartlyRead(tiles: readonly Tile[], name: string): boolean {
+  return tiles.some((tile) => tile.name === name && tile.state === 'partly');
+}
+
 function readers(state: RunState): readonly AgentPanelState[] {
   return state.agents.filter((agent) => agent.role === 'reader');
 }
 
 /**
  * The areas read against the areas of the map: an area counts as read once every agent that works
- * on it has ended (a Deepen sends several agents into one area), and the total is the map's own
- * areas, so the step and "Map the code" count the same things.
+ * on it has ended (a Deepen sends several agents into one area) and the coverage puts it at the
+ * coverage bar or above (P8-93: below it the area is partly read, counted apart), and the total is
+ * the map's own areas, so the step and "Map the code" count the same things.
  */
 function areasRead(input: JourneyInput): {
   readonly read: number;
   readonly of: number;
   readonly failed: number;
+  readonly partly: number;
 } {
   const own = input.tiles.filter((tile) => tile.state !== 'library');
   const ofMap = new Set(own.map((tile) => tile.name));
@@ -83,11 +90,15 @@ function areasRead(input: JourneyInput): {
   // tiles and the failed-areas notice (`endedWithoutCard`), so the three always agree.
   const failedArea = (agents: readonly AgentPanelState[]): boolean => agents.some(endedWithoutCard);
   const all = [...byArea.values()];
-  const read = all.filter((agents) => agents.every(finished) && !failedArea(agents)).length;
+  const finishedWell = [...byArea].filter(
+    ([, agents]) => agents.every(finished) && !failedArea(agents),
+  );
+  const partly = finishedWell.filter(([name]) => isPartlyRead(input.tiles, name)).length;
+  const read = finishedWell.length - partly;
   const failed = all.filter(failedArea).length;
   // RF-208: a retry reads only the areas it names; the rest it holds as they were.
   const retried = input.state.retry?.areas;
-  return { read, of: retried ?? Math.max(own.length, byArea.size), failed };
+  return { read, of: retried ?? Math.max(own.length, byArea.size), failed, partly };
 }
 
 function readStep(input: JourneyInput, mapDone: boolean): Core {
@@ -95,11 +106,12 @@ function readStep(input: JourneyInput, mapDone: boolean): Core {
   if (!mapDone || input.phase.kind === 'queued') return { status: 'later', detail: 'area by area' };
   const all = readers(input.state);
   if (all.length === 0) return { status: 'current', detail: 'planning the areas' };
-  const { read, of, failed } = areasRead(input);
+  const { read, of, failed, partly } = areasRead(input);
+  const partlyText = partly === 0 ? '' : `, ${String(partly)} partly read`;
   const failedText = failed === 0 ? '' : `, ${String(failed)} failed`;
   return {
     status: all.every(finished) ? 'done' : 'current',
-    detail: `${String(read)} of ${String(of)} areas${failedText}`,
+    detail: `${String(read)} of ${String(of)} areas${partlyText}${failedText}`,
   };
 }
 

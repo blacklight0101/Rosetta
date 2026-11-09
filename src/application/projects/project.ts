@@ -41,4 +41,6 @@ export interface Project {
   readonly settingsVersion: number;
   readonly createdAt: EpochMs;
   readonly updatedAt: EpochMs;
+  /** P8-139, DEC-226: when the planning brief was last saved; absent while none is saved. */
+  readonly briefSavedAt?: EpochMs;
 }

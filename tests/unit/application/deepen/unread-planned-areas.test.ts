@@ -74,10 +74,10 @@ describe('plannedAreasOf', () => {
 });
 
 describe('endText', () => {
-  it('P7-02 says Partly read for a capped run with unread areas, else Stopped at its cap', () => {
+  it('P7-02 says Partly read for a capped run with unread areas, else only the code (the step word says the cap)', () => {
     const run = { endState: 'CapReached', errorCode: 'RST-1600' } as const;
 
     expect(endText({ ...run, unreadAreas: 2 })).toBe('Partly read (RST-1600)');
-    expect(endText({ ...run, unreadAreas: 0 })).toBe('Stopped at its cap (RST-1600)');
+    expect(endText({ ...run, unreadAreas: 0 })).toBe('RST-1600');
   });
 });

@@ -22,6 +22,7 @@ import type { NodeOutputWriter } from '../infrastructure/files/node-output-write
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { DeepenServices } from './web/deepen-routes.js';
 import type { RoleKeyDependencies } from '../application/runs/role-keys.js';
+import type { StartConsents } from '../application/consent/start-consent.js';
 
 // RF-006, RF-209: the use cases that go on from an ended understand run, behind the run routes:
 // Resume (the same run, after a stop) and Deepen (a new linked run, after it completed).
@@ -40,6 +41,8 @@ export interface DeepenParts {
   readonly ollamaHost: string | undefined;
   /** RF-431: the roles' keys, checked before a Deepen or a resume is queued. */
   readonly roleKeys: RoleKeyDependencies;
+  /** DEC-209: the consents of the project, shared with the start of a run. */
+  readonly consents: StartConsents;
 }
 
 // RF-209
@@ -49,6 +52,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
   return {
     startDeepen: new StartDeepen({
       ...{ projects, runs, manifests, submit: parts.submit, roleKeys: parts.roleKeys },
+      consents: parts.consents,
       journeys: new PgJourneyRecords(parts.pool), // RF-435: a Deepen runs under the journey's amount
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
@@ -56,6 +60,7 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
       ...{ projects, runs, scans, priceTable: parts.priceTable, models: parts.models },
       ...{ taskResults, manifests },
       keys: new PgProviderKeyRepository(parts.pool),
+      journeys: new PgJourneyRecords(parts.pool), // RF-434: the estimate is held to the journey's amount
       answers: new FileAnswersFile({ writer: parts.writer, masker: parts.masker }),
       priorCards: new FilePriorCards(parts.writer),
       ollamaHost,

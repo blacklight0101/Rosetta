@@ -28,6 +28,8 @@ interface Setup {
   readonly hold?: Promise<undefined>;
   /** What every other call answers, 404 by default. */
   readonly otherwise?: number;
+  /** Receives the address of every call. */
+  readonly calls?: string[];
 }
 
 const urlOf = (input: RequestInfo | URL): string =>
@@ -39,7 +41,7 @@ const projectIdOf = (url: string): string | undefined => {
 
 function appAt(path: string, setup: Setup = {}) {
   window.history.pushState({}, '', path);
-  const fetchFn: typeof fetch = (input) => {
+  const answer: typeof fetch = (input) => {
     const url = urlOf(input);
     if (url === '/api/session') return Promise.resolve(json(200, session(setup.role ?? 'user')));
     const id = projectIdOf(url);
@@ -49,6 +51,11 @@ function appAt(path: string, setup: Setup = {}) {
     }
     const status = setup.otherwise ?? 404;
     return Promise.resolve(failure(status, status === 404 ? 'RST-2003' : 'RST-2006'));
+  };
+  const calls = setup.calls ?? [];
+  const fetchFn: typeof fetch = (input) => {
+    calls.push(urlOf(input));
+    return answer(input);
   };
   return render(
     <App client={createApiClient({ fetch: fetchFn })} routes={routes} assign={vi.fn()} />,
@@ -224,4 +231,35 @@ it('P1-175 moves between the pages without changing the groups', async () => {
     ['main', 'project', 'admin'],
     ['main', 'project', 'admin'],
   ]);
+});
+
+it('P8-134 reads the project name again on the next page after the project was renamed', async () => {
+  rememberProject('p-7');
+  const projects: Record<string, string> = { 'p-7': 'octo/demo' };
+  appAt('/projects', { projects });
+  await screen.findByTestId('nav-group-project');
+  await projectGroup().findByText('Project: octo/demo');
+
+  projects['p-7'] = 'Demo shop';
+  await act(() => {
+    navigate('/projects/p-7');
+  });
+
+  expect(await projectGroup().findByText('Project: Demo shop')).not.toBeNull();
+});
+
+it('P8-134 reads the kept project once on pages outside a project', async () => {
+  rememberProject('p-7');
+  const calls: string[] = [];
+  appAt('/projects', { projects: { 'p-7': 'octo/demo' }, calls });
+  await screen.findByTestId('nav-group-project');
+  await projectGroup().findByText('Project: octo/demo');
+
+  for (const path of ['/settings', '/projects', '/settings']) {
+    await act(() => {
+      navigate(path);
+    });
+  }
+
+  expect(calls.filter((url) => url === '/api/projects/p-7')).toHaveLength(1);
 });

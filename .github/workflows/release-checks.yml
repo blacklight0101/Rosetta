@@ -1,0 +1,250 @@
+# Release checks (RF-1304, DEC-207, DEC-227, ADR-025, ADR-028 Proposed, P8-63, P8-64, P8-141): every
+# push to main, which is the owner's release merge of develop (DEC-175), gets its checks before the
+# 06:00 Madrid release instead of in it. GitHub starts the job `checks` when the CI run of that push
+# completes (workflow_run), so zap-baseline has finished and no runner waits for it (DEC-227); a
+# check_run event would not do: GitHub starts no workflow for check runs of a suite that GitHub
+# Actions created. The job builds, scans and pushes the image of that commit with the steps of the
+# image job of release.yml (tags from scripts/release-tags.sh, one build, the same Trivy gate, push of
+# `sha-<short>` to GHCR); then it confirms the ZAP baseline and the staging check with the two steps
+# of the deploy job of release.yml, word for word (tests keep them equal), and then, in every case,
+# records the result on the commit as the commit status `release/ready` (statuses: write). When
+# release/ready is not success, the last step comments on the issue "Production deploys" with the
+# owner mentioned (issues: write; P8-65), with the script of the deploy notification of release.yml.
+# checks: read lets the job read the zap-baseline check run. release.yml still builds its own image
+# and makes its own checks until Release changes to deploy only a commit whose release/ready is
+# success.
+#
+# A workflow_run runs the file of the default branch (develop) with GITHUB_SHA the head of develop,
+# so the job names the commit of the CI run in COMMIT, checks it out and records everything on it.
+# Only a CI run of a push to main of this repository starts it, never a pull request from a fork
+# whose branch is called main. The job `sweep`, every hour, records release/ready failure on a merge
+# whose checks never finished (CI that never completes, an event GitHub dropped, a lost runner):
+# scripts/release-checks-sweep.sh.
+#
+# The workflow token is the only credential: no secret, no other token. The one variable read is
+# ROSETTA_STAGING_ENABLED, by the staging check, as in release.yml. Hardening as in ci.yml: read-only
+# default token, write scopes only in the jobs, actions pinned to a commit SHA, values reach shell
+# steps through env:.
+name: Release checks
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '41 * * * *'
+
+permissions:
+  contents: read
+
+# The checks of a release merge are never cancelled half-way through a push; a second run of the same
+# commit (CI re-run) queues, and the checks of another commit have their own group, so a third merge
+# never replaces a pending one. The sweeps share one group.
+concurrency:
+  group: release-checks-${{ github.event.workflow_run.head_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: release checks (image, ZAP baseline, staging, release/ready)
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      checks: read
+      packages: write
+      statuses: write
+      issues: write
+    env:
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      # The merge commit and its parents, as in the deploy job of release.yml: the staging check reads
+      # HEAD^2 and its tree; the tags are for a branch, so release-tags.sh reads no history (DEC-227).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
+      - name: Work out the image tags
+        id: tags
+        run: bash scripts/release-tags.sh
+        env:
+          IMAGE: ghcr.io/blacklight0101/rosetta
+          REF_TYPE: branch
+          REF_NAME: ${{ github.event.workflow_run.head_branch }}
+      - name: Build the runtime image
+        run: docker build --label "org.opencontainers.image.source=https://github.com/$REPOSITORY" --tag rosetta:release .
+        env:
+          REPOSITORY: ${{ github.repository }}
+      # The same gate as the image job of ci.yml and release.yml: a fixable High or Critical finding
+      # stops the checks before anything is pushed.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rosetta:release
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: '1'
+      - name: Log in to GHCR
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+      - name: Push the tags
+        run: |
+          for tag in $TAGS; do
+            docker tag rosetta:release "$tag"
+            docker push "$tag"
+          done
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io
+      # Word for word the step of the deploy job of release.yml (threat model section 5).
+      - name: The ZAP baseline passed on this commit
+        id: zap
+        run: |
+          conclusion="$(gh api "repos/$GH_REPO/commits/$COMMIT/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "zap-baseline on $COMMIT: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::The ZAP baseline did not pass on this commit; nothing is deployed."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # Word for word the step of the deploy job of release.yml (DEC-175, ADR-025): the tree of this
+      # merge is the tree of its develop parent and `deploy (staging)` passed on that parent; skipped
+      # with a warning while ROSETTA_STAGING_ENABLED is not 'true'. This workflow has no input, so
+      # skip-staging-check (an emergency override of Release) never applies here.
+      - name: This tree passed staging
+        id: staging
+        run: |
+          if [ "$STAGING_ENABLED" != true ]; then
+            echo "::warning::staging is not enabled; the staging check is skipped (DEC-175)."
+            echo "- staging is not enabled; the staging check is skipped (DEC-175)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$SKIP_STAGING_CHECK" = true ]; then
+            echo "::warning::The staging check was skipped (input skip-staging-check)."
+            echo "- **Staging check skipped** (input skip-staging-check, emergencies only): $(git rev-parse HEAD) was deployed without it." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! develop="$(git rev-parse --verify --quiet 'HEAD^2^{commit}')"; then
+            echo "::error::This commit has no second parent, so it is not a release merge of develop; nothing is deployed (docs/runbooks/deploy.md, Release)."
+            exit 1
+          fi
+          if [ "$(git rev-parse 'HEAD^{tree}')" != "$(git rev-parse "$develop^{tree}")" ]; then
+            echo "::error::The tree of this commit differs from the tree of develop at $develop, which staging deployed; nothing is deployed."
+            exit 1
+          fi
+          conclusion="$(gh api "repos/$GH_REPO/commits/$develop/check-runs?check_name=deploy%20(staging)" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "deploy (staging) on $develop: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::deploy (staging) did not pass on $develop; nothing is deployed."
+            exit 1
+          fi
+        env:
+          STAGING_ENABLED: ${{ vars.ROSETTA_STAGING_ENABLED }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      # RF-1304, DEC-207: always, so a failed, skipped or cancelled step still records the result.
+      # success only when every step before it succeeded and both checks each succeeded; otherwise
+      # failure, named in the description. CI has completed, so a zap-baseline with no conclusion did
+      # not run; one that never finishes is named by the sweep. The step fails with the status, so the run is
+      # red whenever release/ready is not success.
+      - name: Record release/ready on the commit
+        id: ready
+        if: always()
+        run: |
+          if [ "$JOB_STATUS" = success ] && [ "$ZAP" = success ] && [ "$STAGING" = success ]; then
+            state=success
+            if [ "$STAGING_ENABLED" = true ]; then
+              description='Ready: the image is pushed, the ZAP baseline and the staging check passed.'
+            else
+              description='Ready: the image is pushed and the ZAP baseline passed; the staging check was skipped (staging is not enabled).'
+            fi
+          elif [ "$ZAP" = failure ]; then
+            state=failure
+            zap="$(gh api "repos/$GH_REPO/commits/$COMMIT/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')" || zap=unknown
+            case "$zap" in
+              cancelled) description='Not ready: zap-baseline was cancelled on this commit (a later push to main cancels it); re-run it and these checks run again.' ;;
+              missing) description='Not ready: CI finished without a zap-baseline result on this commit.' ;;
+              *) description='Not ready: the ZAP baseline did not pass on this commit.' ;;
+            esac
+          elif [ "$STAGING" = failure ]; then
+            state=failure
+            description='Not ready: the staging check did not pass (the tree, or deploy (staging) of the develop parent).'
+          elif [ "$JOB_STATUS" = cancelled ]; then
+            state=failure
+            description='Not ready: the checks were cancelled or timed out before they finished.'
+          elif [ "$JOB_STATUS" = failure ]; then
+            state=failure
+            description='Not ready: the image build, scan or push failed; the ZAP and staging checks did not run.'
+          else
+            state=failure
+            description="Not ready: a check did not run (ZAP baseline: ${ZAP:-none}, staging check: ${STAGING:-none})."
+          fi
+          if [ "$state" != success ]; then
+            echo "cause=$description" >> "$GITHUB_OUTPUT"
+          fi
+          gh api --method POST "repos/$GH_REPO/statuses/$COMMIT" -f state="$state" -f context=release/ready -f description="$description" -f target_url="$RUN_URL" > /dev/null
+          echo "release/ready on $COMMIT: $state. $description"
+          [ "$state" = success ]
+        env:
+          JOB_STATUS: ${{ job.status }}
+          ZAP: ${{ steps.zap.outcome }}
+          STAGING: ${{ steps.staging.outcome }}
+          STAGING_ENABLED: ${{ vars.ROSETTA_STAGING_ENABLED }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # RF-1304, DEC-207, P8-65: whenever release/ready did not succeed (it is failure, or it could not
+      # be recorded), whatever failed before, a cancel or the job timeout included, tell the owner
+      # before the 06:00 release: a comment on the issue "Production deploys" with the shared script
+      # of the deploy notification of release.yml (the same issue lookup), naming the commit, the
+      # cause written by release/ready and the run. Checks that pass comment nothing.
+      - name: Tell the owner the checks failed
+        if: always() && steps.ready.outcome != 'success'
+        run: |
+          MESSAGE="the checks of the release merge $COMMIT failed; only a commit whose checks passed deploys at 06:00 Madrid (DEC-207). ${CAUSE:-Not ready: release/ready could not be recorded on this commit.} Run: $RUN_URL" bash scripts/production-deploys-comment.sh
+        env:
+          CAUSE: ${{ steps.ready.outputs.cause }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # DEC-227, RF-1304: a merge whose checks never record release/ready (CI that never completes, an
+  # event GitHub dropped, a lost runner) still ends as a failure that tells the owner. Every hour the
+  # sweep walks the first parents of main for the last 24 hours and, for a merge with no
+  # release/ready, records failure and comments on "Production deploys": when zap-baseline had not
+  # finished 40 minutes after the merge, or had finished but nothing was recorded 2 hours after it.
+  # A later run of the checks on that commit replaces the status. GitHub may start a schedule late.
+  sweep:
+    name: release checks sweep (release/ready missing on a merge)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: read
+      statuses: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record release/ready on a release merge whose checks did not finish
+        run: bash scripts/release-checks-sweep.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

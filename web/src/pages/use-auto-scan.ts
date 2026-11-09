@@ -104,6 +104,11 @@ function followScan({ client, projectId, ask, setState, done }: Follow): () => v
   };
 }
 
+/** A scan that is queued or running stays so; any other state waits for the scan of the new source. */
+function waiting(state: ScanState): ScanState {
+  return state.kind === 'scanning' ? state : { kind: 'starting' };
+}
+
 // RF-160
 /** `unscanned`: the page has no code map yet (the estimate says none), so a project with a source is scanned. */
 export function useAutoScan(project: Project, unscanned: boolean, onScanned: () => void): AutoScan {
@@ -123,14 +128,20 @@ export function useAutoScan(project: Project, unscanned: boolean, onScanned: () 
     setRound((current) => current + 1);
   };
   // RF-160: a source that replaces the one the project held is a new source, so it is scanned again.
+  // P8-106: from the render that shows it, the state reads 'starting' (not 'idle' until the history
+  // answers), so the page hides the areas and Analyse of the old code map: a run started on them
+  // would read the scan of the source that was replaced.
   const sourceKey =
     project.source === null ? '' : `${project.source.fileName}|${project.source.uploadedAt}`;
-  const seen = useRef(sourceKey);
+  const [seen, setSeen] = useState(sourceKey);
+  const replaced = seen !== '' && sourceKey !== '' && seen !== sourceKey;
   useEffect(() => {
-    const replaced = seen.current !== '' && sourceKey !== '' && seen.current !== sourceKey;
-    seen.current = sourceKey;
-    if (replaced) scanAgain();
-  }, [sourceKey]);
+    // Kept current on every change: a project that held no source at load has '' here until its first upload.
+    setSeen(sourceKey);
+    if (!replaced) return;
+    setState(waiting);
+    scanAgain();
+  }, [replaced, sourceKey]);
 
   useEffect(() => {
     if (!needsScan && !wanted) {
@@ -146,5 +157,5 @@ export function useAutoScan(project: Project, unscanned: boolean, onScanned: () 
     return followScan({ client, projectId, ask, setState, done });
   }, [client, projectId, needsScan, wanted, round]);
 
-  return { state, scanAgain };
+  return { state: replaced ? waiting(state) : state, scanAgain };
 }

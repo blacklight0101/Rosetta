@@ -289,7 +289,13 @@
   resize: vertical;
 }
 
+/*
+ * The box is the containing block of the table's visually hidden text (an "Actions" header is
+ * absolutely placed): without it that text sits at the table's far edge, outside the box, and the
+ * page scrolls sideways when the table is wider than its box (P8-130, 1024 px).
+ */
 .rst-table-scroll {
+  position: relative;
   overflow-x: auto;
 }
 
@@ -333,6 +339,91 @@
   gap: var(--rst-sp-3) var(--rst-sp-4);
   align-items: start;
   min-inline-size: 0;
+}
+
+/* RF-436, P8-73: the every-role control, one row of two selects and Apply at the top of the roles. */
+.rst-every-role {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  padding-block: var(--rst-sp-2);
+}
+
+/*
+ * RF-436, P8-135: the Roles section of the project settings as the `P8ProjectSettings` artboard draws
+ * it: the heading with its note beside it, then one table of the roles. The fields keep their labels
+ * for assistive technology; the column names them on screen. A select fills its cell and may shrink
+ * with it, so the four columns fit from 640 px; below that the rows stack (the rule further down).
+ */
+.rst-roles__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+}
+
+.rst-roles th,
+.rst-roles td {
+  white-space: normal;
+}
+
+.rst-roles .rst-field__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rst-roles .rst-field__control {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.rst-roles thead th:nth-child(2) {
+  inline-size: 26%;
+}
+
+.rst-roles thead th:nth-child(3) {
+  inline-size: 40%;
+}
+
+.rst-roles__role {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-roles__dot {
+  flex: none;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-role-reader);
+}
+
+.rst-roles__dot--verifier {
+  background: var(--rst-role-verifier);
+}
+
+.rst-roles__dot--planner {
+  background: var(--rst-role-planner);
+}
+
+.rst-roles__dot--summariser {
+  background: var(--rst-role-summariser);
+}
+
+.rst-roles__state--ready {
+  color: var(--rst-ok-ink);
+}
+
+.rst-roles__state--blocked {
+  color: var(--rst-danger-ink);
 }
 
 .rst-prices {
@@ -399,6 +490,11 @@
 .rst-table__sub {
   color: var(--rst-ink-muted);
   font-size: var(--rst-fs-xs);
+}
+
+/* P8-130: the share under a Partly read badge. A whole-pixel line (12px by 1.5) keeps the rows of the table on whole pixels. */
+.rst-table__sub--share {
+  line-height: 1.5;
 }
 
 /* The row actions of an account stay on one line; the table scrolls inside its region. */
@@ -576,9 +672,11 @@
   gap: var(--rst-sp-1) var(--rst-sp-2);
 }
 
+/* P8-26: an area name wraps at its "/" (BreakableText), never inside a name. */
 .rst-start__area-name {
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .rst-start__area-tokens {
@@ -735,10 +833,12 @@
   font-weight: var(--rst-fw-body);
 }
 
+/* P8-26: provider and model wrap at their " / " in a cell wide enough for the longest name, never inside it. */
 .rst-table td.rst-table__wrap {
-  min-inline-size: 7rem;
+  min-inline-size: 15rem;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .rst-start__actions {
@@ -756,6 +856,11 @@
 @media (max-width: 40rem) {
   .rst-table.rst-table--stack,
   .rst-table.rst-table--stack tbody {
+    display: block;
+  }
+
+  /* A caption stays a table-caption box inside the block table and shrinks to one letter per line. */
+  .rst-table.rst-table--stack caption {
     display: block;
   }
 
@@ -798,5 +903,10 @@
 
   .rst-table.rst-table--stack .rst-admin__actions {
     flex-wrap: wrap;
+  }
+
+  /* P8-135: a role whose State is not known yet shows no empty "State" line. */
+  .rst-table.rst-table--stack .rst-roles__state:empty {
+    display: none;
   }
 }

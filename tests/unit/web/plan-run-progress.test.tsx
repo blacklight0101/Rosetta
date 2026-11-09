@@ -102,7 +102,7 @@ it('RF-1015 an ended plan run shows plan figures and no understand figures', asy
   const facts = within(turn()).getByRole('list', { name: 'Run facts' });
   expect(facts.textContent).not.toContain('Cards');
   expect(facts.textContent).not.toContain('Citations passed');
-  expect(facts.textContent).not.toContain('Areas read');
+  expect(facts.textContent).not.toContain('Areas');
   expect(facts.textContent).toContain('Cost');
 });
 

@@ -7,6 +7,7 @@ import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
+import { moneyText } from '../lib/money.js';
 import { dollarsToMicros, microsToDollars } from '../lib/usd.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 
@@ -28,7 +29,7 @@ type LoadState =
 function savedMessage(micros: string | null): string {
   return micros === null
     ? 'Saved: no daily cap on your own keys.'
-    : `Saved: runs on your own keys stop before they pass $${microsToDollars(micros)} in a UTC day.`;
+    : `Saved: runs on your own keys stop before they pass ${moneyText(micros)} in a UTC day.`;
 }
 
 function useOwnCap(): LoadState {

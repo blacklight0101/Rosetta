@@ -35,6 +35,8 @@ export interface SubmitRunRequest {
   readonly stage: RunStage;
   /** The start request's options, recorded in the manifest. */
   readonly options: Readonly<Record<string, unknown>>;
+  /** P8-139, RF-1108, DEC-226: the run a Deepen improves or a plan run is written from, kept on the row. */
+  readonly facts?: Pick<Run, 'deepenParentId' | 'planSourceKey'>;
 }
 
 export interface SubmittedRun {
@@ -64,7 +66,7 @@ export class SubmitRun {
     if (!this.deps.queue.canRun(stage)) return err(ERROR_CODES.runStageNotAvailable);
     // One queue step: a dispatch in between would start the run before its manifest exists.
     const run = await this.deps.queue.admit(async () => {
-      const queued = await this.insert(project, stage);
+      const queued = await this.insert(project, stage, request.facts ?? {});
       await this.writeManifest(queued, request);
       return queued;
     });
@@ -72,7 +74,11 @@ export class SubmitRun {
     return ok({ run: current ?? run, position: await this.deps.queue.positionOf(run.id) });
   }
 
-  private async insert(project: Project, stage: RunStage): Promise<Run> {
+  private async insert(
+    project: Project,
+    stage: RunStage,
+    facts: Pick<Run, 'deepenParentId' | 'planSourceKey'>,
+  ): Promise<Run> {
     const { runs, ids, clock } = this.deps;
     const base = ids.runId(stage);
     const queuedAt = clock.now().getTime();
@@ -89,10 +95,14 @@ export class SubmitRun {
         endState: null,
         queuedAt,
         startedAt: null,
+        spanStartedAt: null,
+        activeMs: 0,
         endedAt: null,
         totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
         failedAreas: 0,
         unreadAreas: 0,
+        endReason: null,
+        ...facts,
       };
       const inserted = await runs.insert(run);
       if (inserted.ok) return run;

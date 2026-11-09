@@ -40,6 +40,12 @@ export interface AreaCoverage {
   readonly readTokens: number;
   /** `readTokens / tokens`, 0 to 1, four decimals; 0 for an area without tokens. */
   readonly readTokenShare: number;
+  /**
+   * RF-230, RF-231 (P8-93): `readTokenShare` over the first-party files of the area only, the number
+   * the summary and the reader gate use; 1 for an area with no first-party tokens (nothing to read).
+   * Absent from coverage written before it existed.
+   */
+  readonly firstPartyShare?: number;
   /** RF-208: why the area's task gave no usable card; left out for an area that gave cards. */
   readonly failure?: string;
   /** RF-260, RF-261: flows and screens; absent from coverage written before they existed. */

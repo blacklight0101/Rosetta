@@ -32,7 +32,7 @@ async function startRunning(page: Page): Promise<void> {
 
 async function stopRun(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 }
 
 test(
@@ -50,7 +50,9 @@ test(
     await expect(tileOf(page, 'Catalog')).toContainText('read', { timeout: 30_000 });
     const now = page.getByRole('region', { name: 'Working now' });
     await expect(now).toContainText('Controllers');
-    await expect(page.getByRole('region', { name: 'Spend for this run' })).toContainText('cap $');
+    await expect(page.getByRole('region', { name: 'Spend for this run' })).toContainText(
+      /[\d,]+ tokens left of [\d,]+ approved/u,
+    );
     await expect(page.getByRole('tab')).toHaveText([
       /^Cards so far/u,
       /^All agents/u,
@@ -77,7 +79,7 @@ test('RF-1003 RF-1010 RF-1011 the cost per role, the estimate, the project total
   const meter = page.getByRole('region', { name: 'Run meter' });
   await expect(meter).toContainText('Estimate', { timeout: 30_000 });
   await expect(meter.getByRole('row', { name: /reader/u })).toBeVisible();
-  await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
+  await expect(meter.getByRole('meter', { name: 'Approved amount used' })).toBeVisible();
   await expect(page.getByTestId('header-totals')).toBeVisible();
   await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');

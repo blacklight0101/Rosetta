@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DeepenEstimate } from '../../../web/src/api/understanding.js';
 import {
-  allRoundsText,
-  firstRoundText,
+  deepenFiguresOf,
   overCapTexts,
 } from '../../../web/src/lib/understanding/deepen-estimate-text.js';
 
@@ -50,23 +49,16 @@ function estimate(kind: string, change: Partial<DeepenEstimate> = {}): DeepenEst
 }
 
 describe('RF-209 the estimate of a Deepen with a local model', () => {
-  it('RF-209 gives the first round in tokens, not dollars', () => {
-    const text = firstRoundText(estimate('ollama'));
+  it('RF-209 gives the first round and all rounds in tokens, not dollars', () => {
+    const figures = deepenFiguresOf(estimate('ollama'));
 
-    expect(text).toContain(
-      'First round: likely 40,000 tokens (low 20,000 tokens, high 90,000 tokens).',
-    );
-    expect(text).not.toContain('$');
+    expect(figures.first).toBe('likely 40,000 tokens');
+    expect(figures.all).toBe('likely 120,000 tokens');
+    expect(JSON.stringify(figures)).not.toContain('$');
   });
 
-  it('RF-209 gives all rounds in tokens and names the token cap as what stops the run', () => {
-    const text = allRoundsText(estimate('ollama'));
-
-    expect(text).toContain(
-      'Up to 3 rounds: likely 120,000 tokens (low 60,000 tokens, high 270,000 tokens).',
-    );
-    expect(text).toContain('1,000,000 tokens is what stops the run');
-    expect(text).not.toContain('$');
+  it('RF-209 names the token cap as what stops the run', () => {
+    expect(deepenFiguresOf(estimate('ollama')).stops).toBe('1,000,000 tokens run cap');
   });
 
   it('RF-427 does not warn about the run cap in dollars when the figures are well under it', () => {
@@ -96,9 +88,7 @@ describe('RF-209 the estimate of a Deepen with a local model', () => {
 
 describe('RF-427 the estimate of a Deepen with a priced model', () => {
   it('RF-209 keeps the figures in dollars', () => {
-    expect(firstRoundText(estimate('anthropic'))).toContain(
-      'First round: likely $0.40 (low $0.20, high $0.90).',
-    );
+    expect(deepenFiguresOf(estimate('anthropic')).first).toBe('likely $0.4000');
   });
 
   it('RF-427 warns in dollars when the high figure could pass the cost cap', () => {

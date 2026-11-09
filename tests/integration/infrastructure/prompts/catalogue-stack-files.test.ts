@@ -15,10 +15,11 @@ describe('the stack files of the shipped catalogue', () => {
   it('RF-609 are read with the rules version of the file name', async () => {
     const shipped = await loadCatalogue('prompts');
 
-    expect(shipped.stack.rulesVersion).toBe(1);
+    expect(shipped.stack.rulesVersion).toBe(2);
     expect(shipped.stack.rules.map((rule) => rule.id)).toEqual([
       'server-rendered-front-end-with-api-back-end',
       'api-back-end-without-contract',
+      'technology-of-another-platform',
     ]);
     expect(shipped.stack.technologies.length).toBeGreaterThan(10);
   });
@@ -26,8 +27,8 @@ describe('the stack files of the shipped catalogue', () => {
   it('RF-609 RNF-004 are part of the hashed catalogue folder', async () => {
     const shipped = await loadCatalogue('prompts');
     const names = (await readdir('prompts/catalogue')).sort();
-    expect(names).toContain('stack-rules.v1.yaml');
-    expect(names).toContain('stack-technologies.v2.yaml');
+    expect(names).toContain('stack-rules.v2.yaml');
+    expect(names).toContain('stack-technologies.v3.yaml');
     const hash = createHash('sha256');
     for (const name of names) {
       hash.update(`${name}\n`).update(await readFile(join('prompts/catalogue', name)));
@@ -48,7 +49,7 @@ describe('loadCatalogue and the stack files', () => {
   it('RF-609 RNF-004 a changed rule changes the catalogue SHA-256', async () => {
     const before = await loadCatalogue('prompts');
     await copyCatalogue();
-    const path = join(folder(), 'stack-rules.v1.yaml');
+    const path = join(folder(), 'stack-rules.v2.yaml');
     await writeFile(path, (await readFile(path, 'utf8')).replace('only serves', 'merely serves'));
 
     const after = await loadCatalogue(temp.path);
@@ -67,7 +68,7 @@ describe('loadCatalogue refuses broken stack files', () => {
 
   it('RF-609 refuses a catalogue without its rules file', async () => {
     await copyCatalogue();
-    await rm(join(folder(), 'stack-rules.v1.yaml'));
+    await rm(join(folder(), 'stack-rules.v2.yaml'));
 
     expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
       code: ERROR_CODES.configurationInvalid,
@@ -76,7 +77,7 @@ describe('loadCatalogue refuses broken stack files', () => {
 
   it('RF-609 refuses a rule whose default does not keep the legacy behaviour', async () => {
     await copyCatalogue();
-    const path = join(folder(), 'stack-rules.v1.yaml');
+    const path = join(folder(), 'stack-rules.v2.yaml');
     const text = await readFile(path, 'utf8');
     await writeFile(
       path,
@@ -90,7 +91,7 @@ describe('loadCatalogue refuses broken stack files', () => {
 
   it('RF-609 refuses a technology of an unknown layer', async () => {
     await copyCatalogue();
-    const path = join(folder(), 'stack-technologies.v2.yaml');
+    const path = join(folder(), 'stack-technologies.v3.yaml');
     await writeFile(path, (await readFile(path, 'utf8')).replace('layer: hosting', 'layer: cloud'));
 
     expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
@@ -109,7 +110,7 @@ describe('loadCatalogue refuses broken proposals (P5-39)', () => {
 
   it('P5-39 RF-609 refuses a proposal for a technology the layer table does not hold', async () => {
     await copyCatalogue();
-    const path = join(folder(), 'stack-proposals.v2.yaml');
+    const path = join(folder(), 'stack-proposals.v3.yaml');
     await writeFile(
       path,
       (await readFile(path, 'utf8')).replace("choice: 'Razor Pages'", "choice: 'Nowhere Pages'"),
@@ -122,7 +123,7 @@ describe('loadCatalogue refuses broken proposals (P5-39)', () => {
 
   it('P5-39 RF-609 refuses a catalogue without its proposals file', async () => {
     await copyCatalogue();
-    await rm(join(folder(), 'stack-proposals.v2.yaml'));
+    await rm(join(folder(), 'stack-proposals.v3.yaml'));
 
     expect(await failureOf(loadCatalogue(temp.path))).toMatchObject({
       code: ERROR_CODES.configurationInvalid,

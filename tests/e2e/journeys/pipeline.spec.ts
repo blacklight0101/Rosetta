@@ -14,6 +14,7 @@ import {
   runStatus,
   startAndOpenLiveRun,
   valueOf,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -37,7 +38,7 @@ async function hrefOf(page: Page, name: string): Promise<string> {
 async function watchCatalogRun(page: Page): Promise<void> {
   // The run is short: the running page is checked by live-run-running.spec.ts, so this journey
   // waits for the end and reads the page of the ended run.
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   // The page of an ended run opens on the overview of the application; the agents and the claims
@@ -81,7 +82,9 @@ test('RF-1001 RF-1002 RF-504 RF-506 from sign-in to the Markdown report, the rep
 
   await openProjectStart(page, repositories.webforms);
   const scan = await runScan(page);
-  await expect(page.getByText('This run has no agents')).toBeVisible();
+  // P8-27 (RF-1015): the page of a scan shows its code map, not the panels of an understand run.
+  await expect(page.getByRole('heading', { name: 'Scan, done', level: 1 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Code map' })).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await openProjectStart(page, repositories.webforms);
@@ -92,7 +95,7 @@ test('RF-1001 RF-1002 RF-504 RF-506 from sign-in to the Markdown report, the rep
   await readReportAndReplay(page);
 
   await page.goto(understand);
-  await expect(runStatus(page)).toContainText('Completed');
+  await expect(runStatus(page)).toContainText(RUN_DONE);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('link', { name: 'Download zip' }).click(),

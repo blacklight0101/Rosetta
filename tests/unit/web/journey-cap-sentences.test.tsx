@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/preact';
+import { journeyEstimateOf } from '../../../src/application/estimate/journey-estimate.js';
 import { expect, it } from 'vitest';
 import type { RunEstimate } from '../../../web/src/api/estimate-schemas.js';
 import { EstimateSection } from '../../../web/src/pages/EstimateSection.js';
@@ -49,7 +50,7 @@ it('RF-435 EV-85 the start page has one cap sentence for a journey step and none
   const total = screen.getByTestId('journey-total').textContent;
   expect(total).toContain('replaces the project run cap');
   expect(total).toContain('Pressing Analyse again later starts a new approval');
-  expect(total).toContain('Analyse approves $4.00');
+  expect(screen.getByTestId('journey-approved').textContent).toContain('$4.00');
   expect(total).toContain('$314.17');
   expect(document.body.textContent).not.toContain('The run stops before any call that could pass');
   expect(document.body.textContent).not.toContain('Starting approves the worst case');
@@ -68,4 +69,56 @@ it('RF-435 EV-85 the project settings say which cap applies to a journey step', 
     expect(document.body.textContent).toContain('replaces the run cap here');
   });
   expect(document.body.textContent).not.toContain('A run stops cleanly when it reaches either cap');
+});
+
+const above: RunEstimate = {
+  ...estimate,
+  journey: {
+    ...{ basis: 'history', deepenRounds: 3, ceilingApplied: true },
+    likely: { tokens: 3_000_000, costMicros: '4085000' },
+    worstCase: { tokens: 9_000_000, costMicros: '9000000' },
+    approvable: { tokens: 3_500_000, costMicros: '4000000' },
+  },
+};
+
+it('RF-434 DEC-210 a likely figure above what can be approved shows the approvable figure and says the run pauses and asks', () => {
+  render(
+    <EstimateSection
+      scanOnly={false}
+      sourceKind="github"
+      estimate={{ status: 'ready', estimate: above }}
+      cap={{
+        capMicros: 500_000n,
+        serverRunCap: { administrator: undefined, serverKeys: false },
+        capTokens: 2_000_000,
+      }}
+      warnings={[]}
+      capsHref="/projects/p-1/settings#caps"
+      onRetry={() => undefined}
+    />,
+  );
+
+  const total = screen.getByTestId('journey-total').textContent;
+  expect(total).toContain('$4.00 (likely above what can be approved (likely $4.09))');
+  expect(screen.getByTestId('journey-approved').textContent).toContain('$4.00');
+  expect(screen.getByTestId('journey-stops').textContent).toContain(
+    'the run will pause and ask at the approved amount',
+  );
+  expect(total).not.toContain('likely $4.09.');
+});
+
+it('RF-434 DEC-205 the approved amount is the same on two reads of the same inputs', () => {
+  const inputs = {
+    understand: {
+      low: { inputTokens: 1, outputTokens: 1, costMicros: 1n },
+      likely: { inputTokens: 100_000, outputTokens: 20_000, costMicros: 300_000n },
+      high: { inputTokens: 400_000, outputTokens: 80_000, costMicros: 900_000n },
+    },
+    sourceTokens: 50_000,
+    deepenRounds: 3,
+    history: [],
+  };
+
+  expect(journeyEstimateOf(inputs).approvable).toEqual(journeyEstimateOf(inputs).approvable);
+  expect(journeyEstimateOf(inputs).approvable).toEqual(journeyEstimateOf({ ...inputs }).worstCase);
 });

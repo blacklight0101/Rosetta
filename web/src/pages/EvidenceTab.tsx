@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useContext, useState } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { tilesOf } from '../lib/live-run/code-map-tiles.js';
@@ -7,8 +7,7 @@ import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { AgentsTab } from './AgentsTab.js';
 import { CardsTab } from './CardsTab.js';
 import { CodeMap } from './CodeMap.js';
-import { useCodeAreas } from './use-code-areas.js';
-import { endedAgents, useRunCoverage } from './use-run-coverage.js';
+import { AreaReadContext } from './area-read-context.js';
 
 // RF-1015, RF-1002..RF-1005, DEC-137: the "Evidence" tab of an ended run: the code map as the run
 // left it, the cards with their claims and citations, and the agents with the cost per role and the
@@ -25,14 +24,17 @@ export interface EvidenceTabProps {
 
 // RF-1015
 export function EvidenceTab(props: EvidenceTabProps): JSX.Element {
-  const { run, state, stage } = props;
+  const { state, stage } = props;
   const [area, setArea] = useState<string | undefined>();
-  const areas = useCodeAreas(run.projectId, stage);
-  const coverage = useRunCoverage(run.id, stage, endedAgents(state));
+  const { areas, coverage, reading } = useContext(AreaReadContext);
   return (
     <div class="rst-p170-evidence">
       {stage === 'understand' ? (
-        <CodeMap tiles={tilesOf(state, areas)} stage={stage} onOpenArea={setArea} />
+        <CodeMap
+          tiles={tilesOf(state, areas, reading.status === 'known' ? reading.partly : undefined)}
+          stage={stage}
+          onOpenArea={setArea}
+        />
       ) : null}
       <CardsTab state={state} claims={state.claims} source={props.source} />
       <AgentsTab

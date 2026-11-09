@@ -1,4 +1,6 @@
+import type { ServerKeyPresence } from '../../src/application/ports/server-key-presence.js';
 import type { SessionStore } from '../../src/application/ports/session-store.js';
+import type { KeyProvider } from '../../src/domain/accounts/provider-keys.js';
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { StreamClosingSessionStore } from '../../src/presentation/web/stream-closing-sessions.js';
 import type { FixedClock } from './fixed-clock.js';
@@ -78,10 +80,20 @@ export function streamRoute(
   };
 }
 
+/** RF-1104: the providers the test server holds a key of its own for; a test adds them (none at first). */
+export class ServerKeyDouble implements ServerKeyPresence {
+  readonly held = new Set<KeyProvider>();
+
+  has(provider: KeyProvider): boolean {
+    return this.held.has(provider);
+  }
+}
+
 export interface KeyParts {
   readonly keys: MemoryProviderKeyRepository;
   readonly secretBox: AesGcmSecretBox;
   readonly resolver: FakeHostResolver;
+  readonly serverKeys: ServerKeyDouble;
 }
 
 /** RF-1104: the key store, its sealing box and the DNS stand-in of the base-URL check. */
@@ -90,5 +102,6 @@ export function keyParts(): KeyParts {
     keys: new MemoryProviderKeyRepository(),
     secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
     resolver: new FakeHostResolver(),
+    serverKeys: new ServerKeyDouble(),
   };
 }

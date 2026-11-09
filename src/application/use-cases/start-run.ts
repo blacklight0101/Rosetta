@@ -5,6 +5,7 @@ import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { Run } from '../../domain/runs/run.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
@@ -14,16 +15,14 @@ import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planSourceRun } from '../plan/plan-source.js';
 import type { Project } from '../projects/project.js';
 import {
-  readUnderstandOptions,
-  rolesNeedCloudConsent,
-  rolesNeedPrivateConfirmation,
+  type ApprovedAmount,
   UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
-import { scopeOf } from '../runs/run-scope.js';
+import { runStartConsent } from '../consent/run-start-consent.js';
+import type { StartConsents } from '../consent/start-consent.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
 import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
-import type { ApprovedAmount } from '../understand/understand-options.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
 // It finds the signed-in user's project (another user's id and an unknown id answer the same) and
@@ -31,7 +30,8 @@ import type { ApprovedAmount } from '../understand/understand-options.js';
 // `STARTABLE_STAGES`. An understand run records its areas and the cloud consent; when its roles
 // would send code off this machine and the request has no consent, it is refused (RST-1515)
 // before any run exists, so nothing can be sent (RF-143). The same run on a project of kind `upload`
-// also needs `privateCodeConfirmed: true` (RST-1521, RF-132); a GitHub project never does.
+// also needs `privateCodeConfirmed: true` (RST-1521, RF-132); a GitHub project never does. A consent
+// of the project that holds stands for both, and a start that carries them gives one (DEC-209).
 
 /** The stages that can be started through the API: `scan` (P1-23), `understand` (P1-33) and `plan` (P3-08). */
 const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
@@ -66,6 +66,11 @@ export interface StartRunDependencies {
    * under what is left of its amount. Absent only where no journey is kept (evaluation tools).
    */
   readonly journeys?: JourneyRecords;
+  /**
+   * DEC-209: the consents of the project. Absent only where none is kept (evaluation tools): every
+   * start then needs the boxes.
+   */
+  readonly consents?: StartConsents;
 }
 
 export interface StartRunRequest {
@@ -153,39 +158,31 @@ export class StartRun {
     if (brief === undefined) return err(ERROR_CODES.planBriefMissing);
     // RF-614, RST-1802, RF-1105: a named source run is checked before any run exists.
     const { actor, sourceRunId } = request;
-    const problem = await this.sourceProblemOf(request, project);
-    if (problem !== undefined) return err(problem);
-    const cloudConsent = request.cloudConsent === true;
-    const roles: readonly AgentRole[] = ['planner'];
-    if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
-      return err(ERROR_CODES.cloudConsentMissing);
-    }
+    const named = await this.namedSourceOf(owner, sourceRunId);
+    if (!named.ok) return err(named.error);
     // RF-132: an uploaded project also needs the second confirmation for the planner.
     // DEC-151: it is recorded, so the queue can check it again when the run starts.
-    const needsPrivate = rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles);
-    if (needsPrivate && request.privateCodeConfirmed !== true) {
-      return err(ERROR_CODES.privateCodeNotConfirmed);
-    }
+    const consent = await runStartConsent(this.deps, request, project, ['planner']);
+    if (!consent.ok) return err(consent.error);
     const planLine = await this.planLineOf(request, project);
     if (!planLine.ok) return err(planLine.error);
+    const { privateCodeConfirmed, ...recorded } = consent.value;
     const options = {
-      ...{ cloudConsent, ...(needsPrivate ? { privateCodeConfirmed: true } : {}) },
+      ...{ ...recorded, ...(privateCodeConfirmed ? { privateCodeConfirmed } : {}) },
       ...(sourceRunId === undefined ? {} : { sourceRunId }),
       ...planLine.value,
     };
-    return this.submit({ actor, project, stage: 'plan', options });
+    return this.submit({ actor, project, stage: 'plan', options, facts: named.value });
   }
 
-  /** RF-614, RST-1802: why the named source run of a plan cannot be used; undefined when it can. */
-  private async sourceProblemOf(
-    request: StartRunRequest,
-    project: Project,
-  ): Promise<StartRunProblem | undefined> {
-    const { sourceRunId } = request;
-    if (sourceRunId === undefined) return undefined;
-    const owner = { userId: request.actor.userId, projectId: project.id };
+  /** RF-614, RST-1802, RF-1108, DEC-226: what the row keeps of a named source, or why it cannot be used. */
+  private async namedSourceOf(
+    owner: { readonly userId: string; readonly projectId: string },
+    sourceRunId: string | undefined,
+  ): Promise<Result<Pick<Run, 'planSourceKey'>, StartRunProblem>> {
+    if (sourceRunId === undefined) return ok({});
     const found = await planSourceRun(this.deps.runs, owner, sourceRunId);
-    return found.ok ? undefined : found.error;
+    return found.ok ? ok({ planSourceKey: found.value.runKey }) : found;
   }
 
   /**
@@ -204,22 +201,6 @@ export class StartRun {
     return retryable && (request.areas?.length ?? 0) > 0 ? undefined : ERROR_CODES.requestInvalid;
   }
 
-  /**
-   * P7-38: a retry takes the cloud consent recorded in the manifest of the run it retries, read here
-   * and never from the browser's figure, which only counts where that run recorded none (the owner
-   * ticks the notice for this retry). A recorded consent is never removed by the browser.
-   */
-  private async consentOf(request: StartRunRequest): Promise<boolean> {
-    const ticked = request.cloudConsent === true;
-    if (request.retryOf === undefined) return ticked;
-    const parent = await this.deps.runs.find(request.actor.userId, request.retryOf);
-    if (parent === undefined) return ticked;
-    const manifest = await this.deps.manifests.read(scopeOf(parent));
-    const recorded =
-      manifest === undefined ? false : readUnderstandOptions(manifest.options).cloudConsent;
-    return recorded || ticked;
-  }
-
   /** RF-432: the server's figures for the shown one; none when the start showed none. */
   private async approvedOf(
     request: StartRunRequest,
@@ -235,28 +216,20 @@ export class StartRun {
     request: StartRunRequest,
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
-    const { ollamaHost } = this.deps;
     const retryProblem = await this.retryProblem(request, project);
     if (retryProblem !== undefined) return err(retryProblem);
-    const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
     const approved = await this.approvedOf(request);
     if (!approved.ok) return err(approved.error);
     const line = await this.leftOf(request, project, approved.value);
     if (!line.ok) return err(line.error);
-    const approvedAmount = line.value;
+    // RF-132: the code of an upload is usually private; a second, separate confirmation is needed.
+    const consent = await runStartConsent(this.deps, request, project, UNDERSTAND_ROLES);
+    if (!consent.ok) return err(consent.error);
     const options = understandOptionsOf({
       ...request,
-      cloudConsent: await this.consentOf(request),
-      privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
-      approvedAmount,
+      ...consent.value,
+      approvedAmount: line.value,
     });
-    if (!options.cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
-      return err(ERROR_CODES.cloudConsentMissing);
-    }
-    // RF-132: the code of an upload is usually private; a second, separate confirmation is needed.
-    if (needsPrivate && options.privateCodeConfirmed !== true) {
-      return err(ERROR_CODES.privateCodeNotConfirmed);
-    }
     const { actor } = request;
     const submitted = await this.submit({
       actor,

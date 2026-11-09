@@ -1,0 +1,207 @@
+/* RF-1021, RF-1022, DEC-211 (P8-26, docs/design/board/P8Project.dc.html): the project page after the
+   journey: its title with the current step, the hand-off package and its cost, the questions left on
+   their defaults, the runs, and the collapsed sections. Tokens only. Names wrap at their separators,
+   never inside a word. The page reserves the height of the summary bar, so nothing is covered. */
+
+html {
+  scroll-padding-block-end: 8rem;
+}
+
+/* P8-105: at phone width the summary bar wraps to about 9.4rem, taller than the 8rem reserve. */
+@media (max-width: 40rem) {
+  html {
+    scroll-padding-block-end: 12rem;
+  }
+}
+
+.rst-start {
+  padding-block-end: var(--rst-sp-6);
+}
+
+.rst-p826-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p826-head .rst-page__title {
+  margin: 0;
+}
+
+.rst-p826-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
+  padding: 2px var(--rst-sp-3);
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-neutral-bg);
+  color: var(--rst-neutral-ink);
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-p826-pill--ok {
+  background: var(--rst-ok-bg);
+  color: var(--rst-ok-ink);
+}
+
+.rst-p826-pill--warn {
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}
+
+.rst-p826-pill--info {
+  background: var(--rst-info-bg);
+  color: var(--rst-info-ink);
+}
+
+.rst-p826-pill--danger {
+  background: var(--rst-danger-bg);
+  color: var(--rst-danger-ink);
+}
+
+.rst-p826-pill a {
+  color: inherit;
+}
+
+.rst-p826-source {
+  margin-inline-start: auto;
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-p826-package {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--rst-sp-5);
+  padding: var(--rst-sp-5);
+}
+
+@media (max-width: 52rem) {
+  .rst-p826-package {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rst-p826-package__main,
+.rst-p826-cost {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p826-package h2,
+.rst-p826-cost h3,
+.rst-p826-block h2 {
+  margin: 0;
+}
+
+.rst-p826-package p,
+.rst-p826-cost p {
+  margin: 0;
+}
+
+.rst-p826-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-p826-checks li {
+  display: flex;
+  gap: var(--rst-sp-2);
+  align-items: baseline;
+}
+
+.rst-p826-checks__mark--ok {
+  color: var(--rst-ok-ink);
+}
+
+.rst-p826-checks__mark--warn {
+  color: var(--rst-warn-ink);
+}
+
+.rst-p826-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p826-cost {
+  padding: var(--rst-sp-4);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+}
+
+.rst-p826-cost__total {
+  font-size: var(--rst-fs-2xl);
+  font-weight: var(--rst-fw-head);
+  font-variant-numeric: tabular-nums;
+}
+
+.rst-p826-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p826-block .rst-p826-spacer {
+  flex-grow: 1;
+}
+
+.rst-p826-runs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+}
+
+.rst-p826-runs h2 {
+  margin: 0;
+}
+
+.rst-p826-fold > summary {
+  cursor: pointer;
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-p826-fold[open] > summary {
+  margin-block-end: var(--rst-sp-3);
+}
+
+.rst-p826-fold > .rst-settings__note {
+  margin-block-start: 0;
+}
+
+/* RF-1022: the three lines of the estimate; the words of a figure wrap at spaces only. */
+.rst-p826-journey {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p826-journey .rst-p241-measure dd {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.rst-p826-journey .rst-settings__note {
+  margin: 0;
+}
+
+.rst-p826-more > summary {
+  cursor: pointer;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+/* RF-241: the labelled re-run choice of the Questions step. */
+.rst-road__rerun {
+  display: flex;
+  gap: var(--rst-sp-2);
+  align-items: flex-start;
+}

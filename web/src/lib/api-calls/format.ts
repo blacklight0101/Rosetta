@@ -1,5 +1,4 @@
-import { tokensLabel } from '../live-run/format.js';
-import { microsToDollars } from '../usd.js';
+import { costLabel, tokensLabel } from '../live-run/format.js';
 
 // RF-1011: how the API calls panel writes a duration, a cost, a token count and a time.
 
@@ -10,9 +9,8 @@ export function durationText(ms: number | null): string {
   return `${(Math.round(ms / 100) / 10).toFixed(1)} s`;
 }
 
-/** Dollars with at least the cents; a fraction of a cent is kept (a small call costs less). */
-export const costText = (micros: number): string =>
-  `$${microsToDollars(String(Math.round(micros)))}`;
+/** A call's cost by the one money formatter (DEC-54). */
+export const costText = (micros: number): string => costLabel(micros);
 
 export const tokenText = (tokens: number): string => tokensLabel(tokens);
 

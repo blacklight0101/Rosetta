@@ -27,6 +27,7 @@ import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.
 import { StoreUpload } from '../application/use-cases/store-upload.js';
 import { WorkbookRendererCheck } from '../application/use-cases/workbook-renderer-check.js';
 import { WorkbookBatches } from '../application/use-cases/workbook-batches.js';
+import { RenameProject } from '../application/use-cases/rename-project.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
 import type { ModelList } from '../application/models/model-list.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
@@ -71,6 +72,7 @@ import { composeScanResults } from './compose-understand.js';
 import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
 import { keptRunCards, keptPriorCards } from './kept-card-readers.js';
+import { PgJourneyFacts } from '../infrastructure/db/pg-journey-facts.js';
 
 // Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
 // use cases behind the projects API. The default settings come from `templates/` and are checked
@@ -236,6 +238,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock, models: parts.models }),
+    renameProject: new RenameProject({ projects, clock }),
     openWorkspace: new OpenWorkspace({
       projects,
       users: new PgUserRepository(pool),
@@ -245,7 +248,10 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
     }),
     // RF-605: the planning brief of Plan setup.
     getPlanningBrief: new GetPlanningBrief({ projects, runs, briefs, catalogue }),
-    savePlanningBrief: new SavePlanningBrief({ projects, runs, briefs, catalogue, clock }),
+    savePlanningBrief: new SavePlanningBrief({
+      ...{ projects, runs, briefs, catalogue, clock },
+      facts: new PgJourneyFacts(pool),
+    }),
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, clock, usage },
       ...{ priceTable: parts.priceTable, models: parts.models },

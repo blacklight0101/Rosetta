@@ -5,10 +5,13 @@
     "tests/e2e/journeys/admin-and-cap.spec.ts",
     "tests/e2e/journeys/cap-resume.spec.ts",
     "tests/e2e/journeys/consolidation.spec.ts",
+    "tests/e2e/journeys/four-readers-cap.spec.ts",
     "tests/e2e/journeys/journey-strip.spec.ts",
+    "tests/e2e/journeys/journey-strip-compact.spec.ts",
     "tests/e2e/journeys/server-key-cap.spec.ts",
     "tests/e2e/journeys/two-users.spec.ts",
     "tests/e2e/live-run.spec.ts",
+    "tests/e2e/non-dotnet-project.spec.ts",
     "tests/e2e/plan-setup.spec.ts",
     "tests/e2e/plan-setup-own-answer.spec.ts",
     "tests/e2e/plan-setup-typed-architecture.spec.ts",
@@ -21,10 +24,15 @@
     "tests/e2e/visual/sweep-admin.spec.ts",
     "tests/e2e/shared-account.spec.ts",
     "tests/e2e/start-button-contrast.spec.ts",
-    "tests/e2e/phone-wrap.spec.ts"
+    "tests/e2e/phone-wrap.spec.ts",
+    "tests/e2e/project-page-states.spec.ts",
+    "tests/e2e/replace-source-scan.spec.ts",
+    "tests/e2e/header-run-meter.spec.ts"
   ],
   "2": [
     "tests/e2e/start-run-queue.spec.ts",
+    "tests/e2e/save-answers.spec.ts",
+    "tests/e2e/journeys/one-amount.spec.ts",
     "tests/e2e/journeys/one-analyse.spec.ts",
     "tests/e2e/journeys/approval-pause.spec.ts",
     "tests/e2e/admin-audit.spec.ts",
@@ -33,6 +41,7 @@
     "tests/e2e/create-project-slow.spec.ts",
     "tests/e2e/harness.spec.ts",
     "tests/e2e/history.spec.ts",
+    "tests/e2e/history-coverage-tooltip.spec.ts",
     "tests/e2e/journeys/full-understand.spec.ts",
     "tests/e2e/journeys/pipeline.spec.ts",
     "tests/e2e/journeys/visitor.spec.ts",
@@ -46,7 +55,8 @@
     "tests/e2e/visual/sweep-account.spec.ts",
     "tests/e2e/side-navigation.spec.ts",
     "tests/e2e/plan-setup-build-method.spec.ts",
-    "tests/e2e/journeys/plan-run-page.spec.ts"
+    "tests/e2e/journeys/plan-run-page.spec.ts",
+    "tests/e2e/journeys/zip-consent.spec.ts"
   ],
   "3": [
     "tests/e2e/account-password.spec.ts",
@@ -60,8 +70,10 @@
     "tests/e2e/journeys/zip-project.spec.ts",
     "tests/e2e/journeys/language-without-pack.spec.ts",
     "tests/e2e/landing.spec.ts",
+    "tests/e2e/landing-stages.spec.ts",
     "tests/e2e/page-shots.spec.ts",
     "tests/e2e/projects-runs.spec.ts",
+    "tests/e2e/cost-table-tooltip.spec.ts",
     "tests/e2e/report-offline.spec.ts",
     "tests/e2e/resume-run.spec.ts",
     "tests/e2e/run-replay.spec.ts",
@@ -77,6 +89,9 @@
     "tests/e2e/projects-upload.spec.ts",
     "tests/e2e/projects-workbooks.spec.ts",
     "tests/e2e/projects-workbooks-progress.spec.ts",
-    "tests/e2e/projects-zip-workbooks-progress.spec.ts"
+    "tests/e2e/projects-zip-workbooks-progress.spec.ts",
+    "tests/e2e/plan-setup-stack.spec.ts",
+    "tests/e2e/plan-setup-stack-defaults.spec.ts",
+    "tests/e2e/python-project-plan.spec.ts"
   ]
 }

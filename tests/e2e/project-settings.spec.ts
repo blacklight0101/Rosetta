@@ -16,7 +16,7 @@ test.describe.configure({ mode: 'serial' });
 
 async function openSettings(page: Page): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Settings for octo/demo' });
+  const link = page.getByRole('button', { name: 'More actions for octo/demo' });
   const empty = page.getByText('No projects yet');
   await expect(link.or(empty)).toBeVisible();
   if (await empty.isVisible()) {
@@ -27,6 +27,7 @@ async function openSettings(page: Page): Promise<void> {
     await page.goto('/projects');
   }
   await link.click();
+  await page.getByRole('menuitem', { name: 'Project settings' }).click();
   await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
   await expect(page.getByLabel('Reader model', { exact: true })).toBeVisible();
 }
@@ -70,7 +71,7 @@ test('RF-002 saves changed settings and shows them again after a reload', async 
   await page.getByLabel('Reader model', { exact: true }).fill('gemma4:e2b');
   await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('1.25');
   // P2-26: the away-from-default warning is on the page while it is checked for accessibility.
-  await expect(page.getByText(/^Differs from the default of \$0\.50\./u)).toBeVisible();
+  await expect(page.getByText(/^Differs from the default of \$0\.5000\./u)).toBeVisible();
   await expectNoSeriousViolations(page);
 
   await page.getByRole('button', { name: 'Save settings' }).click();
@@ -90,11 +91,19 @@ test('RF-405 chooses the Reader model from the Anthropic list, then from Other m
   await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
   const model = page.getByLabel('Reader model', { exact: true });
   await expect(model).toHaveJSProperty('tagName', 'SELECT');
-  await expect(model).toHaveValue('');
+  // RF-436, P8-72: choosing the provider selected its recommended model, not "Choose a model".
+  await expect(model).not.toHaveValue('');
 
   await model.selectOption('claude-haiku-5-5');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
+  // RF-436, P8-57: the reader left Ollama with 1 parallel reader, so 4 was stored and the form says so.
+  await expect(
+    page.getByText(
+      'Parallel readers set from 1 to 4, because the reader is no longer a local model.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel('Parallel readers', { exact: true })).toHaveValue('4');
   await page.reload();
   await expect(page.getByLabel('Reader model', { exact: true })).toHaveValue('claude-haiku-5-5');
   await expectNoSeriousViolations(page);

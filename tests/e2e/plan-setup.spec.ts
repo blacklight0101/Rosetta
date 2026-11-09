@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
 import { openHistory, runRow } from './support/history-page.js';
@@ -5,9 +6,12 @@ import { openStartPage, runStatus } from './support/live-run-page.js';
 import {
   estimate,
   expectOptions,
+  expectPlanCompleted,
+  holdPlanOptions,
   openPlanSetup,
   openStep,
   recorded,
+  saveBrief,
   stepPill,
   understandCatalog,
   writeButton,
@@ -34,6 +38,12 @@ test.beforeEach(async ({ context }, info) => {
   account = credentials.userName;
   await signInAs(context, credentials);
 });
+
+async function answerHosting(page: Page, text: string): Promise<void> {
+  const hosting = page.getByRole('radiogroup', { name: 'Hosting' });
+  await hosting.getByRole('radio', { name: 'Type your own answer' }).check();
+  await page.getByLabel('Your answer for Hosting').fill(text);
+}
 
 test('RF-605 after an understand run Plan setup asks six groups of questions, each with a default and a reason', async ({
   page,
@@ -92,7 +102,11 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
   // the database layer is not end of life and still has the two proposals, keep and your own.
   await expect(layers.first().getByRole('radio')).toHaveCount(3, { timeout: 20_000 });
   await expect(layers.nth(3).getByRole('radio')).toHaveCount(4);
-  await expect(page.getByLabel('Your own for Hosting')).toBeVisible();
+  await expect(
+    page
+      .getByRole('radiogroup', { name: 'Hosting' })
+      .getByRole('radio', { name: 'Type your own answer' }),
+  ).toBeVisible();
   await layers.nth(3).getByRole('radio').last().check();
   await expectNoSeriousViolations(page);
 });
@@ -100,13 +114,15 @@ test('RF-609 the stack step has two options for each of the seven layers and a f
 test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in What I recorded and can be edited', async ({
   page,
 }) => {
+  // #1183: hold the planner's options so saving records only the typed layer, not every open one.
+  const release = await holdPlanOptions(page);
   await openStartPage(page);
   await openPlanSetup(page);
   await openStep(page, 'Migration');
   await page.getByRole('radio', { name: /^Parallel Change/u }).check();
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await expect(stepPill(page, 'Stack')).toHaveAttribute('aria-current', 'step');
-  await page.getByLabel('Your own for Hosting').fill('On-premises Kubernetes');
+  await answerHosting(page, 'On-premises Kubernetes');
   await page.getByRole('button', { name: 'Save and continue' }).click();
   await page.getByLabel('Team size', { exact: true }).fill('6');
   // P6-26 (RF-611, DEC-189): the hosted question has no recommended answer and works by keyboard.
@@ -120,13 +136,8 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
   await page.getByRole('radio', { name: /^Agents will build/u }).check();
   await page.getByRole('radio', { name: /^Claude Code/u }).check();
 
-  // The recorded lines follow the draft, so wait for the save itself before reloading.
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' && response.url().endsWith('/planning-brief'),
-  );
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  expect((await saved).ok()).toBe(true);
+  await saveBrief(page, page.getByRole('button', { name: 'Save', exact: true }));
+  release();
 
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('1 of 7 layers: On-premises Kubernetes');
@@ -135,6 +146,9 @@ test('RF-605 RF-610 RF-611 RF-612 the answers are saved as a brief that shows in
     'Agents will build with Claude Code. Models: smallest haiku, middle sonnet, largest opus',
   );
   await expect(recorded(page).getByText('(default)').first()).toBeVisible();
+  // P8-107: the held request was let through, so the options reach the page that asked for them.
+  await openStep(page, 'Architecture');
+  await expectOptions(page);
   await page.reload();
   await expect(recorded(page)).toContainText('Parallel Change');
   await expect(recorded(page)).toContainText('will be hosted');
@@ -156,6 +170,25 @@ test('RF-613 the plan estimate shows the planner against the caps and the packag
   // P8-01: Analyse recorded the journey, so the run's line is what is left of its amount.
   await expect(estimate(page)).toContainText('Approved tokens left');
   await expect(writeButton(page)).toBeEnabled();
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-605 P8-82 the estimate and Start the plan stay in view at the top and the bottom of the page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openStartPage(page);
+
+  await openPlanSetup(page);
+
+  await expect(page.getByRole('region', { name: 'Roles' })).toContainText('Planner');
+  const bar = page.getByRole('region', { name: 'Plan summary' });
+  await expect(bar).toContainText(/Plan estimate: likely (\$[\d.]+|[\d,]+ tokens)/u);
+  for (const top of [0, 1_000_000]) {
+    await page.evaluate(`window.scrollTo(0, ${String(top)})`);
+    await expect(bar).toBeInViewport({ ratio: 1 });
+    await expect(bar.getByRole('button', { name: /^Start the plan/u })).toBeInViewport();
+  }
   await expectNoSeriousViolations(page);
 });
 
@@ -229,13 +262,14 @@ test('RF-605 after a package exists a changed answer says the package is out of 
 });
 
 test('RF-604 Start the plan starts the plan run and opens its live page', async ({ page }) => {
+  test.setTimeout(120_000); // The plan run may wait for a run slot (RF-1108).
   await openStartPage(page);
   await openPlanSetup(page);
 
   await writeButton(page).click();
 
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
-  await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
+  // The next test starts a plan of the same project: this one has to end first (RF-435, P8-03).
+  await expectPlanCompleted(page);
 });
 
 test('RF-614 RF-604 from the completed understand run to the package: Set up the plan opens Plan setup for that run', async ({
@@ -248,10 +282,10 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
     .getByRole('link', { name: /^View run /u })
     .click();
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await expect(turn.getByRole('button', { name: 'Set up the plan' })).toBeVisible();
+  const setUp = turn.getByRole('button', { name: /^(Skip the Deepen and s|S)et up the plan$/u }); // P8-84
+  await expect(setUp).toBeVisible();
   await expectNoSeriousViolations(page);
-
-  await turn.getByRole('button', { name: 'Set up the plan' }).click();
+  await setUp.click();
 
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
   const source = page.getByRole('region', { name: 'Source run' });

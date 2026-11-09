@@ -42,6 +42,7 @@ function resultOf(): TaskResult {
       tokens: 100,
       readTokens: 40,
       readTokenShare: 0.4,
+      firstPartyShare: 0.4,
     },
   };
 }

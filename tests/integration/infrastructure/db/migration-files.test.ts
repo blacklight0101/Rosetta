@@ -65,6 +65,11 @@ describe('release migrations', () => {
       '0018_runs_unread_areas.sql',
       '0019_runs_awaiting_approval.sql',
       '0020_journeys.sql',
+      '0021_runs_running_time.sql',
+      '0022_runs_end_reason.sql',
+      '0023_runs_end_reason_needs_state.sql',
+      '0024_journey_facts.sql',
+      '0025_project_consent.sql',
     ]);
   });
 

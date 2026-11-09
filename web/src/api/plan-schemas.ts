@@ -139,6 +139,18 @@ export const stackOfferSchema = z.object({
       layer: z.string(),
       proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
       keepLegacy: z.boolean(),
+      // DEC-208: the technologies of the layer that belong to a platform, and the layer's proposals by platform.
+      technologies: z
+        .array(z.object({ name: z.string(), aliases: z.array(z.string()), platform: z.string() }))
+        .default([]),
+      platforms: z
+        .array(
+          z.object({
+            platform: z.string(),
+            proposals: z.array(z.object({ choice: z.string(), why: z.string() })),
+          }),
+        )
+        .default([]),
       // P7-30: the words that name only a platform, each with the layer's choices for it.
       vague: z
         .array(

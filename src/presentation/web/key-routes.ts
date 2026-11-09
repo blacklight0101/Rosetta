@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DeleteProviderKey } from '../../application/use-cases/delete-provider-key.js';
+import type { GetKeyAccess } from '../../application/use-cases/get-key-access.js';
 import type {
   ListProviderKeys,
   ProviderKeySummary,
@@ -26,6 +27,8 @@ import { signedInOf } from './request-actor.js';
 // - PUT /api/account/keys/:provider saves or replaces the key (and, for `openai-compatible`, its
 //   base URL) and answers the same three fields; the key itself never leaves the server again.
 // - DELETE /api/account/keys/:provider removes it (204); a key the user does not have is 404.
+// - GET /api/account/key-access answers, for each provider that takes a key, whether the user saved
+//   one and whether they may use the server's (RF-436, DEC-225): booleans only.
 // A provider that takes no key is 404. The body is capped at 8 KiB; saves are limited to 10 a
 // minute per address, as each may resolve a host name.
 
@@ -33,6 +36,7 @@ export interface KeyServices {
   readonly listProviderKeys: ListProviderKeys;
   readonly saveProviderKey: SaveProviderKey;
   readonly deleteProviderKey: DeleteProviderKey;
+  readonly getKeyAccess: Pick<GetKeyAccess, 'execute'>;
 }
 
 const KEY_BODY_LIMIT_BYTES = 8192;
@@ -72,6 +76,12 @@ export function registerKeyRoutes(server: FastifyInstance, services: KeyServices
   server.get('/api/account/keys', { config: { access: 'user' } }, async (request, reply) => {
     const keys = await services.listProviderKeys.execute({ actor: signedInOf(request).actor });
     return reply.status(200).send({ keys: keys.map(keyView) });
+  });
+
+  // RF-436, DEC-225
+  server.get('/api/account/key-access', { config: { access: 'user' } }, async (request, reply) => {
+    const providers = await services.getKeyAccess.execute({ actor: signedInOf(request).actor });
+    return reply.header('cache-control', 'no-store').status(200).send({ providers });
   });
 
   server.put<{ Params: ProviderParams }>(

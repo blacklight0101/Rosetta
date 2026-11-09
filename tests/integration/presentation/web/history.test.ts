@@ -5,6 +5,7 @@ import {
   createHistoryHarness,
   type HistoryHarness,
 } from '../../../support/history-harness.js';
+import { realPartlyRead } from '../../../support/partly-read-pipeline.js';
 import { addUser, signedInBrowser } from '../../../support/test-browser.js';
 import { createTestServer } from '../../../support/web-server.js';
 
@@ -37,6 +38,7 @@ describe('GET /api/projects/:id/history runs', () => {
     expect(runs[0]).toMatchObject({
       ...{ id: live.id, runId: live.runKey, stage: 'understand', queueState: 'Running' },
       ...{ endState: null, commitSha: null, sizeBytes: 0 },
+      ...{ runningMs: null, wallMs: null },
     });
     expect(runs[1]).toEqual({
       ...{ id: done.id, runId: done.runKey, stage: 'scan', queueState: 'Ended' },
@@ -46,13 +48,61 @@ describe('GET /api/projects/:id/history runs', () => {
         sizeBytes: 5,
         failedAreas: 0,
         unreadAreas: 0,
+        partlyReadAreas: 0,
+        readShare: null,
+        endReason: null,
         position: null,
+        deepenRounds: null,
+        ...{ runningMs: 0, wallMs: 0 },
       },
       ...{ queuedAt: instant, startedAt: instant, endedAt: instant },
       totals: {
         ...{ costMicros: 1_310_000, inputTokens: 400_000 },
         ...{ outputTokens: 12_606, cachedInputTokens: 0 },
       },
+    });
+  });
+});
+
+describe('GET /api/projects/:id/history partly read runs (P8-130)', () => {
+  it('RF-1008 RF-230 gives an ended understand run read below the bar its areas and the real share of its code', async () => {
+    harness = await createHistoryHarness({ partlyRead: realPartlyRead() });
+    const { amy, projectId, done, live, test } = harness;
+    test.runs.executor.settle(live.id, { endState: 'Completed' });
+    await test.runs.ended(live);
+
+    const response = await amy.request({ method: 'GET', url: historyUrl(projectId) });
+
+    const runs = response.json<{ runs: Record<string, unknown>[] }>().runs;
+    const row = runs.find((each) => each['id'] === live.id);
+    expect(row?.['partlyReadAreas']).toBe(1);
+    expect(row?.['readShare']).toBeGreaterThan(0);
+    expect(row?.['readShare']).toBeLessThan(0.8);
+    expect(runs.find((each) => each['id'] === done.id)).toMatchObject({
+      partlyReadAreas: 0,
+      readShare: null,
+    });
+  });
+});
+
+describe('GET /api/projects/:id/history run times', () => {
+  it('RF-1008 shows the first start, the running time and the wall time of a resumed run (P8-88)', async () => {
+    harness = await createHistoryHarness();
+    const { amy, projectId, done, userId, test } = harness;
+    const first = Date.parse(instant);
+    const again = first + 3_600_000;
+    await test.runs.runs.reopen(userId, done.id, again, ['Completed']);
+    await test.runs.runs.start(done.id, again);
+    await test.runs.runs.end(done.id, 'Completed', again + 120_000);
+
+    const response = await amy.request({ method: 'GET', url: historyUrl(projectId) });
+
+    const runs = response.json<{ runs: Record<string, unknown>[] }>().runs;
+    expect(runs.find((run) => run['id'] === done.id)).toMatchObject({
+      startedAt: instant,
+      endedAt: '2026-10-11T10:02:00.000Z',
+      runningMs: 120_000,
+      wallMs: 3_720_000,
     });
   });
 });
@@ -66,7 +116,7 @@ describe('GET /api/projects/:id/history project', () => {
 
     expect(response.json<Record<string, unknown>>()['project']).toEqual({
       ...{ id: projectId, name: 'octo/webforms', ref: '', subpath: '' },
-      ...{ sourceUrl: 'https://github.com/octo/webforms' },
+      ...{ sourceUrl: 'https://github.com/octo/webforms', sourceKind: 'github' },
       ...{ folder: `projects/${projectId}`, sizeBytes: 7 },
     });
   });

@@ -62,8 +62,8 @@ describe('an understand run on the C# fixture: coverage', () => {
       '(root)',
       'Catalog',
       'Controllers',
-      'Database',
       'Services',
+      'Database',
     ]);
     const root = areaOf(coverage, '(root)');
     const read = root?.files.filter((file) => file.read.length > 0);

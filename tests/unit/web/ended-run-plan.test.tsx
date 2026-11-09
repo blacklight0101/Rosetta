@@ -4,8 +4,9 @@ import { runUuid } from './live-run-helpers.js';
 import { openEnded, question } from './ended-run-helpers.js';
 
 // RF-614, RF-1017, RF-1015, RF-006, RST-1802: the "Your turn" panel of an understand run that ended
-// Completed with a Supported claim offers "Set up the plan" (after "Answer questions" when questions
-// are open); a run that stopped offers Resume instead and no plan.
+// Completed with a Supported claim offers "Set up the plan" as its one primary button, with "Answer the
+// questions first" as a link under it while questions are open (RF-1021, P8-84); a run that stopped
+// offers Resume instead and no plan.
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -36,20 +37,15 @@ it('RF-614 Set up the plan is the main action when no question is open', async (
   });
 });
 
-it('RF-614 Answer questions comes first and stays the main action while questions are open', async () => {
+it('RF-614 RF-1021 Set up the plan stays the one primary action while questions are open, with Answer the questions first as a link under it', async () => {
   await openEnded({ judged: 'Supported', questions: [question(1), question(2)] });
 
   await waitFor(() => {
-    expect(within(turn()).getByRole('button', { name: 'Answer 2 questions' })).toBeTruthy();
-    expect(setUp()).toBeTruthy();
+    expect(setUp().className).toContain('rst-button--primary');
   });
-  const buttons = within(turn()).getAllByRole('button');
-  const names = buttons.map((button) => button.textContent);
-  expect(names.indexOf('Answer 2 questions')).toBeLessThan(names.indexOf('Set up the plan'));
-  expect(setUp().className).not.toContain('rst-button--primary');
-  expect(within(turn()).getByRole('button', { name: 'Answer 2 questions' }).className).toContain(
-    'rst-button--primary',
-  );
+  const answer = within(turn()).getByRole('button', { name: 'Answer the 2 questions first' });
+  expect(answer.className).toContain('rst-button--link');
+  expect(setUp().compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
 it('RST-1802 a completed run with no Supported claim offers no plan and says why', async () => {
@@ -61,12 +57,14 @@ it('RST-1802 a completed run with no Supported claim offers no plan and says why
   expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
 });
 
-it('RF-614 P3-121 a run that ended CapReached with a Supported claim offers Set up the plan beside Resume', async () => {
+it('RF-614 P3-121 RF-1021 a run that ended CapReached with a Supported claim offers Set up the plan as a link beside Resume', async () => {
   await openEnded({ judged: 'Supported', endState: 'CapReached', questions: [] });
 
   await waitFor(() => {
     expect(setUp()).toBeTruthy();
   });
+  // RF-1021 (P8-84): Resume in the head is the page's one primary action, so the plan is a link.
+  expect(setUp().className).toContain('rst-button--link');
   expect(turn().textContent).toContain('stopped at a cap');
   expect(screen.getAllByRole('button', { name: 'Resume run' })).toHaveLength(1);
   fireEvent.click(setUp());

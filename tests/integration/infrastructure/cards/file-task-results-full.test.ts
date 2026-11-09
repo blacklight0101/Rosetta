@@ -99,6 +99,7 @@ const coverage: DeepRequired<AreaCoverage> = {
   tokens: 100,
   readTokens: 40,
   readTokenShare: 0.4,
+  firstPartyShare: 0.4,
   failure: 'invalid output (RST-1300)',
   surface,
   note: 'not read',

@@ -39,7 +39,9 @@ it('RF-1015 the Your turn panel counts the open questions and its button opens t
   await waitFor(() => {
     expect(turnPanel().textContent).toContain('3 questions');
   });
-  fireEvent.click(within(turnPanel()).getByRole('button', { name: 'Answer 3 questions' }));
+  fireEvent.click(
+    within(turnPanel()).getByRole('button', { name: 'Answer the 3 questions first' }),
+  );
 
   expect(tab('Your questions').getAttribute('aria-selected')).toBe('true');
   expect(within(screen.getByRole('tabpanel')).getAllByTestId('open-question')).toHaveLength(3);
@@ -55,8 +57,30 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
     expect(text('Cost')).toContain('$0.0041');
   });
   expect(text('Cards')).toContain('1');
-  expect(text('Citations passed')).toContain('1 / 2');
-  expect(text('Areas read')).toContain('1 / 1');
+  expect(text('Supported claims')).toContain('of 0 judged');
+  // P8-93: "all read" only once the coverage says so; it is not claimed before.
+  expect(text('Areas')).not.toContain('all read');
+});
+
+it('RF-1015 RF-230 the Areas figure says "all read" when the coverage puts every area above the bar', async () => {
+  const area = { area: 'Catalog', files: [], firstPartyShare: 0.9 };
+  await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) } });
+
+  const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });
+  await waitFor(() => {
+    expect(within(facts).getByText('Areas').closest('li')?.textContent).toContain('all read');
+  });
+});
+
+it('RF-230 the Areas figure says partly read for an area the run started but read 16% of', async () => {
+  const area = { area: 'Catalog', files: [], firstPartyShare: 0.16 };
+  await openEnded({ extra: { [`GET ${runPath}/coverage`]: json(200, { areas: [area] }) } });
+
+  const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });
+  await waitFor(() => {
+    expect(within(facts).getByText('Areas').closest('li')?.textContent).toContain('1 partly read');
+  });
+  expect(within(facts).queryByText('all read')).toBeNull();
 });
 
 it('RF-008 RF-504 the report and the downloads stay one click away on the ended page', async () => {

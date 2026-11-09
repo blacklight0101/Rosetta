@@ -62,8 +62,8 @@ describe('a second understand run on the same snapshot', UNDERSTAND_TIMEOUT, () 
         ['reader-001', '(root)'],
         ['reader-002', 'Catalog'],
         ['reader-003', 'Controllers'],
-        ['reader-004', 'Database'],
-        ['reader-005', 'Services'],
+        ['reader-004', 'Services'],
+        ['reader-005', 'Database'],
       ],
     });
     expect(await idsOf(h, second)).toEqual(firstIds);

@@ -13,11 +13,11 @@ import type { JourneyRecords } from '../ports/journey-records.js';
 import { scopeOf } from '../runs/run-scope.js';
 import {
   readUnderstandOptions,
-  rolesNeedCloudConsent,
-  rolesNeedPrivateConfirmation,
   UNDERSTAND_ROLES,
   understandOptionsOf,
 } from '../understand/understand-options.js';
+import { consentNeedOf } from '../consent/consent-need.js';
+import { settleConsent, type StartConsents } from '../consent/start-consent.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
 import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.js';
 
@@ -27,7 +27,8 @@ import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.j
 // (another user's id answers like an unknown one) and an understand run that ended `Completed`
 // (a Deepen run too, Q-L). The Deepen is a new understand run over the same areas, linked to that
 // run in its options, with the round limit (1 to 5, default 3) and the coverage pass the owner
-// confirmed; a reader that sends code off this machine needs the consent again (RF-143).
+// confirmed; a reader that sends code off this machine needs the consent again (RF-143), unless a
+// consent of the project holds for it (DEC-209): then the Deepen runs under it and records its id.
 
 export interface StartDeepenDependencies {
   readonly projects: Pick<ProjectRepository, 'find'>;
@@ -40,6 +41,8 @@ export interface StartDeepenDependencies {
   readonly ollamaHost?: string;
   /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
   readonly roleKeys: RoleKeyDependencies;
+  /** DEC-209: the consents of the project; absent, every Deepen needs the boxes. */
+  readonly consents?: StartConsents;
 }
 
 export interface StartDeepenRequest {
@@ -101,10 +104,12 @@ export class StartDeepen {
     const project = await this.deps.projects.find(actor.userId, run.projectId);
     const stored = await this.deps.manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.notFound);
-    const cloudConsent = request.cloudConsent === true;
-    const refusal = await this.refusalOf(request, project);
-    if (refusal !== undefined) return err(refusal);
-    const privateCodeConfirmed = request.privateCodeConfirmed === true;
+    const consent = await this.consentOf(request, project);
+    if (!consent.ok) return err(consent.error);
+    // RF-431: a role with no usable key is refused before the Deepen is queued.
+    if (await anyRoleWithoutKey(this.deps.roleKeys, project, UNDERSTAND_ROLES)) {
+      return err(ERROR_CODES.providerKeyMissing);
+    }
     const { areas } = readUnderstandOptions(stored.options);
     const deepen = { parentRunId: run.id, maxRounds, coveragePass: request.coveragePass !== false };
     // P8-03: nothing is left of the journey's amount; no run is queued.
@@ -114,36 +119,30 @@ export class StartDeepen {
     });
     if (!line.ok) return err(line.error);
     const approvedAmount = line.value;
-    const options = understandOptionsOf({
-      ...{ areas, cloudConsent, deepen, approvedAmount },
-      privateCodeConfirmed:
-        privateCodeConfirmed && rolesNeedPrivateConfirmation(project, this.deps.ollamaHost),
-    });
+    const options = understandOptionsOf({ areas, deepen, approvedAmount, ...consent.value });
     return this.deps.submit.execute({
       actor,
       project,
       stage: 'understand',
       options: { ...options },
+      // RF-1108, DEC-226: the row keeps the run the Deepen improves from the start.
+      facts: { deepenParentId: run.id },
     });
   }
 
   /**
-   * RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload; RF-431: a
-   * role with no usable key, refused before the Deepen is queued.
+   * RF-143: no consent for a cloud provider; RF-132: no second confirmation for an upload; either
+   * stands when a consent of the project holds (DEC-209).
    */
-  private async refusalOf(
+  private consentOf(
     request: StartDeepenRequest,
     project: Project,
-  ): Promise<StartDeepenProblem | undefined> {
-    const { ollamaHost } = this.deps;
-    if (request.cloudConsent !== true && rolesNeedCloudConsent(project.settings, ollamaHost)) {
-      return ERROR_CODES.cloudConsentMissing;
-    }
-    const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
-    if (needsPrivate && request.privateCodeConfirmed !== true) {
-      return ERROR_CODES.privateCodeNotConfirmed;
-    }
-    const keyMissing = await anyRoleWithoutKey(this.deps.roleKeys, project, UNDERSTAND_ROLES);
-    return keyMissing ? ERROR_CODES.providerKeyMissing : undefined;
+  ): ReturnType<typeof settleConsent> {
+    return settleConsent(this.deps.consents, {
+      ...{ actor: request.actor, projectId: project.id },
+      need: consentNeedOf(project, this.deps.ollamaHost),
+      cloudConsent: request.cloudConsent === true,
+      privateCodeConfirmed: request.privateCodeConfirmed === true,
+    });
   }
 }

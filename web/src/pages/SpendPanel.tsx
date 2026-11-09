@@ -1,14 +1,20 @@
 import type { JSX } from 'preact';
+import { useContext } from 'preact/hooks';
 import { Button } from '../components/Button.js';
 import { Link } from '../components/Link.js';
+import { MoneyAmount } from '../components/MoneyAmount.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { capTokensNote } from '../lib/live-run/cap-tokens.js';
 import type { CapsState } from '../lib/live-run/run-state.js';
 import { shareOf } from '../lib/live-run/run-summary.js';
+import type { ApprovedView } from '../lib/live-run/approved-line.js';
+import { ApprovedViewContext } from './approved-view-context.js';
 
 // RF-1003, RF-1011, RF-1015, DEC-137: the spend of the run beside the code map: the cost so far
 // against the cap of the run as a bar, the tokens against their cap, and the two ways on: the
-// per-role table and the estimate (the All agents tab) and the provider calls and logs page.
+// per-role table and the estimate (the All agents tab) and the provider calls and logs page. A run of
+// a journey shows the one amount instead, what is left of the approved amount, with no run cap and no
+// token cap (P8-24, RF-434).
 
 export interface SpendPanelProps {
   readonly runId: string;
@@ -52,6 +58,24 @@ function Bar({ share, name, caption }: BarProps): JSX.Element {
   );
 }
 
+/** P8-24: the bar of the approved amount used and the tokens so far, with no cap named. */
+function ApprovedFigures(props: {
+  readonly approved: ApprovedView;
+  readonly tokens: number;
+}): JSX.Element {
+  const { approved, tokens } = props;
+  return (
+    <>
+      <Bar
+        share={shareOf(approved.spent, approved.cap)}
+        name="Spend against the approved amount"
+        caption="Approved amount used"
+      />
+      <p class="rst-spend__tokens">{`${tokensLabel(tokens)} tokens`}</p>
+    </>
+  );
+}
+
 function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
   const { caps, costMicros, tokens } = props;
   const toward = props.capTokens ?? tokens;
@@ -87,18 +111,27 @@ function Figures({ props }: { readonly props: SpendPanelProps }): JSX.Element {
 // RF-1003
 export function SpendPanel(props: SpendPanelProps): JSX.Element {
   const { caps, costMicros } = props;
+  const approved = useContext(ApprovedViewContext);
   return (
     <section class="rst-card rst-spend" aria-labelledby="rst-spend-title">
       <header class="rst-spend__head">
         <h2 id="rst-spend-title" class="rst-spend__heading">
           Spend for this run
         </h2>
-        {caps === undefined ? null : (
+        {approved !== undefined ? (
+          <span class="rst-spend__cap">{approved.text}</span>
+        ) : caps === undefined ? null : (
           <span class="rst-spend__cap">{`cap ${costLabel(caps.maxCostMicros)}`}</span>
         )}
       </header>
-      <p class="rst-spend__cost">{costLabel(costMicros)}</p>
-      <Figures props={props} />
+      <p class="rst-spend__cost">
+        <MoneyAmount micros={costMicros} tabStop />
+      </p>
+      {approved === undefined ? (
+        <Figures props={props} />
+      ) : (
+        <ApprovedFigures approved={approved} tokens={props.tokens} />
+      )}
       <div class="rst-spend__more">
         <Button variant="link" onClick={props.onOpenRoles}>
           Cost per role and estimate

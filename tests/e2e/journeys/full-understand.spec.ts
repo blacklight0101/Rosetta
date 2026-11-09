@@ -11,23 +11,26 @@ import { answerToOq001, fullRunModel } from '../support/journey-models.js';
 import {
   agentPanel,
   openQuestion,
+  saveAnswers,
   openRunTab,
+  expectCompleted,
   runStatus,
   startAndOpenLiveRun,
   valueOf,
+  RUN_DONE,
 } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
+import { expectDeepenRunPage } from '../support/run-page-figures.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { inEveryView } from '../support/views.js';
 
-// RF-006 is not here (cap-resume.spec.ts). RF-301, RF-300, RF-240, RF-241, RF-1007, ADR-010,
-// P2-13: flows 2 and 3 end to end through the pages and the real server. The first journey
-// understands every area of the C# fixture and checks that both steps of the verifier ran: the
-// citation check (two claims have an invalid citation) and the model judgement (four Supported, one
-// Rejected with its reason). The second answers the question the run asked and runs the area again
-// with the answers. The model double replays the recorded runs (e2e-provider.ts); the reader model
-// has another name than the default, so no area is held.
+// RF-006 is not here (cap-resume.spec.ts). RF-301, RF-300, RF-240, RF-241, RF-1007, ADR-010, P2-13:
+// flows 2 and 3 end to end through the pages and the real server. The first journey understands
+// every area of the C# fixture and checks both verifier steps ran: the citation check (two claims
+// have an invalid citation) and the model judgement (four Supported, one Rejected with its reason).
+// The second answers the run's question and rereads the area with it. The model double replays the
+// recorded runs (e2e-provider.ts); the reader model is not the default, so no area is held.
 
 const claim = (page: Parameters<typeof agentPanel>[0], id: string) =>
   page.getByRole('region', { name: 'Claims' }).getByTestId('claim').filter({ hasText: id });
@@ -43,19 +46,24 @@ async function goOnWithTheDefaultsAndBack(page: Page): Promise<void> {
 }
 
 /**
- * RF-646, DEC-179: a run that can be deepened asks nothing yet: Your turn recommends Deepen first and
- * says that answers given now will be used by it, and the journey recommends it too. Choosing not to
- * Deepen asks for the answers at once.
+ * RF-646, DEC-179, RF-1021 (P8-84): a run that can be deepened and read code below the coverage bar
+ * (as the recorded runs do) asks nothing yet: Your turn offers Deepen as its one primary button and
+ * says that answers given before it are used by it, and the journey recommends it too. Skipping the
+ * Deepen opens Plan setup; back on the run, the answers are asked at once.
  */
 async function chooseNotToDeepen(page: Page): Promise<void> {
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await expect(turn.getByTestId('deepen-first')).toContainText('Deepen this run first');
-  await expect(turn.getByTestId('deepen-first')).toContainText('uses the answers given before it');
+  await expect(turn.getByTestId('deepen-first')).toContainText(
+    'Answers you give before it are used by it.',
+  );
   await expect(journeyOf(page).getByRole('button', { name: /Deepen/u })).toHaveCount(0);
   await expect(journeyOf(page)).toContainText('use the Deepen button in Your turn');
   await expect(page.getByRole('button', { name: /^Deepen this run/u })).toHaveCount(1);
-  await expect(turn.getByRole('button', { name: /^Answer / })).toHaveCount(0);
-  await turn.getByRole('button', { name: 'Do not Deepen: answer the questions now' }).click();
+  await expect(turn.locator('.rst-button--primary')).toHaveText(['Deepen this run']);
+  await turn.getByRole('button', { name: 'Skip the Deepen and set up the plan' }).click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
+  await page.goBack();
+  await expect(turn.getByRole('heading', { name: 'Your turn: set up the plan' })).toBeVisible();
   await expect(turn.getByTestId('deepen-first')).toHaveCount(0);
 }
 
@@ -135,16 +143,17 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await expect(question).toContainText('Open');
   await question.getByRole('radio', { name: 'Type your own answer' }).check();
   await question.getByLabel('Answer to OQ-001').fill(answerToOq001);
-  await question.getByRole('button', { name: 'Save answer' }).click();
+  await saveAnswers(page);
   await expect(question).toContainText('Answer saved in answers.md.');
   await expectJourneyMovedOn(page, question);
 
   await page.getByRole('link', { name: 'Start page' }).click();
-  const rerun = page.getByRole('checkbox', { name: 'Re-run with answers', exact: false });
-  await rerun.check();
+  await page.getByRole('checkbox', { name: /Re-run with my/u }).check();
+  // P8-26: with a run behind it the page folds the areas and Analyse under "Start another run".
+  await page.getByText('Start another run').click();
   await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  await expectCompleted(page, 120_000);
   await expect(page.getByText('1 of 1 agents done')).toBeVisible();
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, '(root)')).toContainText('Done');
@@ -190,10 +199,8 @@ test('RF-209 RF-231 the run shows its measures and offers Deepen with an estimat
   const turn = page.getByRole('region', { name: 'Your turn' });
   await turn.getByRole('button', { name: 'Deepen this run' }).click();
   await expect(turn.getByTestId('deepen-first-round')).toBeVisible();
-  await expect(turn.getByTestId('deepen-all-rounds')).toContainText(
-    'a working ceiling, not a maximum',
-  );
-  await expect(turn.getByTestId('deepen-all-rounds')).toContainText('is what stops the run');
+  await expect(turn.getByTestId('deepen-all-rounds')).toContainText('Up to');
+  await expect(turn.getByTestId('deepen-stops')).toContainText(/left of/u);
 
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
@@ -229,12 +236,12 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
 
   await expect(page).not.toHaveURL(parentUrl);
   const progress = page.getByRole('region', { name: 'Deepen progress' });
-  await expect(progress).toContainText('Started from');
-  // The stop is the last of the Deepen events; the status of the page can lag the new run at first.
+  await expect(progress).toContainText('Started from', { timeout: 120_000 });
+  // A run queued for a run slot shows no region yet; the stop is the last event, the status can lag.
   await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible({ timeout: 120_000 });
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 30_000 });
-  const changes = page.getByRole('table', { name: 'Before and after this Deepen' });
-  await expect(changes.getByTestId('change-coverage')).toBeVisible();
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 30_000 });
+  await expectDeepenRunPage(page);
+  await expect(page.getByTestId('change-coverage')).toBeVisible();
   // P3-62: the round lines read in plain words, the log counts from the start and names no micro-dollars.
   await expect(progress).not.toContainText(/(?<!\d)(?:0 unread files|1 files read|1 new claims)/u);
   await openRunTab(page, 'Activity');

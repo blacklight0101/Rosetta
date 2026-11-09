@@ -40,7 +40,9 @@ describe('BuildPlan: the recorded answer of a small model that writes positions 
     expect(cards.map((each) => each.split('\n')[0])).toEqual([
       ...Array.from({ length: 16 }, (_, at) => `T-${String(at + 1).padStart(3, '0')}`),
     ]);
-    expect(plain(written['checks.md'])).toContain('Every item is built by at least one task card.');
+    expect(plain(written['checks.md'])).toContain(
+      'Every feature, table, operation, journey and screen is built by at least one task card.',
+    );
     expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const warned = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.message).join(' ')).not.toContain('of the gap');
@@ -98,13 +100,14 @@ describe('BuildPlan: a card that cannot be read is logged', () => {
 
   it('Q-54 a card that is not an object is logged as the card itself', async () => {
     const answer = answerOf(card('Operations', operations), 'a text instead of a card');
-    const h = await gappedPlan(gapRecordingOfAll(answer));
+    const h = await gappedPlan(gapRecordingOfAll(answer, '{"tasks": []}'));
 
     await h.plan();
 
     const left = h.s.logger.entries.filter((entry) => entry.message.includes('of the gap'));
     expect(left.map((entry) => entry.message).join(' ')).toMatch(/position 2.*field "card"/u);
-    expect(h.providers.gapRequests()).toHaveLength(1);
+    // No repair: the second call is the second gap round for the items still open (P8-96).
+    expect(h.providers.gapRequests()).toHaveLength(2);
   });
 });
 
@@ -141,7 +144,7 @@ describe('BuildPlan: the repair attempt', () => {
     expect(message).toContain('"title": "Operations"');
     const repairPrompt = await readFile('prompts/planner/gap-repair.v4.md', 'utf8');
     expect(message).toContain(repairPrompt.trim().split('\n')[0]);
-    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v4.md', 'utf8'));
+    expect(repair?.system).toBe(await readFile('prompts/planner/gap.v5.md', 'utf8'));
     expect(repair?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-gap' });
     expect(message).not.toContain(sentinel);
   });
@@ -161,21 +164,21 @@ describe('BuildPlan: the repair attempt is a call like the others', () => {
     ];
     expect(new Set(all.map((each) => each.context.callId)).size).toBe(9);
     expect(Object.keys(manifest.promptVersions)).toEqual(
-      expect.arrayContaining(['planner/gap.v4.md', 'planner/gap-repair.v4.md']),
+      expect.arrayContaining(['planner/gap.v5.md', 'planner/gap-repair.v4.md']),
     );
   });
 });
 
 describe('BuildPlan: a repair that does not fix the answer', () => {
-  it('Q-54 RST-1806 a repair that still fails reports the gaps as before, and asks no third time', async () => {
+  it('Q-54 P8-96 RST-1806 a repair that still fails reports the gaps after the second round, and asks no second repair', async () => {
     const first = answerOf(card('Operations', operations), unreadable);
     const again = answerOf(card(`${sentinel}-again`, rest, { requirements: { id: 3 } }));
-    const h = await gappedPlan(gapRecordingOfAll(first, again));
+    const h = await gappedPlan(gapRecordingOfAll(first, again, '{"tasks": []}'));
 
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.providers.gapRequests()).toHaveLength(2);
+    expect(h.providers.gapRequests()).toHaveLength(3);
     expect(h.s.logger.entries).toContainEqual(
       expect.objectContaining({
         code: 'RST-1806',
@@ -246,12 +249,18 @@ describe('BuildPlan: when no repair is asked', () => {
     expect(h.providers.gapRequests()).toHaveLength(1);
   });
 
-  it('Q-54 an answer with nothing left out asks for no repair, whatever gaps remain', async () => {
-    const h = await gappedPlan(gapRecordingOfAll(answerOf(card('Operations', operations))));
+  it('Q-54 P8-96 an answer with nothing left out asks for no repair, only the second gap round', async () => {
+    const answer = answerOf(card('Operations', operations));
+    const h = await gappedPlan(gapRecordingOfAll(answer, '{"tasks": []}'));
 
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.providers.gapRequests()).toHaveLength(1);
+    expect(h.providers.gapRequests()).toHaveLength(2);
+    const second = h.providers
+      .gapRequests()[1]
+      ?.messages.map((each) => each.content)
+      .join(' ');
+    expect(second).not.toContain('"id": "operation:placeOrder"');
   });
 });

@@ -24,8 +24,12 @@ const PRIVATE_CODE_MISSING = 'RST-1521';
 /** DEC-145 (Q-H): three rounds unless the owner chooses another number from 1 to 5. */
 const DEFAULT_CHOICE: DeepenChoice = { maxRounds: 3, coveragePass: true };
 
-// RF-209
-export function useDeepenEstimate(runId: string, choice: DeepenChoice): DeepenEstimateLoad {
+// RF-209: `revision` reads the estimate again when the project's roles changed (RF-132).
+export function useDeepenEstimate(
+  runId: string,
+  choice: DeepenChoice,
+  revision = 0,
+): DeepenEstimateLoad {
   const { client } = useApp();
   const [load, setLoad] = useState<DeepenEstimateLoad>({ status: 'loading' });
   const { maxRounds, coveragePass } = choice;
@@ -43,7 +47,7 @@ export function useDeepenEstimate(runId: string, choice: DeepenChoice): DeepenEs
     return () => {
       abort.abort();
     };
-  }, [client, runId, maxRounds, coveragePass]);
+  }, [client, runId, maxRounds, coveragePass, revision]);
   return load;
 }
 
@@ -52,7 +56,7 @@ export interface DeepenStart {
   readonly setChoice: (choice: DeepenChoice) => void;
   readonly consent: boolean;
   readonly setConsent: (consent: boolean) => void;
-  /** RF-132: the server asked the second confirmation (RST-1521), so the page now shows it. */
+  /** RF-132: the server asked the second confirmation (RST-1521), so the page shows it too. */
   readonly privateAsked: boolean;
   readonly privateConfirmed: boolean;
   readonly setPrivateConfirmed: (confirmed: boolean) => void;

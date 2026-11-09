@@ -35,7 +35,14 @@ export type CostLine = z.output<typeof lineSchema>;
 export const projectCostSchema = z.object({
   project: z.object({ id: z.string(), name: z.string() }),
   totals: totalsSchema,
-  byRun: z.array(lineSchema.extend({ runId: z.string().nullable(), firstAt: z.string() })),
+  /** `byRole`: the run's cost per role, a line only for a role that made calls in the run (P8-108). */
+  byRun: z.array(
+    lineSchema.extend({
+      runId: z.string().nullable(),
+      firstAt: z.string(),
+      byRole: z.array(lineSchema),
+    }),
+  ),
   byStage: z.array(lineSchema),
   byRole: z.array(lineSchema),
   byProvider: z.array(lineSchema),

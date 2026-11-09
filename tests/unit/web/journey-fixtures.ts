@@ -74,6 +74,18 @@ export const roadSigns: Readonly<Record<string, JourneyFacts>> = {
     source: source({ endState: 'CapReached', errorCode: 'RST-1403', supportedClaims: 3 }),
     briefSaved: false,
   }),
+  /** P8-112: an understand run at its cap that left planned areas unread. */
+  cappedPartly: facts({
+    source: source({
+      ...{ endState: 'CapReached', errorCode: 'RST-1403', supportedClaims: 3, unreadAreas: 2 },
+    }),
+  }),
+  /** P8-112: the plan run reached its cap. */
+  planCapped: facts({ plan: planRun({ endState: 'CapReached', errorCode: 'RST-1403' }) }),
+  /** P8-87: the user pressed Stop on the understand run. */
+  stoppedByYou: facts({ source: source({ endState: 'Interrupted', supportedClaims: 0 }) }),
+  /** P8-87: the user pressed Stop on the plan run. */
+  planStoppedByYou: facts({ plan: planRun({ endState: 'Interrupted' }) }),
   noClaims: facts({ source: source({ supportedClaims: 0 }) }),
   asking: facts({ source: source({ openQuestions: 2 }), briefSaved: false }),
   noBrief: facts({ briefSaved: false }),

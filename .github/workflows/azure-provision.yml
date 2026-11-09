@@ -324,13 +324,17 @@ jobs:
               --env-vars DATABASE_MIGRATOR_URL=secretref:database-migrator-url ROSETTA_LOG_LEVEL=info --output none
           fi
           execution="$(az containerapp job start --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --query name --output tsv)"
-          for _ in $(seq 1 90); do
+          # DEC-227: 32 tries, the wait doubled from 5 up to 30 seconds (about 15 minutes in all).
+          delay=5
+          for _ in $(seq 1 32); do
             status="$(az containerapp job execution show --name "$AZ_MIGRATE_JOB" --resource-group "$AZ_RG" --job-execution-name "$execution" --query properties.status --output tsv)"
             case "$status" in
               Succeeded) echo "Migrate execution $execution: Succeeded."; exit 0 ;;
-              Running | Processing | '') sleep 10 ;;
+              Running | Processing | '') ;;
               *) echo "::error::Migrate execution $execution ended $status; the app is not changed."; exit 1 ;;
             esac
+            sleep "$delay"
+            delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
           done
           echo "::error::Migrate execution $execution did not finish in 15 minutes; the app is not changed."
           exit 1
@@ -436,14 +440,17 @@ jobs:
           ROSETTA_GITHUB_TOKEN: ${{ secrets.ROSETTA_GITHUB_TOKEN }}
       - name: Wait for the new revision and /healthz over HTTPS
         run: |
-          for _ in $(seq 1 60); do
+          # DEC-227: 22 tries, the wait doubled from 5 up to 30 seconds (about 10 minutes in all).
+          delay=5
+          for _ in $(seq 1 22); do
             revisions="$(az containerapp show --name "$AZ_APP" --resource-group "$AZ_RG" --query '[properties.latestRevisionName, properties.latestReadyRevisionName]' --output tsv | tr '\n' ' ')"
             read -r latest ready <<< "$revisions"
             if [ -n "$latest" ] && [ "$latest" = "$ready" ] && curl -fsS --max-time 10 "$PUBLIC_URL/healthz" > /dev/null; then
               echo "Revision $latest is ready and $PUBLIC_URL/healthz answers."
               exit 0
             fi
-            sleep 10
+            sleep "$delay"
+            delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
           done
           echo "::error::$PUBLIC_URL/healthz did not answer from the new revision in 10 minutes."
           exit 1

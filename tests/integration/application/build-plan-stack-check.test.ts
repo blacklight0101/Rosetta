@@ -115,6 +115,35 @@ describe('BuildPlan: the manifest and the stack files (RF-609, RNF-004)', () => 
 
     const { version, sha256 } = shippedCatalogue;
     expect(manifest.catalogue).toEqual({ version, sha256 });
-    expect(shippedCatalogue.stack.rulesVersion).toBe(1);
+    expect(shippedCatalogue.stack.rulesVersion).toBe(2);
+  });
+});
+
+describe('BuildPlan: a technology of another platform (RF-609, DEC-208)', () => {
+  it('RF-609 DEC-208 a package from C# on .NET with Fastify has the clash in checks.md, open-questions.md and the README', async () => {
+    const h = await seededApiPlan(dataDir, {
+      brief: {
+        ...eShop,
+        stack: [
+          { layer: 'language-runtime', choice: 'C# on .NET', custom: false },
+          { layer: 'backend-framework', choice: 'Fastify', custom: false },
+        ],
+      },
+    });
+
+    const files = await h.handoffOf(await h.plan());
+
+    const checks = plain(files['checks.md']);
+    expect(checks).toContain('technology-of-another-platform');
+    expect(checks).toContain('Fastify');
+    const questions = plain(files['open-questions.md']);
+    expect(questions).toContain('stack-clash.technology-of-another-platform.backend-framework');
+    expect(questions).toContain('ASP.NET Core Razor Pages');
+    expect(plain(files['README.md'])).toContain('The stack has an open clash');
+    const adrs = Object.entries(files)
+      .filter(([path]) => path.startsWith('decisions/'))
+      .map(([, text]) => plain(text))
+      .join('\n');
+    expect(adrs).toContain('Use Fastify for the back-end framework layer.');
   });
 });

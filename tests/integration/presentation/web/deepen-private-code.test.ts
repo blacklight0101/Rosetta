@@ -8,7 +8,8 @@ import { addUser, signedInBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-132, RF-143, DEC-148: POST /api/runs/:runId/deepen on an uploaded project whose roles use a
-// cloud provider needs `privateCodeConfirmed: true` besides `cloudConsent: true`.
+// cloud provider needs `privateCodeConfirmed: true` besides `cloudConsent: true`, unless a consent of
+// the project that names the providers holds (DEC-209, P8-78).
 
 let current: TestServer | undefined;
 
@@ -18,6 +19,9 @@ afterEach(async () => {
 });
 
 const cloudReader = settingsFor({ reader: { provider: 'openai', model: 'gpt-5-mini' } });
+const anthropicReader = settingsFor({
+  reader: { provider: 'anthropic', model: 'claude-sonnet-4-5' },
+});
 
 async function setup() {
   const test = createTestServer();
@@ -37,12 +41,18 @@ async function setup() {
   const run = await test.runs.runs.find(amyUser.account.id, id);
   if (run === undefined) throw new Error('The run vanished');
   await settledRun(test.runs, run);
-  return { amy, url: `/api/runs/${id}/deepen` };
+  // DEC-209: the run's start gave a consent naming OpenAI; a reader on Anthropic asks again.
+  const changeProvider = async (): Promise<void> => {
+    const change = { ...owner, projectId: project.id, settings: anthropicReader, updatedAt: 0 };
+    await test.projects.updateSettings({ ...change, expectedVersion: undefined });
+  };
+  return { amy, url: `/api/runs/${id}/deepen`, changeProvider };
 }
 
 describe('POST /api/runs/:runId/deepen and the private code of an upload', () => {
   it('RF-132 refuses a Deepen without the confirmation with RST-1521 (400)', async () => {
-    const { amy, url } = await setup();
+    const { amy, url, changeProvider } = await setup();
+    await changeProvider();
 
     const response = await amy.request({
       method: 'POST',

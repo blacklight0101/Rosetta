@@ -153,6 +153,24 @@
   border-color: var(--rst-danger-ink);
 }
 
+/* RF-436 (P8-76): a number field with its value written out beside it ("2,000,000 tokens"). */
+.rst-field__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  align-items: center;
+}
+
+.rst-field__row .rst-field__control {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.rst-field__suffix {
+  font-size: var(--rst-fs-sm);
+  color: var(--rst-ink-soft);
+}
+
 .rst-field__radios {
   display: flex;
   flex-wrap: wrap;
@@ -340,5 +358,29 @@
 
 .rst-callout .rst-field__label,
 .rst-callout .rst-field__help {
+  color: var(--rst-ink);
+}
+
+/* Consent line (RF-143, P8-81, artboard P8Deepen): one line instead of the boxes while a consent holds */
+
+.rst-consent-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--rst-sp-2) var(--rst-sp-3);
+  padding: 10px 14px;
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-ok-bg);
+  color: var(--rst-ok-ink);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-consent-line__tick {
+  font-weight: 700;
+}
+
+.rst-consent-line__text {
+  flex: 1 1 360px;
+  min-inline-size: 0;
   color: var(--rst-ink);
 }

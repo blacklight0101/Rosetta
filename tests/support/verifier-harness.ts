@@ -42,6 +42,46 @@ async function fixtureReader(): Promise<MemoryRepositoryReader> {
   return new MemoryRepositoryReader(Object.fromEntries(entries));
 }
 
+/** P8-58: the verdict events of a step; the call events (start and end) come with the calls. */
+export function verdictEvents(events: readonly RunEvent[]): RunEvent[] {
+  return events.filter((event) => event.type === 'verify.claim.judged');
+}
+
+const CALL_WORDS: Readonly<Record<string, string>> = {
+  'verify.claim.started': 'start',
+  'verify.claim.callEnded': 'end',
+};
+
+/** P8-58: the call events of a step in log order, for example `start BR-001.c1`, `end BR-001.c1`. */
+export function callEvents(events: readonly RunEvent[]): string[] {
+  return events.flatMap((event) => {
+    const word = CALL_WORDS[event.type];
+    return word === undefined ? [] : [`${word} ${String(event.data['claimId'])}`];
+  });
+}
+
+/**
+ * P8-58: what a consumer of the log counts: starts minus ends after each event, never negative.
+ * This is not the rule of RF-1002 (`docs/data-model.md` 3.9: a set of claim ids, an unknown end changes
+ * nothing, emptied at the judgement and run events); the two agree only on a well-formed log, which
+ * is what these tests feed. The page's reducer tests (P8-60) prove the set rule; this helper does not.
+ */
+export function callsInFlight(events: readonly RunEvent[]): {
+  readonly peak: number;
+  readonly min: number;
+  readonly final: number;
+} {
+  let now = 0;
+  let [peak, min] = [0, 0];
+  for (const { type } of events) {
+    if (type !== 'verify.claim.started' && type !== 'verify.claim.callEnded') continue;
+    now += type === 'verify.claim.started' ? 1 : -1;
+    peak = Math.max(peak, now);
+    min = Math.min(min, now);
+  }
+  return { peak, min, final: now };
+}
+
 export function verifierRecording(name: string): Promise<Recording> {
   return loadRecording(join('tests', 'recordings', 'fake', name));
 }

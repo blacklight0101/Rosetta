@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import type { StartConsents } from '../../src/application/consent/start-consent.js';
 import type { Logger } from '../../src/application/ports/logger.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { RunIndex } from '../../src/application/ports/run-index.js';
@@ -28,12 +29,15 @@ export interface PlanOptionsParts {
   readonly files: MemoryOutputWriter;
   readonly providers: ProviderSetFactory;
   readonly logger: Logger;
+  /** DEC-209 (P8-81): the consents the starts of the test server share. */
+  readonly consents?: StartConsents;
 }
 
 export function planOptionsService(parts: PlanOptionsParts): SuggestPlanOptions {
   const { projects, runs, users, files, providers, logger } = parts;
   return new SuggestPlanOptions({
     ...{ projects, runs, users, providers, logger },
+    ...(parts.consents === undefined ? {} : { consents: parts.consents }),
     cards: new FileRunCards(files),
     scans: new FixedScans([areaOf('Orders', 1000)]),
     callSinks: () => unrecordedSinks(),

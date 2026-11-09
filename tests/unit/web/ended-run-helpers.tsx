@@ -12,6 +12,7 @@ import {
 } from './live-run-fixtures.js';
 import { renderLive, runPath, runRow, type LiveRun } from './live-run-helpers.js';
 import { codeMapAnswer, codeMapPath, ownAreas } from './live-run-running-helpers.js';
+import { measures, understanding, understandingPath } from './understanding-fixtures.js';
 
 // The page of an ended run (P1-170): one understand run that read one area, wrote two cards and
 // asked questions, with the answers of the overview and the open questions.
@@ -70,6 +71,12 @@ const finishedEvents = [
   runEnded(8, 'Completed'),
 ];
 
+/** The code a run that ended so carries: a failure its own, a cap RST-1600 (a real capped run has it). */
+function errorCodeOf(endState: string): string | undefined {
+  if (endState === 'Failed') return 'RST-2006';
+  return endState === 'CapReached' ? 'RST-1600' : undefined;
+}
+
 /** The same events, for a run of this stage that ended as it did. */
 function eventsOf(
   options: Pick<EndedOptions, 'stage' | 'endState' | 'judged'>,
@@ -83,7 +90,7 @@ function eventsOf(
     ev(1, 'run.started', { ...startedData, stage }),
     ...finishedEvents.slice(1, -1),
     ...judged,
-    runEnded(9, endState, endState === 'Failed' ? 'RST-2006' : undefined),
+    runEnded(9, endState, errorCodeOf(endState)),
   ];
 }
 
@@ -119,6 +126,30 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   });
   const connection = await page.stream.connection();
   for (const event of eventsOf(options)) connection.event(event);
-  await screen.findByRole('tablist', { name: 'Results' });
+  // P8-27: a scan page has its code map and no tabs.
+  if (options.stage === 'scan') await screen.findByRole('region', { name: 'Code map' });
+  else await screen.findByRole('tablist', { name: 'Results' });
   return page;
+}
+
+/**
+ * RF-230, RF-1021 (P8-84): the coverage and the measures of a run that read the Catalog area at this
+ * share, the Asset Manager case of the P8Run artboard (8,702 of 52,749 tokens read): below the
+ * coverage bar (0.8) the run is "Partly read" and Deepen is the next step.
+ */
+export function readShare(share: number): Record<string, Response> {
+  return {
+    [`GET ${runPath}/coverage`]: json(200, {
+      areas: [{ area: 'Catalog', files: [], firstPartyShare: share }],
+    }),
+    [understandingPath]: understanding(
+      measures({
+        firstPartyCoverage: share,
+        firstPartyReadTokens: 8702,
+        firstPartyTokens: 52_749,
+        filesNotReadCount: 21,
+        rejected: 23,
+      }),
+    ),
+  };
 }

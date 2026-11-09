@@ -64,6 +64,15 @@ export type KeySummary = z.output<typeof keySummarySchema>;
 /** `GET /api/account/keys`. */
 export const keyListSchema = z.object({ keys: z.array(keySummarySchema) });
 
+/** RF-436, DEC-225: `GET /api/account/key-access`, whether the user can use a key per provider. */
+export const keyAccessSchema = z.object({
+  providers: z.array(
+    z.object({ provider: keyProviderSchema, ownKey: z.boolean(), serverKey: z.boolean() }),
+  ),
+});
+
+export type KeyAccess = z.output<typeof keyAccessSchema>['providers'][number];
+
 /** `PUT /api/account/keys/:provider`. */
 export const keyAnswerSchema = z.object({ key: keySummarySchema });
 

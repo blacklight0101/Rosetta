@@ -28,6 +28,8 @@ import type { IdGenerator } from '../ports/id-generator.js';
 import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
+import type { RunEventPublisher } from '../runs/run-event-publisher.js';
+import type { JourneyFactsStore } from '../ports/journey-facts-store.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { planInputsText, recordPlanSources } from '../plan/plan-record.js';
@@ -61,6 +63,8 @@ export interface BuildPlanDependencies
   readonly costReports: CostReportWriter;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
+  /** P8-139, DEC-226: the source the planner chose is stored on the run's row. */
+  readonly journeyFacts: Pick<JourneyFactsStore, 'recordPlanSource'>;
 }
 
 interface Finish {
@@ -74,6 +78,8 @@ interface Finish {
   readonly proposal: PlanProposal | undefined;
   /** The scan results the rest of the run reads; the proposal's read is handed on, not repeated. */
   readonly scans: ScanResults;
+  /** P8-96: the run's events, where the number of gap rounds is recorded. */
+  readonly events: RunEventPublisher;
 }
 
 /** The codes whose own message is logged: the cut-off answer (RST-1805) and the prompt size (RST-1522). */
@@ -156,8 +162,7 @@ export class BuildPlan implements RunExecutor {
     }
     return this.finish({
       ...{ run, call, input, assembly, files, proposal },
-      scans: proposed.scans,
-      inputs: inputs.value,
+      ...{ scans: proposed.scans, inputs: inputs.value, events: execution.events },
     });
   }
 
@@ -186,6 +191,8 @@ export class BuildPlan implements RunExecutor {
       { content: assembly.content, documents: { ...documents, modules } },
     );
     const covered = links.planned;
+    // P8-96, RF-627: the run records how many gap rounds ran.
+    await parts.events.emit('plan.gap.rounds', { rounds: links.gapRounds });
     for (const message of links.warnings) await warn(message);
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
     const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {

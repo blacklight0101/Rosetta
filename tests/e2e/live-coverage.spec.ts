@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openSettingsFromList } from './support/projects-list.js';
 import {
   agentPanel,
   openRunTab,
@@ -8,6 +9,7 @@ import {
   openStartPage,
   runStatus,
   startUnderstand,
+  RUN_DONE,
 } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -45,7 +47,7 @@ async function waitingEvents(page: Page): Promise<number> {
 /** Lets two reader tasks run at once, so a held reader does not keep the others from starting. */
 async function twoParallelReaders(page: Page): Promise<void> {
   await page.goto('/projects');
-  await page.getByRole('link', { name: 'Settings for octo/webforms' }).click();
+  await openSettingsFromList(page, 'octo/webforms');
   await page.getByLabel('Parallel readers', { exact: true }).fill('2');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
@@ -103,7 +105,7 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await expectNoSeriousViolations(page);
 
   await page.getByRole('button', { name: 'Stop run' }).click();
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
   await openRunTab(page, 'Evidence');
   await expect(coverageOf(page, 'Services')).toContainText('CatalogService.cs');
 });
@@ -146,5 +148,5 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   await expect(map).toContainText('4 of 8 files read in 2 areas');
   await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '75');
   await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '25');
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
 });

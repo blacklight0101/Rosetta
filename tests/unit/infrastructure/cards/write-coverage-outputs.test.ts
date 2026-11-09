@@ -92,6 +92,13 @@ describe('writeCoverageOutputs coverage.json', () => {
     });
   });
 
+  it('RF-231 writes the share of the first-party tokens read when the area has one, and nothing when it has none', async () => {
+    const writer = await written([{ ...orders, firstPartyShare: 0.16 }, billing]);
+
+    expect(jsonOf(writer)).toMatchObject({ areas: [{ firstPartyShare: 0.16 }, {}] });
+    expect(jsonOf(writer)).not.toHaveProperty('areas.1.firstPartyShare');
+  });
+
   it('RF-230 writing the same coverage again gives the same bytes', async () => {
     const first = await written([orders, billing]);
     const second = await written([orders, billing]);

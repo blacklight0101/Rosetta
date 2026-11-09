@@ -9,7 +9,7 @@ import { draftOf } from '../../support/card-fixtures.js';
 import { fakeResponse, recordingOf } from '../../support/fake-recordings.js';
 import { budgetedVerifier, hold, settle } from '../../support/parallel-judgement.js';
 import { fixtureCards } from '../../support/verifier-cards.js';
-import { verifierHarness } from '../../support/verifier-harness.js';
+import { callsInFlight, verifierHarness, verdictEvents } from '../../support/verifier-harness.js';
 
 // P5-15, RF-304, DEC-13, DEC-112: a cap ends the queued judgements at once, and the parallel
 // judgements together never reserve past a cap.
@@ -51,7 +51,11 @@ describe('P5-15 a cap ends the queued judgements at once', () => {
     expect(calls).toBe(4);
     const claims = cards.flatMap((card) => card.claims);
     expect(claims.map((claim) => claim.status)).toEqual(Array(claims.length).fill('Unverified'));
-    expect(h.events.map((event) => event.data['claimId'])).toEqual(claims.map((c) => c.claimId));
+    expect(verdictEvents(h.events).map((event) => event.data['claimId'])).toEqual(
+      claims.map((c) => c.claimId),
+    );
+    // P8-58: the four calls were sent, so four starts, and each ends (the refused one too).
+    expect(callsInFlight(h.events)).toEqual({ peak: 4, min: 0, final: 0 });
   });
 
   it('RF-304 queued claims get no call once the run cap has refused one, and the step ends at once', async () => {
@@ -62,6 +66,8 @@ describe('P5-15 a cap ends the queued judgements at once', () => {
     const statuses = cards.flatMap((card) => card.claims).map((claim) => claim.status);
     expect(statuses).toEqual(Array(statuses.length).fill('Unverified'));
     expect(budget.fake.requests).toHaveLength(0);
+    // P8-58: the guard refused the calls after their start: each start has its end.
+    expect(callsInFlight(verifier.events)).toMatchObject({ min: 0, final: 0 });
   });
 });
 
@@ -119,5 +125,6 @@ describe('P5-15 reservations of parallel judgements never pass a cap', () => {
     expect(statuses.filter((status) => status === 'Supported')).toHaveLength(sent);
     expect(statuses.filter((status) => status === 'Unverified')).toHaveLength(8 - sent);
     expect(await budget.ledger.runEntries(budgetRun.userId, budgetRun.id)).toHaveLength(sent);
+    expect(callsInFlight(verifier.events)).toMatchObject({ min: 0, final: 0 });
   });
 });

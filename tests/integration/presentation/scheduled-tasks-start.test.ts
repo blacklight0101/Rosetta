@@ -93,6 +93,8 @@ describe.skipIf(!hasTestDatabase)('composition root scheduled tasks', () => {
         DAY,
         MINUTE,
         DAY,
+        // P8-139, DEC-226: the backfill of the journey facts, at start-up and daily.
+        DAY,
       ]);
       await insert(pool, oldAuditRow('after-start'));
       await scheduler.runEvery(DAY);

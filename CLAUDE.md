@@ -141,6 +141,16 @@ applied, and fixing it is part of applying the decision.
 
 <!-- STACK-RULES:END -->
 
+## Knowledge graph (graphify)
+
+- The graph lives in `graphify-out/` at the root of the main checkout and is never committed. Worktrees have none of
+  their own: pass `--graph <main checkout>/graphify-out/graph.json`.
+- The graph is optional (DEC-214): `graphify explain "X"` or `graphify affected "X"` can list the callers of a
+  symbol that exists on `develop`. On the Phase 8 build it helped once in about eight queries, so search directly
+  when it does not.
+- The graph covers code. `graphify update .` in the main checkout refreshes it (no model calls); the orchestrator runs
+  it after each run of merges.
+
 ## Read-only paths
 
 - Snapshots under `<data>/sources/` (for example of `dotnet-architecture/eShopModernizing`): input for runs
@@ -153,9 +163,10 @@ applied, and fixing it is part of applying the decision.
   Agents never push to either, never force-push them, never bypass a ruleset and never rewrite published history.
   Builders never merge. Task-card branches are cut from `develop` and their pull requests target it. The orchestrator
   merges task-card pull requests into `develop` itself, with squash, only under the merge rules of
-  `docs/orchestration/README.md` section 3.1 (CI green, verifier PASS posted, branch up to date) (DEC-96), also
-  when the card changes `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` (DEC-199); a pull request
-  that changes this file, and every documentation pull request outside a card, is merged only by the owner.
+  `docs/orchestration/README.md` section 3.1 (CI green, verifier PASS posted, no conflict with `develop`) (DEC-96, DEC-213), also
+  when the card changes `docs/spec/`, `docs/adr/`, `docs/decision-log.md` or `docs/rfc/` (DEC-199); documentation
+  pull requests outside a card, including ones that change this file, are merged by the orchestrator under the same
+  section (DEC-212).
 - **Releases (DEC-175).** When the owner says a batch is ready, the orchestrator opens one pull request `develop` ->
   `main` listing its cards, labelled `needs-owner`; only the owner merges it, with a merge commit (never squash), and
   production deploys it at 06:00 Europe/Madrid the next morning. The orchestrator never merges a release.

@@ -9,54 +9,6 @@
             "text": "",
             "toolCalls": [
               {
-                "id": "call-1",
-                "name": "read_file",
-                "arguments": {
-                  "path": "eShopLegacy/CatalogService.cs",
-                  "startLine": 1,
-                  "endLine": 1
-                }
-              }
-            ],
-            "usage": {
-              "inputTokens": 900,
-              "outputTokens": 30,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "tool_use",
-            "requestId": "fake-request-r1",
-            "modelVersion": "fake-model-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Catalog listing\",\n      \"area\": \"eShopLegacy\",\n      \"summary\": \"Lists the catalog items.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The service returns the catalog items.\",\n          \"citations\": [\n            \"eShopLegacy/CatalogService.cs:1-3\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
-            "toolCalls": [],
-            "usage": {
-              "inputTokens": 900,
-              "outputTokens": 30,
-              "cachedInputTokens": 0,
-              "usageSource": "reported"
-            },
-            "finishReason": "stop",
-            "requestId": "fake-request-1",
-            "modelVersion": "fake-model-2026-10-01"
-          }
-        }
-      ]
-    },
-    {
-      "attempts": [
-        {
-          "response": {
-            "text": "",
-            "toolCalls": [
-              {
                 "id": "call-2",
                 "name": "read_file",
                 "arguments": {
@@ -93,6 +45,54 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "eShopLegacy/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-r1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Catalog listing\",\n      \"area\": \"eShopLegacy\",\n      \"summary\": \"Lists the catalog items.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The service returns the catalog items.\",\n          \"citations\": [\n            \"eShopLegacy/CatalogService.cs:1-3\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
             "modelVersion": "fake-model-2026-10-01"
           }
         }

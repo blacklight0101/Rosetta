@@ -26,6 +26,7 @@ interface OverviewRow {
   readonly runs: number;
   readonly totals: Record<string, unknown>;
   readonly lastRun: Record<string, unknown> | null;
+  readonly journey: Record<string, unknown> | null;
 }
 
 async function overviewOf(
@@ -117,6 +118,34 @@ describe('GET /api/projects/overview queue', () => {
     expect(stop.statusCode).toBe(200);
     expect(rows[0]?.lastRun).toMatchObject({
       ...{ id: queued.id, queueState: 'Ended', endState: 'Interrupted', position: null },
+    });
+  });
+});
+
+describe('GET /api/projects/overview journey', () => {
+  it('RF-010 each row carries the journey of its project, read with the overview', async () => {
+    harness = await createHistoryHarness();
+    const { amy, done, live } = harness;
+
+    const { rows } = await overviewOf(amy);
+
+    expect(rows[0]?.journey).toMatchObject({
+      ...{ scanRunId: done.id, briefSaved: false, plan: null, handoff: null, budget: null },
+      source: {
+        ...{ id: live.id, runKey: live.runKey, queueState: 'Running', endedAt: null },
+        ...{ position: null, openQuestions: 0, deepening: false },
+      },
+    });
+  });
+
+  it('RF-1108 a queued run in the journey keeps its place in the queue', async () => {
+    harness = await createHistoryHarness();
+    const queued = await queueOne(harness);
+
+    const { rows } = await overviewOf(harness.amy);
+
+    expect(rows[0]?.journey).toMatchObject({
+      source: { id: queued.id, queueState: 'Queued', endState: null, position: 1 },
     });
   });
 });

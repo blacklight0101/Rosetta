@@ -9,6 +9,7 @@ import type {
 } from '../../application/use-cases/list-history.js';
 import type { ListedSnapshot, ListSnapshots } from '../../application/use-cases/list-snapshots.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { runTimesOf } from '../../domain/runs/run-times.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
 import {
   registerProjectOverviewRoutes,
@@ -18,7 +19,7 @@ import { signedInOf } from './request-actor.js';
 
 // RF-1008, RF-1012, RF-1105, RF-1102: the history and deletion API.
 // - GET /api/projects/:id/history lists the runs of the signed-in user's project, newest first, with
-//   their commit, stage, state, totals and the size of each folder, and the project folder (name and
+//   their commit, stage, the rounds of a Deepen (P8-89), state, totals and the size of each folder, and the project folder (name and
 //   size) a deletion would free. The owner's id and the snapshot folder never leave the server.
 // - DELETE /api/runs/:runId and DELETE /api/projects/:id remove what has ended (200 with the bytes
 //   freed); a run or project in progress answers 409 (RST-2306). Another user's id answers 404 like
@@ -39,13 +40,22 @@ function instantOrNull(value: number | null): string | null {
   return value === null ? null : formatInstant(value);
 }
 
-function runRow({ run, sizeBytes, position }: HistoryRun): Record<string, unknown> {
+function runRow({
+  run,
+  sizeBytes,
+  position,
+  deepenRounds,
+  partlyRead,
+}: HistoryRun): Record<string, unknown> {
+  // P8-88: the first start, the running time (the sum of the spans) and the wall time of an ended run.
+  const times = runTimesOf(run);
   return {
     id: run.id,
     runId: run.runKey,
     stage: run.stage,
     queueState: run.queueState,
     endState: run.endState,
+    endReason: run.endReason,
     commitSha: run.commitSha,
     queuedAt: formatInstant(run.queuedAt),
     startedAt: instantOrNull(run.startedAt),
@@ -53,8 +63,14 @@ function runRow({ run, sizeBytes, position }: HistoryRun): Record<string, unknow
     totals: run.totals,
     failedAreas: run.failedAreas,
     unreadAreas: run.unreadAreas,
+    // P8-130: what the State badge needs to read "Partly read" as the run page does.
+    partlyReadAreas: partlyRead.areas,
+    readShare: partlyRead.share,
     position,
+    deepenRounds,
     sizeBytes,
+    runningMs: times?.runningMs ?? null,
+    wallMs: times?.wallMs ?? null,
   };
 }
 
@@ -64,6 +80,7 @@ function historyView({ project, runs, sizeBytes }: RunHistory): Record<string, u
       id: project.id,
       name: project.name,
       sourceUrl: project.sourceUrl,
+      sourceKind: project.sourceKind,
       ref: project.ref,
       subpath: project.subpath,
       folder: `projects/${project.id}`,

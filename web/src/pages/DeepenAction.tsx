@@ -6,9 +6,13 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { cloudRoles } from '../lib/estimate-math.js';
 import type { DeepenEstimate } from '../api/understanding.js';
-import { allRoundsText, firstRoundText } from '../lib/understanding/deepen-estimate-text.js';
+import { confirmLineOf } from '../lib/understanding/deepen-estimate-text.js';
 import { CloudNotice } from './CloudNotice.js';
+import { ConsentLine } from './ConsentLine.js';
 import { DeepenEstimateView } from './DeepenEstimateView.js';
+import { PrivateCodeNotice } from './PrivateCodeNotice.js';
+import { useDeepenPrivateCode, type DeepenPrivateCode } from './use-deepen-private-code.js';
+import { useHeldConsent, type HeldConsentState } from './use-held-consent.js';
 import {
   useDeepenEstimate,
   useDeepenStart,
@@ -20,8 +24,10 @@ import {
 // ended Completed. It sends Rosetta back over what it did not confirm. The panel shows the round
 // limit (1 to 5, default 3), the coverage pass (ticked unless the owner unticks it), the estimate
 // of the first round and of all rounds against the run cap, and the consent where a provider is in
-// the cloud. Nothing starts until the owner presses Start and confirms the question. All the styles
-// are under `.rst-p241-`.
+// the cloud. On an uploaded or workbook project whose roles are in the cloud, the private-code
+// confirmation shows beside the consent from the start (RF-132, DEC-209, P8-79); while a consent of
+// the project holds, one line with Withdraw shows instead of both (P8-81). Nothing starts until
+// the owner presses Start and confirms the question. All the styles are under `.rst-p241-`.
 
 const roundChoices = ['1', '2', '3', '4', '5'] as const;
 const consentCode = 'RST-1515';
@@ -29,19 +35,21 @@ const privateCode = 'RST-1521';
 
 interface PanelProps {
   readonly runId: string;
+  readonly projectId: string;
   readonly onClose: () => void;
 }
 
-function needsConsent(load: DeepenEstimateLoad): boolean {
-  return load.status === 'ready' && cloudRoles(load.estimate).length > 0;
-}
-
-function reasonOf(load: DeepenEstimateLoad, deepen: DeepenStart): string | undefined {
+function reasonOf(
+  load: DeepenEstimateLoad,
+  deepen: DeepenStart,
+  asked: { readonly consent: boolean; readonly privateShown: boolean },
+): string | undefined {
   const { consent } = deepen;
+  const { privateShown } = asked;
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';
-  if (needsConsent(load) && !consent) return 'Give the consent above first.';
-  if (deepen.privateAsked && !deepen.privateConfirmed) {
+  if (asked.consent && !consent) return 'Give the consent above first.';
+  if (privateShown && !deepen.privateConfirmed) {
     return 'Give the private code confirmation above first.';
   }
   return undefined;
@@ -62,8 +70,7 @@ function Question(props: {
       onConfirm={props.onConfirm}
       onCancel={props.onCancel}
     >
-      <p>{firstRoundText(props.estimate)}</p>
-      <p>{allRoundsText(props.estimate)}</p>
+      <p>{confirmLineOf(props.estimate)}</p>
     </ConfirmDialog>
   );
 }
@@ -97,34 +104,38 @@ function Controls(props: Pick<DeepenStart, 'choice' | 'setChoice'>): JSX.Element
   );
 }
 
-/** RF-132: after the server asked for it, the second confirmation of an uploaded project. */
-function PrivateAsked({ deepen }: { readonly deepen: DeepenStart }): JSX.Element {
+/** RF-132, P8-79: the second confirmation of an uploaded or workbook project, from the start. */
+function PrivateCode(props: {
+  readonly deepen: DeepenStart;
+  readonly code: DeepenPrivateCode;
+}): JSX.Element {
+  const { deepen, code } = props;
   const refused = deepen.error?.code === privateCode ? deepen.error : undefined;
   return (
-    <section class="rst-callout rst-callout--warn" aria-label="Your code is private">
-      <p>
-        <strong>Your code is private.</strong> Excerpts of your own code from this project will be
-        sent to a cloud provider.
-      </p>
-      <Field
-        kind="checkbox"
-        id="deepen-private-code"
-        label="I understand that my own code from this project will be sent to a cloud provider"
-        checked={deepen.privateConfirmed}
-        error={refused}
-        announce={false}
-        onChange={deepen.setPrivateConfirmed}
-      />
-    </section>
+    <PrivateCodeNotice
+      projectName={code.projectName}
+      workbooks={code.workbooks}
+      providers={code.providers}
+      confirmed={deepen.privateConfirmed}
+      error={refused}
+      onConfirm={deepen.setPrivateConfirmed}
+      onSwitch={code.switchToOllama.run}
+      switching={code.switchToOllama.switching}
+      switchError={code.switchToOllama.error}
+    />
   );
 }
 
 function Consent(props: {
   readonly cloud: ReturnType<typeof cloudRoles>;
   readonly deepen: DeepenStart;
+  readonly code: DeepenPrivateCode;
   readonly refused: ReturnType<typeof useDeepenStart>['error'];
+  readonly held: HeldConsentState;
 }): JSX.Element {
-  const { cloud, deepen, refused } = props;
+  const { cloud, deepen, code, refused, held } = props;
+  // RF-209, DEC-209 (P8-81): a consent of the project that holds shows as one line instead.
+  if (held.consent !== undefined) return <ConsentLine consent={held.consent} held={held} />;
   return (
     <>
       {cloud.length === 0 ? null : (
@@ -132,10 +143,11 @@ function Consent(props: {
           roles={cloud}
           consent={deepen.consent}
           error={refused}
+          reading={held.reading}
           onConsent={deepen.setConsent}
         />
       )}
-      {deepen.privateAsked ? <PrivateAsked deepen={deepen} /> : null}
+      {code.shown ? <PrivateCode deepen={deepen} code={code} /> : null}
       {deepen.error === undefined ||
       refused !== undefined ||
       deepen.error.code === privateCode ? null : (
@@ -145,23 +157,37 @@ function Consent(props: {
   );
 }
 
-function Choices(props: { readonly runId: string }): JSX.Element {
+/** What makes the consent of the project be read again: the roles changed, or a box was refused. */
+function heldKey(revision: number, deepen: DeepenStart): string {
+  return `${String(revision)}:${deepen.error?.code ?? ''}`;
+}
+
+function Choices(props: { readonly runId: string; readonly projectId: string }): JSX.Element {
   const deepen = useDeepenStart(props.runId);
-  const load = useDeepenEstimate(props.runId, deepen.choice);
+  // RF-132: the switch to Ollama changed the roles, so the estimate is read again.
+  const [revision, setRevision] = useState(0);
+  const load = useDeepenEstimate(props.runId, deepen.choice, revision);
   const [asking, setAsking] = useState(false);
   // A refusal closes the question; the reason shows on the page, and Start asks again.
   useEffect(() => {
     if (deepen.error !== undefined) setAsking(false);
   }, [deepen.error]);
-  const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
+  // RF-143, DEC-209 (P8-81): read again after a switch to Ollama or a refusal for a box.
+  const held = useHeldConsent(props.projectId, 'understand', heldKey(revision, deepen));
+  const asked = load.status === 'ready' && held.consent === undefined;
+  const cloud = asked ? cloudRoles(load.estimate) : [];
+  const code = useDeepenPrivateCode(props.projectId, cloud, deepen.privateAsked, () => {
+    deepen.setPrivateConfirmed(false);
+    setRevision((now) => now + 1);
+  });
   // The refusal of the consent shows at the checkbox when the notice is there, else as a banner.
   const refused = cloud.length > 0 && deepen.error?.code === consentCode ? deepen.error : undefined;
-  const reason = reasonOf(load, deepen);
+  const reason = reasonOf(load, deepen, { consent: cloud.length > 0, privateShown: code.shown });
   return (
     <>
       <Controls choice={deepen.choice} setChoice={deepen.setChoice} />
       <DeepenEstimateView load={load} />
-      <Consent cloud={cloud} deepen={deepen} refused={refused} />
+      <Consent {...{ cloud, deepen, code, refused, held }} />
       <Button
         variant="primary"
         {...(reason === undefined ? {} : { disabledReason: reason })}
@@ -185,29 +211,59 @@ function Choices(props: { readonly runId: string }): JSX.Element {
   );
 }
 
-function Panel({ runId, onClose }: PanelProps): JSX.Element {
+function Panel({ runId, projectId, onClose }: PanelProps): JSX.Element {
   return (
     <section class="rst-p241-panel" aria-label="Deepen this run">
-      <Choices runId={runId} />
+      <Choices runId={runId} projectId={projectId} />
       <Button onClick={onClose}>Not now</Button>
     </section>
   );
 }
 
-// RF-209
-export function DeepenAction(props: {
+interface DeepenActionProps {
   readonly runId: string;
+  /** RF-132, P8-79: the run's project, whose source kind decides the private-code confirmation. */
+  readonly projectId: string;
   /** RF-646: Deepen is the recommended next action (answers given now will be used by it). */
   readonly recommended?: boolean;
   /** RF-1021: the panel with the estimate is open at once (the project page); nothing starts. */
   readonly open?: boolean;
-}): JSX.Element {
-  const { runId } = props;
+  /**
+   * RF-1021 (P8-84): the button alone, as the one primary button of "Your turn" or as a link under
+   * it; the panel opens in its place.
+   */
+  readonly look?: 'primary' | 'link';
+}
+
+/** The closed action: the button, with the sentence that says what it does unless `look` is set. */
+function Closed(props: DeepenActionProps & { readonly onOpen: () => void }): JSX.Element {
+  const variant = props.look ?? (props.recommended === true ? 'primary' : 'secondary');
+  const button = (
+    <Button id="deepen-this-run" variant={variant} onClick={props.onOpen}>
+      Deepen this run
+    </Button>
+  );
+  if (props.look !== undefined) return button;
+  return (
+    <div class="rst-p241-action">
+      <p>
+        Send Rosetta back over what it did not confirm. Nothing starts until you see the estimate
+        and confirm.
+      </p>
+      {button}
+    </div>
+  );
+}
+
+// RF-209
+export function DeepenAction(props: DeepenActionProps): JSX.Element {
+  const { runId, projectId } = props;
   const [open, setOpen] = useState(props.open === true);
   if (open) {
     return (
       <Panel
         runId={runId}
+        projectId={projectId}
         onClose={() => {
           setOpen(false);
         }}
@@ -215,20 +271,11 @@ export function DeepenAction(props: {
     );
   }
   return (
-    <div class="rst-p241-action">
-      <p>
-        Send Rosetta back over what it did not confirm. Nothing starts until you see the estimate
-        and confirm.
-      </p>
-      <Button
-        id="deepen-this-run"
-        variant={props.recommended === true ? 'primary' : 'secondary'}
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        Deepen this run
-      </Button>
-    </div>
+    <Closed
+      {...props}
+      onOpen={() => {
+        setOpen(true);
+      }}
+    />
   );
 }

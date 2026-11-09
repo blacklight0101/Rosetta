@@ -4,7 +4,7 @@ import { filesOf, readZip } from '../../support/zip-reader.js';
 import { expectNoSeriousViolations } from './axe.js';
 import { expect } from './fixtures.js';
 import { chooseAreas, openProjectStart, repositories, runScan } from './journey-pages.js';
-import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
+import { runStatus, startAndOpenLiveRun, RUN_DONE } from './live-run-page.js';
 import { openPlanSetup, recorded, writeButton } from './plan-setup-page.js';
 
 // RF-010, RF-604, RF-605, RF-610, RF-601, P3-12: the steps of the release 1 journeys (flows 1 and 7
@@ -20,7 +20,7 @@ export async function understandFromUrl(page: Page): Promise<void> {
   await openProjectStart(page, repositories.webforms);
   await chooseAreas(page, ['Catalog']);
   await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 60_000 });
   await openProjectStart(page, repositories.webforms);
   await openPlanSetup(page);
 }
@@ -38,10 +38,12 @@ export async function writeAndDownload(page: Page): Promise<Readonly<Record<stri
   await expect(writeButton(page)).toBeEnabled();
   await writeButton(page).click();
   // The start request queues the run and may wait behind other accounts' runs on a loaded machine.
-  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
+  ).toBeVisible({
     timeout: 30_000,
   });
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await expectPlanFigures(page);
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([

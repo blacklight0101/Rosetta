@@ -1,18 +1,19 @@
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { areaHoldsWorkbook } from '../../domain/sources/workbook-folders.js';
-import { surfaceOf } from '../../domain/code-map/area-surface.js';
+import { surfaceReaderOf } from '../../domain/code-map/area-surface.js';
 import type { Area } from '../../domain/code-map/area.js';
-import { readingOrder } from '../understand/reader-order.js';
 import type { RunEstimate } from './estimate-types.js';
 
 // RF-425, RF-200, P3-112, P3-123: the areas the estimate before an understand run covers and offers.
 
 /**
  * RF-626: the screens of the areas, taken to be one SCRN card for each page file the code map marks
- * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls.
+ * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls. The code
+ * map is indexed once for all the areas (RF-210, P8-133).
  */
 export function screensOf(areas: readonly Area[], codeMap: CodeMap): number {
-  return areas.reduce((total, area) => total + surfaceOf(area, codeMap).pages.length, 0);
+  const surfaceOf = surfaceReaderOf(codeMap);
+  return areas.reduce((total, area) => total + surfaceOf(area).pages.length, 0);
 }
 
 /** RF-155: the areas that hold a rendered workbook also resend the guidance and both formats. */
@@ -40,15 +41,14 @@ export function offeredAreas(
 }
 
 /**
- * P3-123: with no area list the figures are for the default (own code), but the list still offers
- * every area, because the start page builds its picker from it.
+ * P3-123, RF-210: `ordered` is the planned areas in the readers' order. With no area list the
+ * figures are for the default (own code), but the list still offers every area, because the start
+ * page builds its picker from it.
  */
 export function offeredFor(
-  planned: readonly Area[],
+  ordered: readonly Area[],
   covered: readonly Area[],
   requested: readonly string[] | undefined,
-  thirdParty: ReadonlySet<string>,
 ): readonly Area[] {
-  const ordered = readingOrder(planned, thirdParty); // RF-210: the readers' order
   return (requested ?? []).length > 0 ? ordered.filter((area) => covered.includes(area)) : ordered;
 }

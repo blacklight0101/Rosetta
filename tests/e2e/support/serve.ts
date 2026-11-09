@@ -44,7 +44,8 @@ async function requireFrontEnd(): Promise<void> {
 
 // P1-35: `octo/webforms` is the C# fixture repository, whose recorded understand run the live run
 // page journeys replay (e2e-provider.ts). P1-46: `octo/ledger` is the COBOL fixture, a language
-// without a pack (RF-112), whose reads the answering provider takes like those of `octo/demo`.
+// without a pack (RF-112), whose reads the answering provider takes like those of `octo/demo`. P8-103:
+// `octo/inventory` is the Python fixture, a project that is not .NET, scanned like `octo/demo`.
 async function folderRepository(
   repo: string,
   folder: string,
@@ -66,6 +67,7 @@ async function demoGitHub(): Promise<FakeGitHub> {
   return new FakeGitHub([
     await folderRepository('webforms', 'webforms-csharp'),
     await folderRepository('ledger', 'cobol-ledger'),
+    await folderRepository('inventory', 'python-inventory'),
     {
       owner: 'octo',
       repo: 'demo',

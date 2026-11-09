@@ -40,6 +40,7 @@ import { MemoryLogger } from './memory-logger.js';
 import { sampleProject } from './project-fixtures.js';
 import { fixtureRoot } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
+import { noEndFacts } from './recording-journey-facts.js';
 
 // RF-003, RF-126, RF-1006: the scan run end to end over memory indexes and real files in a temporary
 // data folder. The source fetcher and the scan pipeline can be replaced by the test.
@@ -168,6 +169,7 @@ async function assemble(
   const lifecycle = new RunLifecycle({
     runs,
     manifests,
+    endFacts: noEndFacts,
     sink: new FanOutSink([log]),
     history: log,
     clock,

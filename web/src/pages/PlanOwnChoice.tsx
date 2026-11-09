@@ -15,12 +15,22 @@ export interface PlanOwnChoiceProps {
   readonly draft: Draft;
   readonly change: (next: Draft) => void;
   readonly problem?: string | undefined;
+  /** The label of the field; "Your answer" by default. */
+  readonly label?: string;
+  /** P8-21: a question that keeps its answer elsewhere than `draft.typed` (a stack layer) says so here. */
+  readonly own?: {
+    readonly checked: boolean;
+    readonly text: string;
+    readonly pick: () => Draft;
+    readonly type: (text: string) => Draft;
+  };
 }
 
 // RF-645
 export function PlanOwnChoice(props: PlanOwnChoiceProps): JSX.Element {
-  const { question, group, draft, change, problem } = props;
-  const checked = draft.chosen[question] === TYPED;
+  const { question, group, draft, change, problem, own } = props;
+  const checked = own?.checked ?? draft.chosen[question] === TYPED;
+  const text = own?.text ?? draft.typed[question] ?? '';
   return (
     <>
       <PlanChoice
@@ -29,18 +39,18 @@ export function PlanOwnChoice(props: PlanOwnChoiceProps): JSX.Element {
         title={OWN_ANSWER}
         checked={checked}
         onChoose={() => {
-          change(typeOwn(draft, question, draft.typed[question] ?? ''));
+          change(own?.pick() ?? typeOwn(draft, question, text));
         }}
       />
       {checked ? (
         <Field
           kind="text"
           id={`own-${question}-text`}
-          label="Your answer"
-          value={draft.typed[question] ?? ''}
+          label={props.label ?? 'Your answer'}
+          value={text}
           error={problem === undefined ? undefined : { message: problem }}
-          onInput={(text) => {
-            change(typeOwn(draft, question, text));
+          onInput={(typed) => {
+            change(own?.type(typed) ?? typeOwn(draft, question, typed));
           }}
         />
       ) : null}

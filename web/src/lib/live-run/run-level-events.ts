@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import type { RunEvent } from '../../api/run-events.js';
 import { awaitingData, endedData, resolvedData, scanData, startedData } from './event-data.js';
 import type { RunState, SourceState } from './run-state.js';
+import { withoutVerifierCalls } from './verifier-calls.js';
 
 // RF-1002, RF-1003, RF-1004: what the events of the run itself change: where it started, which
 // source and which caps it has, and how it ended.
@@ -53,7 +54,7 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
   } as const;
   const parsed = startedData.safeParse(event.data);
   if (!parsed.success) return { ...state, ...restarted };
-  const { stage, source, caps, roles } = parsed.data;
+  const { stage, source, caps, roles, parallelism } = parsed.data;
   const given = source === undefined ? undefined : sourceStateOf(source);
   return {
     ...state,
@@ -62,6 +63,9 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
     source: given ?? state.source,
     caps: caps === undefined ? state.caps : caps.run,
     roleKinds: roles === undefined ? state.roleKinds : roleKindsOf(roles),
+    // RF-1002 (P8-59): the limit of the role lines, from the latest start; a start stored without it
+    // counts with no limit.
+    inFlight: { ...state.inFlight, limit: parallelism },
   };
 }
 
@@ -79,13 +83,24 @@ export function onSourceResolved(state: RunState, event: RunEvent): RunState {
   return { ...state, source: { owner, repo, subpath: '', commitSha } };
 }
 
-// RF-1003, RF-1108
+/** RF-1002: an ended run has no call in flight, reader or verifier, whatever its event holds. */
+function withoutCallsInFlight(state: RunState): RunState {
+  const emptied = withoutVerifierCalls(state);
+  const { inFlight } = emptied;
+  return inFlight.reader.length === 0
+    ? emptied
+    : { ...emptied, inFlight: { ...inFlight, reader: [] } };
+}
+
+// RF-1003, RF-1108, RF-1002
 export function onRunEnded(state: RunState, event: RunEvent): RunState {
+  const emptied = withoutCallsInFlight(state);
   const parsed = endedData.safeParse(event.data);
-  if (!parsed.success) return state;
-  const { endState, errorCode, totals, failedAreas, unreadAreas } = parsed.data;
+  if (!parsed.success) return emptied;
+  const { endState, errorCode, totals, failedAreas, unreadAreas, endReason } = parsed.data;
   const costMicros = totals?.costMicros;
-  return { ...state, ended: { endState, errorCode, costMicros, failedAreas, unreadAreas } };
+  const ended = { endState, errorCode, endReason, costMicros, failedAreas, unreadAreas };
+  return { ...emptied, ended };
 }
 
 /** RF-432: the run paused near its approved amount; a later `run.started` (Continue) clears it. */

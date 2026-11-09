@@ -41,6 +41,20 @@
   color: var(--rst-ink-soft);
 }
 
+/* RF-1021 (P8-84): the other paths, as links under the one primary button; an opened Deepen takes a row. */
+.rst-p170-paths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+  align-items: baseline;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p170-paths > .rst-p241-panel {
+  flex-basis: 100%;
+}
+
 .rst-p170-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -59,6 +73,11 @@
   flex-direction: column;
   padding: var(--rst-sp-3) var(--rst-sp-4);
   background: var(--rst-surface);
+}
+
+/* P8-27: the last figure of an odd list takes the whole row, so the list has no empty cell. */
+.rst-p170-fact:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .rst-p170-fact b {
@@ -110,4 +129,12 @@
 /* P7-25: a section of the package checks keeps its lines and table rows. */
 .rst-plan-check {
   white-space: pre-wrap;
+}
+
+/* P8-27: the code map of a scan run. */
+.rst-p827-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
 }

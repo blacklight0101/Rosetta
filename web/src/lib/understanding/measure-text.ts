@@ -24,8 +24,11 @@ export interface Standing {
   readonly text: string;
 }
 
-/** Q-K: the share of the first-party tokens read from which a run may be called well covered. */
-const WELL_COVERED_SHARE = 0.8;
+/**
+ * Q-K, P8-93: the coverage bar: the share of the first-party tokens read from which a run may be
+ * called well covered, and from which an area counts as read.
+ */
+export const COVERAGE_BAR = 0.8;
 
 const number = new Intl.NumberFormat('en-US');
 
@@ -33,9 +36,9 @@ export function countText(count: number): string {
   return number.format(count);
 }
 
-/** A share in whole percent, cut down: 0.7996 is 79%, and a share above zero is never 0%. */
-function percentText(share: number): string {
-  const whole = Math.floor(share * 100);
+/** A share in whole percent, cut down (0.7996 is 79%), never 0% above zero; 1e-6 keeps 0.29 at 29. */
+export function percentText(share: number): string {
+  const whole = Math.floor(share * 100 + 1e-6);
   return whole === 0 && share > 0 ? 'less than 1%' : `${String(whole)}%`;
 }
 
@@ -45,7 +48,7 @@ const plural = (count: number, word: string): string =>
 /** RF-231, Q-K. */
 function isWellCovered(measures: MeasureSet): boolean {
   const share = measures.firstPartyCoverage;
-  return share !== null && share >= WELL_COVERED_SHARE && measures.notJudged === 0;
+  return share !== null && share >= COVERAGE_BAR && measures.notJudged === 0;
 }
 
 // RF-231
@@ -270,6 +273,12 @@ export function mayHaveMeasures(run: {
   return (
     run.stage === 'understand' && run.endState !== null && readSomething.includes(run.endState)
   );
+}
+
+/** P8-89, History artboard: the Coverage column, "42% read" or "none read". */
+export function coverageReadText(measures: MeasureSet): string {
+  const share = measures.firstPartyCoverage;
+  return share === null ? 'none read' : `${percentText(share)} read`;
 }
 
 /** RF-231: the measures of a run on one line, for a list: what was read, confirmed and not judged. */
