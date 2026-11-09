@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-08. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second round are merged into `develop` and nothing is released. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second and third rounds are merged into `develop` and nothing is released. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,43 @@ _Last updated 2026-11-08. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-09, Phase 8 wave 3 round 3: every buildable Phase 8 card is built).** Fifteen more cards are merged into `develop` and none is released: P8-55 #1319, P8-75 #1318, P8-76 #1322, P8-143 #1323, P8-80 #1324, P8-135 #1325, P8-78 #1326, P8-82 #1327, P8-81 #1328, P8-83 #1329, P8-85 #1330, P8-84 #1331, P8-95 #1332, P8-86 #1333 and P8-96 #1334. Nothing is in flight. What is left in Phase 8 needs the owner: P8-46..P8-49, P8-51 (merge queue) and the live parts of P8-61 and P8-66..P8-71 (ADR-028). Counts are in the [tasks.md totals](docs/orchestration/tasks.md).
+
+Product fix found by the stress job (P8-84 round 3): a resumed run waiting in the queue was sent the stale `run.ended` of its first life when a reader subscribed (`subscribe-run-events.ts`, `run-phase.ts` now read `queuedAt`). Look at a resumed run that waits for a slot on the next release.
+
+Owner questions from this round, each with the default the builder applied (say if one should change):
+
+- **P8-55:** Q1-Q3 as written in #1319, defaults kept.
+- **P8-75 and P8-76:** P8-75 Q1-Q4 and P8-76 Q1-Q3 as written in #1318 and #1322, defaults kept.
+- **P8-143:** the fold is left as it is, and the rename is not announced.
+- **P8-135:** limits stay in the Roles section; the states No key and Reachable are added; the rows stack below 640 px; the icons are glyphs.
+- **P8-78:** the read and withdraw routes came with P8-81 and SuggestPlanOptions is done; consent names provider kinds, not endpoints; consent is stored before the key check; a queued run is not checked again after consent is withdrawn.
+- **P8-81:** the wording follows the artboard, workbook projects included; Withdraw is a link-style button; no hint line; the consent line takes the boxes' slot; the boxes show while the consent loads.
+- **P8-82:** the P8Stack footer wording; the Roles summary always shows; the step buttons stay in the card; the reason is visible; the bar reuses the `rst-start__` classes.
+- **P8-83:** the Verification lines of RF-143 and RF-209 should name the e2e that covers them (not done here).
+- **P8-85:** the title "Open questions" is kept; the forms are full and editable; the tab is kept; focus moves to the next question.
+- **P8-84:** Resume is the primary action on a stopped run; below the bar the strip says Deepen even with a brief saved, which overrides RF-615 Q-44 on that page; Retry is secondary.
+- **P8-86:** nothing is selected at the start; Save (0) is enabled; answered questions stay editable; Plan setup's Save is secondary; answers are saved in batches of 50.
+- **P8-95:** a dropped link is not repaired; linked items are not listed in `checks.md`; coverage.v2 is a follow-up; the gap.v4 line stays as history.
+- **P8-96:** no repair in round 2; modules alone do not start round 2; an unreadable repair skips round 2; the estimate adds one gap call (which may cause one RST-2310); no web log writer.
+- **Stress capacity (choose):** the heavy journey e2e specs ran close to the stress job's limit (5 repeats on 4 workers against a server with 2 run slots); P8-84 needed three rounds. Options: tag such specs `@queue` and run them serially, give the e2e server more run slots, or use fewer stress workers. Default: keep, and fix the waits per spec.
+
+Follow-ups found by the verifiers. They block nothing and are not cards yet:
+
+- `web/src/lib/plan-setup/estimate.ts:22`: a remote Ollama reads `needsConsent` false.
+- P8-76: the control has no `aria-describedby` for its note.
+- The RF-132 trace row does not list P8-98.
+- `docs/orchestration/README.md` section 3.1 does not say that a red stress check holds a merge (P8-142 default).
+- P8-78: a `givenAt` in the future is accepted; no test that one user's consent does not count for another; a retry with the parent's consent skips the checks.
+- P8-81: Plan setup does not read the consent again after RST-1515; FailedAreas sends its own consent; the `aria-busy` timing of the consent read; the fold forgets its state after a trip to Settings; the `giveCloudConsent` JSDoc.
+- P8-82: `plan-setup.css` is at 301 lines; the reason is announced twice.
+- P8-85: `focusControlOf`; an id put in a selector without escaping; the moved status is not announced.
+- P8-84: the RF-615 note does not mention the Q-44 override; no tests for failed areas or a running Deepen; no primary action when the journey fails to load; cancelling a queued resumed run has its `run.ended` refused by `event-order.ts`.
+- P8-86: no test above 50 answers; focus after a refused save; no refresh after a refusal mid-batch (RecordAnswers is not atomic); a change from an option to typed text is not counted.
+- P8-95: the gap.v5 example ids T-004 and FLOW-009 look real (a gap.v6 with T-900); linked items in `checks.md`; refuse module and deployment links; a fixed rule for requirement to flow; a live Haiku eval of gap.v5.
+- P8-84 round 3: the SSE stream can close without `run.ended` if the row ends just before the second find and the end is written after the replay (milliseconds, older than the fix); no HTTP integration test for a requeued resumed run; `full-understand.spec.ts` and `plan-setup.spec.ts` are at 300 lines.
+- P8-96: the "asked once more" log line is written even when the guard refuses round 2; no direct test that an unreadable repair skips round 2; the kind de-duplication in `plan-window-facts.ts` has no test (its mutation survived); `tests/recordings/fake/README.md` does not list the 2 new recordings, and `planner-gap-eshop-ev95.json` is used by no test; no Continue test for round 2's answer-book key; no release note about the one-time RST-2310 after the deploy.
 
 **Resume (2026-11-08, Phase 8 wave 3 round 2; the build goes on in a fresh orchestrator session, DEC-214).** Twenty-three more cards are merged into `develop` today and none is released: P8-63 #1283, P8-64 #1288, P8-59 #1286, P8-125 #1292, P8-54 #1293, P8-128 #1289, P8-65 #1294, P8-73 #1287, P8-129 #1290, P8-98 #1297, P8-97 #1291, P8-60 #1296, P8-126 #1306, P8-138 #1308, P8-133 #1307, P8-127 #1305, P8-77 #1304, P8-134 #1310, P8-74 #1309, P8-79 #1298, P8-136 #1295, P8-139 #1303 and P8-137 #1311 (last, on P8-139's facts). Nothing is in flight. Counts are in the [tasks.md totals](docs/orchestration/tasks.md); the follow-ups below are not cards yet.
 

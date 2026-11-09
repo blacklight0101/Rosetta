@@ -8186,7 +8186,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-54
 - **Gate**: owner (asked for on 2026-11-02; changes CI and branch protection)
-- **Status**: Todo
+- **Status**: Done (#1319)
 - **Evidence** (2026-11-02, Phase 8): One CI run is 17 jobs; the longest job takes 11 min (tests windows-latest), e2e shards 7-8 min, yet a run took 25-40 min wall clock.
 - **Reads**: `.github/workflows/ci.yml`, `tests/integration/tooling/workflows.test.ts`, `docs/runbooks/`.
 - **Do**: tests first, then:
@@ -8493,7 +8493,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-57, P8-74
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1318)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): a new project takes Ollama for all four roles although the server shows "Ollama could not be reached. Type the model id.".
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/StartRunPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, `src/application/projects/default-settings.ts`, RF-436, RF-1104.
 - **Do**: P8-19 (see Depends on) changes the same use case and settings form, so it goes first; red tests first.
@@ -8509,7 +8509,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-57, P8-75
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1322)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-03, UX-04 (EV-92 beyond the parallelism of P8-19): Max output token fields read "Not set" while their slider shows a position, and large numbers have no separators (2000000).
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/LimitSetting.tsx`, `web/src/pages/LimitSettings.tsx`, `web/src/pages/project-settings-form.ts`, RF-436, RF-1104.
 - **Do**: P8-19 (see Depends on) changes the same settings form, so it goes first; add the Givens to RF-436 first; red tests first.
@@ -8540,7 +8540,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-76, P8-77
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Done (#1326)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
 - **Reads**: `src/application/use-cases/` (start-run and the Deepen start), the run-start and Deepen routes that check `privateCodeConfirmed` (RST-1521), `web/src/pages/start-gate.ts`, RF-143, RF-142, RF-605, RF-209, ADR-006.
 - **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
@@ -8571,7 +8571,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-76
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Done (#1324)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: On a zip project the Deepen panel shows only the Anthropic box; "Start Deepen" and "Confirm and start" then fail with HTTP 400 and "RST-1521 ... the run lacks the second confirmation for private code", and only then does the private-code box appear (`use-deepen.ts` sets `privateAsked` from the refusal).
 - **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/use-private-code.ts`, RF-143, RF-605, ADR-006.
 - **Do**: add the Givens to RF-143 first (DEC-209); red tests first.
@@ -8587,7 +8587,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-76, P8-78, P8-79, P8-80
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Done (#1328)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
 - **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/CloudNotice.tsx`, `web/src/pages/PrivateCodeNotice.tsx`, `web/src/pages/PlanConsentNotice.tsx`, `web/src/pages/PlanSetupPage.tsx`, RF-143, RF-209, ADR-006.
 - **Do**: add the Givens to RF-143 and RF-209 first (DEC-209); red tests first.
@@ -8603,7 +8603,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-76, P8-80
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Done (#1327)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: Plan setup puts "Switch every role to Ollama" beside the consent and "Start the plan" at the bottom of a page of about 5,400 px.
 - **Reads**: `docs/design/board/P8Deepen.dc.html`, `web/src/pages/PlanSetupPage.tsx`, `web/src/pages/use-switch-to-ollama.ts`, RF-605.
 - **Do**: red tests first.
@@ -8619,7 +8619,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-24, P8-76, P8-77, P8-78, P8-81, P8-82
 - **Gate**: none (DEC-209 answered Q-64)
-- **Status**: Todo
+- **Status**: Done (#1329)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-29, UX-27, UX-16, EV-98: the Anthropic consent was asked on the start page, again in the Deepen panel and again in Plan setup on the same project and day.
 - **Reads**: `docs/design/board/P8Deepen.dc.html`, the end-to-end specs of the Deepen and Plan setup pages, RF-143, RF-142, RF-209, RF-605.
 - **Do**: red test first.
@@ -8634,7 +8634,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-27, P8-83
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1331)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: after the understand, "Your turn" offers three paths at once: "Deepen this run", "Do not Deepen: answer the questions now" and a full-width primary "Set up the plan".
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/YourTurn.tsx`, `web/src/pages/DeepenAction.tsx`, `web/src/pages/PlanNext.tsx`, `web/src/pages/use-skip-deepen.ts`, `web/src/lib/journey/journey-action.ts`, RF-1021, RF-1017.
 - **Do**: add the Givens to RF-1021 first; red tests first.
@@ -8650,7 +8650,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-27, P8-83
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1330)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: The Questions card reads "3 open questions, asked after the last Deepen" before any Deepen ran. "Your questions" lists OQ-003, OQ-002, OQ-001 (newest first), an answered question stays at the top of "Open questions".
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, RF-1007, RF-1021.
 - **Do**: add the Givens to RF-1007 first; red tests first.
@@ -8667,7 +8667,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-27, P8-83, P8-85
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1333)
 - **Evidence** (2026-11-03, UI walk of the whole web UI on the Haiku profile; the UX-nn notes and screens are in the evaluation notes outside the repository): UX-24, UX-25: each answer needs its own Save, and there is no "accept the recommended answers" (Plan setup has one).
 - **Reads**: `docs/design/board/P8Run.dc.html`, `web/src/pages/RunAnswers.tsx`, `web/src/pages/AnswerChoices.tsx`, `web/src/pages/use-answer-save.ts`, RF-1007, RF-647.
 - **Do**: add the Givens to RF-1007 first; red tests first.
@@ -8809,7 +8809,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-83
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1332)
 - **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607.
 - **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/gap-repair-message.ts`, `src/application/plan/plan-repair.ts`, the planner prompt `prompts/planner/package.v12.md`, the recorded eShop failure (the four unbuilt flows and what the first gap round returned), RF-604, RF-627.
 - **Do**: add the Givens to RF-627 first; red tests first, with recorded responses where the first gap round leaves items unbuilt.
@@ -8824,7 +8824,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: S
 - **Depends on**: P8-83, P8-95
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1334)
 - **Evidence** (P8-17 evaluation, 2026-11-02, re-checked 2026-11-03): EV-95, EV-79, EV-86: the plan from the 371-card eShop Deepen failed RST-1806 once (FLOW-002/009/010/012 unbuilt, REQ-017 with no card) after the gap round of P8-06 had run, and completed on the retry from the same inputs; the failed try cost $0.607.
 - **Reads**: `src/application/plan/plan-links.ts` (`planGap`, the gap round and gap repair of P8-06), `src/application/plan/plan-repair.ts`, `docs/conventions.md` (RST-1806), RF-604, RF-627, RF-007.
 - **Do**: red tests first, with recorded responses where the first gap round leaves items unbuilt.
@@ -9449,7 +9449,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: P8-72, P8-73, P8-74, P8-75, P8-76
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1325)
 - **Evidence** (2026-11-04, P8-72 verifier and DEC-224): the `P8ProjectSettings` artboard draws the roles as one table, and no card owns that layout; the card P8-72 changed what a provider choice selects and left the form's layout alone.
 - **Reads**: `docs/design/board/P8ProjectSettings.dc.html`, `web/src/pages/ModelSettings.tsx`, `web/src/pages/ModelChoice.tsx`, `web/src/pages/project-settings-form.ts`, RF-436.
 - **Do**: read what P8-72..P8-76 left first; add the Givens to RF-436 first; red tests first.
@@ -9624,7 +9624,7 @@ Phase 8 comes from the P7-19 evaluation of 2026-11-01/02 (Asset Manager, Invoice
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done (#1323)
 - **Evidence** (2026-11-08, the verifiers of the cards merged that day): MINOR findings that blocked no merge, read from the verdicts and not re-checked since. A line number may have moved. Owner questions are not here; they are in `handoff.md`.
   - Tests: the P8-126 `saveBrief` test timeout of 15 s should be 30 s; the P8-74 "Apply does not save" test (`tests/unit/web/project-settings-role-warning.test.tsx`, about 111-141) asserts no PUT at once and misses a save a tick later; the P8-75 test (`tests/unit/web/start-run-role-warning.test.tsx`, about 128-172) re-reads the same project, so it does not prove a setting another session saved is kept (give the re-read a changed setting and a newer `settingsVersion`, assert the PUT keeps it and sends the new If-Match); the P8-137 "Understand done" assertion in `tests/e2e/visual/sweep-runs.spec.ts` became a looser five-way regex; `question-count-refresh.test.ts:52` (P8-139) has no RF id in its name; the order of `tests/e2e/shards.json` (P8-127).
   - Code: the P8-60 reader list is not reset; the P8-77 memory consent adapter accepts a duplicate id and its arrays allow duplicates; `web/src/pages/use-fold.ts:21-26` (P8-128) closes a fold the user opened in the same task as the page; the P8-134 rename dialog has no live-region or status announcement on success; `pg-run-index.ts` `LIST_OF_PROJECTS` (P8-137) reads every run of up to 100 projects on each 5 s poll (bound it only if cheap and safe); the P8-139 start-up backfill can take an older `end_code` over a newer null end (`src/application/journey/journey-facts-backfill.ts`, about 59-66: guard the fill on the `ended_at` the pass read).
