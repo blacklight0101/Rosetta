@@ -19,7 +19,6 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 import { saveHostedReaderWithOneParallelReader } from '../support/parallel-readers.js';
-import { giveCloudConsent } from '../support/start-choices.js';
 
 // RF-1104, RF-1105, RF-1106, RF-428, RNF-005, P1-131: the administrator's caps bind only runs on a
 // server key. The user has no key of their own, so the run uses the server's (serve.ts holds a fake
@@ -126,7 +125,7 @@ test(
       const pill = page.getByTestId('header-totals');
       const before = await tokensOf(pill);
       await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-      await giveCloudConsent(page, 'I understand; send masked excerpts to OpenAI for this run');
+      await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
       await expect(runStatus(page)).toContainText(/Partly read: \d+% of your code/u, {

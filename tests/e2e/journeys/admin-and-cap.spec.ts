@@ -12,7 +12,6 @@ import { fixturePassword } from '../../support/account-fixtures.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 import { saveHostedReaderWithOneParallelReader } from '../support/parallel-readers.js';
 import { colourOf, stepOf, tokenColour } from '../support/journey-strip.js';
-import { giveCloudConsent } from '../support/start-choices.js';
 
 // RF-1102, RF-1106, RF-1104, RF-422, RF-1010, RF-428, RNF-010, P1-46: the administrator creates a
 // user and saves the caps (the same figures as admin-users.spec.ts, so the server's month stays
@@ -99,7 +98,7 @@ test(
       const pill = page.getByTestId('header-totals');
       const before = await tokensOf(pill);
       await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-      await giveCloudConsent(page, 'I understand; send masked excerpts to OpenAI for this run');
+      await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
       await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });

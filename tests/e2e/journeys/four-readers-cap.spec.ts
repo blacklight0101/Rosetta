@@ -10,7 +10,6 @@ import { transitionsDone } from '../support/transitions.js';
 import { chooseModel, setOutputLimit } from '../support/choose-model.js';
 import { saveHostedReaderWithFourParallelReaders } from '../support/parallel-readers.js';
 import { recordedTokens } from '../support/run-tokens.js';
-import { giveCloudConsent } from '../support/start-choices.js';
 
 // RF-422, RF-429, RF-436, P8-132, Q-67: four parallel readers at a cap under two calls at their worst
 // case. The readers' room counts the calls in flight, so the readers' first calls are let through one
@@ -83,7 +82,7 @@ test(
       const pill = page.getByTestId('header-totals');
       const before = await tokensOf(pill);
       await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-      await giveCloudConsent(page, 'I understand; send masked excerpts to OpenAI for this run');
+      await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
       await startAndOpenLiveRun(page);
 
       await expect(runStatus(page)).toContainText(/Partly read/u, { timeout: 90_000 });

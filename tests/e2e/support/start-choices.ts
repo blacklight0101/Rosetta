@@ -145,12 +145,5 @@ export async function giveCloudConsent(page: Page, label: string): Promise<void>
   await consentRead(page);
   const box = page.getByLabel(label);
   if (await box.isVisible()) await box.check();
-}
-
-/** RF-143 (P8-81): withdraws a consent of the project that holds, so the start page asks the box. */
-export async function withdrawHeldConsent(page: Page): Promise<void> {
-  await consentRead(page);
-  const { notice, line } = consentShown(page);
-  if (await line.isVisible()) await page.getByRole('button', { name: 'Withdraw' }).click();
-  await expect(notice).toBeVisible();
+  else await expect(consentShown(page).line).toBeVisible();
 }
