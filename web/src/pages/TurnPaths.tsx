@@ -10,8 +10,9 @@ import type { SkipDeepen } from './use-skip-deepen.js';
 
 // RF-1021, RF-646, P8-84 (UX-24, UX-25), the P8Run artboard: "Your turn" shows the journey's next
 // step as its one primary button, Deepen while the run read an area of own code below the coverage
-// bar (the "Partly read" of RF-230), else Set up the plan; the other paths are links under it. All
-// the styles are under `.rst-p170-`.
+// bar (the "Partly read" of RF-230), else Set up the plan; the other paths are links under it. A run
+// that stopped at its cap has no primary button here (Resume in the page head is the next step), so
+// Set up the plan is a link too. All the styles are under `.rst-p170-`.
 
 /** The step the one primary button takes; `none` when the panel has no plan to set up. */
 export type TurnStep = 'deepen' | 'plan' | 'none';
@@ -83,6 +84,19 @@ function linksOf(props: TurnLinksProps): JSX.Element[] {
     links.push(
       <Button key="answer" variant="link" onClick={props.onAnswer}>
         {answerLabel(props.open)}
+      </Button>,
+    );
+  }
+  if (step === 'none' && props.plannable) {
+    links.push(
+      <Button
+        key="plan"
+        variant="link"
+        onClick={() => {
+          navigate(planSetupPath(run.projectId, run.id));
+        }}
+      >
+        Set up the plan
       </Button>,
     );
   }

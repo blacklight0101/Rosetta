@@ -45,46 +45,55 @@ function approvalOf(run: {
     : undefined;
 }
 
+/** RF-006: a run that stopped is resumed first. */
+function stoppedNext(c: Context, source: JourneySourceFacts, setUp: string): Next | undefined {
+  const resume = { kind: 'resume', label: 'Resume this run', runId: source.id } as const;
+  // P3-121: a run that stopped at a cap with Supported claims can be planned from; Resume stays
+  // the action until the brief is saved, and the plan is offered beside it.
+  if (plannableAtCap(source)) {
+    if (c.facts.briefSaved) return undefined;
+    return {
+      action: resume,
+      secondary: link('Plan from what was judged', setUp),
+      here: 'understand',
+    };
+  }
+  return { action: resume, here: 'understand' };
+}
+
 function afterTheRun(c: Context, setUp: string): Next | undefined {
   const { source } = c;
   if (source === null) return undefined;
   const phase = phaseOf(source);
   if (phase === 'working') return { action: approvalOf(source), here: 'understand' };
-  if (phase === 'stopped') {
-    const resume = { kind: 'resume', label: 'Resume this run', runId: source.id } as const;
-    // P3-121: a run that stopped at a cap with Supported claims can be planned from; Resume stays
-    // the action until the brief is saved, and the plan is offered beside it.
-    if (plannableAtCap(source)) {
-      if (c.facts.briefSaved) return undefined;
-      return {
-        action: resume,
-        secondary: link('Plan from what was judged', setUp),
-        here: 'understand',
-      };
-    }
-    return { action: resume, here: 'understand' };
-  }
+  if (phase === 'stopped') return stoppedNext(c, source, setUp);
   if (source.supportedClaims === 0) {
     return {
       action: link('Start a new run', `/projects/${c.projectId}`),
       here: 'understand',
     };
   }
+  // RF-1021 (P8-84): the run page knows its coverage: below the bar Deepen is the next step, as in Your
+  // turn, also with no question open or a brief saved.
+  if (c.belowBar === true && deepenFirst(c)) return deepenNext(source);
   // RF-615 (Q-44): a saved brief moves the journey on; the questions stay answerable on the run page.
   if (source.openQuestions === 0 || c.facts.briefSaved) return undefined;
   return questionsNext(c, source, setUp);
+}
+
+/** RF-646: Deepen the run first; the run page points to its Deepen in Your turn. */
+function deepenNext(source: JourneySourceFacts): Next {
+  return {
+    action: { kind: 'deepen', label: 'Deepen this run first', href: `/runs/${source.id}` },
+    here: 'questions',
+  };
 }
 
 /** RF-646, DEC-179: Deepen first; the questions come after the last Deepen, or at once when the user skips it. */
 function questionsNext(c: Context, source: JourneySourceFacts, setUp: string): Next {
   // P6-19: a Deepen is running; there is nothing to start, the questions come after it.
   if (deepenRunning(c)) return { action: undefined, here: 'questions' };
-  if (deepenFirst(c)) {
-    return {
-      action: { kind: 'deepen', label: 'Deepen this run first', href: `/runs/${source.id}` },
-      here: 'questions',
-    };
-  }
+  if (deepenFirst(c)) return deepenNext(source);
   const count = source.openQuestions;
   const label = `Answer ${String(count)} question${count === 1 ? '' : 's'}`;
   return {

@@ -3,6 +3,7 @@ import { waitsForAnswer } from '../api/answers.js';
 import { MoneyAmount } from '../components/MoneyAmount.js';
 import { tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
+import { primaryPlaceOf } from '../lib/live-run/primary-place.js';
 import { PlanNext, type CapLeft } from './PlanNext.js';
 import { PlanTurn } from './PlanTurn.js';
 import { overviewEstimateText } from '../lib/live-run/overview-estimate.js';
@@ -212,8 +213,14 @@ function writeOverviewOf(props: YourTurnProps, facts: Facts): JSX.Element | unde
   ) : undefined;
 }
 
-/** RF-1021 (P8-84): the step of the one primary button. */
+/**
+ * RF-1021 (P8-84): the step of the one primary button. Only a run that completed with a Supported
+ * claim has one here; a run that stopped is resumed first (Resume in the page head), so the panel
+ * offers its plan and its Deepen as links.
+ */
 function stepOf(props: YourTurnProps, skip: SkipDeepen): TurnStep {
+  const facts = endFactsOf(props.state);
+  if (primaryPlaceOf(props.state.ended?.endState, facts.supportedClaims) !== 'turn') return 'none';
   if (recommendsDeepen(props) && !skip.skipped && belowTheBar(props.reading)) return 'deepen';
   return plannable(props) ? 'plan' : 'none';
 }

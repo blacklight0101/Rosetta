@@ -138,7 +138,8 @@ export function FailedAreas(props: FailedAreasProps): JSX.Element | null {
           onConsent={setConsent}
         />
       )}
-      <Button variant="primary" busy={retry.busy} onClick={retry.retry}>
+      {/* RF-1021 (P8-84): secondary, so the page keeps its one primary action (Your turn or Resume). */}
+      <Button variant="secondary" busy={retry.busy} onClick={retry.retry}>
         Retry failed areas
       </Button>
       {retry.error === undefined ? null : <ErrorBanner error={retry.error} />}

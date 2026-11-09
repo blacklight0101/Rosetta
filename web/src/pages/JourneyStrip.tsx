@@ -40,11 +40,16 @@ export interface JourneyStripProps {
   readonly onSkipDeepen?: (() => void) | undefined;
   /** RF-1020, P8-100: the detail cards stay open and no button hides them (the project page). */
   readonly alwaysExpanded?: boolean | undefined;
+  /**
+   * RF-1021 (P8-84): the next action is a secondary button, because the page holds its one primary
+   * action elsewhere (Your turn or Resume in the head of an ended understand run page).
+   */
+  readonly actionVariant?: 'primary' | 'secondary' | undefined;
 }
 
 function Action(props: {
   readonly action: JourneyAction | undefined;
-  readonly variant?: 'primary' | 'secondary';
+  readonly variant?: 'primary' | 'secondary' | undefined;
   readonly onResumed: () => void;
   readonly onAnswer: (() => void) | undefined;
   readonly onDeepen?: (() => void) | undefined;
@@ -53,7 +58,12 @@ function Action(props: {
   const { action, onAnswer, onDeepen } = props;
   if (action === undefined) return null;
   if (action.kind === 'resume') {
-    return <ResumeButton runId={action.runId} label={action.label} onResumed={props.onResumed} />;
+    return (
+      <ResumeButton
+        {...{ runId: action.runId, label: action.label, onResumed: props.onResumed }}
+        variant={props.variant ?? 'primary'}
+      />
+    );
   }
   const answersHere = action.kind === 'answer' && onAnswer !== undefined;
   // P8-11 (EV-90): the run page has the Deepen button in "Your turn"; the strip points to it in words.
@@ -115,6 +125,7 @@ function Next(props: JourneyStripProps): JSX.Element {
   return (
     <Action
       action={own ? undefined : action}
+      variant={props.actionVariant}
       onResumed={props.onResumed}
       onAnswer={props.onAnswer}
       onDeepen={props.onDeepen}

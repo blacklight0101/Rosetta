@@ -118,7 +118,8 @@ function understandPart({ source }: Context): Part {
 const liveHref = (liveRunId: string | undefined, fallback: string): string =>
   liveRunId === undefined ? fallback : `/runs/${liveRunId}`;
 
-function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Context): Part {
+function questionsBase(c: Context): Part {
+  const { source, facts, liveRunId } = c;
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -138,7 +139,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
     return { state: 'skipped', detail: left, href };
   }
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
-  if (deepenRunning({ source, skippedDeepen: skipped })) {
+  if (deepenRunning(c)) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
     // P8-26: a live Deepen makes this step a link to its run page.
     return {
@@ -147,7 +148,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
       href: liveHref(liveRunId, href),
     };
   }
-  if (deepenFirst({ source, skippedDeepen: skipped })) {
+  if (deepenFirst(c)) {
     const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
     return { state: 'upcoming', detail, href };
   }
