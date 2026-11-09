@@ -89,7 +89,7 @@ function entryOf(question: OpenQuestionRow, choice: Choice, text: string) {
 export const SAVED_MESSAGE = 'Answer saved in answers.md.';
 export const CLEARED_MESSAGE = 'Answer cleared in answers.md.';
 
-export interface AnswerSaveOptions {
+interface AnswerSaveOptions {
   /** RF-647: an open question with no answer starts on its recommended option. */
   readonly prefill?: boolean;
   /** P8-85: the message a question shows when it is drawn, after its save moved it to another list. */

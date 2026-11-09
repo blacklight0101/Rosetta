@@ -183,10 +183,14 @@ interface ListProps {
   readonly accept: AcceptRegistry | undefined;
 }
 
-/** P8-85: a question that moved to the Answered list was saved; one that moved back was cleared. */
-type ShownList = ListProps & { readonly shown: Questions; readonly moved: ReadonlySet<string> };
+interface ItemsProps extends ListProps {
+  readonly shown: Questions;
+  /** P8-85: the questions that just moved to this list, and the message their save showed. */
+  readonly moved: ReadonlySet<string>;
+  readonly movedMessage: string;
+}
 
-function Items(props: ShownList & { readonly movedMessage: string }): JSX.Element {
+function Items(props: ItemsProps): JSX.Element {
   return (
     <ol class="rst-p139-answers__list">
       {props.shown.map((question) => (

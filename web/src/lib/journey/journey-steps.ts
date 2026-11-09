@@ -145,7 +145,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
         : `${String(open)} questions left on their defaults`;
     return { state: 'skipped', detail: left, href };
   }
-  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
+  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by the Deepen.
   if (deepenRunning({ source, skippedDeepen: skipped })) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
     // P8-26: a live Deepen makes this step a link to its run page.

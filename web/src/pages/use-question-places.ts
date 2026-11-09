@@ -10,7 +10,7 @@ import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 type Questions = readonly OpenQuestionRow[];
 type Place = 'open' | 'answered';
 
-export interface QuestionPlaces {
+interface QuestionPlaces {
   readonly open: Questions;
   readonly answered: Questions;
   /** The questions that moved to another list since the page last drew them, by card id. */
