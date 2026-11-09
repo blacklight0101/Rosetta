@@ -52,7 +52,7 @@ it('RF-646 RF-1007 an answered question can be edited in the Answered list', asy
   fireEvent.input(within(answered).getByLabelText('Answer to OQ-002'), {
     target: { value: 'Nobody.' },
   });
-  fireEvent.click(within(answered).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
   await waitFor(() => {
     expect(page.calls.some((call) => call.method === 'PUT')).toBe(true);
@@ -102,7 +102,7 @@ it('RF-1007 RF-645 a question with a saved answer is in the Answered list when t
   );
   fireEvent.click((await list()).getByRole('radio', { name: 'Type your own answer' }));
   fireEvent.input((await list()).getByLabelText('Answer to OQ-001'), { target: { value: typed } });
-  fireEvent.click((await list()).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
   await waitFor(() => {
     expect(screen.getByTestId('open-question').textContent).toContain(

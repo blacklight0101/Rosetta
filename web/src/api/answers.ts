@@ -74,25 +74,39 @@ export function getAnsweredCount(
   });
 }
 
+/** RF-1007, RF-645: one answer to record; `chosen` is the number (from 1) of the option, or `typed`. */
+export interface AnswerEntry {
+  readonly cardId: string;
+  readonly answer: string;
+  readonly chosen?: number | 'typed';
+}
+
 /** Records one answer; the answer lists the run's questions as they are now. */
 // RF-1007
 export function saveAnswer(
   client: ApiClient,
   runId: string,
-  answer: {
-    readonly cardId: string;
-    readonly answer: string;
-    /** RF-645: the number (from 1) of the suggested answer chosen, or `typed`. */
-    readonly chosen?: number | 'typed';
-  },
+  answer: AnswerEntry,
+): Promise<ApiResult<readonly OpenQuestionRow[]>> {
+  return saveAnswers(client, runId, [answer]);
+}
+
+/** RF-1007 (P8-86): records several answers in one request, at most `MAX_ANSWERS_PER_SAVE`. */
+export function saveAnswers(
+  client: ApiClient,
+  runId: string,
+  answers: readonly AnswerEntry[],
 ): Promise<ApiResult<readonly OpenQuestionRow[]>> {
   return client.request({
     method: 'PUT',
     path: pathOf(runId),
-    body: { answers: [answer] },
+    body: { answers },
     schema: questionsSchema,
   });
 }
+
+/** The most answers the answers route takes in one request (answer-routes.ts). */
+export const MAX_ANSWERS_PER_SAVE = 50;
 
 /** RF-241: opens an Answered question again, so an edited answer is used by the next re-run. */
 export function reopenQuestion(

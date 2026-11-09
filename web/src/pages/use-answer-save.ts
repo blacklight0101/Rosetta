@@ -1,5 +1,10 @@
 import { useState } from 'preact/hooks';
-import { reopenQuestion, saveAnswer, type OpenQuestionRow } from '../api/answers.js';
+import {
+  reopenQuestion,
+  saveAnswer,
+  type AnswerEntry,
+  type OpenQuestionRow,
+} from '../api/answers.js';
 import type { ApiFailure, ApiResult } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
 
@@ -74,7 +79,7 @@ function recommendedChoice(question: OpenQuestionRow): Choice {
 }
 
 /** RF-645: what a save sends: a chosen option writes its own answer, a typed one the text. */
-function entryOf(question: OpenQuestionRow, choice: Choice, text: string) {
+function entryOf(question: OpenQuestionRow, choice: Choice, text: string): AnswerEntry {
   const { cardId } = question;
   if (question.options === undefined) return { cardId, answer: text };
   if (typeof choice === 'number') {
@@ -83,6 +88,12 @@ function entryOf(question: OpenQuestionRow, choice: Choice, text: string) {
   return choice === 'typed'
     ? { cardId, answer: text, chosen: 'typed' as const }
     : { cardId, answer: '' };
+}
+
+/** RF-647 (P8-86): the answer "Accept the recommended answers" saves for a question that waits. */
+export function recommendedEntry(question: OpenQuestionRow): AnswerEntry | undefined {
+  const choice = recommendedChoice(question);
+  return choice === '' ? undefined : entryOf(question, choice, '');
 }
 
 /** The messages of a save that kept an answer and of one that cleared it. */
@@ -94,6 +105,8 @@ interface AnswerSaveOptions {
   readonly prefill?: boolean;
   /** P8-85: the message a question shows when it is drawn, after its save moved it to another list. */
   readonly message?: string | undefined;
+  /** P8-86: told what the question would save each time its answer is changed. */
+  readonly onDraft?: ((entry: AnswerEntry) => void) | undefined;
 }
 
 export function useAnswerSave(
@@ -102,7 +115,7 @@ export function useAnswerSave(
   apply: (questions: Questions) => void,
   options: AnswerSaveOptions = {},
 ): AnswerSave {
-  const { prefill = false, message: first = '' } = options;
+  const { prefill = false, message: first = '', onDraft } = options;
   const { client } = useApp();
   const [text, setText] = useState(question.answer);
   const [choice, setChoice] = useState<Choice>(() => {
@@ -136,11 +149,13 @@ export function useAnswerSave(
   const type = (value: string): void => {
     setText(value);
     request.setMessage('');
+    onDraft?.(entryOf(question, choice, value));
   };
   const { busy, failure, message } = request;
   const choose = (value: Choice): void => {
     setChoice(value);
     request.setMessage('');
+    onDraft?.(entryOf(question, value, text));
   };
   return { text, choice, choose, busy, failure, message, type, submit, reopen };
 }

@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { sectionTitles } from '../api/overview.js';
 import { waitsForAnswer, type OpenQuestionRow } from '../api/answers.js';
 import { Button } from '../components/Button.js';
@@ -9,6 +9,7 @@ import { StatusBadge } from '../components/StatusBadge.js';
 import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
 import { Earlier, Reasons } from './QuestionReasons.js';
+import { SaveAnswersBar } from './SaveAnswersBar.js';
 import {
   CLEARED_MESSAGE,
   SAVED_MESSAGE,
@@ -19,12 +20,13 @@ import { useFocusAfterMove } from './use-focus-after-move.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
 import { useQuestionPlaces } from './use-question-places.js';
 import type { RunAnswersState } from './use-run-answers.js';
+import { useSaveAnswers, type SaveAnswers } from './use-save-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
 // field for the answer, or its suggested answers as choices plus "Type your own answer" (RF-645,
-// DEC-178; a question saved before that keeps the field). Saving writes the answer into the project's answers.md (the other answers
-// stay); a question is marked answered only when its area is analysed again with the answers
+// DEC-178; a question saved before that keeps the field). One "Save answers" for the list (P8-86)
+// writes the changed answers into the project's answers.md (the other answers stay); a question is marked answered only when its area is analysed again with the answers
 // (RF-241), so a saved answer reads "Answer saved" (not open, DEC-154) until a re-run used it, then Answered. A re-run skips
 // an Answered question, so one whose answer was edited is reopened first (RF-241). Question and
 // context come from a model and are shown as text. Each question also says how many items depend on
@@ -73,33 +75,26 @@ function ReopenButton(props: { readonly save: AnswerSave }): JSX.Element {
   );
 }
 
+/** P8-86: the answer of one question; the list's "Save answers" saves it with the others. */
 function AnswerForm(props: {
   readonly question: OpenQuestionRow;
   readonly save: AnswerSave;
+  /** The message of the list's last save of this question. */
+  readonly note: string | undefined;
 }): JSX.Element {
   const { question, save } = props;
   const answered = question.state === 'Answered';
   return (
-    <form
-      class="rst-p139-question__form"
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        void save.submit();
-      }}
-    >
+    <div class="rst-p139-question__form">
       {save.failure === undefined ? null : <ErrorBanner error={save.failure} />}
       <AnswerInput question={question} save={save} />
       <div class="rst-p139-question__actions">
-        <Button type="submit" variant="secondary" busy={save.busy}>
-          Save answer
-        </Button>
         {answered ? <ReopenButton save={save} /> : null}
         <p class="rst-settings__note" role="status">
-          {save.message}
+          {save.message === '' ? (props.note ?? '') : save.message}
         </p>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -140,11 +135,13 @@ function QuestionItem(props: {
   readonly accept: AcceptRegistry | undefined;
   /** P8-85: the message of the save that just moved the question to this list. */
   readonly moved: string | undefined;
+  readonly batch: SaveAnswers;
 }): JSX.Element {
-  const { question, accept } = props;
+  const { question, accept, batch } = props;
   const save = useAnswerSave(props.runId, question, props.apply, {
     prefill: accept !== undefined,
     message: props.moved,
+    onDraft: batch.draft,
   });
   if (accept !== undefined) {
     if (waitsForAnswer(question) && question.options !== undefined) {
@@ -167,7 +164,7 @@ function QuestionItem(props: {
       )}
       <Reasons question={question} />
       <Earlier question={question} />
-      <AnswerForm question={question} save={save} />
+      <AnswerForm question={question} save={save} note={batch.notes.get(question.cardId)} />
     </li>
   );
 }
@@ -189,6 +186,7 @@ interface ItemsProps extends ListProps {
   /** P8-85: the questions that just moved to this list, and the message their save showed. */
   readonly moved: ReadonlySet<string>;
   readonly movedMessage: string;
+  readonly batch: SaveAnswers;
 }
 
 function Items(props: ItemsProps): JSX.Element {
@@ -204,6 +202,7 @@ function Items(props: ItemsProps): JSX.Element {
           onConcern={props.onConcern}
           accept={props.accept}
           moved={props.moved.has(question.cardId) ? props.movedMessage : undefined}
+          batch={props.batch}
         />
       ))}
     </ol>
@@ -218,7 +217,8 @@ function Items(props: ItemsProps): JSX.Element {
 function QuestionLists(props: ListProps): JSX.Element {
   const [note, setNote] = useState('');
   const { open, answered, moved } = useQuestionPlaces(props.questions);
-  useFocusAfterMove(moved, open, answered);
+  const afterSave = useRef(false);
+  useFocusAfterMove(moved, open, answered, afterSave);
   const apply = (questions: Questions): void => {
     props.apply(questions);
     const left = questions.filter(waitsForAnswer).length;
@@ -226,6 +226,17 @@ function QuestionLists(props: ListProps): JSX.Element {
       `Saved. ${String(left)} ${left === 1 ? 'question waits' : 'questions wait'} for an answer.`,
     );
   };
+  const batch = useSaveAnswers(props.runId, props.questions, {
+    saved: (questions) => {
+      afterSave.current = true;
+      apply(questions);
+    },
+    say: setNote,
+  });
+  const shared = { ...props, apply, moved, batch };
+  const offerAccept =
+    props.accept === undefined &&
+    open.some((question) => waitsForAnswer(question) && question.options !== undefined);
   return (
     <>
       <p class="rst-settings__note" role="status" data-testid="answers-status">
@@ -236,13 +247,12 @@ function QuestionLists(props: ListProps): JSX.Element {
           No question waits for an answer.
         </p>
       )}
-      {open.length === 0 ? null : (
-        <Items {...props} {...{ apply, moved }} shown={open} movedMessage={CLEARED_MESSAGE} />
-      )}
+      {open.length === 0 ? null : <Items {...shared} shown={open} movedMessage={CLEARED_MESSAGE} />}
+      <SaveAnswersBar batch={batch} offerAccept={offerAccept} main={props.accept === undefined} />
       {answered.length === 0 ? null : (
         <details class="rst-p139-answered" data-testid="answered-questions">
           <summary>{`Answered (${String(answered.length)})`}</summary>
-          <Items {...props} {...{ apply, moved }} shown={answered} movedMessage={SAVED_MESSAGE} />
+          <Items {...shared} shown={answered} movedMessage={SAVED_MESSAGE} />
         </details>
       )}
     </>

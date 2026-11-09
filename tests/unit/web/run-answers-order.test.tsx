@@ -36,14 +36,6 @@ const waiting = (): string[] => {
     .map((item) => /OQ-\d+/u.exec(item.textContent)?.[0] ?? '');
 };
 
-const itemOf = (cardId: string): HTMLElement => {
-  const found = screen
-    .getAllByTestId('open-question')
-    .find((item) => item.textContent.includes(cardId));
-  if (found === undefined) throw new Error(`No question ${cardId}.`);
-  return found;
-};
-
 describe('RF-1007 the order of the questions', () => {
   it('RF-1007 lists the questions in id order, the ones that wait for an answer first', async () => {
     answers([
@@ -71,7 +63,7 @@ describe('RF-1007 an answered question moves to Answered', () => {
     expect(screen.queryByTestId('answered-questions')).toBeNull();
 
     fireEvent.input(screen.getByLabelText('Answer to OQ-001'), { target: { value: 'Yes.' } });
-    fireEvent.click(within(itemOf('OQ-001')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     const answered = await screen.findByTestId('answered-questions');
     expect(page.calls.filter((call) => call.method === 'PUT')).toHaveLength(1);
@@ -92,7 +84,7 @@ describe('RF-1007 an answered question moves to Answered', () => {
     fireEvent.input(within(answered).getByLabelText('Answer to OQ-001'), {
       target: { value: '' },
     });
-    fireEvent.click(within(answered).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(screen.queryByTestId('answered-questions')).toBeNull();

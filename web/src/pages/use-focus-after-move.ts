@@ -5,7 +5,9 @@ import type { OpenQuestionRow } from '../api/answers.js';
 // focus would fall to the page. The focus goes on instead: to the first control of the next
 // question that waits for an answer, or to the "Answered" summary when none is left; a question
 // that moved back to the ones that wait keeps the focus in its own first control. Focus that is
-// already on a control is left where it is.
+// already on a control is left where it is. P8-86: after the list's "Save answers" or "Accept the
+// recommended answers" the focus goes on in the same way even from the button; when the save moved
+// nothing and the busy button let the focus fall to the page, it returns to Save answers.
 
 type Questions = readonly OpenQuestionRow[];
 
@@ -24,6 +26,10 @@ function focusControlOf(cardId: string): boolean {
   return true;
 }
 
+function focusSaveAnswers(): void {
+  document.querySelector<HTMLElement>('[data-testid="save-answers"] button')?.focus();
+}
+
 function focusSummary(): void {
   document.querySelector<HTMLElement>('[data-testid="answered-questions"] > summary')?.focus();
 }
@@ -39,12 +45,20 @@ export function useFocusAfterMove(
   moved: ReadonlySet<string>,
   open: Questions,
   answered: Questions,
+  /** P8-86: set by the list's save; the next draw moves the focus on and clears it. */
+  afterSave: { current: boolean },
 ): void {
   useEffect(() => {
-    if (moved.size === 0 || !focusLost()) return;
+    const saved = afterSave.current;
+    afterSave.current = false;
+    if (moved.size === 0) {
+      if (saved && focusLost()) focusSaveAnswers();
+      return;
+    }
+    if (!saved && !focusLost()) return;
     const back = open.find((question) => moved.has(question.cardId));
     if (back !== undefined && focusControlOf(back.cardId)) return;
     const next = nextOpen(open, moved);
     if (next === undefined || !focusControlOf(next.cardId)) focusSummary();
-  }, [moved, open, answered]);
+  }, [moved, open, answered, afterSave]);
 }

@@ -49,7 +49,7 @@ function saveAnswer(cardId: string, text: string): void {
   fireEvent.input(within(item(cardId)).getByLabelText(`Answer to ${cardId}`), {
     target: { value: text },
   });
-  fireEvent.click(within(item(cardId)).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 }
 
 it('RF-615 a question with a saved answer reads Answer saved and not Open', async () => {
