@@ -2,8 +2,9 @@ import type { EndReason } from '../../api/end-reason.js';
 import type { RunRow } from '../../api/run-schemas.js';
 import type { AwaitingState, RunState } from './run-state.js';
 
-// RF-1108, RF-003: where a run is, from what the page knows: the events say when it started and
-// ended; the run row says so for a run whose events have not arrived yet (a queued run has none).
+// RF-1108, RF-003, RF-006: where a run is, from what the page knows: the events say when it started
+// and ended; the run row says so for a run whose events have not arrived yet (a queued run has none)
+// and for a resumed run that waits in the queue again (its events are those of its earlier start).
 
 export type RunPhase =
   | { readonly kind: 'queued'; readonly position?: number | null }
@@ -29,6 +30,7 @@ export function phaseOf(row: RunRow, state: RunState): RunPhase {
   if (row.queueState === 'Ended') {
     return { kind: 'ended', endState: row.endState ?? 'Interrupted', endReason: row.endReason };
   }
+  if (queuedAgain(row, state)) return { kind: 'queued', position: row.position };
   // RF-432: the event says it paused; a run whose events have not arrived has the row's word.
   if (state.awaiting !== undefined)
     return { kind: 'awaiting', continueAmount: state.awaiting.continueAmount };
@@ -36,4 +38,16 @@ export function phaseOf(row: RunRow, state: RunState): RunPhase {
   if (state.startedAt !== undefined) return { kind: 'running' };
   if (row.queueState === 'Queued') return { kind: 'queued', position: row.position };
   return { kind: 'running' };
+}
+
+/**
+ * RF-006: a resumed run that waits in the queue has the events of its earlier start (and pause);
+ * the row says it was queued after that start, so it is queued until its next `run.started`.
+ */
+function queuedAgain(row: RunRow, state: RunState): boolean {
+  const { startedAt } = state;
+  if (row.queueState !== 'Queued' || row.queuedAt === undefined || startedAt === undefined) {
+    return false;
+  }
+  return Date.parse(row.queuedAt) > Date.parse(startedAt);
 }

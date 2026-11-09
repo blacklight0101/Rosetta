@@ -1,16 +1,19 @@
 import type { JSX } from 'preact';
 import { mayDeepen } from '../lib/live-run/may-deepen.js';
-import { useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useState } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { reportFilePath } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { Rail, openQuestions } from './EndedRail.js';
 import { Tabs } from '../components/Tabs.js';
+import { endFactsOf } from '../lib/live-run/end-facts.js';
+import { primaryPlaceOf } from '../lib/live-run/primary-place.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { endedTabsOf } from './ended-tabs.js';
 import { ActivityTab } from './ActivityTab.js';
+import { AreaReadContext } from './area-read-context.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
 import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
@@ -23,6 +26,7 @@ import { RunAnswers } from './RunAnswers.js';
 import { RunFailure } from './RunFailure.js';
 import { RunStepper } from './RunStepper.js';
 import { ScanResult } from './ScanResult.js';
+import { belowTheBar } from './TurnPaths.js';
 import { useQuestionsFocus, type FocusRequest } from './use-focus-first-question.js';
 import { useRunAnswers, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
@@ -172,6 +176,26 @@ function Panels(props: PanelsProps): JSX.Element | null {
   );
 }
 
+/**
+ * RF-1021 (P8-84): the journey of an ended understand run. It reads the coverage as Your turn does, so
+ * both name the same next step, and its action is secondary unless the page has no other primary.
+ */
+function EndedJourney(
+  props: EndedBodyProps & { readonly open: number | undefined; readonly onAnswer: () => void },
+): JSX.Element {
+  const { run, stage, phase, shown } = props;
+  const { reading } = useContext(AreaReadContext);
+  const place = primaryPlaceOf(shown.ended?.endState, endFactsOf(shown).supportedClaims);
+  return (
+    <UnderstandJourney
+      {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
+      onAnswer={props.onAnswer}
+      belowBar={belowTheBar(reading)}
+      actionVariant={place === 'strip' ? 'primary' : 'secondary'}
+    />
+  );
+}
+
 /** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
 function Header(
   props: EndedBodyProps & {
@@ -194,10 +218,7 @@ function Header(
       />
       {shown.retry === undefined ? null : <RetryNotice retry={shown.retry} />}
       {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
-      <UnderstandJourney
-        {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
-        onAnswer={props.onAnswer}
-      />
+      <EndedJourney {...props} />
     </>
   );
 }
@@ -242,6 +263,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
             costMicros={props.costMicros}
             report={report}
             onAnswer={showQuestions}
+            understanding={props.understanding}
           />
         </div>
       )}

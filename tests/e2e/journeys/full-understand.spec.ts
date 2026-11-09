@@ -47,19 +47,24 @@ async function goOnWithTheDefaultsAndBack(page: Page): Promise<void> {
 }
 
 /**
- * RF-646, DEC-179: a run that can be deepened asks nothing yet: Your turn recommends Deepen first and
- * says that answers given now will be used by it, and the journey recommends it too. Choosing not to
- * Deepen asks for the answers at once.
+ * RF-646, DEC-179, RF-1021 (P8-84): a run that can be deepened and read code below the coverage bar
+ * (as the recorded runs do) asks nothing yet: Your turn offers Deepen as its one primary button and
+ * says that answers given before it are used by it, and the journey recommends it too. Skipping the
+ * Deepen opens Plan setup; back on the run, the answers are asked at once.
  */
 async function chooseNotToDeepen(page: Page): Promise<void> {
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await expect(turn.getByTestId('deepen-first')).toContainText('Deepen this run first');
-  await expect(turn.getByTestId('deepen-first')).toContainText('uses the answers given before it');
+  await expect(turn.getByTestId('deepen-first')).toContainText(
+    'Answers you give before it are used by it.',
+  );
   await expect(journeyOf(page).getByRole('button', { name: /Deepen/u })).toHaveCount(0);
   await expect(journeyOf(page)).toContainText('use the Deepen button in Your turn');
   await expect(page.getByRole('button', { name: /^Deepen this run/u })).toHaveCount(1);
-  await expect(turn.getByRole('button', { name: /^Answer / })).toHaveCount(0);
-  await turn.getByRole('button', { name: 'Do not Deepen: answer the questions now' }).click();
+  await expect(turn.locator('.rst-button--primary')).toHaveText(['Deepen this run']);
+  await turn.getByRole('button', { name: 'Skip the Deepen and set up the plan' }).click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
+  await page.goBack();
+  await expect(turn.getByRole('heading', { name: 'Your turn: set up the plan' })).toBeVisible();
   await expect(turn.getByTestId('deepen-first')).toHaveCount(0);
 }
 

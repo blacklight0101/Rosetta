@@ -28,6 +28,9 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { replayRunId } from '../support/seed-replay.js';
 import { transitionsDone } from '../support/transitions.js';
 
+/** RF-1021 (P8-84): Set up the plan, or the link that skips the Deepen first. */
+const setUpThePlan = /^(Skip the Deepen and s|S)et up the plan$/u;
+
 // RF-615, RF-614, RF-006, DEC-143, RNF-010: the journey from code to package on the pages of the
 // failure paths, driven by real runs of the test server and its model double (e2e-provider.ts). An
 // understand run that is stopped locks the plan steps and offers Resume; a plan run that fails
@@ -55,13 +58,14 @@ test.describe.configure({ mode: 'serial' });
 test('RF-615 RF-006 an understand run that was stopped locks the plan steps and offers Resume, which runs it again', async ({
   page,
 }, info) => {
-  // A scan, then a run that is stopped at the held reader: longer than the default 30 s.
-  test.setTimeout(120_000);
+  // A scan, a run stopped at the held reader and its resume, each of which may wait for one of the
+  // server's two run slots (RF-1108): longer than the default 30 s.
+  test.setTimeout(240_000);
   await signInAs(page.context(), accountFor('live-controls', info.project.name));
   await openScannedStartPage(page);
   const live = await startUnderstand(page, ['Catalog', 'Controllers']);
   await openRunTab(page, 'All agents');
-  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
+  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 90_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 
@@ -88,11 +92,15 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
   await journey(page).getByRole('button', { name: 'Resume this run' }).click();
 
   await expect(page).toHaveURL(live);
-  await expect(runStatus(page)).toContainText('Running', { timeout: 30_000 });
+  // RF-006, RF-1108: a resume that waits for a run slot reads Queued, then Running once it starts.
+  await expect(runStatus(page)).toContainText('Running', { timeout: 90_000 });
   // RF-1020: the strip is on every run page, also while the run works.
   await expect(journey(page)).toBeVisible();
   await showStepDetails(page);
   await expect(stepOf(page, 'Understand')).toContainText('Running now');
+  // The resumed run waits at the held reader again: stopped, it frees its run slot for other tests.
+  await page.getByRole('button', { name: 'Stop run' }).click();
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 });
 
 test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try the plan again opens a new estimate', async ({
@@ -108,7 +116,8 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await expect(stepOf(page, 'Understand')).toContainText('Done');
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await turn.getByRole('button', { name: 'Set up the plan' }).click();
+  // RF-1021 (P8-84): below the coverage bar Deepen is the primary button and the plan a link under it.
+  await turn.getByRole('button', { name: setUpThePlan }).click();
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
   await expect(journey(page)).toBeVisible();
   await showStepDetails(page);

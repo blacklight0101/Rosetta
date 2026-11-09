@@ -5,10 +5,10 @@ import { isResumable } from '../lib/live-run/resumable.js';
 
 // RF-614, RF-1017, RF-006, RST-1802: what the "Your turn" panel of an understand run offers about the
 // plan. A run that ended `Completed` with a Supported claim offers "Set up the plan", which opens Plan
-// setup for this run; it is the main action unless questions are still open. A run with no Supported
-// claim says there is nothing to plan from. A run that ended `CapReached` with a Supported claim also
-// offers it, beside Resume (the button in the page head, RF-006), and says the package uses only the
-// claims judged (P3-121). A run that `Failed` or was `Interrupted` points to Resume instead, because
+// setup for this run; it is the one primary action of the panel unless Deepen is (RF-1021, P8-84). A run with no Supported
+// claim says there is nothing to plan from. A run that ended `CapReached` with a Supported claim says
+// the package uses only the claims judged (P3-121) and offers the plan as a link under it, because
+// Resume (the button in the page head, RF-006) is the page's one primary action (RF-1021, P8-84). A run that `Failed` or was `Interrupted` points to Resume instead, because
 // `plan` refuses it.
 
 export interface PlanNextProps {
@@ -16,8 +16,8 @@ export interface PlanNextProps {
   readonly projectId: string;
   readonly endState: string;
   readonly supportedClaims: number;
-  /** Questions are still open: Answer questions stays the main action. */
-  readonly questionsOpen: boolean;
+  /** RF-1021 (P8-84): Set up the plan is the primary button; false while Deepen is the next step. */
+  readonly setUp: boolean;
   /** P7-26: what a capped run left. */
   readonly left?: CapLeft;
   /** P7-26: the "Write the overview" action, when the overview call was refused. */
@@ -32,7 +32,7 @@ export interface CapLeft {
 }
 
 /** RF-614: Plan setup for this run, named by its id in the query string. */
-const planSetupPath = (projectId: string, runId: string): string =>
+export const planSetupPath = (projectId: string, runId: string): string =>
   `/projects/${encodeURIComponent(projectId)}/plan-setup?run=${encodeURIComponent(runId)}`;
 
 /** P7-26: what the run left, in words: areas not read, claims not judged, the overview. */
@@ -64,7 +64,7 @@ function Capped(props: PlanNextProps): JSX.Element {
           : ''}
       </p>
       {props.writeOverview}
-      {plan ? <SetUp {...props} /> : null}
+      {plan && props.setUp ? <SetUp {...props} /> : null}
     </>
   );
 }
@@ -95,16 +95,16 @@ export function PlanNext(props: PlanNextProps): JSX.Element | null {
   }
   return (
     <>
-      <SetUp {...props} />
+      {props.setUp ? <SetUp {...props} /> : null}
       {props.writeOverview}
     </>
   );
 }
 
-function SetUp({ runId, projectId, questionsOpen }: PlanNextProps): JSX.Element {
+function SetUp({ runId, projectId }: PlanNextProps): JSX.Element {
   return (
     <Button
-      variant={questionsOpen ? 'secondary' : 'primary'}
+      variant="primary"
       onClick={() => {
         navigate(planSetupPath(projectId, runId));
       }}

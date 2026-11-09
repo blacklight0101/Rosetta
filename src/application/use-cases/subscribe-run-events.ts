@@ -65,8 +65,12 @@ export class SubscribeRunEvents {
     if (run === undefined) return err('not-found');
     const scope = scopeOf(run);
     const lastSeq = await history.lastSeq(scope);
+    // RF-006: the run as it is once its stored events are counted. A run's row ends before its
+    // run.ended is stored, so a run that is not ended now was resumed after every run.ended counted.
+    const now = (await runs.find(request.actor.userId, request.runId)) ?? run;
+    const endedNow = now.queueState === 'Ended';
     const afterSeq = Math.min(request.afterSeq, lastSeq);
-    const delivery = new Delivery(request, afterSeq, lastSeq);
+    const delivery = new Delivery(request, afterSeq, { storedEnd: lastSeq, endedNow });
     delivery.unsubscribe = feed.subscribe(run.userId, run.id, (event) => {
       delivery.live(event);
     });
@@ -79,7 +83,7 @@ export class SubscribeRunEvents {
             if (delivery.isClosed) throw new ReplayStopped();
           });
           delivery.release();
-          if (run.queueState === 'Ended') delivery.end();
+          if (endedNow) delivery.end();
         } catch (error) {
           delivery.close();
           if (!(error instanceof ReplayStopped)) throw error;
@@ -103,13 +107,20 @@ class Delivery {
   private heldBytes = 0;
   private last: number;
   private readonly storedEnd: number;
+  /** RF-006: false for a run queued or running (again), whose stored run.ended is not its end. */
+  private readonly endedNow: boolean;
   private holding = true;
   private closed = false;
 
-  constructor(request: SubscribeRunEventsRequest, afterSeq: number, storedEnd: number) {
+  constructor(
+    request: SubscribeRunEventsRequest,
+    afterSeq: number,
+    stored: { readonly storedEnd: number; readonly endedNow: boolean },
+  ) {
     this.request = request;
     this.last = afterSeq;
-    this.storedEnd = storedEnd;
+    this.storedEnd = stored.storedEnd;
+    this.endedNow = stored.endedNow;
   }
 
   live(event: RunEvent): void {
@@ -128,10 +139,16 @@ class Delivery {
   send(event: RunEvent, stored = false): void {
     if (this.closed || event.seq <= this.last) return;
     this.last = event.seq;
-    // RF-006: a stored run.ended that a resume followed is not the end of the stream.
-    if (stored && isRunEnded(event) && event.seq < this.storedEnd) return;
+    // RF-006: a stored run.ended that a resume followed is not the end of the stream, also while
+    // the resumed run waits in the queue and its log still ends with that run.ended.
+    if (stored && isRunEnded(event) && this.endedBefore(event.seq)) return;
     this.request.onEvent(event, stored);
     if (isRunEnded(event)) this.end();
+  }
+
+  /** Whether a stored run.ended at `seq` ended an earlier life of a run that was resumed. */
+  private endedBefore(seq: number): boolean {
+    return seq < this.storedEnd || (!this.endedNow && seq === this.storedEnd);
   }
 
   /** Sends what arrived while the stored events were read. */

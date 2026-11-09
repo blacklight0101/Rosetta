@@ -43,6 +43,10 @@ export interface JourneyPanelProps {
   readonly rerun?: RerunChoice | undefined;
   /** RF-1020, P8-100: the strip stays expanded, with no button to hide the details (the project page). */
   readonly alwaysExpanded?: boolean | undefined;
+  /** RF-1021 (P8-84): the run read its own code below the coverage bar; none where the page does not know. */
+  readonly belowBar?: boolean | undefined;
+  /** RF-1021 (P8-84): the page holds its one primary action elsewhere; the strip's action is secondary. */
+  readonly actionVariant?: 'primary' | 'secondary' | undefined;
 }
 
 /** RF-1021: what the project page does in place: Deepen, skipping it, and the questions and plan setup. */
@@ -65,7 +69,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   const skip = useSkipDeepen(
     runId ?? (load.status === 'ready' ? load.facts.source?.id : undefined),
   );
-  const { liveRunId } = props;
+  const { liveRunId, belowBar } = props;
   const answered = props.rerun?.answered;
   useReportView({
     ...{ onView: props.onView, load, projectId, liveRunId, answered },
@@ -75,7 +79,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
   if (load.status === 'failed') {
     return <p class="rst-road-note">{`The journey could not be read (${load.error.code}).`}</p>;
   }
-  const view = journeyOf(load.facts, projectId, skip.skipped, { liveRunId, answered });
+  const view = journeyOf(load.facts, projectId, skip.skipped, { liveRunId, answered, belowBar });
   const source = load.facts.source;
   const inPlace = inPlaceOf(props, source?.id, {
     skip: () => {
@@ -95,6 +99,7 @@ export function JourneyPanel(props: JourneyPanelProps): JSX.Element | null {
       onPackage={props.onPackage}
       pagePath={props.pagePath}
       alwaysExpanded={props.alwaysExpanded}
+      actionVariant={props.actionVariant}
       {...inPlace}
       onResumed={
         props.onResumed ??

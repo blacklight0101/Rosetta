@@ -126,7 +126,8 @@ const liveHref = (liveRunId: string | undefined, fallback: string): string =>
 const askedBy = (source: Pick<JourneySourceFacts, 'deepens' | 'isDeepen'>): string =>
   source.isDeepen || source.deepens > 0 ? 'asked after the last Deepen' : 'asked by the understand';
 
-function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Context): Part {
+function questionsBase(c: Context): Part {
+  const { source, facts, liveRunId } = c;
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
   if (phase === 'working') return locked('Comes after the run finishes');
@@ -146,7 +147,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
     return { state: 'skipped', detail: left, href };
   }
   // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by the Deepen.
-  if (deepenRunning({ source, skippedDeepen: skipped })) {
+  if (deepenRunning(c)) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
     // P8-26: a live Deepen makes this step a link to its run page.
     return {
@@ -157,7 +158,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
   }
   // RF-1007 (P8-85): "after the last Deepen" only once a Deepen has ended; before, the understand asked.
   const asked = `${plural(open, 'open question')}, ${askedBy(source)}`;
-  if (deepenFirst({ source, skippedDeepen: skipped })) {
+  if (deepenFirst(c)) {
     const detail = `${asked}: answers given now will be used by the Deepen`;
     return { state: 'upcoming', detail, href };
   }

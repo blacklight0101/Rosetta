@@ -17,6 +17,8 @@ export const runSchema = z.looseObject({
   /** P8-111: why an `Interrupted` run ended; null for any other run and for one with no recorded reason. */
   endReason: endReasonField,
   commitSha: z.string().nullable(),
+  /** RF-006: when the run was queued, or queued again by a Resume; absent from the start answer. */
+  queuedAt: z.string().optional(),
   /** When the run began; null while it waits in the queue (or if it was stopped there). */
   startedAt: z.string().nullable().default(null),
   /** The place of a queued run in the server's queue, from 1; null for any other run. */

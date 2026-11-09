@@ -220,8 +220,7 @@ function Panel({ runId, projectId, onClose }: PanelProps): JSX.Element {
   );
 }
 
-// RF-209
-export function DeepenAction(props: {
+interface DeepenActionProps {
   readonly runId: string;
   /** RF-132, P8-79: the run's project, whose source kind decides the private-code confirmation. */
   readonly projectId: string;
@@ -229,7 +228,35 @@ export function DeepenAction(props: {
   readonly recommended?: boolean;
   /** RF-1021: the panel with the estimate is open at once (the project page); nothing starts. */
   readonly open?: boolean;
-}): JSX.Element {
+  /**
+   * RF-1021 (P8-84): the button alone, as the one primary button of "Your turn" or as a link under
+   * it; the panel opens in its place.
+   */
+  readonly look?: 'primary' | 'link';
+}
+
+/** The closed action: the button, with the sentence that says what it does unless `look` is set. */
+function Closed(props: DeepenActionProps & { readonly onOpen: () => void }): JSX.Element {
+  const variant = props.look ?? (props.recommended === true ? 'primary' : 'secondary');
+  const button = (
+    <Button id="deepen-this-run" variant={variant} onClick={props.onOpen}>
+      Deepen this run
+    </Button>
+  );
+  if (props.look !== undefined) return button;
+  return (
+    <div class="rst-p241-action">
+      <p>
+        Send Rosetta back over what it did not confirm. Nothing starts until you see the estimate
+        and confirm.
+      </p>
+      {button}
+    </div>
+  );
+}
+
+// RF-209
+export function DeepenAction(props: DeepenActionProps): JSX.Element {
   const { runId, projectId } = props;
   const [open, setOpen] = useState(props.open === true);
   if (open) {
@@ -244,20 +271,11 @@ export function DeepenAction(props: {
     );
   }
   return (
-    <div class="rst-p241-action">
-      <p>
-        Send Rosetta back over what it did not confirm. Nothing starts until you see the estimate
-        and confirm.
-      </p>
-      <Button
-        id="deepen-this-run"
-        variant={props.recommended === true ? 'primary' : 'secondary'}
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        Deepen this run
-      </Button>
-    </div>
+    <Closed
+      {...props}
+      onOpen={() => {
+        setOpen(true);
+      }}
+    />
   );
 }

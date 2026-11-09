@@ -25,6 +25,8 @@ export interface Context {
   readonly liveRunId?: string | undefined;
   /** P8-26 (RF-241): the questions with an answer that wait for a re-run; none when not known. */
   readonly answered?: number | undefined;
+  /** RF-1021 (P8-84): the source run read own code below the coverage bar; none when the page does not know. */
+  readonly belowBar?: boolean | undefined;
 }
 
 /** What a page knows beyond the facts of the server (P8-26). */
@@ -33,6 +35,11 @@ export interface JourneyExtras {
   readonly liveRunId?: string | undefined;
   /** RF-241: the questions with an answer that wait for a re-run. */
   readonly answered?: number | undefined;
+  /**
+   * RF-1021 (P8-84): the run page knows the coverage of its run: below the bar Deepen is the next
+   * step, at the bar or above it is not, as in Your turn. Pages that do not know leave it out.
+   */
+  readonly belowBar?: boolean | undefined;
 }
 
 export type RunPhase = 'working' | 'completed' | 'stopped';
@@ -125,11 +132,12 @@ export function plannableAtCap(
 /**
  * RF-646, DEC-179: a run that can be deepened and has not been is not the time to ask: Deepen is
  * recommended first, because it uses the answers given now. Once the last Deepen has ended, or when
- * the user chose not to Deepen, the questions are asked.
+ * the user chose not to Deepen, the questions are asked. RF-1021 (P8-84): a page that knows the run
+ * read its own code at the bar or above does not recommend Deepen first.
  */
-export function deepenFirst(c: Pick<Context, 'source' | 'skippedDeepen'>): boolean {
+export function deepenFirst(c: Pick<Context, 'source' | 'skippedDeepen' | 'belowBar'>): boolean {
   const { source } = c;
-  if (source === null || c.skippedDeepen) return false;
+  if (source === null || c.skippedDeepen || c.belowBar === false) return false;
   return (
     phaseOf(source) === 'completed' && !source.isDeepen && source.deepens === 0 && !source.deepening
   );
