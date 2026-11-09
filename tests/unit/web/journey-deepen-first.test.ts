@@ -63,3 +63,47 @@ describe('RF-646 the journey and a running Deepen', () => {
     expect(view.action?.kind).not.toBe('deepen');
   });
 });
+
+// RF-1021 (P8-84): the run page knows the coverage of its run, as Your turn does: Deepen is the next
+// step only while the run read its own code below the bar; a page that does not know (the project
+// page) keeps the rule of RF-646.
+describe('RF-1021 the journey and the coverage bar', () => {
+  it('RF-1021 at the bar or above the journey asks the questions and never says Deepen first', () => {
+    const view = journeyOf(asking(), projectId, false, { belowBar: false });
+
+    expect(view.action).toMatchObject({ kind: 'answer', label: 'Answer 2 questions' });
+    expect(step(view, 'questions').detail).toBe('2 open questions');
+  });
+
+  it('RF-1021 below the bar the journey recommends Deepen first, as Your turn does', () => {
+    const view = journeyOf(asking(), projectId, false, { belowBar: true });
+
+    expect(view.action).toMatchObject({ kind: 'deepen', label: 'Deepen this run first' });
+  });
+
+  it('RF-1021 below the bar Deepen stays the next step with no question open or a brief saved', () => {
+    const none = journeyOf(
+      facts({ source: source({ openQuestions: 0, deepens: 0 }), briefSaved: false }),
+      projectId,
+      false,
+      { belowBar: true },
+    );
+    const saved = journeyOf(
+      facts({ source: source({ openQuestions: 2, deepens: 0 }) }),
+      projectId,
+      false,
+      { belowBar: true },
+    );
+
+    expect(none.action).toMatchObject({ kind: 'deepen' });
+    expect(saved.action).toMatchObject({ kind: 'deepen' });
+  });
+
+  it('RF-1021 RF-646 below the bar a skipped or made Deepen is not recommended again', () => {
+    const skipped = journeyOf(asking(), projectId, true, { belowBar: true });
+    const made = journeyOf(asking({ deepens: 1 }), projectId, false, { belowBar: true });
+
+    expect(skipped.action).toMatchObject({ kind: 'answer' });
+    expect(made.action).toMatchObject({ kind: 'answer' });
+  });
+});

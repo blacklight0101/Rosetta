@@ -57,12 +57,14 @@ it('RST-1802 a completed run with no Supported claim offers no plan and says why
   expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
 });
 
-it('RF-614 P3-121 a run that ended CapReached with a Supported claim offers Set up the plan beside Resume', async () => {
+it('RF-614 P3-121 RF-1021 a run that ended CapReached with a Supported claim offers Set up the plan as a link beside Resume', async () => {
   await openEnded({ judged: 'Supported', endState: 'CapReached', questions: [] });
 
   await waitFor(() => {
     expect(setUp()).toBeTruthy();
   });
+  // RF-1021 (P8-84): Resume in the head is the page's one primary action, so the plan is a link.
+  expect(setUp().className).toContain('rst-button--link');
   expect(turn().textContent).toContain('stopped at a cap');
   expect(screen.getAllByRole('button', { name: 'Resume run' })).toHaveLength(1);
   fireEvent.click(setUp());
