@@ -12,6 +12,7 @@ import {
 } from './live-run-fixtures.js';
 import { renderLive, runPath, runRow, type LiveRun } from './live-run-helpers.js';
 import { codeMapAnswer, codeMapPath, ownAreas } from './live-run-running-helpers.js';
+import { measures, understanding, understandingPath } from './understanding-fixtures.js';
 
 // The page of an ended run (P1-170): one understand run that read one area, wrote two cards and
 // asked questions, with the answers of the overview and the open questions.
@@ -129,4 +130,26 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   if (options.stage === 'scan') await screen.findByRole('region', { name: 'Code map' });
   else await screen.findByRole('tablist', { name: 'Results' });
   return page;
+}
+
+/**
+ * RF-230, RF-1021 (P8-84): the coverage and the measures of a run that read the Catalog area at this
+ * share, the Asset Manager case of the P8Run artboard (8,702 of 52,749 tokens read): below the
+ * coverage bar (0.8) the run is "Partly read" and Deepen is the next step.
+ */
+export function readShare(share: number): Record<string, Response> {
+  return {
+    [`GET ${runPath}/coverage`]: json(200, {
+      areas: [{ area: 'Catalog', files: [], firstPartyShare: share }],
+    }),
+    [understandingPath]: understanding(
+      measures({
+        firstPartyCoverage: share,
+        firstPartyReadTokens: 8702,
+        firstPartyTokens: 52_749,
+        filesNotReadCount: 21,
+        rejected: 23,
+      }),
+    ),
+  };
 }

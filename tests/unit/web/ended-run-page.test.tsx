@@ -39,7 +39,9 @@ it('RF-1015 the Your turn panel counts the open questions and its button opens t
   await waitFor(() => {
     expect(turnPanel().textContent).toContain('3 questions');
   });
-  fireEvent.click(within(turnPanel()).getByRole('button', { name: 'Answer 3 questions' }));
+  fireEvent.click(
+    within(turnPanel()).getByRole('button', { name: 'Answer the 3 questions first' }),
+  );
 
   expect(tab('Your questions').getAttribute('aria-selected')).toBe('true');
   expect(within(screen.getByRole('tabpanel')).getAllByTestId('open-question')).toHaveLength(3);

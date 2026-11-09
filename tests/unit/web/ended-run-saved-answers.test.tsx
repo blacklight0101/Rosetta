@@ -75,7 +75,7 @@ it('RF-615 the tab count and Your turn count only the questions without a saved 
   await waitFor(() => {
     expect(tab('Your questions').textContent).toContain('2');
   });
-  expect(within(turn()).getByRole('button', { name: 'Answer 2 questions' })).toBeTruthy();
+  expect(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' })).toBeTruthy();
 });
 
 it('RF-615 Your turn with every answer saved offers the plan and no questions', async () => {
@@ -149,7 +149,7 @@ it('RF-615 clearing a saved answer counts the question as open again', async () 
   saveAnswer('OQ-001', '');
 
   await within(strip()).findByRole('button', { name: 'Answer 1 question' });
-  expect(within(turn()).getByRole('button', { name: 'Answer 1 question' })).toBeTruthy();
+  expect(within(turn()).getByRole('button', { name: 'Answer the question first' })).toBeTruthy();
   expect(within(item('OQ-001')).getByTestId('status-badge').textContent).toBe('Open');
 });
 
@@ -159,7 +159,7 @@ it('RF-615 Answer questions from another tab opens Your questions and focuses th
     expect(tab('Your questions').textContent).toContain('2');
   });
 
-  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 2 questions' }));
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' }));
 
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-002')).getByLabelText('Answer to OQ-002'));
@@ -171,7 +171,7 @@ it('RF-615 Answer questions while already on the tab moves focus to the first wi
   fireEvent.click(tab('Your questions'));
   within(item('OQ-001')).getByLabelText('Answer to OQ-001').focus();
 
-  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 1 question' }));
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the question first' }));
 
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-002')).getByLabelText('Answer to OQ-002'));
@@ -180,13 +180,13 @@ it('RF-615 Answer questions while already on the tab moves focus to the first wi
 
 it('RF-615 choosing Answer questions again moves focus back to the first question without an answer', async () => {
   await openEnded({ questions: [question(1), question(2)] });
-  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 2 questions' }));
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' }));
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-001')).getByLabelText('Answer to OQ-001'));
   });
   within(item('OQ-002')).getByLabelText('Answer to OQ-002').focus();
 
-  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 2 questions' }));
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' }));
 
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-001')).getByLabelText('Answer to OQ-001'));
@@ -195,7 +195,7 @@ it('RF-615 choosing Answer questions again moves focus back to the first questio
 
 it('RF-615 focus moves once: coming back to the tab does not take focus again', async () => {
   await openEnded({ questions: [question(1), question(2)] });
-  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer 2 questions' }));
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' }));
   await waitFor(() => {
     expect(document.activeElement).toBe(within(item('OQ-001')).getByLabelText('Answer to OQ-001'));
   });

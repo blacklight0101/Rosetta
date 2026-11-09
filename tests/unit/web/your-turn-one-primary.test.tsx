@@ -1,9 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { json } from './fake-api.js';
-import { openEnded, question } from './ended-run-helpers.js';
+import { openEnded, question, readShare } from './ended-run-helpers.js';
 import { runPath, runUuid } from './live-run-helpers.js';
-import { measures, understanding, understandingPath } from './understanding-fixtures.js';
 
 // RF-1021, RF-646, P8-84 (UX-24, UX-25): "Your turn" shows the journey's next step as its one primary
 // button: Deepen while the run read an area of own code below the coverage bar, else Set up the plan.
@@ -20,23 +19,7 @@ const primaries = (): string[] =>
 const links = (): string[] =>
   Array.from(turn().querySelectorAll('.rst-button--link')).map((each) => each.textContent);
 
-/** The Asset Manager case of the artboard: 8,702 of 52,749 tokens read, the Catalog area at 16%. */
-function coverage(share: number): Record<string, Response> {
-  return {
-    [`GET ${runPath}/coverage`]: json(200, {
-      areas: [{ area: 'Catalog', files: [], firstPartyShare: share }],
-    }),
-    [understandingPath]: understanding(
-      measures({
-        firstPartyCoverage: share,
-        firstPartyReadTokens: 8702,
-        firstPartyTokens: 52_749,
-        filesNotReadCount: 21,
-        rejected: 23,
-      }),
-    ),
-  };
-}
+const coverage = readShare;
 
 const twoQuestions = [question(1), question(2)];
 
@@ -65,8 +48,9 @@ it('RF-1021 RF-646 Skip the Deepen and set up the plan records the choice and op
     extra: coverage(0.16),
   });
 
+  await within(turn()).findByRole('heading', { name: 'Your turn: read the rest of the code' });
   fireEvent.click(
-    await within(turn()).findByRole('button', { name: 'Skip the Deepen and set up the plan' }),
+    within(turn()).getByRole('button', { name: 'Skip the Deepen and set up the plan' }),
   );
 
   expect(window.localStorage.getItem(`rosetta.skip-deepen.${runUuid}`)).toBe('1');
@@ -83,9 +67,8 @@ it('RF-1021 RF-646 Answer the questions first opens the questions and Deepen sta
     extra: coverage(0.16),
   });
 
-  fireEvent.click(
-    await within(turn()).findByRole('button', { name: 'Answer the 2 questions first' }),
-  );
+  await within(turn()).findByRole('heading', { name: 'Your turn: read the rest of the code' });
+  fireEvent.click(within(turn()).getByRole('button', { name: 'Answer the 2 questions first' }));
 
   expect(screen.getByRole('tab', { name: /Your questions/u }).getAttribute('aria-selected')).toBe(
     'true',

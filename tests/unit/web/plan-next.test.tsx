@@ -6,10 +6,7 @@ import { PlanNext } from '../../../web/src/pages/PlanNext.js';
 
 it('RF-614 offers nothing while the end of the run is not known', () => {
   render(
-    <PlanNext
-      {...{ runId: 'r-1', projectId: 'p-1', endState: '', supportedClaims: 3 }}
-      questionsOpen={false}
-    />,
+    <PlanNext {...{ runId: 'r-1', projectId: 'p-1', endState: '', supportedClaims: 3 }} setUp />,
   );
 
   expect(screen.queryByRole('button')).toBeNull();
@@ -20,7 +17,7 @@ it('P7-26 names what a capped run left and offers the overview, not the Resume b
   render(
     <PlanNext
       {...{ runId: 'r-1', projectId: 'p-1', endState: 'CapReached', supportedClaims: 0 }}
-      questionsOpen={false}
+      setUp
       left={{ unreadAreas: 3, unjudgedClaims: 12, overviewMissing: true }}
       writeOverview={<button type="button">Write the overview</button>}
     />,
@@ -41,7 +38,7 @@ it('P8-11 a Completed run with a Supported claim offers Set up the plan and the 
   render(
     <PlanNext
       {...{ runId: 'r-1', projectId: 'p-1', endState: 'Completed', supportedClaims: 2 }}
-      questionsOpen={false}
+      setUp
       writeOverview={<button type="button">Write the overview</button>}
     />,
   );
@@ -54,7 +51,7 @@ it('P8-11 a Completed run with no Supported claim says so and still offers the o
   render(
     <PlanNext
       {...{ runId: 'r-1', projectId: 'p-1', endState: 'Completed', supportedClaims: 0 }}
-      questionsOpen={false}
+      setUp
       writeOverview={<button type="button">Write the overview</button>}
     />,
   );

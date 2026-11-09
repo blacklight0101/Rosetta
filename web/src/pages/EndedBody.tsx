@@ -242,6 +242,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
             costMicros={props.costMicros}
             report={report}
             onAnswer={showQuestions}
+            understanding={props.understanding}
           />
         </div>
       )}

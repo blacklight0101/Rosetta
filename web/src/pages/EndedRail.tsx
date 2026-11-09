@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useContext } from 'preact/hooks';
 import { waitsForAnswer } from '../api/answers.js';
 import type { RunRow } from '../api/run-schemas.js';
+import type { MeasureFigures } from '../api/understanding.js';
 import { Link } from '../components/Link.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import { packageSectionId } from './focus-package.js';
@@ -10,6 +11,7 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunReport } from './RunReport.js';
 import type { AnswersLoad } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
+import type { UnderstandingLoad } from './use-understanding.js';
 import { AreaReadContext } from './area-read-context.js';
 import { YourTurn } from './YourTurn.js';
 
@@ -30,6 +32,8 @@ export interface RailProps {
   readonly onResumed: () => void;
   readonly report: { readonly onBuilt: () => void };
   readonly onAnswer: () => void;
+  /** RF-231, P8-84: the understanding of the run, for what "Your turn" says the readers covered. */
+  readonly understanding?: UnderstandingLoad | undefined;
 }
 
 /** The Your turn panel, and the report, the downloads and the calls link, one click away. */
@@ -38,7 +42,7 @@ export function Rail(props: RailProps): JSX.Element {
   const { reading } = useContext(AreaReadContext);
   return (
     <aside class="rst-p170-rail">
-      <YourTurn {...props} reading={reading} />
+      <YourTurn {...props} reading={reading} measures={measuresOf(props.understanding)} />
       <section
         id={packageSectionId}
         class="rst-card rst-p170-downloads"
@@ -54,6 +58,11 @@ export function Rail(props: RailProps): JSX.Element {
       </section>
     </aside>
   );
+}
+
+/** The measures of the run once read; null when it has none or they are not read yet. */
+function measuresOf(load: UnderstandingLoad | undefined): MeasureFigures | null {
+  return load?.status === 'ready' ? load.understanding.measures : null;
 }
 
 /** How many questions wait for an answer; none known until they are read. */
