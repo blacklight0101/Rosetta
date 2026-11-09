@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second and third rounds are merged into `develop` and nothing is released; Phase 9 is carded and held. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed at the next 06:00 Madrid run); Phase 9 is carded and held. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-133.
+- `docs/decision-log.md` - decisions DEC-01..DEC-228.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -30,13 +30,15 @@ _Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-
 
 ## Resume point
 
+**Resume (2026-11-09, release of Phase 8 waves 2 and 3).** On the owner's word `develop` was merged into `main` by #1351 (merge commit `344bdc9d`). First #1350 brought `full-understand.spec.ts` back to the 300-line limit, which the merges of P8-84 and P8-86 together had broken on `develop`. Every required check passed; the non-required stress job was cancelled on the release pull request (it reruns every changed test of the whole release and ran out of time and database connections; each card had passed its own stress run). After the merge CI, CodeQL and the release checks passed: the image is pushed, the ZAP baseline passed, the staging check was skipped (staging is not enabled) and `release/ready` is set. EV-100 ships as a known Major (P9-01, held). The owner answered the key question (DEC-228). Follow-up not carded: the stress job could skip release pull requests.
+
 **Resume (2026-11-09, evaluation after Phase 8 wave 3; Phase 9 carded and held).** On the owner's word the evaluation was re-run on Haiku only (P8-46..P8-48, compared by P8-49; the cards read In review until the owner has read the report): Asset Manager, Invoice Generator and eShopModernizing end to end on the evaluation stack `rosetta-eval2`, rebuilt from `develop` at `bbb696cd`. **Critical defects: none**, so nothing was added to Phase 8. Every journey completed, no call passed an approved amount or a cap, and 48 page loads at 375, 768 and 1280 px, light and dark, showed no overflow, console error or HTTP error. Cost $2.85 for the whole session (2026-11-02: $3.02), 21.6M tokens in and 2.05M out, 1 h 58 min. The eShop plan completed first try and every eShop module has a task card. Findings fixed since 2026-11-02: EV-82, EV-83, EV-86..EV-88, EV-90..EV-95, EV-97, EV-99, EV-32, EV-73 through the web, EV-44; EV-84 now pauses, continues and stops as designed.
 
 The owner said to card every other finding in Phase 9 and not to start it: P9-01..P9-13 (#1336..#1348), counts in the [tasks.md totals](docs/orchestration/tasks.md). EV-100 (Major, P9-01 and P9-02): after Continue (+N) at an approval pause the journey's approved amount is not raised, so the plan cannot start without a workaround (start and at once stop an understand run). The Minors: EV-101 "Stop here" ends as "Cap reached" (P9-03), EV-104 a stopped reader counts as failed (P9-04), EV-105 cancelling a queued resumed run cannot record its end (P9-05), EV-108 a completed plan can leave a requirement built by no card (P9-06), EV-102 and EV-107 the journey strip's scan step and total (P9-07, P9-08), EV-103 the start page with Ollama unreachable (P9-09), EV-106 queue wording (P9-10), and the carried EV-96 (P9-11), EV-85 (P9-12) and EV-89/EV-57/EV-69 (P9-13). The report and its evidence are in the private evaluation folder (`Rosetta-wt/eval2/_eval/p8w3-evaluation.md`, `p8w3-haiku-report.md`), outside the repository.
 
 Owner agenda from this evaluation:
 
-- **The evaluation stack's key.** `_eval/eval2.env` carries no `ANTHROPIC_API_KEY`; as in the 2026-11-02 run the stack got it from the main checkout's git-ignored `.env`, passed to compose as a second `--env-file` (no one read or printed it). Confirm this is how the evaluation stack should get its key, or say where it should come from.
+- **The evaluation stack's key.** Answered: it keeps coming from the main checkout's git-ignored `.env`, passed to compose as a second `--env-file` (DEC-228).
 - **EV-84 needed the administrator.** A user cannot lower the approved amount, so the pause was reached by setting the user day cap to $0.10 around the start (restored to $10). Say if a user should be able to approve less than the approvable amount.
 - **Clear Phase 9** when you want it built; P8-49's compare is the report above.
 
