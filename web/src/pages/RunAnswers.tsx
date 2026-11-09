@@ -15,6 +15,7 @@ import {
   useAnswerSave,
   type AnswerSave,
 } from './use-answer-save.js';
+import { useFocusAfterMove } from './use-focus-after-move.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
 import { useQuestionPlaces } from './use-question-places.js';
 import type { RunAnswersState } from './use-run-answers.js';
@@ -153,7 +154,7 @@ function QuestionItem(props: {
     }
   }
   return (
-    <li class="rst-p139-question" data-testid="open-question">
+    <li class="rst-p139-question" data-testid="open-question" data-card-id={question.cardId}>
       <div class="rst-p139-question__head">
         <span class="rst-mono rst-p139-question__id">{question.cardId}</span>
         <StatusBadge list="QuestionShown" value={shownState(question)} />
@@ -217,6 +218,7 @@ function Items(props: ItemsProps): JSX.Element {
 function QuestionLists(props: ListProps): JSX.Element {
   const [note, setNote] = useState('');
   const { open, answered, moved } = useQuestionPlaces(props.questions);
+  useFocusAfterMove(moved, open, answered);
   const apply = (questions: Questions): void => {
     props.apply(questions);
     const left = questions.filter(waitsForAnswer).length;
