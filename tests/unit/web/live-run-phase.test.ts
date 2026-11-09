@@ -46,3 +46,31 @@ it('RF-1108 a run the row calls running is running once its events start and end
   expect(phaseOf(row('Running', null), ended)).toEqual({ kind: 'ended', endState: 'Completed' });
   expect(phaseOf(row('Queued', null), stateAfter())).toEqual({ kind: 'queued', position: null });
 });
+
+// RF-006 (P8-84): a resumed run that waits in the queue again has only the events of its earlier
+// start; the row was queued after that start, so the page says Queued, not Running or the old end.
+const requeued = (queuedAt: string): RunRow => ({ ...row('Queued', null), queuedAt });
+
+it('RF-006 a resumed run queued after its earlier start is queued until its next run.started', () => {
+  const earlier = stateAfter(ev(1, 'run.started', startedData));
+  const restarted = stateAfter(
+    ev(1, 'run.started', startedData),
+    ev(3, 'run.started', startedData),
+  );
+
+  expect(phaseOf(requeued('2026-10-12T10:00:02.000Z'), earlier)).toEqual({
+    kind: 'queued',
+    position: null,
+  });
+  expect(phaseOf(requeued('2026-10-12T10:00:02.000Z'), restarted)).toEqual({ kind: 'running' });
+});
+
+it('RF-006 RF-432 the pause of the earlier life does not show while the resumed run is queued', () => {
+  const paused = stateAfter(
+    ev(1, 'run.started', startedData),
+    ev(2, 'run.awaitingApproval', { continueAmount: 1 }),
+  );
+
+  expect(phaseOf(requeued('2026-10-12T10:00:05.000Z'), paused).kind).toBe('queued');
+  expect(phaseOf(row('AwaitingApproval', null), paused).kind).toBe('awaiting');
+});
