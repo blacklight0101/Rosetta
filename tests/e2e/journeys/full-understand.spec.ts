@@ -11,6 +11,7 @@ import { answerToOq001, fullRunModel } from '../support/journey-models.js';
 import {
   agentPanel,
   openQuestion,
+  saveAnswers,
   openRunTab,
   expectCompleted,
   runStatus,
@@ -138,7 +139,7 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
   await expect(question).toContainText('Open');
   await question.getByRole('radio', { name: 'Type your own answer' }).check();
   await question.getByLabel('Answer to OQ-001').fill(answerToOq001);
-  await question.getByRole('button', { name: 'Save answer' }).click();
+  await saveAnswers(page);
   await expect(question).toContainText('Answer saved in answers.md.');
   await expectJourneyMovedOn(page, question);
 

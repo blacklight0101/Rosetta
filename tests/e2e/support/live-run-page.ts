@@ -221,11 +221,24 @@ export async function chooseSecondSuggestedAnswer(question: Locator): Promise<vo
   await expect(radios.nth(1)).toBeChecked();
 }
 
-/** RF-645: Tab leaves the group of choices (or the field) for "Save answer", and Enter saves. */
+/** RF-1007 (P8-86): the one "Save answers (N)" of the Your questions list. */
+export function saveAnswersButton(page: Page): Locator {
+  return page
+    .getByRole('region', { name: 'Open questions' })
+    .getByRole('button', { name: /^Save answers \(\d+\)$/u });
+}
+
+/** RF-1007 (P8-86): presses the list's Save answers, which saves every changed answer at once. */
+export async function saveAnswers(page: Page): Promise<void> {
+  await saveAnswersButton(page).click();
+}
+
+/** RF-645, P8-86: the one changed answer is counted, and Enter on "Save answers (1)" saves it. */
 async function saveWithKeyboard(question: Locator): Promise<void> {
   const page = question.page();
-  await page.keyboard.press('Tab');
-  await expect(question.getByRole('button', { name: 'Save answer' })).toBeFocused();
+  const save = saveAnswersButton(page);
+  await expect(save).toHaveText('Save answers (1)');
+  await save.focus();
   await page.keyboard.press('Enter');
   await expect(question).toContainText('Answer saved in answers.md.');
 }

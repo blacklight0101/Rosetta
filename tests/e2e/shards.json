@@ -31,6 +31,7 @@
   ],
   "2": [
     "tests/e2e/start-run-queue.spec.ts",
+    "tests/e2e/save-answers.spec.ts",
     "tests/e2e/journeys/one-amount.spec.ts",
     "tests/e2e/journeys/one-analyse.spec.ts",
     "tests/e2e/journeys/approval-pause.spec.ts",
