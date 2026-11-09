@@ -93,7 +93,7 @@ describe('saving an answer on the live run page', () => {
     ).findByLabelText('Answer to OQ-001');
 
     fireEvent.input(field, { target: { value: 'Yes,\ngreyed out.' } });
-    fireEvent.click(within(item('OQ-001')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(within(item('OQ-001')).getByRole('status').textContent).toContain(
@@ -122,7 +122,7 @@ describe('clearing and refused answers on the live run page', () => {
     const field = await screen.findByLabelText('Answer to OQ-002');
 
     fireEvent.input(field, { target: { value: '' } });
-    fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(within(item('OQ-002')).getByRole('status').textContent).toContain(
@@ -139,10 +139,10 @@ describe('clearing and refused answers on the live run page', () => {
     const field = await screen.findByLabelText('Answer to OQ-001');
 
     fireEvent.input(field, { target: { value: 'Maybe.' } });
-    fireEvent.click(within(item('OQ-001')).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
-      expect(item('OQ-001').textContent).toContain('RST-2000');
+      expect(screen.getByTestId('save-answers').textContent).toContain('RST-2000');
     });
     expect(valueOf(within(item('OQ-001')).getByLabelText('Answer to OQ-001'))).toBe('Maybe.');
   });

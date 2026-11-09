@@ -86,7 +86,7 @@ it('RF-1007 RF-240 answering from the tab writes the answer through the answers 
   fireEvent.input(within(item('OQ-001')).getByLabelText('Answer to OQ-001'), {
     target: { value: 'Staff only.' },
   });
-  fireEvent.click(within(item('OQ-001')).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
   await waitFor(() => {
     expect(within(item('OQ-001')).getByRole('status').textContent).toContain(

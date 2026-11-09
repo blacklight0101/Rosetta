@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { json, renderPage } from './fake-api.js';
 import { AnswersHarness } from './run-answers-harness.js';
 
-// RF-1007 (P8-85, UX-25): a saved answer moves its question to the Answered list and the Save
-// button unmounts; the focus must not fall to the page. It goes to the next question that waits,
-// or to the Answered summary when none is left.
+// RF-1007 (P8-85, P8-86, UX-25): one Save answers moves the saved questions to the Answered list;
+// the focus goes on to the next question that waits, or to the Answered summary when none is left.
 
 const runId = '2f0c4b1e-0000-4000-8000-000000000001';
 const route = `/api/runs/${runId}/answers`;
@@ -28,7 +27,7 @@ const save = (cardId: string, value: string): void => {
     .find((element) => element.textContent.includes(cardId));
   if (item === undefined) throw new Error(`No question ${cardId}.`);
   fireEvent.input(within(item).getByLabelText(`Answer to ${cardId}`), { target: { value } });
-  fireEvent.click(within(item).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 };
 
 describe('RF-1007 the focus after a saved answer moves its question', () => {
@@ -62,7 +61,7 @@ describe('RF-1007 the focus after a saved answer moves its question', () => {
     fireEvent.input(within(answered).getByLabelText('Answer to OQ-001'), {
       target: { value: '' },
     });
-    fireEvent.click(within(answered).getByRole('button', { name: 'Save answer' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
     await waitFor(() => {
       expect(screen.queryByTestId('answered-questions')).toBeNull();

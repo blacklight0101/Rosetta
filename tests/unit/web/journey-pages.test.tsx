@@ -143,7 +143,7 @@ it('RF-615 answering a question on the page reads the journey again', async () =
   fireEvent.input(within(first).getByLabelText('Answer to OQ-001'), {
     target: { value: 'Staff only.' },
   });
-  fireEvent.click(within(first).getByRole('button', { name: 'Save answer' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Save answers/u }));
 
   await waitFor(() => {
     const reads = page.calls.filter((call) => call.path === journeyPath);
