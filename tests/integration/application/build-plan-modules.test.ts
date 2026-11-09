@@ -11,7 +11,7 @@ import { seededUxPlan } from '../../support/ux-plan-harness.js';
 // P8-06, RF-601, RF-607, RF-627, RNF-004, EV-32: a plan run over a scan with three modules (an
 // orders web app, a WebForms admin app, a WinForms desk client) and deployment material (a k8s
 // folder and a Dockerfile). The recorded cards of the demo plan build every item of the documents
-// and no module, so the gap call (gap.v4) asks for the modules and the deployment by id; what it
+// and no module, so the gap call (gap.v5) asks for the modules and the deployment by id; what it
 // leaves without a card is named in checks.md with the reason and never fails the run, under SDD
 // and not. Names are synthetic.
 
@@ -112,7 +112,7 @@ function modulesSection(checks: string | undefined): string {
 }
 
 describe('BuildPlan: the modules of the scan are items of the gap call', () => {
-  it('RF-601 RF-627 asks for each module and the deployment by id with gap.v4, and coverage.v2 links them', async () => {
+  it('RF-601 RF-627 asks for each module and the deployment by id with gap.v5, and coverage.v2 links them', async () => {
     const { h } = await plannedWith(undefined);
 
     const coverage = h.providers.coverageRequests()[0];
@@ -122,7 +122,7 @@ describe('BuildPlan: the modules of the scan are items of the gap call', () => {
     const gap = h.providers.gapRequests()[0];
     const message = gap?.messages.map((each) => each.content).join('\n') ?? '';
     for (const id of items) expect(message).toContain(`"id": "${id}"`);
-    expect(gap?.system).toBe(await readFile('prompts/planner/gap.v4.md', 'utf8'));
+    expect(gap?.system).toBe(await readFile('prompts/planner/gap.v5.md', 'utf8'));
   });
 
   it('RF-601 a module with no card is named in checks.md with the reason and the run still completes', async () => {

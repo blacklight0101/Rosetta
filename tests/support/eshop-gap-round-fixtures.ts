@@ -76,7 +76,7 @@ async function fixture(): Promise<Fixture> {
 }
 
 function table(name: string, purpose: string): ModelTable {
-  const columns = [{ name: 'id', type: 'int', nullable: false }];
+  const columns = [{ name: 'id', type: 'int', nullable: false, legacy: null, migrationRisk: '' }];
   return {
     ...{ name, purpose, sources: [], columns, primaryKey: ['id'] },
     ...{ uniqueKeys: [], foreignKeys: [], checks: [], indexes: [] },
