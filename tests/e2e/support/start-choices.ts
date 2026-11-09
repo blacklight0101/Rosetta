@@ -140,8 +140,15 @@ async function consentRead(page: Page): Promise<void> {
 /**
  * RF-143, DEC-209 (P8-81): ticks the cloud consent of the start page, unless a consent given by an
  * earlier start of the same project holds: then the page shows one line and asks no box.
+ *
+ * The notice and the line are inside "Start another run" once the project has a run, and the page
+ * opens that fold by itself only while the journey has to start again (RF-1021). While an earlier
+ * test's run still works (queued behind the server's run slots when the tests run in parallel) the
+ * journey waits for it and the fold stays closed, so neither would ever show. The choices are opened
+ * first, as a person does (P8-106).
  */
 export async function giveCloudConsent(page: Page, label: string): Promise<void> {
+  await showStartChoices(page);
   await consentRead(page);
   const box = page.getByLabel(label);
   if (await box.isVisible()) await box.check();
