@@ -56,14 +56,15 @@ describe('BuildPlan: a card with no builds and several items uncovered', () => {
     expect(JSON.stringify(h.s.logger.entries)).not.toContain(sentinel);
   });
 
-  it('RF-627 a repair card that still names no builds is left out, and the run ends RST-1806', async () => {
+  it('RF-627 P8-96 a repair card that still names no builds is left out, and the run ends RST-1806 after the second round', async () => {
     const first = answerOf(card('Operations', operations), noBuilds(sentinel));
-    const h = await gappedPlan(gapRecordingOfAll(first, answerOf(noBuilds(`${sentinel}-again`))));
+    const again = answerOf(noBuilds(`${sentinel}-again`));
+    const h = await gappedPlan(gapRecordingOfAll(first, again, '{"tasks": []}'));
 
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.providers.gapRequests()).toHaveLength(2);
+    expect(h.providers.gapRequests()).toHaveLength(3);
     expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     expect(plain((await h.handoffOf(run))['tasks.md'])).not.toContain(sentinel);
   });

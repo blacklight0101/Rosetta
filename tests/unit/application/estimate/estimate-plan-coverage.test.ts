@@ -26,7 +26,7 @@ describe('EstimatePlan: the coverage call', () => {
     const { assumptions } = await estimateOf();
 
     const system = (await readFile('prompts/planner/coverage.v2.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(6);
+    expect(assumptions.calls).toBe(7);
     expect(assumptions.coveragePromptTokens).toBeGreaterThan(Math.ceil(system / 4));
   });
 
@@ -41,7 +41,8 @@ describe('EstimatePlan: the coverage call', () => {
       assumptions.dataModelPromptTokens -
       assumptions.coveragePromptTokens -
       assumptions.gapPromptTokens -
-      assumptions.gapRepairPromptTokens;
+      assumptions.gapRepairPromptTokens -
+      assumptions.gapPromptTokens;
     const sum = [
       plan,
       assumptions.prdPromptTokens,
@@ -49,6 +50,8 @@ describe('EstimatePlan: the coverage call', () => {
       assumptions.coveragePromptTokens,
       assumptions.gapPromptTokens,
       assumptions.gapRepairPromptTokens,
+      // P8-96: the second gap round.
+      assumptions.gapPromptTokens,
     ]
       .map(reservation)
       .reduce((total, each) => total + each, 0);

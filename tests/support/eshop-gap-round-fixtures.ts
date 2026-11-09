@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PlannerCall } from '../../src/application/plan/ask-planner.js';
-import type { LinkCalls } from '../../src/application/plan/plan-links.js';
+import type { LinkCalls } from '../../src/application/plan/gap-rounds.js';
 import type { CoverageInput } from '../../src/application/plan/plan-coverage.js';
 import { ManifestUpdates } from '../../src/application/runs/manifest-updates.js';
 import type { ModelTable } from '../../src/domain/planning/data-model.js';

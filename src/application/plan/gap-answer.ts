@@ -75,6 +75,10 @@ export interface GapAnswer {
   readonly links?: GapLinkDraft[];
   /** P8-95: the links that could not be read, by position in `links`, field and a fixed reason. */
   readonly linkProblems?: GapProblem[];
+  /** P8-96: set when the answer's `links` value is not a list; it is dropped whole. */
+  readonly linksNotList?: true;
+  /** P8-96: how many links past the first 100 were dropped, when any were. */
+  readonly linksPastMax?: number;
 }
 
 function reasonOf(code: string): string {
@@ -159,9 +163,11 @@ function readCards(cards: readonly unknown[], uncoveredItem: string | undefined)
   return single === undefined ? answer : { ...answer, singleItemRule: single };
 }
 
-/** P8-95: the answer with its links read one by one; as it was when it has no `links` list. */
+/** P8-95: the answer with its links read one by one; as it was when it has no `links` value. */
+// P8-95, P8-96: a `links` value that is not a list is dropped whole and noted, as are links past the bound.
 function withLinks(read: GapAnswer, list: unknown): GapAnswer {
-  if (!Array.isArray(list)) return read;
+  if (list === undefined) return read;
+  if (!Array.isArray(list)) return { ...read, linksNotList: true };
   const links: GapLinkDraft[] = [];
   const linkProblems: GapProblem[] = [];
   list.slice(0, MAX_LINKS).forEach((each: unknown, index) => {
@@ -170,7 +176,8 @@ function withLinks(read: GapAnswer, list: unknown): GapAnswer {
     if (link.success) links.push({ position, ...link.data });
     else linkProblems.push(problemOf(position, link.error, each, 'link'));
   });
-  return { ...read, links, linkProblems };
+  const past = list.length - MAX_LINKS;
+  return { ...read, links, linkProblems, ...(past > 0 ? { linksPastMax: past } : {}) };
 }
 
 // Q-45, Q-54, RF-627, P7-14, P8-95: `uncoveredItem` is the one item the block holds, when it holds exactly one.

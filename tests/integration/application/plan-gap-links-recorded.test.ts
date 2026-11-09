@@ -11,9 +11,11 @@ import { ev95Calls, ev95Flows, ev95Input } from '../../support/eshop-gap-round-f
 // its answer wrote 20 cards for the 29 other items of the block, none for the four, and left no
 // card out, so no repair was asked. With gap.v5 the answer links the four to T-004
 // (tests/recordings/fake/planner-gap-eshop-ev95-links.json, the recorded answer plus that link)
-// and they are built.
+// and they are built. P8-96: the four flows the gap.v4 answer leaves open now get a second gap
+// round, so the recorded answer is replayed with a synthetic second answer that writes nothing
+// (planner-gap-eshop-ev95-still-open.json).
 
-const recorded = 'planner-gap-eshop-ev95.json';
+const recorded = 'planner-gap-eshop-ev95-still-open.json';
 const linked = 'planner-gap-eshop-ev95-links.json';
 
 async function linksOf(recording: string) {
@@ -29,7 +31,7 @@ describe('the recorded first gap round of the eShop plan (EV-95)', () => {
   it('RF-627 P8-95 asks for the 33 items the coverage call left, the four flows among them', async () => {
     const { provider } = await linksOf(recorded);
 
-    expect(provider.requests).toHaveLength(2);
+    expect(provider.requests).toHaveLength(3);
     const message = provider.requests[1]?.messages.map((each) => each.content).join('\n') ?? '';
     const items = idsIn(message.split('<<<END')[0] ?? '');
     expect(items).toHaveLength(33);
@@ -46,7 +48,7 @@ describe('the recorded first gap round of the eShop plan (EV-95)', () => {
     expect(open).toEqual(ev95Flows);
     expect(result.planned.report.modules).toEqual([]);
     expect(result.leftOut).toEqual([]);
-    expect(provider.requests).toHaveLength(2);
+    expect(provider.requests).toHaveLength(3);
     const named = result.planned.content.tasks.flatMap((task) => task.builds);
     for (const id of ev95Flows) expect(named).not.toContain(id);
   });
