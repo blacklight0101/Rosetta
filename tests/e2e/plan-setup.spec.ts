@@ -282,10 +282,10 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
     .getByRole('link', { name: /^View run /u })
     .click();
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await expect(turn.getByRole('button', { name: 'Set up the plan' })).toBeVisible();
+  const setUp = turn.getByRole('button', { name: /^(Skip the Deepen and s|S)et up the plan$/u }); // P8-84
+  await expect(setUp).toBeVisible();
   await expectNoSeriousViolations(page);
-
-  await turn.getByRole('button', { name: 'Set up the plan' }).click();
+  await setUp.click();
 
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
   const source = page.getByRole('region', { name: 'Source run' });

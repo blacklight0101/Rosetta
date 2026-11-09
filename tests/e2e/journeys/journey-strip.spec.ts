@@ -28,6 +28,9 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { replayRunId } from '../support/seed-replay.js';
 import { transitionsDone } from '../support/transitions.js';
 
+/** RF-1021 (P8-84): Set up the plan, or the link that skips the Deepen first. */
+const setUpThePlan = /^(Skip the Deepen and s|S)et up the plan$/u;
+
 // RF-615, RF-614, RF-006, DEC-143, RNF-010: the journey from code to package on the pages of the
 // failure paths, driven by real runs of the test server and its model double (e2e-provider.ts). An
 // understand run that is stopped locks the plan steps and offers Resume; a plan run that fails
@@ -108,7 +111,8 @@ test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try 
   await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 90_000 });
   await expect(stepOf(page, 'Understand')).toContainText('Done');
   const turn = page.getByRole('region', { name: 'Your turn' });
-  await turn.getByRole('button', { name: 'Set up the plan' }).click();
+  // RF-1021 (P8-84): below the coverage bar Deepen is the primary button and the plan a link under it.
+  await turn.getByRole('button', { name: setUpThePlan }).click();
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
   await expect(journey(page)).toBeVisible();
   await showStepDetails(page);
