@@ -1,3 +1,4 @@
+import type { GapLinked } from '../../domain/planning/gap-links.js';
 import type { GapEntries, GapProblem } from './gap-answer.js';
 import type { HandoffPackage } from './handoff-package.js';
 
@@ -5,7 +6,8 @@ import type { HandoffPackage } from './handoff-package.js';
 // an answer that was read card by card because it was not JSON as a whole, and the cards kept with
 // entries of `dependsOn` dropped. checks.md lists every card the gap and the repair answers left out
 // and every card kept with dropped entries, under an area per answer, by position and field, with a
-// fixed reason; nothing here is text of the answer.
+// fixed reason; nothing here is text of the answer. P8-95: the log names each card of the plan an
+// answer linked items to, by the ids of the block, and each link it dropped by position and field.
 
 /** The log lines for an answer read card by card and for the entries it dropped. */
 export function entryWarnings(
@@ -55,4 +57,22 @@ export function gapLeftOutItems(
 
 function upper(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** P8-95: the log lines for the items linked to cards of the plan and for the links dropped. */
+export function linkWarnings(
+  label: string,
+  linked: readonly GapLinked[],
+  dropped: readonly Pick<GapProblem, 'position' | 'field' | 'reason'>[],
+): string[] {
+  return [
+    ...linked.map(
+      ({ task, builds }) =>
+        `The ${label} linked ${builds.join(', ')} to ${task}, a task card of the plan.`,
+    ),
+    ...dropped.map(
+      ({ position, field, reason }) =>
+        `Link at position ${String(position)} of the ${label} was dropped: the field "${field}" ${reason}.`,
+    ),
+  ];
 }
