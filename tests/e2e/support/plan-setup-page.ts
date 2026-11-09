@@ -107,3 +107,16 @@ export async function holdPlanOptions(page: Page): Promise<() => void> {
   });
   return release;
 }
+
+/**
+ * RF-604: the live page of the plan run that Start the plan opened, waited on until the run ends
+ * Completed. The run may first wait for one of the server's two run slots (RF-1108), and until it
+ * ends it holds what is left of the journey's amount (RF-435, P8-03), so a later plan start of the
+ * same project would be refused meanwhile (RST-2311).
+ */
+export async function expectPlanCompleted(page: Page): Promise<void> {
+  const heading = /^(Scan|Understand|Deepen|Plan|Run)\b/u;
+  await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+}

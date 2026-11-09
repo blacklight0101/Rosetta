@@ -58,13 +58,14 @@ test.describe.configure({ mode: 'serial' });
 test('RF-615 RF-006 an understand run that was stopped locks the plan steps and offers Resume, which runs it again', async ({
   page,
 }, info) => {
-  // A scan, then a run that is stopped at the held reader: longer than the default 30 s.
-  test.setTimeout(120_000);
+  // A scan, a run stopped at the held reader and its resume, each of which may wait for one of the
+  // server's two run slots (RF-1108): longer than the default 30 s.
+  test.setTimeout(240_000);
   await signInAs(page.context(), accountFor('live-controls', info.project.name));
   await openScannedStartPage(page);
   const live = await startUnderstand(page, ['Catalog', 'Controllers']);
   await openRunTab(page, 'All agents');
-  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
+  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 90_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 
@@ -91,11 +92,15 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
   await journey(page).getByRole('button', { name: 'Resume this run' }).click();
 
   await expect(page).toHaveURL(live);
-  await expect(runStatus(page)).toContainText('Running', { timeout: 30_000 });
+  // RF-006, RF-1108: a resume that waits for a run slot reads Queued, then Running once it starts.
+  await expect(runStatus(page)).toContainText('Running', { timeout: 90_000 });
   // RF-1020: the strip is on every run page, also while the run works.
   await expect(journey(page)).toBeVisible();
   await showStepDetails(page);
   await expect(stepOf(page, 'Understand')).toContainText('Running now');
+  // The resumed run waits at the held reader again: stopped, it frees its run slot for other tests.
+  await page.getByRole('button', { name: 'Stop run' }).click();
+  await expect(runStatus(page)).toContainText('Stopped by you', { timeout: 30_000 });
 });
 
 test('RF-615 RF-614 a failed plan leaves the earlier steps as they were and Try the plan again opens a new estimate', async ({

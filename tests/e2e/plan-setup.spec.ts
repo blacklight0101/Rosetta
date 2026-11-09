@@ -6,6 +6,7 @@ import { openStartPage, runStatus } from './support/live-run-page.js';
 import {
   estimate,
   expectOptions,
+  expectPlanCompleted,
   holdPlanOptions,
   openPlanSetup,
   openStep,
@@ -261,15 +262,14 @@ test('RF-605 after a package exists a changed answer says the package is out of 
 });
 
 test('RF-604 Start the plan starts the plan run and opens its live page', async ({ page }) => {
+  test.setTimeout(120_000); // The plan run may wait for a run slot (RF-1108).
   await openStartPage(page);
   await openPlanSetup(page);
 
   await writeButton(page).click();
 
-  await expect(
-    page.getByRole('heading', { name: /^(Scan|Understand|Deepen|Plan|Run)\b/u, level: 1 }),
-  ).toBeVisible();
-  await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
+  // The next test starts a plan of the same project: this one has to end first (RF-435, P8-03).
+  await expectPlanCompleted(page);
 });
 
 test('RF-614 RF-604 from the completed understand run to the package: Set up the plan opens Plan setup for that run', async ({
