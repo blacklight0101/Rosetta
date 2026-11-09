@@ -9,7 +9,13 @@ import { StatusBadge } from '../components/StatusBadge.js';
 import { AnswerInput } from './AnswerChoices.js';
 import { sectionAnchor } from './AppOverview.js';
 import { Earlier, Reasons } from './QuestionReasons.js';
-import { useAnswerSave, type AnswerSave } from './use-answer-save.js';
+import {
+  CLEARED_MESSAGE,
+  SAVED_MESSAGE,
+  useAnswerSave,
+  type AnswerSave,
+} from './use-answer-save.js';
+import { useFocusAfterMove } from './use-focus-after-move.js';
 import { useFocusFirst, type FocusRequest } from './use-focus-first-question.js';
 import { useQuestionPlaces } from './use-question-places.js';
 import type { RunAnswersState } from './use-run-answers.js';
@@ -132,9 +138,14 @@ function QuestionItem(props: {
   readonly section?: keyof typeof sectionTitles | undefined;
   readonly onConcern: RunAnswersProps['onConcern'];
   readonly accept: AcceptRegistry | undefined;
+  /** P8-85: the message of the save that just moved the question to this list. */
+  readonly moved: string | undefined;
 }): JSX.Element {
   const { question, accept } = props;
-  const save = useAnswerSave(props.runId, question, props.apply, accept !== undefined);
+  const save = useAnswerSave(props.runId, question, props.apply, {
+    prefill: accept !== undefined,
+    message: props.moved,
+  });
   if (accept !== undefined) {
     if (waitsForAnswer(question) && question.options !== undefined) {
       accept.set(question.cardId, save.submit);
@@ -143,7 +154,7 @@ function QuestionItem(props: {
     }
   }
   return (
-    <li class="rst-p139-question" data-testid="open-question">
+    <li class="rst-p139-question" data-testid="open-question" data-card-id={question.cardId}>
       <div class="rst-p139-question__head">
         <span class="rst-mono rst-p139-question__id">{question.cardId}</span>
         <StatusBadge list="QuestionShown" value={shownState(question)} />
@@ -173,7 +184,14 @@ interface ListProps {
   readonly accept: AcceptRegistry | undefined;
 }
 
-function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
+interface ItemsProps extends ListProps {
+  readonly shown: Questions;
+  /** P8-85: the questions that just moved to this list, and the message their save showed. */
+  readonly moved: ReadonlySet<string>;
+  readonly movedMessage: string;
+}
+
+function Items(props: ItemsProps): JSX.Element {
   return (
     <ol class="rst-p139-answers__list">
       {props.shown.map((question) => (
@@ -185,6 +203,7 @@ function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
           section={props.links.find((link) => link.cardId === question.cardId)?.section}
           onConcern={props.onConcern}
           accept={props.accept}
+          moved={props.moved.has(question.cardId) ? props.movedMessage : undefined}
         />
       ))}
     </ol>
@@ -192,12 +211,14 @@ function Items(props: ListProps & { readonly shown: Questions }): JSX.Element {
 }
 
 /**
- * RF-646, RF-1007, DEC-179: the open questions first; the ones with an answer a run used in a collapsed
- * "Answered" list whose questions can be edited like the others. One list for the project.
+ * RF-646, RF-1007, DEC-179, P8-85: the questions that wait for an answer first; the ones with an
+ * answer in a collapsed "Answered" list whose questions can be edited like the others, each list in
+ * id order. One list for the project.
  */
 function QuestionLists(props: ListProps): JSX.Element {
   const [note, setNote] = useState('');
-  const { open, answered } = useQuestionPlaces(props.questions);
+  const { open, answered, moved } = useQuestionPlaces(props.questions);
+  useFocusAfterMove(moved, open, answered);
   const apply = (questions: Questions): void => {
     props.apply(questions);
     const left = questions.filter(waitsForAnswer).length;
@@ -215,11 +236,13 @@ function QuestionLists(props: ListProps): JSX.Element {
           No question waits for an answer.
         </p>
       )}
-      {open.length === 0 ? null : <Items {...props} apply={apply} shown={open} />}
+      {open.length === 0 ? null : (
+        <Items {...props} {...{ apply, moved }} shown={open} movedMessage={CLEARED_MESSAGE} />
+      )}
       {answered.length === 0 ? null : (
         <details class="rst-p139-answered" data-testid="answered-questions">
           <summary>{`Answered (${String(answered.length)})`}</summary>
-          <Items {...props} apply={apply} shown={answered} />
+          <Items {...props} {...{ apply, moved }} shown={answered} movedMessage={SAVED_MESSAGE} />
         </details>
       )}
     </>

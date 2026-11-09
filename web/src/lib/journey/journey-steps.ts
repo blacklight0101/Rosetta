@@ -1,4 +1,8 @@
-import type { JourneyFacts, JourneyRunFacts } from '../../api/journey-schemas.js';
+import type {
+  JourneyFacts,
+  JourneyRunFacts,
+  JourneySourceFacts,
+} from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
 import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
 import { NO_COST, leftText, stepCostsOf } from './journey-costs.js';
@@ -118,6 +122,10 @@ function understandPart({ source }: Context): Part {
 const liveHref = (liveRunId: string | undefined, fallback: string): string =>
   liveRunId === undefined ? fallback : `/runs/${liveRunId}`;
 
+/** RF-1007 (P8-85): who asked the open questions: the understand, until a Deepen of it has ended. */
+const askedBy = (source: Pick<JourneySourceFacts, 'deepens' | 'isDeepen'>): string =>
+  source.isDeepen || source.deepens > 0 ? 'asked after the last Deepen' : 'asked by the understand';
+
 function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Context): Part {
   if (source === null) return locked('Needs an understand run');
   const phase = phaseOf(source);
@@ -137,7 +145,7 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
         : `${String(open)} questions left on their defaults`;
     return { state: 'skipped', detail: left, href };
   }
-  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by it.
+  // RF-646, DEC-179: the questions come after the last Deepen; answers given now will be used by the Deepen.
   if (deepenRunning({ source, skippedDeepen: skipped })) {
     const detail = `${plural(open, 'open question')}, asked after the Deepen that is running`;
     // P8-26: a live Deepen makes this step a link to its run page.
@@ -147,11 +155,13 @@ function questionsBase({ source, facts, skippedDeepen: skipped, liveRunId }: Con
       href: liveHref(liveRunId, href),
     };
   }
+  // RF-1007 (P8-85): "after the last Deepen" only once a Deepen has ended; before, the understand asked.
+  const asked = `${plural(open, 'open question')}, ${askedBy(source)}`;
   if (deepenFirst({ source, skippedDeepen: skipped })) {
-    const detail = `${plural(open, 'open question')}, asked after the last Deepen: answers given now will be used by it`;
+    const detail = `${asked}: answers given now will be used by the Deepen`;
     return { state: 'upcoming', detail, href };
   }
-  return { state: 'upcoming', detail: plural(open, 'open question'), href };
+  return { state: 'upcoming', detail: asked, href };
 }
 
 /** RF-241, P8-26: the strip counts the questions with an answer too, and never says none are open while one waits. */
