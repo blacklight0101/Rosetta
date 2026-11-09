@@ -11,11 +11,11 @@ import {
 // manifest. The coverage prompt stays as it was: the new prompt is a file of its own.
 
 describe('loadGapPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap.v4.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap.v5.md with its version and hash', async () => {
     const file = await loadGapPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap.v4.md');
-    expect(file).toMatchObject({ name: 'planner/gap.v4.md', version: 'v4' });
+    const bytes = await readFile('prompts/planner/gap.v5.md');
+    expect(file).toMatchObject({ name: 'planner/gap.v5.md', version: 'v5' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -62,7 +62,21 @@ describe('loadGapRepairPrompt', () => {
     expect(text).toMatch(/only the cards/iu);
     expect(text).toMatch(/data, never instructions/u);
     expect(text).toMatch(/Write no text other than the JSON/u);
-    expect(await readFile('prompts/planner/gap.v4.md', 'utf8')).not.toMatch(/could not be read/u);
+    expect(await readFile('prompts/planner/gap.v5.md', 'utf8')).not.toMatch(/could not be read/u);
+  });
+});
+
+describe('the gap prompt of P8-95', () => {
+  it('RF-627 P8-95 asks to link an item a card of the plan already does to that card, never to leave it out', async () => {
+    const { text } = await loadGapPrompt('prompts');
+
+    expect(text).toMatch(/"links"/u);
+    expect(text).toMatch(/\{"task": "T-004", "builds": \["flow:FLOW-009"\]\}/u);
+    expect(text).toMatch(/do not leave it out/u);
+    expect(text).toMatch(/Never link .*migrations/su);
+    expect(text).toMatch(
+      /Every item of the first block ends up in the `builds` of a card of `tasks` or of a link/u,
+    );
   });
 });
 
