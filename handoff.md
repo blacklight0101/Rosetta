@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second and third rounds are merged into `develop` and nothing is released. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 wave 3 and its second and third rounds are merged into `develop` and nothing is released; Phase 9 is carded and held. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,16 @@ _Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-09, evaluation after Phase 8 wave 3; Phase 9 carded and held).** On the owner's word the evaluation was re-run on Haiku only (P8-46..P8-48, compared by P8-49; the cards read In review until the owner has read the report): Asset Manager, Invoice Generator and eShopModernizing end to end on the evaluation stack `rosetta-eval2`, rebuilt from `develop` at `bbb696cd`. **Critical defects: none**, so nothing was added to Phase 8. Every journey completed, no call passed an approved amount or a cap, and 48 page loads at 375, 768 and 1280 px, light and dark, showed no overflow, console error or HTTP error. Cost $2.85 for the whole session (2026-11-02: $3.02), 21.6M tokens in and 2.05M out, 1 h 58 min. The eShop plan completed first try and every eShop module has a task card. Findings fixed since 2026-11-02: EV-82, EV-83, EV-86..EV-88, EV-90..EV-95, EV-97, EV-99, EV-32, EV-73 through the web, EV-44; EV-84 now pauses, continues and stops as designed.
+
+The owner said to card every other finding in Phase 9 and not to start it: P9-01..P9-13 (#1336..#1348), counts in the [tasks.md totals](docs/orchestration/tasks.md). EV-100 (Major, P9-01 and P9-02): after Continue (+N) at an approval pause the journey's approved amount is not raised, so the plan cannot start without a workaround (start and at once stop an understand run). The Minors: EV-101 "Stop here" ends as "Cap reached" (P9-03), EV-104 a stopped reader counts as failed (P9-04), EV-105 cancelling a queued resumed run cannot record its end (P9-05), EV-108 a completed plan can leave a requirement built by no card (P9-06), EV-102 and EV-107 the journey strip's scan step and total (P9-07, P9-08), EV-103 the start page with Ollama unreachable (P9-09), EV-106 queue wording (P9-10), and the carried EV-96 (P9-11), EV-85 (P9-12) and EV-89/EV-57/EV-69 (P9-13). The report and its evidence are in the private evaluation folder (`Rosetta-wt/eval2/_eval/p8w3-evaluation.md`, `p8w3-haiku-report.md`), outside the repository.
+
+Owner agenda from this evaluation:
+
+- **The evaluation stack's key.** `_eval/eval2.env` carries no `ANTHROPIC_API_KEY`; as in the 2026-11-02 run the stack got it from the main checkout's git-ignored `.env`, passed to compose as a second `--env-file` (no one read or printed it). Confirm this is how the evaluation stack should get its key, or say where it should come from.
+- **EV-84 needed the administrator.** A user cannot lower the approved amount, so the pause was reached by setting the user day cap to $0.10 around the start (restored to $10). Say if a user should be able to approve less than the approvable amount.
+- **Clear Phase 9** when you want it built; P8-49's compare is the report above.
 
 **Resume (2026-11-09, Phase 8 wave 3 round 3: every buildable Phase 8 card is built).** Fifteen more cards are merged into `develop` and none is released: P8-55 #1319, P8-75 #1318, P8-76 #1322, P8-143 #1323, P8-80 #1324, P8-135 #1325, P8-78 #1326, P8-82 #1327, P8-81 #1328, P8-83 #1329, P8-85 #1330, P8-84 #1331, P8-95 #1332, P8-86 #1333 and P8-96 #1334. Nothing is in flight. What is left in Phase 8 needs the owner: P8-46..P8-49, P8-51 (merge queue) and the live parts of P8-61 and P8-66..P8-71 (ADR-028). Counts are in the [tasks.md totals](docs/orchestration/tasks.md).
 
