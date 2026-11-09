@@ -225,7 +225,8 @@ describe('journeyOf: questions, brief and estimate', () => {
     const view = journeyOf(roadSigns['asking'] ?? facts(), projectId);
 
     expect(step(view, 'questions')).toMatchObject({
-      ...{ state: 'current', here: true, detail: '2 open questions', href: `/runs/${sourceId}` },
+      ...{ state: 'current', here: true, href: `/runs/${sourceId}` },
+      detail: '2 open questions, asked after the last Deepen',
     });
     expect(step(view, 'brief')).toMatchObject({ state: 'upcoming', here: false });
     expect(view.action).toEqual({
@@ -241,7 +242,7 @@ describe('journeyOf: questions, brief and estimate', () => {
       projectId,
     );
 
-    expect(step(view, 'questions').detail).toBe('1 open question');
+    expect(step(view, 'questions').detail).toBe('1 open question, asked after the last Deepen');
   });
 });
 

@@ -19,7 +19,9 @@ describe('RF-646 the journey and Deepen', () => {
       href: `/runs/${sourceId}`,
     });
     expect(step(view, 'questions')).toMatchObject({ here: true });
-    expect(step(view, 'questions').detail).toContain('answers given now will be used by it');
+    expect(step(view, 'questions').detail).toContain(
+      'answers given now will be used by the Deepen',
+    );
   });
 });
 
@@ -61,5 +63,34 @@ describe('RF-646 the journey and a running Deepen', () => {
     const view = journeyOf(asking({ openQuestions: 0 }), projectId);
 
     expect(view.action?.kind).not.toBe('deepen');
+  });
+});
+
+describe('RF-1007 the Questions step says who asked the questions', () => {
+  it('RF-1007 reads "asked by the understand" while no Deepen has ended', () => {
+    const view = journeyOf(asking(), projectId);
+
+    expect(step(view, 'questions').detail).toBe(
+      '2 open questions, asked by the understand: answers given now will be used by the Deepen',
+    );
+    expect(step(view, 'questions').detail).not.toContain('after the last Deepen');
+  });
+
+  it('RF-1007 reads "asked by the understand" when the user chose not to Deepen', () => {
+    const view = journeyOf(asking(), projectId, true);
+
+    expect(step(view, 'questions').detail).toBe('2 open questions, asked by the understand');
+  });
+
+  it('RF-1007 reads "asked after the last Deepen" once a Deepen has ended', () => {
+    const view = journeyOf(asking({ deepens: 1 }), projectId);
+
+    expect(step(view, 'questions').detail).toBe('2 open questions, asked after the last Deepen');
+  });
+
+  it('RF-1007 reads "asked after the last Deepen" on the page of a Deepen', () => {
+    const view = journeyOf(asking({ deepens: 1, isDeepen: true }), projectId);
+
+    expect(step(view, 'questions').detail).toBe('2 open questions, asked after the last Deepen');
   });
 });
