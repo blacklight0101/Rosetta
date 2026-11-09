@@ -78,7 +78,16 @@ export class WithdrawConsent {
   }
 }
 
-/** DEC-209: what the start use cases use: the consent that holds, and giving one. */
-export function startConsentsOf(deps: ConsentDependencies): StartConsents {
-  return { held: new HeldConsent(deps), give: new GiveConsent(deps) };
+/** DEC-209, P8-81: the consent use cases of a project: what the starts use, and withdrawing. */
+export interface ConsentCases extends StartConsents {
+  readonly withdraw: Pick<WithdrawConsent, 'execute'>;
+}
+
+/** DEC-209: what the start use cases use (the consent that holds, giving one) and withdraw (P8-81). */
+export function startConsentsOf(deps: ConsentDependencies): ConsentCases {
+  return {
+    held: new HeldConsent(deps),
+    give: new GiveConsent(deps),
+    withdraw: new WithdrawConsent(deps),
+  };
 }

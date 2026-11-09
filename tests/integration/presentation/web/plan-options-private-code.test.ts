@@ -123,3 +123,39 @@ describe('POST /api/projects/:id/plan-options with the confirmations given', () 
     expect(response.statusCode).toBe(200);
   });
 });
+
+// RF-143, RF-132, DEC-209 (P8-81): Plan setup shows one consent line while a consent of the project
+// holds for the planner, so its options are asked without the boxes.
+describe('POST /api/projects/:id/plan-options under a consent of the project', () => {
+  it('RF-143 P8-81 options asked with the consent give one, and the next ask needs no box', async () => {
+    const { amy, url } = await setup('github');
+    const first = await amy.request({ method: 'POST', url, payload: { cloudConsent: true } });
+    expect(first.statusCode).toBe(200);
+
+    const again = await amy.request({ method: 'POST', url });
+
+    expect(again.statusCode).toBe(200);
+  });
+
+  it('RF-132 P8-81 an upload under a consent that holds needs neither box', async () => {
+    const { amy, url } = await setup('upload');
+    const payload = { cloudConsent: true, privateCodeConfirmed: true };
+    expect((await amy.request({ method: 'POST', url, payload })).statusCode).toBe(200);
+
+    const again = await amy.request({ method: 'POST', url });
+
+    expect(again.statusCode).toBe(200);
+  });
+
+  it('RF-143 P8-81 after a withdrawal the options need the consent again (RST-1515)', async () => {
+    const { amy, url } = await setup('github');
+    await amy.request({ method: 'POST', url, payload: { cloudConsent: true } });
+    const consentUrl = url.replace(/plan-options$/u, 'consent');
+    expect((await amy.request({ method: 'DELETE', url: consentUrl })).statusCode).toBe(200);
+
+    const again = await amy.request({ method: 'POST', url });
+
+    expect(again.statusCode).toBe(400);
+    expect(again.json()).toMatchObject({ code: ERROR_CODES.cloudConsentMissing });
+  });
+});

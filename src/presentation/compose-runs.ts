@@ -54,7 +54,7 @@ import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
 import { withPrivateCodeRecheck } from './compose-recheck.js';
-import { composeConsents } from './compose-consents.js';
+import { composeConsentServices, composeConsents } from './compose-consents.js';
 import {
   composeJourney,
   composeJourneyBackfill,
@@ -63,7 +63,6 @@ import {
 } from './compose-journey.js';
 import type { ScheduledJob } from '../application/ports/scheduler.js';
 import { composeBuildReport } from './compose-report.js';
-import { composePlanOptions } from './compose-plan-options.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
@@ -210,8 +209,8 @@ function runServices(service: ServiceParts): RunServices {
     }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     ...composeRunReads(runs, writer),
-    // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.
-    suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans, ollamaHost }),
+    // RF-608, RF-143, P8-81: Plan setup's options and the consent routes, over the starts' consents.
+    ...composeConsentServices({ ...parts, writer, projects, runs, scans, ollamaHost, consents }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

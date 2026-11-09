@@ -117,3 +117,40 @@ export async function revealAreas(page: Page): Promise<void> {
   await expect(fold.or(areas).first()).toBeAttached({ timeout: 90_000 });
   await openSettled(page, fold);
 }
+
+/** RF-143 (P8-81): the cloud notice of the start page, and the one line of a consent that holds. */
+function consentShown(page: Page): { readonly notice: Locator; readonly line: Locator } {
+  return {
+    notice: page.getByRole('region', { name: 'Code will leave this machine' }),
+    line: page.getByText(/^You agreed on /u),
+  };
+}
+
+/**
+ * RF-143, DEC-209 (P8-81): waits until the start page has read the consent of the project. The notice
+ * shows, marked busy, while it is read; a consent that holds then replaces it with one line.
+ */
+async function consentRead(page: Page): Promise<void> {
+  const { notice, line } = consentShown(page);
+  // As long as Start waits for the estimate, which names the providers the notice needs.
+  await expect(notice.or(line).first()).toBeVisible({ timeout: 30_000 });
+  await expect(notice.and(page.locator('[aria-busy="true"]'))).toHaveCount(0);
+}
+
+/**
+ * RF-143, DEC-209 (P8-81): ticks the cloud consent of the start page, unless a consent given by an
+ * earlier start of the same project holds: then the page shows one line and asks no box.
+ *
+ * The notice and the line are inside "Start another run" once the project has a run, and the page
+ * opens that fold by itself only while the journey has to start again (RF-1021). While an earlier
+ * test's run still works (queued behind the server's run slots when the tests run in parallel) the
+ * journey waits for it and the fold stays closed, so neither would ever show. The choices are opened
+ * first, as a person does (P8-106).
+ */
+export async function giveCloudConsent(page: Page, label: string): Promise<void> {
+  await showStartChoices(page);
+  await consentRead(page);
+  const box = page.getByLabel(label);
+  if (await box.isVisible()) await box.check();
+  else await expect(consentShown(page).line).toBeVisible();
+}

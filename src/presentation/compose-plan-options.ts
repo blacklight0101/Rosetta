@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import type { StartConsents } from '../application/consent/start-consent.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { Logger } from '../application/ports/logger.js';
@@ -38,6 +39,8 @@ export interface PlanOptionsParts {
   readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
   readonly ollamaHost?: string | undefined;
+  /** DEC-209 (P8-81): the consents of the project, shared with the starts. */
+  readonly consents: StartConsents;
 }
 
 // RF-608, RF-609
@@ -45,7 +48,7 @@ export function composePlanOptions(parts: PlanOptionsParts): SuggestPlanOptions 
   const { pool, logger, clock, writer, projects, runs, scans, providers } = parts;
   const { masker, dataDir } = parts;
   return new SuggestPlanOptions({
-    ...{ projects, runs, scans, providers, logger },
+    ...{ projects, runs, scans, providers, logger, consents: parts.consents },
     users: new PgUserRepository(pool),
     cards: keptRunCards(writer),
     callSinks: projectCallSinks({ writer, masker, clock, dataDir }),

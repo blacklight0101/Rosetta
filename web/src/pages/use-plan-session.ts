@@ -12,12 +12,14 @@ import {
 import { TYPED } from '../lib/plan-setup/own-answers.js';
 import { usePlanEstimate, type EstimateLoad } from './use-plan-estimate.js';
 import { usePlanOptions, type OptionsLoad } from './use-plan-options.js';
+import { useHeldConsent, type HeldConsentState } from './use-held-consent.js';
 import { usePrivateCode, type PrivateCode } from './use-private-code.js';
 import { usePlanSetup, type PlanSetupActions, type PlanSetupState } from './use-plan-setup.js';
 
 // RF-605, RF-608, RF-613, RF-143: everything the Plan setup page keeps together: the answers, the
 // estimate, the options of the planner and the consent. The options are asked once a step that
-// shows them has been opened, and for a cloud planner only after the consent.
+// shows them has been opened, and for a cloud planner only after the consent, or at once while a
+// consent of the project holds for the planner (P8-81).
 
 export interface PlanSession extends PlanSetupState, PlanSetupActions {
   readonly estimate: EstimateLoad;
@@ -25,8 +27,10 @@ export interface PlanSession extends PlanSetupState, PlanSetupActions {
   /** The provider the planner role uses, from the project's settings. */
   readonly plannerProvider: string;
   readonly blockers: readonly Blocker[];
-  /** The planner would send code off this machine. */
+  /** The planner would send code off this machine and no consent of the project holds for it. */
   readonly cloud: boolean;
+  /** RF-143, DEC-209 (P8-81): the consent of the project that holds for the planner. */
+  readonly held: HeldConsentState;
   /** The options wait for a confirmation that is not given yet. */
   readonly waitingForConsent: boolean;
   readonly consent: boolean;
@@ -110,12 +114,14 @@ function useOptionsWanted(step: string): boolean {
 function usePlanner(project: Project, onSwitched: () => void) {
   const [current, setProject] = useState(project);
   const { provider, kind } = plannerOfProject(current);
-  const cloud = needsConsent(kind);
+  // RF-143, DEC-209 (P8-81): a consent of the project that holds for the planner asks no box.
+  const held = useHeldConsent(current.id, 'plan', current.updatedAt);
+  const cloud = needsConsent(kind) && held.consent === undefined;
   const privateCode = usePrivateCode(current, cloud, (saved) => {
     setProject(saved);
     onSwitched();
   });
-  return { current, provider, cloud, privateCode };
+  return { current, provider, cloud, privateCode, held };
 }
 
 // RF-605
@@ -137,7 +143,7 @@ export function usePlanSession(
   }, [reload]);
   const setup = usePlanSetup(projectId, view, onSaved);
   const planner = estimate.load.status === 'ready' ? estimate.load.estimate : undefined;
-  const { current, provider, cloud, privateCode } = usePlanner(project, reload);
+  const { current, provider, cloud, privateCode, held } = usePlanner(project, reload);
   const waiting = cloud && !(consent && (!privateCode.needed || privateCode.checked));
   const options = usePlanOptions({
     projectId,
@@ -153,7 +159,7 @@ export function usePlanSession(
     planner,
     plannerProvider: provider,
     blockers: planner === undefined ? [] : blockersOf(planner),
-    cloud,
+    ...{ cloud, held },
     waitingForConsent: waiting,
     consent: cloud && consent,
     setConsent,

@@ -4,7 +4,6 @@ import { startConsentsOf } from '../../src/application/use-cases/consent-use-cas
 import { MemoryProjectConsents } from '../../src/infrastructure/db/memory-project-consents.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import type { RoleKeyDependencies } from '../../src/application/runs/role-keys.js';
-import type { StartConsents } from '../../src/application/consent/start-consent.js';
 import { testRoleKeys } from './web-role-keys.js';
 import { NO_LISTED_MODELS } from '../../src/application/models/model-list.js';
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
@@ -41,6 +40,7 @@ import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { composeConsentRoutes } from '../../src/presentation/compose-consents.js';
 import { composeObservability } from '../../src/presentation/compose-observability.js';
 import type { ObservabilityServices } from '../../src/presentation/web/observability-routes.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -223,9 +223,8 @@ function answerAndJourney(
   return { ...answerServices(runs, stores), getJourney: journeyOf(runs, stores) };
 }
 
-/** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 /** DEC-209: one store of the project's consents, which every start of the test server shares. */
-function consentsOf(projects: MemoryProjectRepository, clock: Clock): StartConsents {
+function consentsOf(projects: MemoryProjectRepository, clock: Clock) {
   const consents = new MemoryProjectConsents(projects);
   return startConsentsOf({ consents, clock, ids: new SequenceIdGenerator() });
 }
@@ -237,10 +236,10 @@ function startServices(
     readonly briefs: PlanningBriefStore;
     readonly clock: Clock;
     readonly roleKeys: RoleKeyDependencies;
+    readonly consents: ReturnType<typeof consentsOf>;
   },
 ): Pick<ServerOptions['runs'], 'startRun' | keyof ReturnType<typeof deepenServices>> {
-  const { projects, keys, roleKeys, briefs } = stores;
-  const consents = consentsOf(projects, stores.clock);
+  const { projects, keys, roleKeys, briefs, consents } = stores;
   return {
     startRun: startRunOf({ ...runs, projects, briefs, roleKeys, consents }),
     ...deepenServices(runs, { projects, keys, roleKeys, consents }),
@@ -267,6 +266,7 @@ export function runServices(
 ): ServerOptions['runs'] {
   const { projects, keys, calls, logs, clock, answers } = stores;
   const roleKeys = testRoleKeys(stores.users, keys); // RF-431
+  const consents = consentsOf(projects, clock); // DEC-209: one store for every start and the routes
   return {
     getRun: getRunOf(runs, outputs.text),
     ...pageReads(runs.runs, outputs.text),
@@ -282,12 +282,12 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, priorCards: stores.priorCards, clock }),
     ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    ...startServices(runs, { ...stores, roleKeys }),
+    ...startServices(runs, { ...stores, roleKeys, consents }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
-      runs: runs.runs,
-      providers: stores.factory,
+      ...{ runs: runs.runs, providers: stores.factory, consents },
     }),
+    ...composeConsentRoutes({ projects, consents }), // RF-143, P8-81
     estimateRun: new EstimateRun({
       ...{ projects, runs: runs.runs, scans: new FixedScans(catalogAreas), keys },
       ...{ priceTable: estimatePrices, models: NO_LISTED_MODELS, reasoningModels: () => false },
