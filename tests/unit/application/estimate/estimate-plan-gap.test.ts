@@ -27,7 +27,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const { assumptions } = await estimateOf();
 
     const system = (await readFile('prompts/planner/gap.v5.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(6);
+    expect(assumptions.calls).toBe(7);
     expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(assumptions.gapPromptTokens).not.toBe(assumptions.coveragePromptTokens);
   });
@@ -40,7 +40,23 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
     expect(high).toBeGreaterThan(reservation(assumptions.gapPromptTokens));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(6 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+  });
+});
+
+describe('EstimatePlan: the second gap round', () => {
+  it('RF-627 P8-96 RF-613 counts the second gap round as one more gap call, reserved with its continuations', async () => {
+    const { assumptions, planner } = await estimateOf();
+
+    const reservation = (promptTokens: number): number =>
+      3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
+    const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
+    expect(high).toBeGreaterThan(
+      2 * reservation(assumptions.gapPromptTokens) + reservation(assumptions.gapRepairPromptTokens),
+    );
+    expect(assumptions.promptTokens).toBeGreaterThan(
+      2 * assumptions.gapPromptTokens + assumptions.gapRepairPromptTokens,
+    );
   });
 });
 

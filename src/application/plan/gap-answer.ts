@@ -75,6 +75,10 @@ export interface GapAnswer {
   readonly links?: GapLinkDraft[];
   /** P8-95: the links that could not be read, by position in `links`, field and a fixed reason. */
   readonly linkProblems?: GapProblem[];
+  /** P8-96: set when the answer's `links` value is not a list; it is dropped whole. */
+  readonly linksNotList?: true;
+  /** P8-96: how many links past the first 100 were dropped, when any were. */
+  readonly linksPastMax?: number;
 }
 
 function reasonOf(code: string): string {

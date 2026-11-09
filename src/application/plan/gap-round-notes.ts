@@ -76,3 +76,8 @@ export function linkWarnings(
     ),
   ];
 }
+
+/** P8-96: the log lines for a `links` value dropped whole or cut at its bound. */
+export function linkListWarnings(): string[] {
+  return [];
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseGapAnswer } from '../../../../src/application/plan/gap-answer.js';
+import { linkListWarnings } from '../../../../src/application/plan/gap-round-notes.js';
 import { scenario } from '../../../support/task-card-fixtures.js';
 
 // P8-95, RF-627, ADR-013, EV-95: a gap answer may link an item of its block to a task card the plan
@@ -91,5 +92,41 @@ describe('parseGapAnswer: links that do not read as a whole', () => {
     expect(read?.salvaged).toBe(true);
     expect(read?.drafts).toHaveLength(1);
     expect(read?.links).toEqual([{ position: 1, task: 'T-004', builds: ['flow:FLOW-002'] }]);
+  });
+});
+
+describe('parseGapAnswer: a links value it cannot take whole', () => {
+  it('RF-627 P8-96 a links value that is not a list is dropped, and the log says so without its text', () => {
+    const read = parseGapAnswer(JSON.stringify({ tasks: [card], links: { task: 'T-004' } }));
+
+    expect(read?.drafts).toHaveLength(1);
+    expect(read?.links).toBeUndefined();
+    expect(read?.linksNotList).toBe(true);
+    const lines = linkListWarnings('gap answer', read ?? { drafts: [] });
+    expect(lines).toEqual(['The "links" value of the gap answer was not a list and was dropped.']);
+    expect(lines.join(' ')).not.toContain('T-004');
+  });
+
+  it('RF-627 P8-96 reads the first 100 links and drops each one past them, with a count in the log', () => {
+    const many = Array.from({ length: 103 }, () => ({ task: 'T-004', builds: flows }));
+
+    const read = parseGapAnswer(JSON.stringify({ tasks: [], links: many }));
+
+    expect(read?.links).toHaveLength(100);
+    expect(read?.links?.at(-1)?.position).toBe(100);
+    expect(read?.linksPastMax).toBe(3);
+    expect(linkListWarnings('second gap answer', read ?? { drafts: [] })).toEqual([
+      '3 links of the second gap answer past the first 100 were dropped.',
+    ]);
+  });
+
+  it('RF-627 P8-96 exactly 100 links are all read, with no log line', () => {
+    const hundred = Array.from({ length: 100 }, () => ({ task: 'T-004', builds: flows }));
+
+    const read = parseGapAnswer(JSON.stringify({ tasks: [], links: hundred }));
+
+    expect(read?.links).toHaveLength(100);
+    expect(read?.linksPastMax).toBeUndefined();
+    expect(linkListWarnings('gap answer', read ?? { drafts: [] })).toEqual([]);
   });
 });
