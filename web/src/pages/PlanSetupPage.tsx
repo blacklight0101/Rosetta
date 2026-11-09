@@ -6,6 +6,7 @@ import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { JourneyPanel } from './JourneyPanel.js';
+import { ConsentLine } from './ConsentLine.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { providerLabel } from './provider-choices.js';
@@ -74,10 +75,13 @@ interface BodyProps {
 
 /**
  * RF-143, RF-132: the notice of the cloud planner and, for an upload, the private-code notice; its
- * switch to Ollama sits in the roles summary instead (RF-605, P8-82).
+ * switch to Ollama sits in the roles summary instead (RF-605, P8-82). While a consent of the project
+ * holds for the planner, one line with Withdraw shows instead of both (P8-81).
  */
 function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
-  const { privateCode } = session;
+  const { privateCode, held } = session;
+  // RF-143, DEC-209 (P8-81): a consent of the project that holds shows as one line instead.
+  if (held.consent !== undefined) return <ConsentLine consent={held.consent} held={held} />;
   return (
     <>
       {session.cloud ? (

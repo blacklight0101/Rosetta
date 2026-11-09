@@ -4,7 +4,7 @@ import { sampleProject } from '../../../support/project-fixtures.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { addUser, signedInBrowser } from '../../../support/test-browser.js';
 import { heldZip } from '../../../support/upload-run-fixtures.js';
-import { createTestServer, type TestServer } from '../../../support/web-server.js';
+import { createTestServer, testPublicUrl, type TestServer } from '../../../support/web-server.js';
 
 // RF-143, RF-1105, DEC-209 (P8-81): GET /api/projects/:id/consent?for=understand|plan answers the
 // consent of the project that holds for the roles of that start, which a page shows as one line;
@@ -137,9 +137,10 @@ describe("another user's project (RF-1105, P8-81)", () => {
 
   it('RF-1105 P8-81 a request without a session is refused', async () => {
     const { test, url } = await setup();
+    const headers = { origin: testPublicUrl };
 
-    const read = await test.server.inject({ method: 'GET', url: `${url}?for=understand` });
-    const withdrawn = await test.server.inject({ method: 'DELETE', url });
+    const read = await test.server.inject({ method: 'GET', url: `${url}?for=understand`, headers });
+    const withdrawn = await test.server.inject({ method: 'DELETE', url, headers });
 
     expect(read.statusCode).toBe(401);
     expect(withdrawn.statusCode).toBe(401);

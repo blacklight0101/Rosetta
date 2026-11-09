@@ -8,9 +8,11 @@ import { cloudRoles } from '../lib/estimate-math.js';
 import type { DeepenEstimate } from '../api/understanding.js';
 import { confirmLineOf } from '../lib/understanding/deepen-estimate-text.js';
 import { CloudNotice } from './CloudNotice.js';
+import { ConsentLine } from './ConsentLine.js';
 import { DeepenEstimateView } from './DeepenEstimateView.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { useDeepenPrivateCode, type DeepenPrivateCode } from './use-deepen-private-code.js';
+import { useHeldConsent, type HeldConsentState } from './use-held-consent.js';
 import {
   useDeepenEstimate,
   useDeepenStart,
@@ -23,7 +25,8 @@ import {
 // limit (1 to 5, default 3), the coverage pass (ticked unless the owner unticks it), the estimate
 // of the first round and of all rounds against the run cap, and the consent where a provider is in
 // the cloud. On an uploaded or workbook project whose roles are in the cloud, the private-code
-// confirmation shows beside the consent from the start (RF-132, DEC-209, P8-79). Nothing starts until
+// confirmation shows beside the consent from the start (RF-132, DEC-209, P8-79); while a consent of
+// the project holds, one line with Withdraw shows instead of both (P8-81). Nothing starts until
 // the owner presses Start and confirms the question. All the styles are under `.rst-p241-`.
 
 const roundChoices = ['1', '2', '3', '4', '5'] as const;
@@ -36,19 +39,16 @@ interface PanelProps {
   readonly onClose: () => void;
 }
 
-function needsConsent(load: DeepenEstimateLoad): boolean {
-  return load.status === 'ready' && cloudRoles(load.estimate).length > 0;
-}
-
 function reasonOf(
   load: DeepenEstimateLoad,
   deepen: DeepenStart,
-  privateShown: boolean,
+  asked: { readonly consent: boolean; readonly privateShown: boolean },
 ): string | undefined {
   const { consent } = deepen;
+  const { privateShown } = asked;
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';
-  if (needsConsent(load) && !consent) return 'Give the consent above first.';
+  if (asked.consent && !consent) return 'Give the consent above first.';
   if (privateShown && !deepen.privateConfirmed) {
     return 'Give the private code confirmation above first.';
   }
@@ -131,8 +131,11 @@ function Consent(props: {
   readonly deepen: DeepenStart;
   readonly code: DeepenPrivateCode;
   readonly refused: ReturnType<typeof useDeepenStart>['error'];
+  readonly held: HeldConsentState;
 }): JSX.Element {
-  const { cloud, deepen, code, refused } = props;
+  const { cloud, deepen, code, refused, held } = props;
+  // RF-209, DEC-209 (P8-81): a consent of the project that holds shows as one line instead.
+  if (held.consent !== undefined) return <ConsentLine consent={held.consent} held={held} />;
   return (
     <>
       {cloud.length === 0 ? null : (
@@ -140,6 +143,7 @@ function Consent(props: {
           roles={cloud}
           consent={deepen.consent}
           error={refused}
+          reading={held.reading}
           onConsent={deepen.setConsent}
         />
       )}
@@ -153,6 +157,11 @@ function Consent(props: {
   );
 }
 
+/** What makes the consent of the project be read again: the roles changed, or a box was refused. */
+function heldKey(revision: number, deepen: DeepenStart): string {
+  return `${String(revision)}:${deepen.error?.code ?? ''}`;
+}
+
 function Choices(props: { readonly runId: string; readonly projectId: string }): JSX.Element {
   const deepen = useDeepenStart(props.runId);
   // RF-132: the switch to Ollama changed the roles, so the estimate is read again.
@@ -163,19 +172,22 @@ function Choices(props: { readonly runId: string; readonly projectId: string }):
   useEffect(() => {
     if (deepen.error !== undefined) setAsking(false);
   }, [deepen.error]);
-  const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
+  // RF-143, DEC-209 (P8-81): read again after a switch to Ollama or a refusal for a box.
+  const held = useHeldConsent(props.projectId, 'understand', heldKey(revision, deepen));
+  const asked = load.status === 'ready' && held.consent === undefined;
+  const cloud = asked ? cloudRoles(load.estimate) : [];
   const code = useDeepenPrivateCode(props.projectId, cloud, deepen.privateAsked, () => {
     deepen.setPrivateConfirmed(false);
     setRevision((now) => now + 1);
   });
   // The refusal of the consent shows at the checkbox when the notice is there, else as a banner.
   const refused = cloud.length > 0 && deepen.error?.code === consentCode ? deepen.error : undefined;
-  const reason = reasonOf(load, deepen, code.shown);
+  const reason = reasonOf(load, deepen, { consent: cloud.length > 0, privateShown: code.shown });
   return (
     <>
       <Controls choice={deepen.choice} setChoice={deepen.setChoice} />
       <DeepenEstimateView load={load} />
-      <Consent cloud={cloud} deepen={deepen} code={code} refused={refused} />
+      <Consent {...{ cloud, deepen, code, refused, held }} />
       <Button
         variant="primary"
         {...(reason === undefined ? {} : { disabledReason: reason })}

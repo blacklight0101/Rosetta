@@ -5,6 +5,7 @@ import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { chooseModel } from './support/choose-model.js';
+import { giveCloudConsent } from './support/start-choices.js';
 
 // RF-425 (second scenario), DEC-97, P2-08: the start page asks before an understand run whose
 // likely cost is above the confirm threshold, and the whole question is answered with the keyboard.
@@ -30,7 +31,7 @@ async function openWithCloudReader(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByLabel(consent).check();
+  await giveCloudConsent(page, consent);
 }
 
 /** Stops the run the notice names (or cancels it when queued) and waits until it has ended. */

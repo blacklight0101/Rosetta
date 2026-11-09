@@ -16,6 +16,7 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { chooseModel } from '../support/choose-model.js';
 import { pauseFinishedRun } from '../support/pause-run.js';
+import { giveCloudConsent } from '../support/start-choices.js';
 
 // RF-006, RF-422, RF-428, RF-432, RF-301, ADR-007, ADR-010, ADR-026, P2-13, P7-05: flow 4 to its end.
 // A run on a priced reader that is approved and paused ("Waiting for your approval") keeps what it
@@ -59,7 +60,7 @@ test('RF-006 RF-422 RF-301 RF-432 a run pauses at the amount approved, the owner
   await saveSettings(page);
   await page.getByRole('link', { name: 'Start a run' }).click();
   await chooseAreas(page, 'all');
-  await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
+  await giveCloudConsent(page, 'I understand; send masked excerpts to OpenAI for this run');
   const live = await startAndOpenLiveRun(page);
 
   await expect(runStatus(page)).toContainText(RUN_DONE, { timeout: 180_000 });

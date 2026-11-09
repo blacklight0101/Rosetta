@@ -6,7 +6,11 @@ import { runStatus } from './support/live-run-page.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
-import { showStartChoices } from './support/start-choices.js';
+import {
+  giveCloudConsent,
+  showStartChoices,
+  withdrawHeldConsent,
+} from './support/start-choices.js';
 import { openStartPage, projectIdOf } from './support/start-run-page.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
@@ -115,6 +119,8 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
   await showStartChoices(page);
+  // P8-81: a consent an earlier test gave on the shared project would show one line instead.
+  await withdrawHeldConsent(page);
 
   const notice = page.getByRole('region', { name: 'Code will leave this machine' });
   await expect(notice).toContainText('OpenAI');
@@ -152,7 +158,7 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
     await page.getByRole('button', { name: 'Save settings' }).click();
     await expect(page.getByText('Settings saved.')).toBeVisible();
     await page.getByRole('link', { name: 'Start a run' }).click();
-    await page.getByLabel(consent).check();
+    await giveCloudConsent(page, consent);
 
     const warning = page.getByTestId('cap-warning');
     await expect(warning).toContainText('run cap');
@@ -274,7 +280,7 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByLabel(consent).check();
+  await giveCloudConsent(page, consent);
   await page.getByRole('button', { name: /^Analyse/u }).click();
 
   // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until

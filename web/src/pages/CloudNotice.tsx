@@ -14,6 +14,8 @@ export interface CloudNoticeProps {
   readonly consent: boolean;
   /** The server's refusal, shown next to the checkbox. */
   readonly error: { readonly code: string; readonly message: string } | undefined;
+  /** P8-81: the consent of the project is being read; a consent that holds replaces the notice. */
+  readonly reading?: boolean;
   readonly onConsent: (checked: boolean) => void;
 }
 
@@ -28,7 +30,11 @@ export function CloudNotice(props: CloudNoticeProps): JSX.Element {
   const { roles, consent, error, onConsent } = props;
   const names = providerNames(roles.map((role) => role.provider));
   return (
-    <section class="rst-callout rst-callout--warn" aria-labelledby={titleId}>
+    <section
+      class="rst-callout rst-callout--warn"
+      aria-labelledby={titleId}
+      aria-busy={props.reading === true ? 'true' : undefined}
+    >
       <div class="rst-callout__row">
         <span class="rst-callout__icon">
           <Glyph name="warning-triangle" />

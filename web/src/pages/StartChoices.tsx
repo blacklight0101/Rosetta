@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { localLikelyTokens } from '../lib/start-confirmation.js';
 import { CloudNotice } from './CloudNotice.js';
+import { ConsentLine } from './ConsentLine.js';
 import { EstimateSection } from './EstimateSection.js';
 import { PrivateCodeNotice } from './PrivateCodeNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
@@ -11,7 +12,8 @@ import { SummaryBar } from './SummaryBar.js';
 import type { StartForm } from './use-start-form.js';
 
 // RF-1001, RF-143, RF-132, RF-425, RF-1018, RF-1022, P8-26: what starts a run from the project page: the
-// areas, the estimate with the run cap, the cloud notice with its consent, and the summary bar with
+// areas, the estimate with the run cap, the cloud notice with its consent (or the one line of a
+// consent that holds, P8-81), and the summary bar with
 // Analyse. The page holds it open while the journey has to start and collapsed under "Start another
 // run" once the project has a run to go on from.
 
@@ -84,21 +86,36 @@ function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null
   );
 }
 
+/**
+ * RF-143, DEC-209 (P8-81): the one line of the consent that holds, or the cloud notice; while the
+ * consent is read the notice shows, marked busy.
+ */
+function Consent({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { consent, actions, stage } = form;
+  const { held } = consent;
+  if (stage === 'understand' && held.consent !== undefined) {
+    return <ConsentLine consent={held.consent} held={held} />;
+  }
+  if (consent.roles.length === 0) return null;
+  return (
+    <CloudNotice
+      roles={consent.roles}
+      consent={consent.checked}
+      error={actions.refusals.consent}
+      reading={held.reading}
+      onConsent={consent.set}
+    />
+  );
+}
+
 // RF-1001
 export function StartChoices({ form }: { readonly form: StartForm }): JSX.Element {
-  const { actions, consent } = form;
+  const { actions } = form;
   return (
     <>
       <StaleCodeMapNotice form={form} />
       <Columns form={form} />
-      {consent.roles.length === 0 ? null : (
-        <CloudNotice
-          roles={consent.roles}
-          consent={consent.checked}
-          error={actions.refusals.consent}
-          onConsent={consent.set}
-        />
-      )}
+      <Consent form={form} />
       <PrivateCode form={form} />
       {actions.refusals.start === undefined ? null : <ErrorBanner error={actions.refusals.start} />}
       <SummaryBar form={form} />

@@ -8,6 +8,7 @@ import { leaveOnlyThisInTheDay } from './support/seed-limits.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 import { chooseModel } from './support/choose-model.js';
+import { giveCloudConsent } from './support/start-choices.js';
 
 // RF-002, RF-1001, RF-1106, DEC-108, P1-106: what the start page and the settings page read
 // from the server, driven against the test server. Two tabs cannot overwrite each other's settings (a
@@ -96,7 +97,7 @@ test('DEC-108 the warning names what is left of the day, not the whole cap', asy
   await page.getByRole('link', { name: 'Start a run' }).click();
 
   const consent = 'I understand; send masked excerpts to OpenAI for this run';
-  await page.getByLabel(consent).check();
+  await giveCloudConsent(page, consent);
 
   const warning = page.getByTestId('cap-warning');
   await expect(warning).toContainText('daily cap today');
