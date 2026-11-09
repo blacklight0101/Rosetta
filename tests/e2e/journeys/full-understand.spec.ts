@@ -25,13 +25,12 @@ import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
 import { inEveryView } from '../support/views.js';
 
-// RF-006 is not here (cap-resume.spec.ts). RF-301, RF-300, RF-240, RF-241, RF-1007, ADR-010,
-// P2-13: flows 2 and 3 end to end through the pages and the real server. The first journey
-// understands every area of the C# fixture and checks that both steps of the verifier ran: the
-// citation check (two claims have an invalid citation) and the model judgement (four Supported, one
-// Rejected with its reason). The second answers the question the run asked and runs the area again
-// with the answers. The model double replays the recorded runs (e2e-provider.ts); the reader model
-// has another name than the default, so no area is held.
+// RF-006 is not here (cap-resume.spec.ts). RF-301, RF-300, RF-240, RF-241, RF-1007, ADR-010, P2-13:
+// flows 2 and 3 end to end through the pages and the real server. The first journey understands
+// every area of the C# fixture and checks both verifier steps ran: the citation check (two claims
+// have an invalid citation) and the model judgement (four Supported, one Rejected with its reason).
+// The second answers the run's question and rereads the area with it. The model double replays the
+// recorded runs (e2e-provider.ts); the reader model is not the default, so no area is held.
 
 const claim = (page: Parameters<typeof agentPanel>[0], id: string) =>
   page.getByRole('region', { name: 'Claims' }).getByTestId('claim').filter({ hasText: id });
