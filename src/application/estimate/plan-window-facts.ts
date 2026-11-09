@@ -19,9 +19,10 @@ export function windowFacts(
   promptTokens: readonly number[],
 ): WindowFacts {
   const budget = promptBudgetTokens(window);
-  const oversizedCalls = calls.flatMap((call, at) =>
-    (promptTokens[at] ?? 0) > budget ? [call.kind] : [],
-  );
+  // P8-96: the two gap rounds are one kind of call, named once.
+  const oversizedCalls = [
+    ...new Set(calls.flatMap((call, at) => ((promptTokens[at] ?? 0) > budget ? [call.kind] : []))),
+  ];
   return {
     windowTokens: window.windowTokens,
     fitsWindow: oversizedCalls.length === 0,

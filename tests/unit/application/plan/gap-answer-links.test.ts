@@ -102,7 +102,7 @@ describe('parseGapAnswer: a links value it cannot take whole', () => {
     expect(read?.drafts).toHaveLength(1);
     expect(read?.links).toBeUndefined();
     expect(read?.linksNotList).toBe(true);
-    const lines = linkListWarnings('gap answer', read ?? { drafts: [] });
+    const lines = linkListWarnings('gap answer', read ?? {});
     expect(lines).toEqual(['The "links" value of the gap answer was not a list and was dropped.']);
     expect(lines.join(' ')).not.toContain('T-004');
   });
@@ -115,7 +115,7 @@ describe('parseGapAnswer: a links value it cannot take whole', () => {
     expect(read?.links).toHaveLength(100);
     expect(read?.links?.at(-1)?.position).toBe(100);
     expect(read?.linksPastMax).toBe(3);
-    expect(linkListWarnings('second gap answer', read ?? { drafts: [] })).toEqual([
+    expect(linkListWarnings('second gap answer', read ?? {})).toEqual([
       '3 links of the second gap answer past the first 100 were dropped.',
     ]);
   });
@@ -127,6 +127,6 @@ describe('parseGapAnswer: a links value it cannot take whole', () => {
 
     expect(read?.links).toHaveLength(100);
     expect(read?.linksPastMax).toBeUndefined();
-    expect(linkListWarnings('gap answer', read ?? { drafts: [] })).toEqual([]);
+    expect(linkListWarnings('gap answer', read ?? {})).toEqual([]);
   });
 });

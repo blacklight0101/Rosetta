@@ -1,5 +1,5 @@
 import type { GapLinked } from '../../domain/planning/gap-links.js';
-import type { GapEntries, GapProblem } from './gap-answer.js';
+import type { GapAnswer, GapEntries, GapProblem } from './gap-answer.js';
 import type { HandoffPackage } from './handoff-package.js';
 
 // P7-14, RF-627, ADR-013: what a gap round tells the log and checks.md beyond the cards it left out:
@@ -8,6 +8,7 @@ import type { HandoffPackage } from './handoff-package.js';
 // and every card kept with dropped entries, under an area per answer, by position and field, with a
 // fixed reason; nothing here is text of the answer. P8-95: the log names each card of the plan an
 // answer linked items to, by the ids of the block, and each link it dropped by position and field.
+// P8-96: a `links` value dropped whole because it is no list, and the count of links past the bound.
 
 /** The log lines for an answer read card by card and for the entries it dropped. */
 export function entryWarnings(
@@ -78,6 +79,19 @@ export function linkWarnings(
 }
 
 /** P8-96: the log lines for a `links` value dropped whole or cut at its bound. */
-export function linkListWarnings(): string[] {
-  return [];
+// P8-96
+export function linkListWarnings(
+  label: string,
+  answer: Pick<GapAnswer, 'linksNotList' | 'linksPastMax'>,
+): string[] {
+  const whole =
+    answer.linksNotList === true
+      ? [`The "links" value of the ${label} was not a list and was dropped.`]
+      : [];
+  const past = answer.linksPastMax;
+  const cut =
+    past === undefined
+      ? []
+      : [`${String(past)} links of the ${label} past the first 100 were dropped.`];
+  return [...whole, ...cut];
 }
