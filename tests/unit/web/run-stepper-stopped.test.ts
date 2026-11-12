@@ -78,3 +78,32 @@ it('RF-1002 a stopped reader read again under another task in a resume shows no 
   expect(understandDetail(events)).toBe('2 of 2 agents done');
   expect(overview).toMatchObject({ done: 2, failed: 0, stopped: 0 });
 });
+
+it('RF-1002 DEC-217 a reader a cap or the approval pause cut short is stopped, not failed', () => {
+  const events = [
+    started,
+    planned(2, 'a1', 'Catalog'),
+    planned(3, 'a2', 'Orders'),
+    agentEnded(4, 'a1', 'Done', 1),
+    agentEnded(5, 'a2', 'StoppedByCap'),
+    runEnded(6, 'CapReached'),
+  ];
+
+  expect(understandDetail(events)).toBe('1 of 2 agents done, 1 stopped');
+  expect(overviewOf(stateAfter(...events))).toMatchObject({ done: 1, failed: 0, stopped: 1 });
+});
+
+it('RF-1002 a reader cut short at a cap and read again by a resume shows no stop', () => {
+  const events = [
+    started,
+    planned(2, 'a1', 'Orders'),
+    agentEnded(3, 'a1', 'StoppedByCap'),
+    runEnded(4, 'CapReached'),
+    ev(5, 'run.started', { ...startedData, stage: 'understand' }),
+    planned(6, 'a2', 'Orders'),
+    agentEnded(7, 'a2', 'Done', 1),
+    runEnded(8, 'Completed'),
+  ];
+
+  expect(overviewOf(stateAfter(...events))).toMatchObject({ done: 1, failed: 0, stopped: 0 });
+});

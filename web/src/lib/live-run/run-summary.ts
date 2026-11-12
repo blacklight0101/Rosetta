@@ -7,7 +7,10 @@ export interface Overview {
   readonly running: number;
   readonly done: number;
   readonly failed: number;
-  /** P9-04: readers the user's Stop cut short; no failure, and not counted when a resume read them again. */
+  /**
+   * P9-04, DEC-217: readers a Stop or a cap (the approval pause, Stop here) cut short; no failure,
+   * and not counted when a resume read them again.
+   */
   readonly stopped: number;
   /** The readers counted above; a stopped reader a resume read again under another task is not one. */
   readonly total: number;
@@ -25,8 +28,8 @@ export interface RoleTotals {
 
 /**
  * Agents planned, running, done and failed. An agent that stopped at its turn limit still gave its
- * cards, so it counts as done; one that gave invalid output, failed, or was stopped by a cap counts
- * as failed.
+ * cards, so it counts as done; one that gave invalid output or failed counts as failed. One a Stop
+ * or a cap cut short counts as stopped, never as failed (P9-04, DEC-217).
  */
 // RF-1002
 export function overviewOf(state: RunState): Overview {
@@ -37,14 +40,14 @@ export function overviewOf(state: RunState): Overview {
     planned: count(['Planned']),
     running: count(['Running']),
     done: count(['Done', 'TurnLimitReached']),
-    failed: count(['Failed', 'InvalidOutput', 'StoppedByCap']),
-    stopped: count(['Stopped']),
+    failed: count(['Failed', 'InvalidOutput']),
+    stopped: count(['Stopped', 'StoppedByCap']),
     total: agents.length,
   };
 }
 
 /**
- * P9-04: a stopped reader that a later task of the same area and role read again (a resume gives it
+ * P9-04: a stopped reader (by a Stop or a cap) that a later task of the same area and role read again (a resume gives it
  * a new task id) is left out of the figures, so a Completed resumed run shows no stop it recovered from.
  */
 function readAgain(
@@ -52,7 +55,7 @@ function readAgain(
   agent: AgentPanelState,
   at: number,
 ): boolean {
-  if (agent.state !== 'Stopped') return false;
+  if (agent.state !== 'Stopped' && agent.state !== 'StoppedByCap') return false;
   return agents.some(
     (later, index) => index > at && later.area === agent.area && later.role === agent.role,
   );
@@ -69,6 +72,7 @@ const failureWords: Readonly<Record<string, string>> = {
   Failed: 'failed',
   TurnLimitReached: 'turn limit reached without a card',
   StoppedByCap: 'stopped by a cap without a card',
+  Stopped: 'stopped without a card',
 };
 
 /**
