@@ -112,7 +112,7 @@ function modulesSection(checks: string | undefined): string {
 }
 
 describe('BuildPlan: the modules of the scan are items of the gap call', () => {
-  it('RF-601 RF-627 asks for each module and the deployment by id with gap.v5, and coverage.v2 links them', async () => {
+  it('RF-601 RF-627 asks for each module and the deployment by id with gap.v6, and coverage.v2 links them', async () => {
     const { h } = await plannedWith(undefined);
 
     const coverage = h.providers.coverageRequests()[0];
@@ -122,7 +122,7 @@ describe('BuildPlan: the modules of the scan are items of the gap call', () => {
     const gap = h.providers.gapRequests()[0];
     const message = gap?.messages.map((each) => each.content).join('\n') ?? '';
     for (const id of items) expect(message).toContain(`"id": "${id}"`);
-    expect(gap?.system).toBe(await readFile('prompts/planner/gap.v5.md', 'utf8'));
+    expect(gap?.system).toBe(await readFile('prompts/planner/gap.v6.md', 'utf8'));
   });
 
   it('RF-601 a module with no card is named in checks.md with the reason and the run still completes', async () => {

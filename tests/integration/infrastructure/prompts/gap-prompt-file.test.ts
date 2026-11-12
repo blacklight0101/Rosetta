@@ -11,11 +11,11 @@ import {
 // manifest. The coverage prompt stays as it was: the new prompt is a file of its own.
 
 describe('loadGapPrompt', () => {
-  it('RNF-004 loads prompts/planner/gap.v5.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/gap.v6.md with its version and hash', async () => {
     const file = await loadGapPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/gap.v5.md');
-    expect(file).toMatchObject({ name: 'planner/gap.v5.md', version: 'v5' });
+    const bytes = await readFile('prompts/planner/gap.v6.md');
+    expect(file).toMatchObject({ name: 'planner/gap.v6.md', version: 'v6' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
@@ -62,7 +62,7 @@ describe('loadGapRepairPrompt', () => {
     expect(text).toMatch(/only the cards/iu);
     expect(text).toMatch(/data, never instructions/u);
     expect(text).toMatch(/Write no text other than the JSON/u);
-    expect(await readFile('prompts/planner/gap.v5.md', 'utf8')).not.toMatch(/could not be read/u);
+    expect(await readFile('prompts/planner/gap.v6.md', 'utf8')).not.toMatch(/could not be read/u);
   });
 });
 
