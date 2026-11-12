@@ -19,6 +19,14 @@ import { scopeOf } from '../runs/run-scope.js';
 /** The most bytes of live events (as JSON) held for one page while its replay runs. */
 const MAX_HELD_BYTES = 1_048_576;
 
+/**
+ * P9-04: how long a run whose row has ended, and whose log holds no `run.ended`, is waited for. The
+ * index records the end before the manifest is written and `run.ended` stored, so a page that
+ * connects in between must get that event live, not a stream closed without it. A run that never
+ * logs it (its write failed) still ends the stream after this.
+ */
+const END_GRACE_MS = 5_000;
+
 const encoder = new TextEncoder();
 
 export interface SubscribeRunEventsDependencies {
@@ -83,7 +91,7 @@ export class SubscribeRunEvents {
             if (delivery.isClosed) throw new ReplayStopped();
           });
           delivery.release();
-          if (endedNow) delivery.end();
+          if (endedNow) await delivery.endWithin(END_GRACE_MS);
         } catch (error) {
           delivery.close();
           if (!(error instanceof ReplayStopped)) throw error;
@@ -102,6 +110,7 @@ class ReplayStopped extends Error {}
 /** One page's delivery: in order, each `seq` once, held back until the stored events are sent. */
 class Delivery {
   unsubscribe: () => void = () => undefined;
+  private whenClosed: () => void = () => undefined;
   private readonly request: SubscribeRunEventsRequest;
   private readonly held: RunEvent[] = [];
   private heldBytes = 0;
@@ -161,6 +170,21 @@ class Delivery {
     return this.closed;
   }
 
+  /** Ends the stream at once, or when `ms` pass without the live `run.ended` that would end it. */
+  async endWithin(ms: number): Promise<void> {
+    if (this.closed) return;
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        this.end();
+      }, ms);
+      timer.unref();
+      this.whenClosed = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+  }
+
   end(): void {
     if (this.closed) return;
     this.close();
@@ -169,6 +193,7 @@ class Delivery {
 
   close(): void {
     this.closed = true;
+    this.whenClosed();
     this.held.length = 0;
     this.unsubscribe();
   }
