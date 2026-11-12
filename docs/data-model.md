@@ -1108,7 +1108,11 @@ The journey facts (P8-139, DEC-226, RF-615): the journey strip and the projects 
 | `created_at`           | `timestamptz` | when Analyse was pressed; the steps of the journey are the project's understand and plan runs queued since then    |
 
 A new Analyse replaces the row. The journey's spend is the sum of the cost and tokens of its steps, read from `runs`, and
-what is left is the line every step runs under (RF-435).
+what is left is the line every step runs under (RF-435). Continue (+N) on a paused step raises `approved_tokens` and
+`approved_cost_micros` by the same N as the run's manifest, under the project's journey lock and never past the
+administrator run ceilings; a Continue that cannot queue the run puts the row back, and one the row can take none of is
+refused (RF-432, P9-01). So the approved amount a read returns includes every Continue of the journey. A run queued
+before `created_at` keeps its `runs.queued_at` when continued, so it never becomes a step of a later journey.
 
 **`project_consent`** (RF-143, RF-142, DEC-209, ADR-006; migration `0025`, P8-77)
 

@@ -47,7 +47,7 @@ The same image runs locally and hosted (ADR-014).
 
 Two runtime containers (ADR-014): the **app** (one Node.js 24 process, the Fastify server, started by the container
 runtime and long-lived) and **PostgreSQL**. Runs execute inside the app process as background jobs, limited by the
-run queue (RF-1108). The journey lock (`src/application/journey/journey-lock.ts`) is in-process; running more than one app instance requires moving it to the database first (P8-03). Inside the app:
+run queue (RF-1108). The journey lock (`src/application/journey/journey-lock.ts`) is in-process (a start of a step and a Continue that raises the journey's amount, P9-01, take it); running more than one app instance requires moving it to the database first (P8-03). Inside the app:
 
 | Component                   | Layer                         | Responsibility                                                                                                                                                           |
 | --------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

@@ -15,7 +15,9 @@ import type { RunEventHistory, RunEventSink } from '../ports/run-events.js';
 import type { ResolvedSource } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
-import { continueAmountOf } from '../../domain/budget/approved-amount.js';
+import type { Amount } from '../../domain/budget/approved-amount.js';
+import { continueOfferOf } from '../journey/journey-raise.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import { readUnderstandOptions } from '../understand/understand-options.js';
 import type { RunEndFacts } from '../journey/run-end-facts.js';
 import { RunEventPublisher } from './run-event-publisher.js';
@@ -55,6 +57,14 @@ export interface RunLifecycleDependencies {
   readonly parallelism?: Pick<StartParallelism, 'of'>;
   /** P8-139, DEC-226: stores the journey facts the end knows (required, so no composition forgets it). */
   readonly endFacts: Pick<RunEndFacts, 'record'>;
+  /** RF-432, P9-01: the journeys, so a pause offers only the N a step's journey can take. */
+  readonly journeys?: JourneyRecords | undefined;
+}
+
+/** RF-432: the approved amount of a paused run and the N Continue offers (none: it adds nothing). */
+interface PauseOffer {
+  readonly approved: Amount;
+  readonly continueAmount: Amount | undefined;
 }
 
 export interface StartedRun {
@@ -140,31 +150,45 @@ export class RunLifecycle {
 
   /**
    * RF-432, ADR-026: `Running` -> `AwaitingApproval` once, then `run.awaitingApproval` with the
-   * approved amount and the N that Continue offers. Undefined when the run was not running. The
-   * manifest keeps no end: its tasks already ended `StoppedByCap` and saved their work.
+   * approved amount and the N that Continue offers. Undefined when the run was not running, or
+   * (DEC-206, P9-01) when Continue could add nothing because the step's journey can take none of N:
+   * the run then ends `CapReached` as at a hard ceiling. The manifest keeps no end: its tasks
+   * already ended `StoppedByCap` and saved their work.
    */
   // RF-432
   async pause(run: Run, detail: Pick<EndDetail, 'unreadAreas'> = {}): Promise<Run | undefined> {
+    const offer = await this.attempt(run, 'the Continue offer', () => this.offerOf(run));
+    if (offer !== undefined && offer.continueAmount === undefined) return undefined;
     const counts = detail.unreadAreas === undefined ? {} : { unreadAreas: detail.unreadAreas };
     const paused = await this.deps.runs.pause(run.id, this.deps.clock.now().getTime(), counts);
     if (paused === undefined) return undefined;
     await this.attempt(paused, 'run.awaitingApproval', async () => {
-      const stored = await this.deps.manifests.read(scopeOf(paused));
-      const approved =
-        stored === undefined ? undefined : readUnderstandOptions(stored.options).approvedAmount;
       const events = await RunEventPublisher.open({ scope: scopeOf(paused), ...this.eventParts() });
       await events.emit('run.awaitingApproval', {
         totals: paused.totals,
         unreadAreas: paused.unreadAreas,
-        ...(approved === undefined
+        ...(offer === undefined
           ? {}
           : {
-              approvedAmount: { tokens: approved.tokens, costMicros: approved.costMicros },
-              continueAmount: continueAmountOf(approved),
+              approvedAmount: {
+                tokens: offer.approved.tokens,
+                costMicros: offer.approved.costMicros,
+              },
+              continueAmount: offer.continueAmount,
             }),
       });
     });
     return paused;
+  }
+
+  /** RF-432: the run's approved amount and the N its pause offers; undefined without an amount. */
+  private async offerOf(run: Run): Promise<PauseOffer | undefined> {
+    const stored = await this.deps.manifests.read(scopeOf(run));
+    const approved =
+      stored === undefined ? undefined : readUnderstandOptions(stored.options).approvedAmount;
+    if (approved === undefined) return undefined;
+    const continueAmount = await continueOfferOf(this.deps.journeys, run, approved);
+    return { approved, continueAmount };
   }
 
   /**

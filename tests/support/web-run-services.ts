@@ -31,7 +31,7 @@ import { ListRunCalls } from '../../src/application/use-cases/list-run-calls.js'
 import { ListRunLogs } from '../../src/application/use-cases/list-run-logs.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../../src/application/use-cases/reopen-question.js';
-import { continueRunOf } from './continue-run-of.js';
+import { continueRunOf, journeysOf, type JourneyGiven } from './continue-run-of.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
@@ -232,23 +232,24 @@ function consentsOf(projects: MemoryProjectRepository, clock: Clock) {
 /** RF-003, RF-209, DEC-209: Start run and Start Deepen, which share the project's consents. */
 function startServices(
   runs: RunHarness,
-  stores: Parameters<typeof deepenServices>[1] & {
-    readonly briefs: PlanningBriefStore;
-    readonly clock: Clock;
-    readonly roleKeys: RoleKeyDependencies;
-    readonly consents: ReturnType<typeof consentsOf>;
-  },
+  stores: Parameters<typeof deepenServices>[1] &
+    JourneyGiven & {
+      readonly briefs: PlanningBriefStore;
+      readonly clock: Clock;
+      readonly roleKeys: RoleKeyDependencies;
+      readonly consents: ReturnType<typeof consentsOf>;
+    },
 ): Pick<ServerOptions['runs'], 'startRun' | keyof ReturnType<typeof deepenServices>> {
   const { projects, keys, roleKeys, briefs, consents } = stores;
   return {
-    startRun: startRunOf({ ...runs, projects, briefs, roleKeys, consents }),
+    startRun: startRunOf({ ...runs, projects, briefs, roleKeys, consents, ...journeysOf(stores) }),
     ...deepenServices(runs, { projects, keys, roleKeys, consents }),
   };
 }
 
 export function runServices(
   runs: RunHarness,
-  stores: {
+  stores: JourneyGiven & {
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
     readonly answers: AnswersFile;
@@ -272,7 +273,7 @@ export function runServices(
     ...pageReads(runs.runs, outputs.text),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
-    continueRun: continueRunOf(runs, clock),
+    continueRun: continueRunOf(runs, clock, stores),
     resumeRun: new ResumeRun({
       ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
       ...{ roleKeys, problem: () => Promise.resolve(undefined) },
