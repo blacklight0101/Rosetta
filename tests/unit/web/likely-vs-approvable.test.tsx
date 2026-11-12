@@ -71,7 +71,7 @@ it('RF-434 P9-11 a likely token count above the approvable one says the run paus
 
 it('RF-430 P9-11 a moved approvable figure is named with both figures and the reason', () => {
   expect(figureMovedText(first, later)).toBe(
-    'The approvable figure moved from $1.32 to $0.31. The figures changed: they now come from the measured totals of earlier runs of this model, not from the fixed assumptions.',
+    'The approvable figure moved from $1.32 to $0.3140. The figures changed: they now come from the measured totals of earlier runs of this model, not from the fixed assumptions.',
   );
   expect(figureMovedText(first, first)).toBeUndefined();
   expect(figureMovedText(first, estimateOf({ ...first.journey, ceilingApplied: true }))).toBe(
@@ -83,7 +83,7 @@ it('RF-430 P9-11 a changed ceiling moves the figure with a reason that is not th
   const lowered = estimateOf({ ...first.journey, approvable: { tokens: 1, costMicros: '500000' } });
 
   expect(figureMovedText(first, lowered)).toBe(
-    'The approvable figure moved from $1.32 to $0.50. The ceilings, the settings or the areas changed since the earlier read.',
+    'The approvable figure moved from $1.32 to $0.5000. The ceilings, the settings or the areas changed since the earlier read.',
   );
 });
 
@@ -109,8 +109,8 @@ it('RF-434 P9-11 a later read on the same page does not replace the figure witho
 
   view.rerender(<EstimateSection {...props} estimate={{ status: 'ready', estimate: later }} />);
 
-  expect(screen.getByTestId('journey-approved').textContent).toContain('$0.31');
-  expect(screen.getByTestId('journey-moved').textContent).toContain('moved from $1.32 to $0.31');
+  expect(screen.getByTestId('journey-approved').textContent).toContain('$0.3140');
+  expect(screen.getByTestId('journey-moved').textContent).toContain('moved from $1.32 to $0.3140');
   view.rerender(<EstimateSection {...props} estimate={{ status: 'ready', estimate: first }} />);
   expect(screen.queryByTestId('journey-moved')).toBeNull();
 });
