@@ -54,6 +54,12 @@ export function RunOverview({ state }: { readonly state: RunState }): JSX.Elemen
             <dt>Failed</dt>
             <dd>{overview.failed}</dd>
           </div>
+          {overview.stopped === 0 ? null : (
+            <div>
+              <dt>Stopped</dt>
+              <dd>{overview.stopped}</dd>
+            </div>
+          )}
         </dl>
       </div>
       <div class="rst-live-tile">
