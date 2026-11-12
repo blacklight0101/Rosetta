@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { phaseOf } from '../../../web/src/lib/live-run/run-phase.js';
+import type { RunEvent } from '../../../web/src/api/run-events.js';
 import type { RunRow } from '../../../web/src/api/run-schemas.js';
 import { overviewOf } from '../../../web/src/lib/live-run/run-summary.js';
 import { stepperOf } from '../../../web/src/lib/live-run/run-stepper.js';
@@ -25,7 +26,7 @@ const row: RunRow = {
 
 const started = ev(1, 'run.started', { ...startedData, stage: 'understand' });
 
-function understandDetail(...events: Parameters<typeof stateAfter>): string | undefined {
+function understandDetail(events: readonly RunEvent[]): string | undefined {
   const state = stateAfter(...events);
   const steps = stepperOf(row, state, phaseOf(row, state));
   return steps.find((step) => step.name === 'Understand')?.detail;
@@ -41,7 +42,7 @@ it('RF-1002 a reader a Stop cut short reads stopped, not failed', () => {
     runEnded(6, 'Interrupted'),
   ];
 
-  expect(understandDetail(...events)).toBe('1 of 2 agents done, 1 stopped');
+  expect(understandDetail(events)).toBe('1 of 2 agents done, 1 stopped');
   expect(overviewOf(stateAfter(...events))).toMatchObject({ done: 1, failed: 0, stopped: 1 });
 });
 
@@ -55,7 +56,7 @@ it('RF-1002 a reader that really failed still counts as failed beside a stopped 
     runEnded(6, 'Interrupted'),
   ];
 
-  expect(understandDetail(...events)).toBe('0 of 2 agents done, 1 failed, 1 stopped');
+  expect(understandDetail(events)).toBe('0 of 2 agents done, 1 failed, 1 stopped');
 });
 
 it('RF-1002 a stopped reader read again under another task in a resume shows no failure', () => {
@@ -74,6 +75,6 @@ it('RF-1002 a stopped reader read again under another task in a resume shows no 
 
   const overview = overviewOf(stateAfter(...events));
 
-  expect(understandDetail(...events)).toBe('2 of 2 agents done');
+  expect(understandDetail(events)).toBe('2 of 2 agents done');
   expect(overview).toMatchObject({ done: 2, failed: 0, stopped: 0 });
 });

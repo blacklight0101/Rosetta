@@ -4,7 +4,8 @@ import type { EndReason } from '../../api/end-reason.js';
 // `reduce-run.ts`. Nothing here is HTML: every text is shown as text.
 
 export type AgentState =
-  'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
+  | ('Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput')
+  | ('Failed' | 'StoppedByCap' | 'Stopped');
 
 export interface ToolNow {
   /** For example `read_file Catalog/Edit.aspx.cs:40-80`. */

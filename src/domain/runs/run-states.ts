@@ -24,12 +24,22 @@ export type RunEndReason = (typeof RUN_END_REASONS)[number];
 export const RUN_QUEUE_STATES = ['Queued', 'Running', 'AwaitingApproval', 'Ended'] as const;
 export type RunQueueState = (typeof RUN_QUEUE_STATES)[number];
 
-/** RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other five. */
+/**
+ * RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other six. `Stopped` (P9-04)
+ * is a task the user's Stop (or a shutdown) cut short: a stop is no failure.
+ */
 export type AgentTaskState =
-  'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
+  | ('Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput')
+  | ('Failed' | 'StoppedByCap' | 'Stopped');
 
 /** RF-006: whether a resume runs a task of this state again (its state, as the manifest stores it). */
-const UNFINISHED_TASK_STATES: readonly string[] = ['Planned', 'Running', 'StoppedByCap', 'Failed'];
+const UNFINISHED_TASK_STATES: readonly string[] = [
+  'Planned',
+  'Running',
+  'StoppedByCap',
+  'Failed',
+  'Stopped',
+];
 
 export function isUnfinishedTask(state: string): boolean {
   return UNFINISHED_TASK_STATES.includes(state);

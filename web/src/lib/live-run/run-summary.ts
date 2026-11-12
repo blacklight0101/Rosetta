@@ -7,6 +7,10 @@ export interface Overview {
   readonly running: number;
   readonly done: number;
   readonly failed: number;
+  /** P9-04: readers the user's Stop cut short; no failure, and not counted when a resume read them again. */
+  readonly stopped: number;
+  /** The readers counted above; a stopped reader a resume read again under another task is not one. */
+  readonly total: number;
 }
 
 export interface RoleTotals {
@@ -26,14 +30,32 @@ export interface RoleTotals {
  */
 // RF-1002
 export function overviewOf(state: RunState): Overview {
+  const agents = state.agents.filter((agent, index) => !readAgain(state.agents, agent, index));
   const count = (states: readonly string[]): number =>
-    state.agents.filter((agent) => states.includes(agent.state)).length;
+    agents.filter((agent) => states.includes(agent.state)).length;
   return {
     planned: count(['Planned']),
     running: count(['Running']),
     done: count(['Done', 'TurnLimitReached']),
     failed: count(['Failed', 'InvalidOutput', 'StoppedByCap']),
+    stopped: count(['Stopped']),
+    total: agents.length,
   };
+}
+
+/**
+ * P9-04: a stopped reader that a later task of the same area and role read again (a resume gives it
+ * a new task id) is left out of the figures, so a Completed resumed run shows no stop it recovered from.
+ */
+function readAgain(
+  agents: readonly AgentPanelState[],
+  agent: AgentPanelState,
+  at: number,
+): boolean {
+  if (agent.state !== 'Stopped') return false;
+  return agents.some(
+    (later, index) => index > at && later.area === agent.area && later.role === agent.role,
+  );
 }
 
 export interface FailedArea {

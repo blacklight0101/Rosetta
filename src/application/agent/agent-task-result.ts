@@ -32,7 +32,7 @@ const stateOf: Readonly<Record<AgentTaskEndReason, EndState>> = {
   'context-limit': 'TurnLimitReached',
   'repeated-calls': 'Failed',
   'unknown-tools': 'Failed',
-  aborted: 'Failed',
+  aborted: 'Stopped',
   'cap-reached': 'StoppedByCap',
   'provider-failed': 'Failed',
 };
