@@ -119,7 +119,7 @@ export function scenarioCost(estimate: PlanEstimate, scenario: Scenario): string
 }
 
 /** The figure of a scenario in the unit of a cap: tokens for a token cap, the cost for a cost cap. */
-function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap): string {
+export function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap): string {
   return cap.unit === 'tokens'
     ? tokensText(tokensOfScenario(estimate, scenario))
     : dollars(estimate.planner[scenario].costMicros);
@@ -132,4 +132,29 @@ function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap
 export function overCaps(estimate: PlanEstimate, scenario: Scenario): readonly PlanCap[] {
   const local = isLocalModel(estimate.planner.kind);
   return estimate.caps.filter((cap) => !cap.fits[scenario] && !(local && cap.unit === 'micros'));
+}
+
+/** RF-435, P9-02: the journey's remainder is below the likely plan estimate. */
+export interface JourneyShort {
+  readonly cap: PlanCap;
+  /** Nothing is left, so "Start the plan" is refused (RST-2311) until Analyse approves more. */
+  readonly usedUp: boolean;
+  readonly text: string;
+}
+
+/**
+ * RF-435, RF-613, P9-02: what is short of the journey's approved amount, with both figures, and the
+ * one way on: with something left the plan starts and pauses to Continue (+N); with nothing left
+ * only Analyse again on the start page approves a new amount.
+ */
+export function journeyShortOf(estimate: PlanEstimate): JourneyShort | undefined {
+  const cap = overCaps(estimate, 'likely').find((each) => each.approved);
+  if (cap === undefined) return undefined;
+  const approved = capFigure(cap, cap.limit);
+  const needs = `the plan is estimated at ${scenarioFigure(estimate, 'likely', cap)}`;
+  const usedUp = cap.remaining <= 0n;
+  const text = usedUp
+    ? `Nothing is left of the ${approved} you approved, and ${needs}. The plan cannot start until you approve a new amount.`
+    : `Only ${capFigure(cap, cap.remaining)} is left of the ${approved} you approved, and ${needs}. You can still start it: the run pauses before it passes what is left and asks you to Continue (+N), which raises the approved amount.`;
+  return { cap, usedUp, text };
 }

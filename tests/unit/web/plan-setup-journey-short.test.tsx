@@ -14,7 +14,7 @@ afterEach(() => {
 
 const answers = { [`GET ${base}/planning-brief`]: json(200, savedBrief) };
 
-const short = (remaining: string) => ({
+const short = (remaining: string, fits = false) => ({
   ...planEstimate,
   runLine: 'journey',
   planner: {
@@ -29,10 +29,10 @@ const short = (remaining: string) => ({
       limit: '3100000',
       spent: '0',
       remaining,
-      fits: { low: true, likely: false, high: false },
+      fits: { low: true, likely: fits, high: fits },
     },
   ],
-  withinCaps: { low: true, likely: false, high: false },
+  withinCaps: { low: true, likely: fits, high: fits },
 });
 
 const startButton = (): HTMLButtonElement => {
@@ -68,7 +68,7 @@ describe('plan setup with a journey that is short', () => {
   });
 
   it('RF-613 P9-02 a journey with enough left shows no short notice', async () => {
-    renderPlan({ ...answers, [`GET ${base}/plan-estimate`]: json(200, short('3100000')) });
+    renderPlan({ ...answers, [`GET ${base}/plan-estimate`]: json(200, short('3100000', true)) });
     await ready();
     expect(screen.queryByTestId('plan-journey-short')).toBeNull();
   });

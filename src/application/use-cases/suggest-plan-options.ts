@@ -14,7 +14,7 @@ import type { PromptFile } from '../agent/prompt-file.js';
 import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recommend-plan-options.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
-import { stepAmountOf } from '../journey/journey-budget.js';
+import { stepAmountChecked } from '../journey/journey-budget.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { CallSinks, ProviderSetFactory } from '../ports/provider-set-factory.js';
@@ -142,6 +142,9 @@ export class SuggestPlanOptions {
     const { deps } = this;
     const account = await deps.users.findById(request.actor.userId);
     if (account === undefined) return err(ERROR_CODES.notFound);
+    // RF-435, P9-02: a journey with nothing left refuses the call before it is made, with RST-2311.
+    const line = await stepAmountChecked(deps, { userId: account.id, projectId: project.id });
+    if (!line.ok) return err(line.error);
     const built = await deps.providers.build({
       account,
       run: { id: null, userId: account.id, projectId: project.id, stage: 'plan' },
@@ -149,7 +152,7 @@ export class SuggestPlanOptions {
       roles: ['planner'],
       cloudConsent: request.cloudConsent,
       // RF-435, P8-01: the call runs under what is left of the journey's approved amount.
-      approvedAmount: await stepAmountOf(deps, { userId: account.id, projectId: project.id }),
+      approvedAmount: line.value,
       sinks: {
         ...deps.callSinks({ userId: account.id, projectId: project.id }),
         costs: { addCall: () => Promise.resolve() },
@@ -172,18 +175,28 @@ export class SuggestPlanOptions {
           runId: `plan-options-${callId}`,
           nextCallId: () => `plan-options-${callId}#1`,
         },
-        traceId: deps.ids
-          .uuid()
-          .replaceAll('-', '')
-          .padEnd(TRACE_ID_LENGTH, '0')
-          .slice(0, TRACE_ID_LENGTH),
+        traceId: traceIdOf(deps.ids),
         signal: deps.signals.after(callLimitMs(project, planner.name)),
         onAnswer: () => Promise.resolve(),
       },
       { ...input, catalogue },
     );
-    return outcome.ok ? outcome : err(outcome.error.code);
+    return outcome.ok ? outcome : err(journeyWords(outcome.error.code, line.value !== undefined));
   }
+}
+
+/**
+ * RF-435, P9-02: under a journey the call is stopped by the journey's remainder, not by a project
+ * cap, so it answers RST-2311 (press Analyse again) instead of RST-1600 (raise the project cap).
+ */
+function journeyWords(code: ErrorCode, underJourney: boolean): ErrorCode {
+  return underJourney && code === ERROR_CODES.budgetCapReached
+    ? ERROR_CODES.journeyAmountUsed
+    : code;
+}
+
+function traceIdOf(ids: Pick<IdGenerator, 'uuid'>): string {
+  return ids.uuid().replaceAll('-', '').padEnd(TRACE_ID_LENGTH, '0').slice(0, TRACE_ID_LENGTH);
 }
 
 function isCompleted(run: Run): boolean {
