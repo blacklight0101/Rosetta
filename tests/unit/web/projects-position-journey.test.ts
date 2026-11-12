@@ -87,7 +87,9 @@ describe('RF-010 where it is before the first understand run', () => {
     });
 
     expect(headingOf('octo/demo', view).title).toBe(text);
-    expect(step(view, 'scan').detail).toContain(text);
+    // P9-07 (EV-102): the scan is done; the row's "Start a run" is the understand step's words.
+    expect(step(view, 'scan').detail).toBe('Code map ready');
+    expect(step(view, 'understand').detail).toContain(text);
   });
 
   it('RF-010 a project with no run reads the first step of the journey', () => {
