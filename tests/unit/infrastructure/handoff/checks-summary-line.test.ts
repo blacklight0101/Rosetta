@@ -55,7 +55,7 @@ describe('checks.md: the summary line of the plan coverage', () => {
     const tasks = [planTask({ builds: everything, requirements: ['REQ-002'] })];
 
     expect(summaryOf(packageOf(tasks, 4))).toBe(
-      'Every feature, table, operation, journey and screen is built by at least one task card; 3 requirements are built by no card.',
+      'Every feature, table, operation, journey and screen is built by at least one task card; 3 requirements are built by no card, so the run is not complete.',
     );
   });
 
@@ -63,7 +63,7 @@ describe('checks.md: the summary line of the plan coverage', () => {
     const tasks = [planTask({ builds: everything, requirements: [] })];
 
     expect(summaryOf(packageOf(tasks))).toBe(
-      'Every feature, table, operation, journey and screen is built by at least one task card; 1 requirement is built by no card.',
+      'Every feature, table, operation, journey and screen is built by at least one task card; 1 requirement is built by no card, so the run is not complete.',
     );
   });
 

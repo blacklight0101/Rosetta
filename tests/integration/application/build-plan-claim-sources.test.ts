@@ -226,8 +226,10 @@ describe('BuildPlan: which answers the repair round is for (EV-83)', () => {
     const { h, run } = await planned(someUnsourced, unsourced);
 
     expect(planRequests(h)).toHaveLength(2);
-    expect(run.endState).not.toBe('Failed');
+    // P9-06: the kept requirement is built by no card (its cards were left out), so the package is
+    // written with it and the run ends RST-1806 instead of completing.
     expect(plain((await h.handoffOf(run))['requirements.md'])).toContain('Place an order');
+    expect(plain((await h.handoffOf(run))['checks.md'])).toContain('Requirements built by no card');
   });
 
   it('P8-02 RF-607 one card left without a requirement while others keep theirs gets no round', async () => {
