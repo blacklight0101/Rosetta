@@ -8,6 +8,7 @@ import type { RunEventHistory, RunEventSink } from '../../src/application/ports/
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import type { RunEndFacts } from '../../src/application/journey/run-end-facts.js';
+import type { JourneyRecords } from '../../src/application/ports/journey-records.js';
 import type { StartCaps } from '../../src/application/runs/run-start-caps.js';
 import type { StartParallelism } from '../../src/application/runs/run-start-parallelism.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
@@ -113,6 +114,8 @@ export interface RunHarnessOptions {
   readonly parallelism?: Pick<StartParallelism, 'of'>;
   /** P8-139: what records the journey facts of a run's end; nothing when left out. */
   readonly endFacts?: Pick<RunEndFacts, 'record'>;
+  /** RF-432, P9-01: the journey records a pause reads for the N it offers; none when left out. */
+  readonly journeys?: JourneyRecords;
 }
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
@@ -148,6 +151,7 @@ function createStores(options: RunHarnessOptions): Stores {
     ...(options.startCaps === undefined ? {} : { startCaps: options.startCaps }),
     ...(options.parallelism === undefined ? {} : { parallelism: options.parallelism }),
     endFacts: options.endFacts ?? noEndFacts,
+    ...(options.journeys === undefined ? {} : { journeys: options.journeys }),
   });
   return { clock, logger, runs, manifests, events, broadcaster, lifecycle };
 }
