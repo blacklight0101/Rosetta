@@ -102,14 +102,18 @@ function ofRun(run: JourneyRunFacts, completed: Part): Part {
   return { ...unfinishedStep(run), href: runPage(run) };
 }
 
+// P9-07 (EV-102): a completed scan is done, with or without an understand run.
 function scanPart({ source, facts }: Context): Part {
-  if (source === null) return { state: 'upcoming', detail: 'Start a run to map the code' };
+  if (source === null && facts.scanRunId === null) {
+    return { state: 'upcoming', detail: 'Start a run to map the code' };
+  }
   const href = facts.scanRunId === null ? undefined : `/runs/${facts.scanRunId}`;
   return { state: 'done', detail: 'Code map ready', href };
 }
 
-function understandPart({ source }: Context): Part {
-  if (source === null) return locked('Needs a run: start one');
+function understandPart({ source, facts }: Context): Part {
+  if (source === null && facts.scanRunId === null) return locked('Needs a run: start one');
+  if (source === null) return { state: 'upcoming', detail: 'Start a run to understand the code' };
   const claims = source.supportedClaims;
   const detail =
     claims === 0
