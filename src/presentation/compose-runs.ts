@@ -170,15 +170,15 @@ function answerServices(
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability, counts } = service;
-  const cards = keptPriorCards(writer);
-  const ollamaHost = ollamaHostOf(parts.ollamaUrl);
+  const [cards, ollamaHost] = [keptPriorCards(writer), ollamaHostOf(parts.ollamaUrl)];
   const roleKeys = { users: new PgUserRepository(parts.pool), keys: parts.keySources };
   const estimateRun = composeEstimateRun(parts, { projects, runs, scans, roleKeys });
   const consents = composeConsents(parts.pool, parts.clock); // DEC-209: one store for every start
+  const journeys = new PgJourneyRecords(parts.pool); // RF-011: Analyse records it, Continue raises it
   return {
     startRun: new StartRun({
       ...{ projects, runs, manifests, submit: submitRun, roleKeys, consents },
-      ...{ journey: journeyLookupOf(estimateRun), journeys: new PgJourneyRecords(parts.pool) },
+      ...{ journey: journeyLookupOf(estimateRun), journeys },
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
@@ -186,7 +186,7 @@ function runServices(service: ServiceParts): RunServices {
     getRun: new GetRun({ runs, queue, manifests, files: new FileRunTextFiles(writer) }),
     getJourney: composeJourney({ projects, runs, pool: parts.pool }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
-    ...answerServices({ runs, manifests, queue, clock: parts.clock }),
+    ...answerServices({ runs, manifests, queue, clock: parts.clock, journeys }),
     resumeRun: composeResume({
       ...{ projects, runs, manifests, queue, scans, writer },
       ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys },
