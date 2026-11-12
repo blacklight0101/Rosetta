@@ -166,6 +166,36 @@ function resumeTests(name: string, fresh: FreshEventStore): void {
   });
 }
 
+function laterLifeEndTests(name: string, fresh: FreshEventStore): void {
+  it(`RF-006 ${name} accepts a cancelled queued resume run.ended after the first life end`, async () => {
+    const { sink, history } = await fresh();
+    await sink.publish(scope, eventFor(scope, 1, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'UserStop' }));
+
+    await sink.publish(scope, eventFor(scope, 3, 'run.ended', { endReason: 'QueueCancel' }));
+
+    const stored = await history.read(scope, 0);
+    expect(stored.map((event) => event.type)).toEqual(['run.started', 'run.ended', 'run.ended']);
+    await expect(sink.publish(scope, eventFor(scope, 4))).rejects.toMatchObject({
+      code: ERROR_CODES.runEventRefused,
+    });
+  });
+
+  it(`RF-006 ${name} refuses a second run.ended within one life`, async () => {
+    const { sink, history } = await fresh();
+    await sink.publish(scope, eventFor(scope, 1, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'UserStop' }));
+
+    await expect(
+      sink.publish(scope, eventFor(scope, 3, 'run.ended', { endReason: 'UserStop' })),
+    ).rejects.toMatchObject({ code: ERROR_CODES.runEventRefused });
+    await expect(
+      sink.publish(scope, eventFor(scope, 3, 'run.ended', { endState: 'Completed' })),
+    ).rejects.toMatchObject({ code: ERROR_CODES.runEventRefused });
+    expect(await history.read(scope, 0)).toHaveLength(2);
+  });
+}
+
 function isolationTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} keeps the events of two runs apart`, async () => {
     const { sink, history } = await fresh();
@@ -197,4 +227,5 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
   refusalTests(name, fresh);
   isolationTests(name, fresh);
   resumeTests(name, fresh);
+  laterLifeEndTests(name, fresh);
 }
