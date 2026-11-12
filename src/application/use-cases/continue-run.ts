@@ -1,8 +1,8 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { raiseApprovedAmount, type Amount } from '../../domain/budget/approved-amount.js';
-import { continuedAmount, withinCeilings } from '../runs/approved-journey.js';
+import { withinCeilings } from '../runs/approved-journey.js';
 import { withProjectLock } from '../journey/journey-lock.js';
-import { journeyRaiseOf, type JourneyRaise } from '../journey/journey-raise.js';
+import { journeyRaiseOf, offeredExtra, type JourneyRaise } from '../journey/journey-raise.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
@@ -25,6 +25,8 @@ import type { SubmittedRun } from './submit-run.js';
 // RF-435, P9-01, EV-100: a run that is a step of a journey raises the journey's approved amount by
 // the same N in that step, under the project's journey lock, so a start cannot read the journey
 // between the two raises; when the run cannot be queued, the manifest and the journey go back.
+// DEC-206: a Continue the journey can take none of adds nothing, so it is refused (RST-2311); a run
+// queued before the current journey keeps its queue time, so it stays out of that journey.
 
 export interface ContinueRunDependencies {
   readonly runs: RunIndex;
@@ -35,15 +37,20 @@ export interface ContinueRunDependencies {
   readonly journeys?: JourneyRecords | undefined;
 }
 
-export type ContinueProblem = typeof ERROR_CODES.notFound | typeof ERROR_CODES.conflict;
+export type ContinueProblem =
+  typeof ERROR_CODES.notFound | typeof ERROR_CODES.conflict | typeof ERROR_CODES.journeyAmountUsed;
+
+/** What one Continue did: the queued run, a refusal, or nothing (the run is not paused). */
+type Continued = Run | typeof ERROR_CODES.journeyAmountUsed | undefined;
 
 /** The manifest raised by N and the raise of the journey that goes with it. */
 interface Raise {
   readonly manifest: RunManifest;
-  readonly journey: Pick<JourneyRaise, 'apply' | 'undo'>;
+  readonly journey: Omit<JourneyRaise, 'extra'>;
 }
 
 const unchanged = (): Promise<void> => Promise.resolve();
+const runAlone = { takesNothing: false, keepsQueuedAt: false, apply: unchanged, undo: unchanged };
 
 export class ContinueRun {
   private readonly deps: ContinueRunDependencies;
@@ -67,6 +74,7 @@ export class ContinueRun {
       this.deps.queue.exclusive(run.id, () => this.continueOnce(userId, run.id, request.extra)),
     );
     if (!continued.ok || continued.value === undefined) return err(ERROR_CODES.conflict);
+    if (typeof continued.value === 'string') return err(continued.value);
     const current = await this.deps.runs.find(userId, run.id);
     return ok({
       run: current ?? continued.value,
@@ -79,7 +87,7 @@ export class ContinueRun {
     userId: string,
     runId: string,
     extra: Amount | undefined,
-  ): Promise<Run | undefined> {
+  ): Promise<Continued> {
     const { runs, manifests, clock } = this.deps;
     const run = await runs.find(userId, runId);
     if (run?.queueState !== 'AwaitingApproval') return undefined;
@@ -87,6 +95,7 @@ export class ContinueRun {
     const stored = await manifests.read(scope);
     if (stored === undefined) return undefined;
     const raise = await this.raiseOf(run, stored, extra);
+    if (raise.journey.takesNothing) return ERROR_CODES.journeyAmountUsed;
     await raise.journey.apply();
     const putBack = async (): Promise<void> => {
       await manifests.write(scope, stored);
@@ -95,7 +104,8 @@ export class ContinueRun {
     let queued: Run | undefined;
     try {
       await manifests.write(scope, raise.manifest);
-      queued = await runs.continueAwaiting(userId, runId, clock.now().getTime());
+      const at = raise.journey.keepsQueuedAt ? run.queuedAt : clock.now().getTime();
+      queued = await runs.continueAwaiting(userId, runId, at);
     } catch (error) {
       await putBack();
       throw error;
@@ -113,14 +123,11 @@ export class ContinueRun {
   ): Promise<Raise> {
     const { approvedAmount } = readUnderstandOptions(manifest.options);
     if (approvedAmount === undefined) {
-      return { manifest, journey: { apply: unchanged, undo: unchanged } };
+      return { manifest, journey: runAlone };
     }
     // RF-432: N is at most the offered one; the sum stays within the ceilings.
-    const offered = continuedAmount(approvedAmount, extra);
-    const journey = await journeyRaiseOf(this.deps.journeys, run, {
-      tokens: offered.tokens - approvedAmount.tokens,
-      costMicros: offered.costMicros - approvedAmount.costMicros,
-    });
+    const offered = offeredExtra(approvedAmount, extra);
+    const journey = await journeyRaiseOf(this.deps.journeys, run, offered);
     // P9-01: the run takes the N its journey took, so neither passes the other or the ceilings.
     const raised = withinCeilings(raiseApprovedAmount(approvedAmount, journey.extra));
     return {
