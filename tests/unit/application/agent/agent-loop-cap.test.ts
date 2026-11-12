@@ -72,7 +72,7 @@ describe('runAgentTask and stops', () => {
     expect(result.state).toBe('StoppedByCap');
   });
 
-  it('RF-1003 a stop by the user still ends the task as Failed with RST-1501', async () => {
+  it('RF-1003 a stop by the user still ends the task as Stopped with RST-1501', async () => {
     const { request } = loopSetup([]);
     const controller = new AbortController();
     controller.abort();
@@ -81,7 +81,7 @@ describe('runAgentTask and stops', () => {
       request({ complete: () => Promise.reject(new Error('unused')) }, controller.signal),
     );
 
-    expect(result.state).toBe('Failed');
+    expect(result.state).toBe('Stopped');
     expect(result.code).toBe(ERROR_CODES.providerCallCancelled);
   });
 });

@@ -25,6 +25,7 @@ const AGENT_STATES: readonly AgentState[] = [
   'InvalidOutput',
   'Failed',
   'StoppedByCap',
+  'Stopped',
 ];
 
 function blankAgent(agentTaskId: string): AgentPanelState {

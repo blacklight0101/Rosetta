@@ -36,6 +36,7 @@ export const stateLists = {
     'InvalidOutput',
     'Failed',
     'StoppedByCap',
+    'Stopped',
   ],
   RunEndState: ['Completed', 'CapReached', 'Failed', 'Interrupted'],
   RunQueueState: ['Queued', 'Running', 'AwaitingApproval', 'Ended'],
@@ -90,6 +91,7 @@ export const badgeSpecs: SpecTable = {
     InvalidOutput: badge('Invalid output', 'danger', 'tint', 'brackets'),
     Failed: badge('Failed', 'danger', 'solid', 'exclamation'),
     StoppedByCap: badge('Stopped by cap', 'warn', 'solid', 'square'),
+    Stopped: badge('Stopped by you', 'neutral', 'solid', 'pause-bars'),
   },
   RunEndState: {
     Completed: badge('Completed', 'ok', 'solid', 'check'),

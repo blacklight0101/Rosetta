@@ -120,7 +120,7 @@ describe('an understand run whose tasks end early: coverage', UNDERSTAND_TIMEOUT
     const manifest = await h.manifestOf(run);
     expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
       ['Catalog', 'InvalidOutput'],
-      ['Services', 'Failed'],
+      ['Services', 'Stopped'],
     ]);
     const coverage = await coverageOf(h.runFolder(run));
     expect(coverage.areas.map((entry) => [entry.area, entry.files])).toEqual([
