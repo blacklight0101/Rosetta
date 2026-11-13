@@ -15,6 +15,13 @@ export type LabArgs =
       readonly cases: string;
       readonly repetitions: number;
       readonly yes: boolean;
+      /** RF-1404: the model that scores each answer against the family rubric. */
+      readonly judge?: { readonly provider: string; readonly model: string };
+    }
+  | {
+      readonly kind: 'judge-check';
+      readonly model: { readonly provider: string; readonly model: string };
+      readonly yes: boolean;
     }
   | { readonly kind: 'compare'; readonly a: string; readonly b: string }
   | { readonly kind: 'help' };

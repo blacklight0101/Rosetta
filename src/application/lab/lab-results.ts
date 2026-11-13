@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. All figures are deterministic: no judge is involved.
@@ -26,6 +27,8 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
+  /** RF-1404: the judge's scores, present only in a run made with `--judge`. */
+  judge: judgementSchema.optional(),
 });
 
 const resultsSchema = z.strictObject({
@@ -50,6 +53,7 @@ const resultsSchema = z.strictObject({
   endState: z.enum(['Completed', 'Refused']),
   refusal: z.string().nullable(),
   cases: z.array(caseSchema),
+  judge: judgeInfoSchema.optional(),
 });
 
 export type LabCaseResult = z.infer<typeof caseSchema>;
