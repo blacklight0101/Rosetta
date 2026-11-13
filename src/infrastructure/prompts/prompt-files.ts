@@ -22,7 +22,7 @@ const readerPromptNames = {
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
   repair: 'cards/repair.v6.md',
-  continue: 'cards/continue.v1.md',
+  continue: 'cards/continue.v2.md',
   readFirst: 'reader/read-first.v1.md',
   readMore: 'reader/read-more.v2.md',
 } as const;
