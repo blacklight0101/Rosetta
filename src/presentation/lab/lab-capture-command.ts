@@ -21,6 +21,7 @@ const CAPTURE_USAGE = [
   '  --name <set>      the case set to write: lab/cases/<set>.json',
   '  --sources <file>  JSON of the sources (name, address, commit or snapshot, licence) by key',
   '  --run <key>=<dir> a saved run folder (or the folder that holds one) and the source it is of',
+  '  --local           write to lab/local-cases (git-ignored), for sets that may not be published',
   '  --max-per-run <n> the most cases taken from one run, 1 to 50 (default 3)',
   'Sends nothing. Inputs only: no system prompt, no model answer, no expected label.',
 ].join('\n');
@@ -111,14 +112,19 @@ export async function runLabCapture(
   labFolder: string,
   print: (line: string) => void,
 ): Promise<number> {
-  const args = argsOf(argv);
+  const local = argv.includes('--local');
+  const args = argsOf(argv.filter((each) => each !== '--local'));
   if (!args.ok) return (print(`${args.error}\n${CAPTURE_USAGE}`), 1);
   try {
     const request = await requestOf(args.value);
     if (!request.ok) return (print(request.error), 1);
     const built = buildCaseSet(request.value);
     if (!built.ok) return (print(built.error), 1);
-    const file = await writeCaseSetFile(join(labFolder, 'cases'), args.value.name, built.value.set);
+    const file = await writeCaseSetFile(
+      join(labFolder, local ? 'local-cases' : 'cases'),
+      args.value.name,
+      built.value.set,
+    );
     const held = built.value.set.cases.filter((each) => each.split === 'held-back').length;
     print(
       `Wrote ${file}: ${String(built.value.set.cases.length)} cases, ${String(held)} held back.`,

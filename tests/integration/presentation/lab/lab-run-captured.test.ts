@@ -19,7 +19,7 @@ const runOf = (prompt: string, version: string, cases: string) => ({
 
 describe('the lab over captured case sets', () => {
   it('RF-1406 runs the planner gap set and keeps the split of the set in the results', async () => {
-    const router = new ModelRouter({ 'model-a': Array.from({ length: 11 }, () => '{"tasks":[]}') });
+    const router = new ModelRouter({ 'model-a': Array.from({ length: 5 }, () => '{"tasks":[]}') });
 
     const { code } = await runLab(
       labParts({ outputDir: out(), router }),
@@ -28,16 +28,16 @@ describe('the lab over captured case sets', () => {
     const [results] = await writtenResults(out());
 
     expect(code).toBe(0);
-    expect(results?.cases).toHaveLength(11);
+    expect(results?.cases).toHaveLength(5);
     expect(results?.cases.every((each) => each.detail === 'NoCards' && each.validFirstTry)).toBe(
       true,
     );
-    expect(results?.cases.filter((each) => each.split === 'held-back')).toHaveLength(4);
+    expect(results?.cases.filter((each) => each.split === 'held-back')).toHaveLength(2);
     expect(results?.caseSet.version).toBe('planner-gap-1');
   });
 
   it('RF-1406 runs the merge set and counts an unreadable answer as unusable', async () => {
-    const answers = Array.from({ length: 14 }, (_, index) =>
+    const answers = Array.from({ length: 10 }, (_, index) =>
       index === 0 ? 'Same card.' : '{"merges":[]}',
     );
     const router = new ModelRouter({ 'model-a': answers });
@@ -53,7 +53,7 @@ describe('the lab over captured case sets', () => {
   });
 
   it('RF-1406 runs a reader set: the first turn is classified without a tool loop', async () => {
-    const router = new ModelRouter({ 'model-a': Array.from({ length: 16 }, () => '{"cards":[]}') });
+    const router = new ModelRouter({ 'model-a': Array.from({ length: 10 }, () => '{"cards":[]}') });
 
     await runLab(
       labParts({ outputDir: out(), router }),
@@ -61,7 +61,7 @@ describe('the lab over captured case sets', () => {
     );
     const [results] = await writtenResults(out());
 
-    expect(results?.cases).toHaveLength(16);
+    expect(results?.cases).toHaveLength(10);
     expect(results?.cases.every((each) => each.detail === 'Answered' && each.calls === 1)).toBe(
       true,
     );

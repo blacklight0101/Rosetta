@@ -5,23 +5,5 @@
     "url": "https://github.com/dotnet-architecture/eShopModernizing",
     "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
     "licence": "MIT (Copyright (c) .NET Foundation and Contributors)"
-  },
-  "asset-manager": {
-    "key": "asset-manager",
-    "name": "Asset Manager (Excel workbook, uploaded as asset-manager.zip)",
-    "snapshot": "sha256:344b952e5ed95fda7f9f0e8b3ffa49d3c0dd224bf63632958df1f808cd8306f1",
-    "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository"
-  },
-  "invoice-generator": {
-    "key": "invoice-generator",
-    "name": "Invoice Generator (Excel workbook, uploaded as invoice-generator.zip)",
-    "snapshot": "sha256:8b41b5ba11769d9b8d63c5463d14e1e9ca9e066b099136f75af305a5420e28bf",
-    "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository"
-  },
-  "invoice-generator-b": {
-    "key": "invoice-generator-b",
-    "name": "Invoice Generator (Excel workbook, a second upload of invoice-generator.zip)",
-    "snapshot": "sha256:07224ecb361428020fbb9a83752dc5663e90de5020e47126bc620f8dbbd5101a",
-    "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository"
   }
 }

@@ -5,846 +5,21 @@
   "description": "Inputs of reader/area captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
   "sources": [
     {
-      "key": "asset-manager",
-      "name": "Asset Manager (Excel workbook, uploaded as asset-manager.zip)",
-      "snapshot": "sha256:344b952e5ed95fda7f9f0e8b3ffa49d3c0dd224bf63632958df1f808cd8306f1",
-      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
-      "runs": ["20261109-054045-understand", "20261109-054346-understand"]
-    },
-    {
-      "key": "invoice-generator",
-      "name": "Invoice Generator (Excel workbook, uploaded as invoice-generator.zip)",
-      "snapshot": "sha256:8b41b5ba11769d9b8d63c5463d14e1e9ca9e066b099136f75af305a5420e28bf",
-      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
-      "runs": ["20261109-052032-understand", "20261109-052223-understand"]
-    },
-    {
       "key": "eshop",
       "name": "dotnet-architecture/eShopModernizing",
       "url": "https://github.com/dotnet-architecture/eShopModernizing",
       "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
       "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
-      "runs": ["20261109-054942-understand", "20261109-063857-understand"]
+      "runs": [
+        "20261109-054942-understand",
+        "20261109-063857-understand",
+        "20261101-235310-understand",
+        "20261102-185338-understand",
+        "20261029-142029-understand"
+      ]
     }
   ],
   "cases": [
-    {
-      "id": "asset-manager-20261109-054045-understand-reader-001",
-      "from": "asset-manager",
-      "split": "tune",
-      "input": {
-        "area": "Asset Manager.xlsm",
-        "files": [
-          {
-            "path": "Asset Manager.xlsm/Inventory/formulas.md",
-            "language": "markdown",
-            "lines": 89
-          },
-          {
-            "path": "Asset Manager.xlsm/Inventory/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Inventory/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Inventory/values.md",
-            "language": "markdown",
-            "lines": 505
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/formulas.md",
-            "language": "markdown",
-            "lines": 20
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/values.md",
-            "language": "markdown",
-            "lines": 288
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/values.md",
-            "language": "markdown",
-            "lines": 508
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/formulas.md",
-            "language": "markdown",
-            "lines": 37
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
-            "language": "markdown",
-            "lines": 105
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/formulas.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/values.md",
-            "language": "markdown",
-            "lines": 12
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Calendar.cls",
-            "language": "unknown",
-            "lines": 340
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Module1.bas",
-            "language": "vb6",
-            "lines": 116
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Sheet1.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Sheet2.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Sheet3.cls",
-            "language": "unknown",
-            "lines": 9
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Sheet4.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/Sheet6.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/ThisWorkbook.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/frm_Search_Product.cls",
-            "language": "unknown",
-            "lines": 317
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
-            "language": "unknown",
-            "lines": 527
-          },
-          {
-            "path": "Asset Manager.xlsm/workbook.md",
-            "language": "markdown",
-            "lines": 91
-          }
-        ],
-        "workbook": true,
-        "turns": 12
-      }
-    },
-    {
-      "id": "asset-manager-20261109-054045-understand-reader-002",
-      "from": "asset-manager",
-      "split": "held-back",
-      "input": {
-        "area": "(root)",
-        "files": [
-          {
-            "path": "dependencies.md",
-            "language": "markdown",
-            "lines": 61
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "asset-manager-20261109-054346-understand-reader-005",
-      "from": "asset-manager",
-      "split": "tune",
-      "input": {
-        "area": "Asset Manager.xlsm",
-        "files": [
-          {
-            "path": "Asset Manager.xlsm/Inventory/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Inventory/values.md",
-            "language": "markdown",
-            "lines": 505
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/values.md",
-            "language": "markdown",
-            "lines": 288
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/values.md",
-            "language": "markdown",
-            "lines": 508
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
-            "language": "markdown",
-            "lines": 105
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Asset Manager.xlsm/Support/values.md",
-            "language": "markdown",
-            "lines": 12
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
-            "language": "unknown",
-            "lines": 527
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "asset-manager-20261109-054346-understand-reader-006",
-      "from": "asset-manager",
-      "split": "tune",
-      "input": {
-        "area": "Asset Manager.xlsm",
-        "files": [
-          {
-            "path": "Asset Manager.xlsm/Report/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/values.md",
-            "language": "markdown",
-            "lines": 508
-          },
-          {
-            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
-            "language": "markdown",
-            "lines": 105
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
-            "language": "unknown",
-            "lines": 527
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "asset-manager-20261109-054346-understand-reader-008",
-      "from": "asset-manager",
-      "split": "tune",
-      "input": {
-        "area": "Asset Manager.xlsm",
-        "files": [
-          {
-            "path": "Asset Manager.xlsm/Inventory/values.md",
-            "language": "markdown",
-            "lines": 505
-          },
-          {
-            "path": "Asset Manager.xlsm/Product_Master/values.md",
-            "language": "markdown",
-            "lines": 288
-          },
-          {
-            "path": "Asset Manager.xlsm/Report/values.md",
-            "language": "markdown",
-            "lines": 508
-          },
-          {
-            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
-            "language": "unknown",
-            "lines": 527
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "invoice-generator-20261109-052032-understand-reader-001",
-      "from": "invoice-generator",
-      "split": "held-back",
-      "input": {
-        "area": "Invoice_Generator.xlsm",
-        "files": [
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/formulas.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/values.md",
-            "language": "markdown",
-            "lines": 32
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/formulas.md",
-            "language": "markdown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/values.md",
-            "language": "markdown",
-            "lines": 19
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/values.md",
-            "language": "markdown",
-            "lines": 40
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
-            "language": "markdown",
-            "lines": 55
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/validation.md",
-            "language": "markdown",
-            "lines": 10
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/values.md",
-            "language": "markdown",
-            "lines": 57
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/values.md",
-            "language": "markdown",
-            "lines": 37
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/formulas.md",
-            "language": "markdown",
-            "lines": 12
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/notes.md",
-            "language": "markdown",
-            "lines": 20
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/values.md",
-            "language": "markdown",
-            "lines": 29
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md",
-            "language": "markdown",
-            "lines": 30
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormInputMaster.cls",
-            "language": "unknown",
-            "lines": 100
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormOpenInvoice.cls",
-            "language": "unknown",
-            "lines": 257
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormSearch.cls",
-            "language": "unknown",
-            "lines": 185
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormViewMaster.cls",
-            "language": "unknown",
-            "lines": 99
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/MainInvoiceGenerator.bas",
-            "language": "vb6",
-            "lines": 43
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/Sheet1.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/Sheet3.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/ThisWorkbook.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shCalc.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shDash.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shInvoice.cls",
-            "language": "unknown",
-            "lines": 105
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shMaster.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shTemp.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/workbook.md",
-            "language": "markdown",
-            "lines": 110
-          }
-        ],
-        "workbook": true,
-        "turns": 12
-      }
-    },
-    {
-      "id": "invoice-generator-20261109-052032-understand-reader-002",
-      "from": "invoice-generator",
-      "split": "held-back",
-      "input": {
-        "area": "(root)",
-        "files": [
-          {
-            "path": "LICENSE",
-            "language": "unknown",
-            "lines": 21
-          },
-          {
-            "path": "README.md",
-            "language": "markdown",
-            "lines": 123
-          },
-          {
-            "path": "dependencies.md",
-            "language": "markdown",
-            "lines": 61
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "invoice-generator-20261109-052223-understand-reader-005",
-      "from": "invoice-generator",
-      "split": "tune",
-      "input": {
-        "area": "Invoice_Generator.xlsm",
-        "files": [
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Calculation/values.md",
-            "language": "markdown",
-            "lines": 32
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/values.md",
-            "language": "markdown",
-            "lines": 19
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/values.md",
-            "language": "markdown",
-            "lines": 40
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/values.md",
-            "language": "markdown",
-            "lines": 57
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/values.md",
-            "language": "markdown",
-            "lines": 37
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/notes.md",
-            "language": "markdown",
-            "lines": 20
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/values.md",
-            "language": "markdown",
-            "lines": 29
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/formulas.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md",
-            "language": "markdown",
-            "lines": 30
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/Sheet1.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/Sheet3.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/ThisWorkbook.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shCalc.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shDash.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shMaster.cls",
-            "language": "unknown",
-            "lines": 11
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/shTemp.cls",
-            "language": "unknown",
-            "lines": 11
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "invoice-generator-20261109-052223-understand-reader-011",
-      "from": "invoice-generator",
-      "split": "tune",
-      "input": {
-        "area": "Invoice_Generator.xlsm",
-        "files": [
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/validation.md",
-            "language": "markdown",
-            "lines": 9
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
-            "language": "markdown",
-            "lines": 4
-          },
-          {
-            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
-            "language": "markdown",
-            "lines": 9
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
-      "id": "invoice-generator-20261109-052223-understand-reader-006",
-      "from": "invoice-generator",
-      "split": "tune",
-      "input": {
-        "area": "Invoice_Generator.xlsm",
-        "files": [
-          {
-            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
-            "language": "markdown",
-            "lines": 55
-          },
-          {
-            "path": "Invoice_Generator.xlsm/Template/values.md",
-            "language": "markdown",
-            "lines": 29
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormInputMaster.cls",
-            "language": "unknown",
-            "lines": 100
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormOpenInvoice.cls",
-            "language": "unknown",
-            "lines": 257
-          },
-          {
-            "path": "Invoice_Generator.xlsm/macros/FormSearch.cls",
-            "language": "unknown",
-            "lines": 185
-          }
-        ],
-        "turns": 12
-      }
-    },
     {
       "id": "eshop-20261109-054942-understand-reader-036",
       "from": "eshop",
@@ -1043,27 +218,6 @@
       }
     },
     {
-      "id": "eshop-20261109-054942-understand-reader-093",
-      "from": "eshop",
-      "split": "tune",
-      "input": {
-        "area": "Kubernetes/eShopModernizedWebForms-K8s",
-        "files": [
-          {
-            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-CD-deployment.yml",
-            "language": "yaml",
-            "lines": 59
-          },
-          {
-            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-deployment.yml",
-            "language": "yaml",
-            "lines": 59
-          }
-        ],
-        "turns": 12
-      }
-    },
-    {
       "id": "eshop-20261109-063857-understand-reader-191",
       "from": "eshop",
       "split": "tune",
@@ -1101,26 +255,741 @@
       }
     },
     {
-      "id": "eshop-20261109-063857-understand-reader-196",
+      "id": "eshop-20261101-235310-understand-reader-036",
       "from": "eshop",
       "split": "held-back",
       "input": {
-        "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+        "area": "eShopLegacyNTier/src",
         "files": [
           {
-            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
-            "language": "razor",
-            "lines": 104
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
           },
           {
-            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml",
-            "language": "razor",
-            "lines": 91
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
           },
           {
-            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
-            "language": "razor",
-            "lines": 105
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-005",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "VM",
+        "files": [
+          {
+            "path": "VM/DockerCerts-Generation/CreateDockerCerts.ps1",
+            "language": "powershell",
+            "lines": 101
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml",
+            "language": "yaml",
+            "lines": 5
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.yml",
+            "language": "yaml",
+            "lines": 10
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.nosql.yml",
+            "language": "yaml",
+            "lines": 22
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.yml",
+            "language": "yaml",
+            "lines": 29
+          },
+          {
+            "path": "VM/eShopModernizedWebForms/docker-compose.nobuild.yml",
+            "language": "yaml",
+            "lines": 10
+          },
+          {
+            "path": "VM/eShopModernizedWebForms/docker-compose.override.yml",
+            "language": "yaml",
+            "lines": 29
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "VM",
+        "files": [
+          {
+            "path": "VM/DockerCerts-Generation/CreateDockerCerts.ps1",
+            "language": "powershell",
+            "lines": 101
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml",
+            "language": "yaml",
+            "lines": 5
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.yml",
+            "language": "yaml",
+            "lines": 10
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.nosql.yml",
+            "language": "yaml",
+            "lines": 22
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.yml",
+            "language": "yaml",
+            "lines": 29
+          },
+          {
+            "path": "VM/eShopModernizedWebForms/docker-compose.nobuild.yml",
+            "language": "yaml",
+            "lines": 10
+          },
+          {
+            "path": "VM/eShopModernizedWebForms/docker-compose.override.yml",
+            "language": "yaml",
+            "lines": 29
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Properties",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Properties/launchSettings.json",
+            "language": "json",
+            "lines": 27
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s",
+        "files": [
+          {
+            "path": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-compose.yml",
+            "language": "yaml",
+            "lines": 19
+          },
+          {
+            "path": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml",
+            "language": "yaml",
+            "lines": 59
           }
         ],
         "turns": 12

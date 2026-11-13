@@ -92,12 +92,21 @@ as `held-back`. The rule reads no input, so the split exists before any version 
 cases, and a version is kept only when it beats the current one on them (DEC-231). Do not move a case between splits:
 `tests/integration/lab/committed-case-sets.test.ts` recomputes the rule for every committed set.
 
-**The committed sets (2026-11-13).** Built from saved Haiku 5.5 evaluation runs of three public sources: eShopModernizing
-(MIT, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d), and the Asset Manager and Invoice Generator workbooks (uploads of
-`asset-manager.zip` and `invoice-generator.zip`, identified by the SHA-256 of the snapshot; their licence is not recorded
-in the runs and the set says so: the owner confirms it). Runs: `p8w3-haiku-{am,inv,eshop}-{understand,deepen}` for the
-reader, merge and overview sets; `p6/p7/p8/p8w3-haiku-{am,inv,eshop}-plan` and `h-eshop2-plan` for `planner-gap`. Excerpts are at most two reads of
-forty lines per case. The sets are small samples to start tuning, not a benchmark.
+**The committed sets (2026-11-13).** Built from saved Haiku 5.5 evaluation runs of one published source,
+eShopModernizing (MIT, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d, `lab/sources.json`): 5 cases for `planner-gap`,
+10 for `summariser-merge`, 3 for `summariser-overview`, 10 for each of `reader-task`, `reader-area`,
+`reader-read-first` and `cards-card-format`; a third of each, rounded up, is held back by the fixed rule. Runs:
+`p6/p7/p8/p8w3-haiku-eshop-{understand,plan}`, `p8w3-haiku-eshop-deepen` and `h-eshop2-plan`. Excerpts are at most two
+reads of forty lines per case. The sets are small samples to start tuning, not a benchmark.
+
+**Sets that may not be published (`lab/local-cases/`).** The Asset Manager and Invoice Generator workbooks of the
+evaluation are uploads of unknown origin and licence, and nothing of uncertain origin enters this public repository
+(DEC-03). Their cases are therefore not committed. `lab/local-cases/` and `lab/local-sources.json` are git-ignored (and
+not in the image); `npm run lab -- --capture --local --sources lab/local-sources.json ...` writes there, and
+`--cases <name>` finds a set in `lab/cases/` first and in `lab/local-cases/` otherwise. On the machine that has the runs,
+the sets `<prompt>-workbooks` (for example `planner-gap-workbooks`) are rebuilt with that command from the runs
+`p8w3-haiku-{am,inv}-{understand,deepen}`, `p8w3-haiku-am-plan`, `p6/p8-haiku-am-plan` and `p6/p7/p8-haiku-inv-plan`. A tuning
+card may use them for tuning on that machine; a result on them is not published with its inputs.
 
 **Agent-loop prompts (the reader).** The lab does not run a reader loop. A reader case measures one turn: the area's
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
