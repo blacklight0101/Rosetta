@@ -269,7 +269,8 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
       {props.asks || props.failed ? (
         <PlanNext
           {...{ runId: run.id, projectId: run.projectId }}
-          {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
+          {...{ endState: state.ended?.endState ?? '', endReason: state.ended?.endReason }}
+          supportedClaims={facts.supportedClaims}
           setUp={step === 'plan'}
           left={leftOf(props, facts)}
           writeOverview={writeOverviewOf(props, facts)}

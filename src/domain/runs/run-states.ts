@@ -12,8 +12,10 @@ export type RunEndState = (typeof RUN_END_STATES)[number];
 /**
  * P8-111, DEC-217: why a run ended `Interrupted`: its owner stopped it (`UserStop`), the server
  * restarted or shut down under it (`Restart`), or it was cancelled while queued (`QueueCancel`).
+ * P9-03, RF-432: `StoppedAtApproval` is the one reason of a `CapReached` run: its owner chose
+ * Stop here at the approval pause, so no cap stopped it.
  */
-export const RUN_END_REASONS = ['UserStop', 'Restart', 'QueueCancel'] as const;
+export const RUN_END_REASONS = ['UserStop', 'Restart', 'QueueCancel', 'StoppedAtApproval'] as const;
 export type RunEndReason = (typeof RUN_END_REASONS)[number];
 
 /**

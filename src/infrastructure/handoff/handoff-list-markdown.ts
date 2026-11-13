@@ -213,8 +213,9 @@ function noStackLines(handoff: HandoffPackage): string[] {
 // RF-604, P3-121: the first lines of the README when the source run stopped at a cap.
 function sourceStopLines(handoff: HandoffPackage): string[] {
   if (handoff.sourceStop === undefined) return [];
+  const why = handoff.sourceStop.atApproval === true ? 'the approved amount' : 'a cap';
   return [
-    'The understand run this package was planned from stopped at a cap before it finished, so the package covers only the claims it had judged. checks.md says how many were left out.',
+    `The understand run this package was planned from stopped at ${why} before it finished, so the package covers only the claims it had judged. checks.md says how many were left out.`,
     '',
   ];
 }

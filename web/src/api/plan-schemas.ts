@@ -224,6 +224,8 @@ export const planSourceSchema = z.object({
   supportedClaims: z.number().int().min(0),
   /** P3-121: `CapReached` for a run that stopped at a cap but holds Supported claims. */
   endState: z.enum(['Completed', 'CapReached']),
+  /** P9-03: `StoppedAtApproval` for a run its owner stopped at the approval pause. */
+  endReason: z.literal('StoppedAtApproval').nullable().catch(null).optional(),
   newest: z.boolean(),
 });
 

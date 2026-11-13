@@ -1,6 +1,6 @@
 import type { JourneyFacts } from '../../api/journey-schemas.js';
 import type { LastRun } from '../../api/overview-schemas.js';
-import { interruptedWord } from '../interrupted-word.js';
+import { interruptedPhrase, interruptedWord } from '../interrupted-word.js';
 import { headingOf, type HeadingTone } from './project-heading.js';
 import { journeyOf } from './journey-steps.js';
 
@@ -48,6 +48,9 @@ function completedPosition(stage: string): ProjectPosition {
 function endedPosition(run: LastRun): ProjectPosition {
   const step = stepOf(run.stage);
   if (run.endState === 'Completed') return completedPosition(run.stage);
+  if (run.endState === 'CapReached' && run.endReason === 'StoppedAtApproval') {
+    return { text: `${step} ${interruptedPhrase(run.endReason)}`, tone: 'stopped' };
+  }
   if (run.endState === 'CapReached') {
     return { text: `${step} stopped at its cap`, tone: 'attention' };
   }

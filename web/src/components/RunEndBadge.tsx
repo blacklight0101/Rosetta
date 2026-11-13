@@ -61,5 +61,8 @@ export function RunEndBadge(props: RunEndBadgeProps): JSX.Element {
   if (endState === 'Interrupted' && (endReason === 'Restart' || endReason === 'QueueCancel')) {
     return <StatusBadge list="RunInterruptedBy" value={endReason} />;
   }
+  if (endState === 'CapReached' && endReason === 'StoppedAtApproval') {
+    return <StatusBadge list="RunInterruptedBy" value={endReason} />;
+  }
   return <StatusBadge list="RunEndState" value={endState} />;
 }

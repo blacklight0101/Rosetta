@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 // P8-111, DEC-217, data-model.md section 4 (`runs.end_reason`): why a run that ended `Interrupted`
-// ended. A reason the page does not know reads as none (the wording of a run with no reason).
+// ended; P9-03: `StoppedAtApproval` is the owner's Stop here at the approval pause (a `CapReached`
+// run). A reason the page does not know reads as none (the wording of a run with no reason).
 
-const endReasonSchema = z.enum(['UserStop', 'Restart', 'QueueCancel']);
+const endReasonSchema = z.enum(['UserStop', 'Restart', 'QueueCancel', 'StoppedAtApproval']);
 
 export type EndReason = z.output<typeof endReasonSchema>;
 

@@ -44,7 +44,7 @@ const SPAN_MS =
 const END_SPAN_MS =
   'COALESCE(GREATEST(0, (EXTRACT(EPOCH FROM (LEAST($3::timestamptz, COALESCE($7::timestamptz, $3::timestamptz)) - span_started_at)) * 1000)::bigint), 0)';
 const END =
-  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5, end_reason = CASE WHEN $2::text = 'Interrupted' THEN $6::text END, span_started_at = NULL, active_ms = active_ms + " +
+  "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4, unread_areas = $5, end_reason = CASE WHEN $2::text = 'Interrupted' AND $6::text <> 'StoppedAtApproval' OR $2::text = 'CapReached' AND $6::text = 'StoppedAtApproval' THEN $6::text END, span_started_at = NULL, active_ms = active_ms + " +
   END_SPAN_MS +
   " WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted') OR (queue_state = 'AwaitingApproval' AND $2::text IN ('CapReached', 'Interrupted')))" +
   RETURNING;

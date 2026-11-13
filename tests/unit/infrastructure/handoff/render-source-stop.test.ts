@@ -40,6 +40,26 @@ describe('a package planned from a run that stopped at a cap', () => {
   });
 });
 
+describe('a package planned from a run its owner stopped at the approved amount', () => {
+  const files = renderHandoff(
+    {
+      ...handoffOf('Plain text.'),
+      sourceStop: { unjudgedClaims: 3, totalClaims: 10, atApproval: true },
+    },
+    masker,
+  );
+
+  it('RF-432 P9-03 checks.md and the README name the stop at the approved amount, not a cap', () => {
+    const checks = files['checks.md'] ?? '';
+    const readme = files['README.md'] ?? '';
+
+    expect(checks).toContain('## Source run stopped at the approved amount');
+    expect(checks).toContain('3 of 10 claims were never judged');
+    expect(readme).toContain('stopped at the approved amount');
+    expect(`${checks}${readme}`).not.toContain('at a cap');
+  });
+});
+
 describe('a package planned from a completed run', () => {
   it('RF-604 P3-121 says nothing about a cap', () => {
     const files = renderHandoff(handoffOf('Plain text.'), masker);

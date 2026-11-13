@@ -206,10 +206,12 @@ function sourceStopLines(handoff: HandoffPackage): string[] {
   const stop = handoff.sourceStop;
   if (stop === undefined) return [];
   const { unjudgedClaims: left, totalClaims: total } = stop;
+  // P9-03: the owner's Stop here is no cap.
+  const why = stop.atApproval === true ? 'the approved amount' : 'a cap';
   return [
-    '## Source run stopped at a cap',
+    `## Source run stopped at ${why}`,
     '',
-    `The understand run this package was planned from (${handoff.sourceRun}) stopped at a cap before it finished. Only its Supported claims were used. ${String(left)} of ${String(total)} claim${total === 1 ? '' : 's'} ${left === 1 ? 'was' : 'were'} never judged and ${left === 1 ? 'is' : 'are'} excluded; the areas it did not read are not in the package. Resume the run, then write the package again to cover them.`,
+    `The understand run this package was planned from (${handoff.sourceRun}) stopped at ${why} before it finished. Only its Supported claims were used. ${String(left)} of ${String(total)} claim${total === 1 ? '' : 's'} ${left === 1 ? 'was' : 'were'} never judged and ${left === 1 ? 'is' : 'are'} excluded; the areas it did not read are not in the package. Resume the run, then write the package again to cover them.`,
     '',
   ];
 }

@@ -27,9 +27,11 @@ function Description({ source }: { readonly source: PlanSource }): JSX.Element {
       </p>
       {source.endState === 'CapReached' ? (
         <p class="rst-plan-note">
-          This run stopped at a cap. The package uses only its Supported claims; the claims it never
-          judged are listed as excluded, and checks.md says how many. Resume the run first to judge
-          the rest.
+          {source.endReason === 'StoppedAtApproval'
+            ? 'You stopped this run at the approved amount.'
+            : 'This run stopped at a cap.'}{' '}
+          The package uses only its Supported claims; the claims it never judged are listed as
+          excluded, and checks.md says how many. Resume the run first to judge the rest.
         </p>
       ) : null}
       {source.newest ? (
