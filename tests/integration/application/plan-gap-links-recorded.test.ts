@@ -61,7 +61,7 @@ describe('the recorded first gap round of the eShop plan (EV-95)', () => {
     const card = result.planned.content.tasks.find((task) => task.id === 'T-004');
     expect(card?.title).toBe('Create, edit and delete catalog items for signed-in users');
     expect(card?.builds).toEqual(expect.arrayContaining(ev95Flows));
-    expect(result.planned.content.tasks).toHaveLength(24);
+    expect(result.planned.content.tasks).toHaveLength(25);
     expect(result.warnings).toContain(
       'The gap answer linked flow:FLOW-002, flow:FLOW-009, flow:FLOW-010, flow:FLOW-012 to T-004, a task card of the plan.',
     );
