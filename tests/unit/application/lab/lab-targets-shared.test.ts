@@ -84,7 +84,7 @@ beforeAll(async () => {
   targets = new Map(sharedTargets(prompts, kit).map((each) => [each.id, each]));
 });
 
-async function run(id: string, data: unknown, answer: Answer, text = 'NOTE [MASKED:{{kind}}]') {
+async function run(id: string, data: unknown, answer: Answer, text = '[MASKED:{{kind}}] NOTE') {
   const parsed = targets.get(id)?.parseInput(data);
   if (parsed?.ok !== true) throw new Error(`not parsed: ${id}`);
   const { env, requests } = environment([answer]);
@@ -108,7 +108,7 @@ describe('the masked-value target', () => {
     expect(outcome).toEqual({ usable: true, detail: 'Valid' });
     expect(requests).toHaveLength(1);
     const sent = JSON.stringify(requests[0]?.messages);
-    expect(sent).toContain('Password=NOTE [MASKED:connection-string];');
+    expect(sent).toContain('Password=[MASKED:connection-string] NOTE;');
     expect(sent).not.toContain('FakeSecret1');
     expect(sent).not.toContain('{secret}');
     expect(requests[0]?.system).toBe(readerSystemPrompt(prompts));

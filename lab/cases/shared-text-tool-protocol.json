@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "version": "shared-text-tool-protocol-1",
+  "prompt": "shared/text-tool-protocol",
+  "description": "Invented cases, no source. Each case is a reader turn sent with the text tool protocol in the system prompt and no native tools: a first turn that must call a read tool (expected ReadsFiles) or the turn after a replay of invented reads that must give the cards (expected Valid). The split follows the fixed rule on the input (docs/runbooks/prompt-lab.md section 4).",
+  "cases": [
+    {
+      "id": "shop-first-turn",
+      "split": "tune",
+      "expected": "ReadsFiles",
+      "input": {
+        "area": "shop",
+        "files": [
+          {
+            "path": "shop/Cart.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "shop/Checkout.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "library-first-turn",
+      "split": "tune",
+      "expected": "ReadsFiles",
+      "input": {
+        "area": "library",
+        "files": [
+          {
+            "path": "library/Loans.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "library/Members.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "clinic-first-turn",
+      "split": "tune",
+      "expected": "ReadsFiles",
+      "input": {
+        "area": "clinic",
+        "files": [
+          {
+            "path": "clinic/Booking.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "clinic/Slots.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "school-first-turn",
+      "split": "held-back",
+      "expected": "ReadsFiles",
+      "input": {
+        "area": "school",
+        "files": [
+          {
+            "path": "school/Grades.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "school/Classes.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "garage-first-turn",
+      "split": "held-back",
+      "expected": "ReadsFiles",
+      "input": {
+        "area": "garage",
+        "files": [
+          {
+            "path": "garage/Repairs.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "garage/Parts.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 12
+      }
+    },
+    {
+      "id": "shop-after-reads",
+      "split": "held-back",
+      "expected": "Valid",
+      "input": {
+        "area": "shop",
+        "files": [
+          {
+            "path": "shop/Cart.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "shop/Checkout.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 8,
+        "reads": [
+          {
+            "path": "shop/Cart.cs",
+            "startLine": 10,
+            "lines": [
+              "public decimal Total() => Lines.Sum(l => l.Price * l.Quantity);",
+              "public bool IsEmpty => Lines.Count == 0;",
+              "public void Clear() => Lines.Clear();"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "library-after-reads",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "library",
+        "files": [
+          {
+            "path": "library/Loans.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "library/Members.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 8,
+        "reads": [
+          {
+            "path": "library/Loans.cs",
+            "startLine": 10,
+            "lines": [
+              "const int MaxLoans = 5;",
+              "public bool CanBorrow(Member m) => m.Active && m.Loans.Count < MaxLoans;",
+              "public DateTime DueDate(DateTime from) => from.AddDays(21);"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "clinic-after-reads",
+      "split": "held-back",
+      "expected": "Valid",
+      "input": {
+        "area": "clinic",
+        "files": [
+          {
+            "path": "clinic/Booking.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "clinic/Slots.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 8,
+        "reads": [
+          {
+            "path": "clinic/Booking.cs",
+            "startLine": 10,
+            "lines": [
+              "public bool Overlaps(Slot a, Slot b) => a.Start < b.End && b.Start < a.End;",
+              "public Slot Next(Slot s) => new Slot(s.End, s.End.AddMinutes(20));",
+              "public int Length => (int)(End - Start).TotalMinutes;"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "school-after-reads",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "school",
+        "files": [
+          {
+            "path": "school/Grades.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "school/Classes.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 8,
+        "reads": [
+          {
+            "path": "school/Grades.cs",
+            "startLine": 10,
+            "lines": [
+              "public double Average(IEnumerable<int> marks) => marks.Any() ? marks.Average() : 0;",
+              "public bool Passed(double average) => average >= 5.0;",
+              "public string Letter(double average) => average >= 9 ? \"A\" : average >= 7 ? \"B\" : \"C\";"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "garage-after-reads",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "garage",
+        "files": [
+          {
+            "path": "garage/Repairs.cs",
+            "language": "csharp",
+            "lines": 90
+          },
+          {
+            "path": "garage/Parts.cs",
+            "language": "csharp",
+            "lines": 55
+          }
+        ],
+        "turns": 8,
+        "reads": [
+          {
+            "path": "garage/Repairs.cs",
+            "startLine": 10,
+            "lines": [
+              "public decimal Labour(int minutes) => minutes / 60m * HourlyRate;",
+              "public decimal PartsCost() => Parts.Sum(p => p.Price);",
+              "public decimal Total() => Labour(Minutes) + PartsCost();"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

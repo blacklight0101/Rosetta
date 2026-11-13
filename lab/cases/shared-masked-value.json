@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "version": "shared-masked-value-1",
+  "prompt": "shared/masked-value",
+  "description": "Invented cases, no source. Each case is a reader turn after reads whose lines name an invented secret with the token {secret}; the value is in the case field `secret`, so no value stands in this file. The lab puts the value in, masks the reads with the run masker using the file under test and counts a value that is still in the text or repeated in the answer as Leaked. expected is Valid: the card answer is read. The split follows the fixed rule on the input (docs/runbooks/prompt-lab.md section 4).",
+  "cases": [
+    {
+      "id": "billing-config-connection",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "billing",
+        "files": [
+          {
+            "path": "billing/App.config",
+            "language": "xml",
+            "lines": 60
+          },
+          {
+            "path": "billing/Invoice.cs",
+            "language": "csharp",
+            "lines": 140
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret1",
+        "reads": [
+          {
+            "path": "billing/App.config",
+            "startLine": 12,
+            "lines": [
+              "<connectionStrings>",
+              "  <add name=\"Billing\" connectionString=\"Server=db01;Database=Billing;User Id=bill;Password={secret};\" />",
+              "</connectionStrings>",
+              "<appSettings>",
+              "  <add key=\"PageSize\" value=\"25\" />",
+              "</appSettings>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "orders-url-connection",
+      "split": "held-back",
+      "expected": "Valid",
+      "input": {
+        "area": "orders",
+        "files": [
+          {
+            "path": "orders/appsettings.json",
+            "language": "json",
+            "lines": 18
+          },
+          {
+            "path": "orders/Broker.cs",
+            "language": "csharp",
+            "lines": 90
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret2",
+        "reads": [
+          {
+            "path": "orders/appsettings.json",
+            "startLine": 3,
+            "lines": [
+              "\"Orders\": {",
+              "  \"Broker\": \"amqp://orders:{secret}@mq01:5672/vhost\",",
+              "  \"Queue\": \"orders-new\",",
+              "  \"Prefetch\": 20",
+              "}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "shipping-password-constant",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "shipping",
+        "files": [
+          {
+            "path": "shipping/Credentials.cs",
+            "language": "csharp",
+            "lines": 30
+          },
+          {
+            "path": "shipping/Upload.cs",
+            "language": "csharp",
+            "lines": 75
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret3",
+        "reads": [
+          {
+            "path": "shipping/Credentials.cs",
+            "startLine": 4,
+            "lines": [
+              "public static class Credentials",
+              "{",
+              "    private const string Host = \"ftp.example.test\";",
+              "    private const string UserName = \"shipper\";",
+              "    private const string Password = \"{secret}\";",
+              "}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "catalog-api-key-json",
+      "split": "held-back",
+      "expected": "Valid",
+      "input": {
+        "area": "catalog",
+        "files": [
+          {
+            "path": "catalog/settings.json",
+            "language": "json",
+            "lines": 22
+          },
+          {
+            "path": "catalog/Prices.cs",
+            "language": "csharp",
+            "lines": 110
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret4",
+        "reads": [
+          {
+            "path": "catalog/settings.json",
+            "startLine": 6,
+            "lines": [
+              "\"Prices\": {",
+              "  \"Endpoint\": \"https://prices.example.test/v2\",",
+              "  \"ApiKey\": \"{secret}\",",
+              "  \"TimeoutSeconds\": 15",
+              "}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "inventory-bearer-script",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "inventory",
+        "files": [
+          {
+            "path": "inventory/sync.sh",
+            "language": "shell",
+            "lines": 12
+          },
+          {
+            "path": "inventory/Levels.cs",
+            "language": "csharp",
+            "lines": 64
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret5",
+        "reads": [
+          {
+            "path": "inventory/sync.sh",
+            "startLine": 1,
+            "lines": [
+              "#!/bin/sh",
+              "curl -s -H \"Authorization: Bearer {secret}\" https://stock.example.test/api/levels",
+              "echo \"levels synced\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "payroll-xml-password",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "payroll",
+        "files": [
+          {
+            "path": "payroll/web.config",
+            "language": "xml",
+            "lines": 48
+          },
+          {
+            "path": "payroll/Run.cs",
+            "language": "csharp",
+            "lines": 200
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret6",
+        "reads": [
+          {
+            "path": "payroll/web.config",
+            "startLine": 20,
+            "lines": [
+              "<bank>",
+              "  <UserName>payroll</UserName>",
+              "  <Password>{secret}</Password>",
+              "  <Branch>0042</Branch>",
+              "</bank>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "deploy-script-flag",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "deploy",
+        "files": [
+          {
+            "path": "deploy/publish.ps1",
+            "language": "powershell",
+            "lines": 20
+          },
+          {
+            "path": "deploy/Readme.md",
+            "language": "markdown",
+            "lines": 15
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret7",
+        "reads": [
+          {
+            "path": "deploy/publish.ps1",
+            "startLine": 5,
+            "lines": [
+              "$target = \"db02\"",
+              ".\\migrate.exe --server $target --user app --password {secret} --retries 3",
+              "Write-Host \"migrated\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "staff-already-masked",
+      "split": "tune",
+      "expected": "Valid",
+      "input": {
+        "area": "staff",
+        "files": [
+          {
+            "path": "staff/Settings.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "staff/Roster.cs",
+            "language": "csharp",
+            "lines": 120
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret8",
+        "reads": [
+          {
+            "path": "staff/Settings.cs",
+            "startLine": 8,
+            "lines": [
+              "    public const int Timeout = 30;",
+              "    public const string ReadOnlyPassword = \"[MASKED:password]\";",
+              "    public const string AdminPassword = \"{secret}\";",
+              "    public const string Region = \"north\";"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "reports-two-lines",
+      "split": "held-back",
+      "expected": "Valid",
+      "input": {
+        "area": "reports",
+        "files": [
+          {
+            "path": "reports/reports.ini",
+            "language": "ini",
+            "lines": 14
+          },
+          {
+            "path": "reports/Export.cs",
+            "language": "csharp",
+            "lines": 88
+          }
+        ],
+        "turns": 10,
+        "secret": "FakeSecret9",
+        "reads": [
+          {
+            "path": "reports/reports.ini",
+            "startLine": 2,
+            "lines": [
+              "[mail]",
+              "ApiKey={secret}",
+              "From=reports-desk",
+              "[db]",
+              "Password={secret}",
+              "Name=reports"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

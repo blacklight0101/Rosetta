@@ -8,13 +8,25 @@ import { overviewTarget } from '../../application/lab/targets/overview-target.js
 import { repairTargets } from '../../application/lab/targets/repair-targets.js';
 import { readerPartTargets } from '../../application/lab/targets/reader-part-targets.js';
 import { readerTargets } from '../../application/lab/targets/reader-targets.js';
+import { sharedTargets, type SharedKit } from '../../application/lab/targets/shared-targets.js';
 import { verifierClaimTarget } from '../../application/lab/targets/verifier-claim-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
+import {
+  maskedKindPlaceholder,
+  maskedValueReplacement,
+} from '../../infrastructure/prompts/masked-value-prompt.js';
 import {
   loadGapPrompt,
   loadPlannerPrompt,
   loadReaderPrompts,
 } from '../../infrastructure/prompts/prompt-files.js';
+import {
+  parseTextAnswer,
+  textProtocolSystem,
+  toolCallBlock,
+  toolResultBlock,
+} from '../../infrastructure/providers/ollama/text-tool-protocol.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 
 // RF-1401, RF-1406, ADR-029: the registry of the prompts the lab can run. To wire another prompt id:
@@ -23,6 +35,23 @@ import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-promp
 // (section 7). The targets that need a prompt the lab does not vary (the verifier's retry message,
 // the rest of the reader's prompts, the system prompts of the calls the planner repairs) take the
 // run's current files, loaded here.
+
+/**
+ * What the shared targets take from the infrastructure (P10-10): the run's masker with the file under
+ * test as its replacement, and the text protocol the Ollama adapter uses.
+ */
+const sharedKit: SharedKit = {
+  maskerOf: (file) =>
+    file.text.split(maskedKindPlaceholder).length === 2
+      ? new SecretMasker(undefined, maskedValueReplacement(file))
+      : undefined,
+  protocol: {
+    systemOf: textProtocolSystem,
+    parse: parseTextAnswer,
+    toolCallBlock,
+    toolResultBlock,
+  },
+};
 
 /** Every target the lab has. */
 // RF-1406
@@ -42,6 +71,7 @@ export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]
     ...readerPartTargets(reader),
     ...cardSurfaceTargets(reader),
     cardsRepairTarget(reader),
+    ...sharedTargets(reader, sharedKit),
   ];
 }
 
