@@ -204,7 +204,7 @@ without leaving CI, and a new or changed test runs repeatedly before it becomes 
   retry, and writes the list to its job summary; it runs only when the list has an entry and the change is code.
 - The job `test-picks` (check `pick quarantined and changed tests`) lists the pull request's added, changed and
   renamed test files with the GitHub API; the job `stress` (check `stress changed tests (not required)`) runs only
-  those, five times each: Vitest shuffled with `--repeats=4`, Playwright with `--repeat-each=5` on four workers, no
+  those, five times each (skipped on a release pull request to `main`, DEC-227): Vitest shuffled with `--repeats=4`, Playwright with `--repeat-each=5` on four workers, no
   retry, so one failed run fails it. It is skipped when no test file changed.
 - Neither check is required: the eight required names stay as they are (RNF-001). The rules, the costs and how an
   entry joins and leaves the list are in [the CI throughput runbook](runbooks/ci-throughput.md), section 6.
