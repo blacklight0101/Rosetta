@@ -23,6 +23,8 @@ export const runSchema = z.looseObject({
   startedAt: z.string().nullable().default(null),
   /** The place of a queued run in the server's queue, from 1; null for any other run. */
   position: z.number().int().positive().nullable().default(null),
+  /** RF-1108, EV-106: the user's running run that holds this queued run back; null for any other. */
+  waitsFor: z.object({ id: z.string(), runId: z.string() }).nullable().optional(),
   totals: z.object({
     costMicros: count,
     inputTokens: count,

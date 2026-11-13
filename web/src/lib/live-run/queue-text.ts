@@ -21,5 +21,5 @@ export function queueSuffix(position: number | null | undefined): string {
 /** `Waits for your run <name> to end`: a queued run behind the user's own running run. */
 // RF-1108, EV-106
 export function waitsForText(runKey: string): string {
-  return runKey;
+  return `Waits for your run ${runKey} to end`;
 }

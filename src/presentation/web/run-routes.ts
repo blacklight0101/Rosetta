@@ -217,10 +217,10 @@ function registerGet(server: FastifyInstance, services: RunServices): void {
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const { run, reportBuilt, position, cloudConsent, sourceRunId } = outcome.value;
+      const { run, reportBuilt, position, waitsFor, cloudConsent, sourceRunId } = outcome.value;
       return reply
         .status(200)
-        .send({ ...runView(run), reportBuilt, position, cloudConsent, sourceRunId });
+        .send({ ...runView(run), reportBuilt, position, waitsFor, cloudConsent, sourceRunId });
     },
   );
 }

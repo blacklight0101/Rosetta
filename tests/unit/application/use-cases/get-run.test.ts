@@ -34,7 +34,7 @@ const plain = { cloudConsent: false, sourceRunId: null } as const;
 
 const found = (run: Run, reportBuilt: boolean, position: number | null) => ({
   ok: true,
-  value: { run, reportBuilt, position, ...plain },
+  value: { run, reportBuilt, position, waitsFor: null, ...plain },
 });
 
 const endedRun = (runKey: string): Run =>
@@ -59,9 +59,10 @@ async function setup(
   run: Run,
   files: ReportFolders,
   queue: QueuePositions = new FakeQueue(),
+  others: readonly Run[] = [],
 ): Promise<GetRun> {
   const runs = new MemoryRunIndex();
-  await runs.insert(run);
+  for (const each of [run, ...others]) await runs.insert(each);
   return new GetRun({ runs, files, queue });
 }
 
@@ -106,6 +107,33 @@ describe('GetRun', () => {
     expect(other).toEqual({ ok: false, error: 'not-found' });
     expect(unknown).toEqual({ ok: false, error: 'not-found' });
     expect(files.asked).toEqual([]);
+  });
+});
+
+describe('GetRun: the run a queued run waits for', () => {
+  it('RF-1108 EV-106 names the user running run that holds the queued run', async () => {
+    const holder = runningRun({
+      userId: userAmy.userId,
+      stage: 'understand',
+      runKey: '2026-11-09T10-00-00Z-understand',
+    });
+    const run = sampleRun({ userId: userAmy.userId, stage: 'plan' });
+    const getRun = await setup(run, new ReportFolders(), new FakeQueue(new Map([[run.id, 1]])), [
+      holder,
+    ]);
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
+
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        run,
+        reportBuilt: false,
+        position: 1,
+        waitsFor: { id: holder.id, runId: holder.runKey },
+        ...plain,
+      },
+    });
   });
 });
 

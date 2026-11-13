@@ -51,5 +51,6 @@ export function holdingRunOf(
   runId: string,
 ): Run | undefined {
   const waiting = queued.find((run) => run.id === runId);
-  return running.find((run) => run.id === runId && waiting !== undefined);
+  if (waiting === undefined || !isPaid(waiting)) return undefined;
+  return running.find((run) => isPaid(run) && run.userId === waiting.userId);
 }
