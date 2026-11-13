@@ -10050,7 +10050,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: S
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Todo
+- **Status**: In review (2026-11-13: the masked-value target now ends on the answer; no version kept: `shared/masked-value` v2 passes the quality gate of DEC-235 but fails (c) on the pooled figures, `shared/text-tool-protocol` does not beat v1; the round log in `docs/evaluation/prompt-lab/shared.md` has the figures)
 - **Evidence**: the secret and masked-value prompts guard what leaves the server.
 - **Reads**: `prompts/shared/*` (secret-risk, masked-value, text-tool-protocol, the last only if P10-05 did not change it), P10-04.
 - **Do**: as P10-05; a missed secret is a regression no score can buy back. Round log in `docs/evaluation/prompt-lab/shared.md`.

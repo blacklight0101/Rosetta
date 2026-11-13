@@ -92,6 +92,10 @@ This replaces the cut of the held-back rule in the amendment above; dropping twi
 - **Inputs that hold a masked value.** The hash reads the masked text, so a change to the note of `prompts/shared/masked-value.v1.md` (the text that replaces a masked value) or to the rules of the masker re-hashes every input that holds a masked value and may move it to the other side. Such a change re-captures the sets, and the side of the inputs it touches is decided again, before any version is tuned on them.
 - **Escaped quotes after `-P`.** The rule for the password of `sqlcmd`, `osql` and `bcp` read `\"` as a backslash value: inside a JSON string (`-P \"pw\"`, or an exec array `\"-P\", \"pw\"`) it masked the backslash and sent the password. The rules now follow the escaped-quote rules of P3-128: a quoted value opens with one to four backslashes and a quote and runs to the quote of the same kind and escape, so the other quote (`"it's"`) belongs to it; a bare shell word runs to a blank or a quote, a comma and a bracket included, which end a value only between the plain items of an exec array (`[CMD, sqlcmd, -P, pw]`).
 
+## Amendment (2026-11-13, P10-10, DEC-236): the committed sets keep the note they were captured with
+
+The amendment above says a change to the note re-captures the sets before any version is tuned. That is relaxed: the committed lab sets (`cards-*`, `reader-*`) keep the text of the note they were captured with (`prompts/shared/masked-value.v1.md`), and no set is re-captured for a change of the note alone. The `shared/masked-value` target does not read the stored note: it puts the invented value in, masks the reads with the masker of the run using the note under test, and sends the replay, so a version of the note is measured without a re-capture. A set is re-captured with the current note only when it is re-captured for another reason, or at the end of Phase 10. Why: a re-capture re-hashes every input that holds a note and can move it to the other side of the split, while another builder tunes those sets (P10-09). The P10-10 candidate note (v2) was not kept (`docs/evaluation/prompt-lab/shared.md`), so no note changed and no set moved.
+
 ## References
 
-- RF-141, RF-1400..RF-1408, RNF-015, DEC-231, ADR-003, ADR-007, ADR-008.
+- RF-141, RF-1400..RF-1408, RNF-015, DEC-231, DEC-236, ADR-003, ADR-007, ADR-008.
