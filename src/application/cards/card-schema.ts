@@ -10,6 +10,8 @@ import {
 import { cardLimits } from './card-limits.js';
 import {
   MIN_SUGGESTED_ANSWERS,
+  eitherOrAnswerRefusal,
+  isEitherOrQuestion,
   isOpenQuestion,
   sameKindAnswerRefusal,
   spacedWords,
@@ -136,12 +138,9 @@ function suggestedAnswerProblems(
   } else if (answers[0]?.recommended !== true) {
     problems.push('The recommended suggested answer must be listed first.');
   }
-  if (
-    question !== undefined &&
-    isOpenQuestion(question) &&
-    answers.some((each) => startsWithYesOrNo(each.answer))
-  ) {
-    problems.push(sameKindAnswerRefusal);
+  if (question !== undefined && answers.some((each) => startsWithYesOrNo(each.answer))) {
+    if (isOpenQuestion(question)) problems.push(sameKindAnswerRefusal);
+    else if (isEitherOrQuestion(question)) problems.push(eitherOrAnswerRefusal);
   }
   return problems;
 }

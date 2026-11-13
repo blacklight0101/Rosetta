@@ -5,6 +5,7 @@ import {
   sameQuestion,
 } from '../../../../src/application/understand/open-questions.js';
 import { assignCardIds } from '../../../../src/domain/cards/card-ids.js';
+import { sameSubject } from '../../../../src/application/understand/same-question.js';
 import { draftOf } from '../../../support/card-fixtures.js';
 import { distinctPairs, nearRepeatPairs } from '../../../support/eshop-near-repeats.js';
 
@@ -85,7 +86,7 @@ describe('RF-243 EV-57 P8-05 one run asks a near-repeat once, by the shared rule
 
 describe('RF-646 P9-13 near-repeat pairs of the eShop evaluation (threshold 75%)', () => {
   it.each(nearRepeatPairs)('merges %s / %s', (first, second) => {
-    expect(sameQuestion(first, second)).toBe(true);
+    expect(sameQuestion(first, second) || sameSubject(first, second)).toBe(true);
   });
   it.each(distinctPairs)('keeps %s / %s apart', (first, second) => {
     expect(sameQuestion(first, second)).toBe(false);

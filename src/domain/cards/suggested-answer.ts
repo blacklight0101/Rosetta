@@ -47,7 +47,20 @@ export function spacedWords(text: string): string {
   return text.replace(invisible, ' ').replace(/\s+/gu, ' ').trim();
 }
 
-/** P9-13: true when the question offers two sides joined with "or". */
+/** A question opened by a verb asks yes or no, unless it joins two sides with "or". */
+const closedQuestionStart =
+  /^(?:is|are|was|were|do|does|did|can|could|should|will|would|must|may|has|have)\b/iu;
+
+/**
+ * P9-13, EV-89: true when a verb-opened question offers two sides joined with "or" ("Is it run by this
+ * team or by another system?"), so "Yes" and "No" do not answer it. "and/or" and "or not" are not sides.
+ */
 export function isEitherOrQuestion(question: string): boolean {
-  return question.length < 0;
+  const text = question.trim();
+  if (isOpenQuestion(text) || !closedQuestionStart.test(text)) return false;
+  return /\bor\b/iu.test(text.replace(/\band\/or\b/giu, ' ').replace(/\bor not\b/giu, ' '));
 }
+
+/** What the agent is told when an either-or question has a Yes or No answer. */
+export const eitherOrAnswerRefusal =
+  'This question offers two sides, so no suggested answer may start with "Yes" or "No". Name one of the two sides in each answer, the third one too, or a qualified mix of both, for example "Another system, with this team only as the shared catalog".';
