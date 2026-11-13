@@ -187,6 +187,15 @@ describe('a continuation that starts again', () => {
     expect(inFence.outcome).toEqual({ usable: false, detail: 'Restarted' });
   });
 
+  it('RF-1406 keeps a continuation that finishes the card and is cut again, as a run does', async () => {
+    const again2 = `${rest.slice(0, -2)}, {"type": "BR", "title": "Cut`;
+
+    expect((await run('cards/continue', { text: again2 })).outcome).toEqual({
+      usable: true,
+      detail: 'Partial',
+    });
+  });
+
   it('RF-1406 is not valid on the first try either, and the rest of the cut is', () => {
     expect(targets.get('cards/continue')?.readsAnswer(again)).toBe(false);
     expect(targets.get('cards/continue')?.readsAnswer(rest)).toBe(true);

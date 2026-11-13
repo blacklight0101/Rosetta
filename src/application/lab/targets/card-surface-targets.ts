@@ -8,6 +8,7 @@ import {
   type ReaderPrompts,
 } from '../../agent/reader-prompts.js';
 import { readerToolDefinitions } from '../../agent/tool-definitions.js';
+import { readCutCards } from '../../cards/cut-cards.js';
 import { parseCardsLenient } from '../../cards/parse-cards.js';
 import type { LlmMessage, LlmResponse } from '../../ports/llm-provider.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
@@ -28,12 +29,66 @@ import { askOnce, problemsOf } from './single-call.js';
 // (agent-loop.ts) and the lab drops them on purpose (P10-09):
 //   cards/flows, cards/screens  the fragment under test is added after the card format of the system
 //                               prompt, for an area marked for it, and the other fragment is left out
-//   cards/continue              the turn after a fixed cut answer and the continue file under test; the
-//                               fragment the model sends is joined to the cut answer as the run joins it
+//   cards/continue              the turn after a cut answer made from the first read and the continue
+//                               file under test; the fragment the model sends is joined to the cut
+//                               answer as the run joins it
 
-/** The answer cut off in the continue case: fixed text, never a model's. */
-const CUT_ANSWER =
-  '{"cards": [{"type": "BR", "title": "Late fee after 30 days", "area": "billing", "summary": "An invoice unpaid after 30 days gets a late fee.", "confidence": "High", "claims": [{"text": "The late fee is added when the invoice is more than 30 days old.", "citations": ["src/Billing/Invoices.cs:40-52"]}, {"text": "The fee is a flat 5 percent of the open amount and is';
+/**
+ * The answer cut off in the continue case: the start of a card about the first read of the case, cut
+ * inside its claim. It is made from the case's path and lines, never from a model's answer, so the
+ * model can finish it from what it has read (a cut about unread code is refused as ungrounded).
+ */
+function cutOf(input: ReaderCase): string {
+  const read = input.reads?.[0];
+  if (read === undefined) return '';
+  const last = read.startLine + read.lines.length - 1;
+  const name = read.path.split('/').at(-1) ?? read.path;
+  const lines = `${String(read.startLine)}-${String(last)}`;
+  const claim = JSON.stringify(`The file ${read.path} holds the code at lines ${lines}, which is`);
+  const fields = [
+    ...['"type": "FEAT"', `"title": ${JSON.stringify(`Reads ${name}`)}`],
+    ...[
+      `"area": ${JSON.stringify(input.area)}`,
+      `"summary": ${JSON.stringify(`The code in ${read.path} is read here.`)}`,
+    ],
+    ...['"confidence": "High"', `"claims": [{"text": ${claim.slice(0, -1)}`],
+  ];
+  return `{"cards": [{${fields.join(', ')}`;
+}
+
+/** The cut of a stand-in case: first-try validity reads the fragment alone, and every cut has this shape. */
+const STAND_IN = cutOf({
+  ...{ area: 'a', files: [{ path: 'a.cs', language: 'csharp' }], turns: 2 },
+  reads: [{ path: 'a.cs', startLine: 1, lines: ['x'] }],
+});
+
+/** The text of the claim the cut stops inside: a finished card starts its first claim with it. */
+function claimStartOf(cut: string): string {
+  const marker = '"text": "';
+  const start = cut.lastIndexOf(marker) + marker.length;
+  return String(JSON.parse(`"${cut.slice(start)}"`));
+}
+
+/**
+ * Whether the joined answer finished the cut card: its first card, read as the run reads it (or, for
+ * an answer cut again, the cards finished before that cut), has the cut's first claim. A model that
+ * starts a new answer (often after a line of prose or inside a fence) does not.
+ */
+function continues(cut: string, joinedText: string): boolean {
+  const whole = parseCardsLenient(joinedText);
+  const read = whole.drafts.length > 0 ? whole : readCutCards(joinedText);
+  return read?.drafts[0]?.claims[0]?.text.startsWith(claimStartOf(cut)) === true;
+}
+
+/** A joined answer the run could read: usable only when it finished the cut card (`Restarted`). */
+function continuation(cut: string, response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
+  const joinedResponse = joined(cut, response);
+  const outcome = cardsOutcome(joinedResponse, prompts);
+  const finished = continues(cut, joinedResponse.text);
+  if (outcome.usable) return finished ? outcome : { usable: false, detail: 'Restarted' };
+  // Cut again at the output limit after finishing the card: a run asks again and keeps these cards.
+  return finished && outcome.detail === 'Unusable' ? { usable: true, detail: 'Partial' } : outcome;
+}
 
 type Part = 'flows' | 'screens' | 'continue';
 
@@ -55,12 +110,12 @@ function messagesOf(part: Part, input: ReaderCase, prompts: ReaderPrompts, env: 
   const replay = replayOfReads(onLastTurn(input), prompts, tag);
   if (part !== 'continue') return [task, ...replay];
   const more: LlmMessage = { role: 'user', content: prompts.continue.text.trimEnd() };
-  return [task, ...replay, { role: 'assistant' as const, content: CUT_ANSWER }, more];
+  return [task, ...replay, { role: 'assistant' as const, content: cutOf(input) }, more];
 }
 
 /** The fragment of a continuation, joined to the cut answer as the run joins it, read as an answer. */
-function joined(response: LlmResponse): LlmResponse {
-  return { ...response, text: joinFragment(CUT_ANSWER, response.text) };
+function joined(cut: string, response: LlmResponse): LlmResponse {
+  return { ...response, text: joinFragment(cut, response.text) };
 }
 
 function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): PreparedCase {
@@ -76,7 +131,8 @@ function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): Prep
         tools: part === 'continue' ? readerToolDefinitions : [],
       });
       if (!asked.ok) return asked.error;
-      return cardsOutcome(part === 'continue' ? joined(asked.value) : asked.value, prompts);
+      if (part === 'continue') return continuation(cutOf(input), asked.value, prompts);
+      return cardsOutcome(asked.value, prompts);
     },
   };
 }
@@ -92,9 +148,10 @@ function targetOf(id: string, part: Part, current: ReaderPrompts): LabTarget {
       return ok(preparedOf(part, parsed.data, current));
     },
     readsAnswer: (text) => {
-      const answer = part === 'continue' ? joinFragment(CUT_ANSWER, text) : text;
+      const answer = part === 'continue' ? joinFragment(STAND_IN, text) : text;
       const parsed = parseCardsLenient(answer);
-      return parsed.drafts.length > 0 && parsed.problems.length === 0;
+      const read = parsed.drafts.length > 0 && parsed.problems.length === 0;
+      return part === 'continue' ? read && continues(STAND_IN, answer) : read;
     },
   };
 }
