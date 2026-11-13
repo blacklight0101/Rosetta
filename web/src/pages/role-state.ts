@@ -10,6 +10,8 @@ import { kindOfProvider } from './provider-choices.js';
 // on Ollama is ready when Ollama answered with its models. Nothing is said before the answer the
 // state rests on has come or when it could not be had, nor for a provider that is neither (the fake).
 
+const UNDERSTAND_ROLE_NAMES: readonly RoleName[] = ['reader', 'verifier', 'summariser'];
+
 export type RoleState = 'key-ready' | 'no-key' | 'reachable' | 'not-reachable';
 
 const keyKinds: readonly string[] = ['anthropic', 'openai', 'openai-compatible'];
@@ -48,7 +50,7 @@ export function roleStates(
 export interface ProvidersDown {
   /** Ollama answered that it could not be reached, so a switch to it cannot work. */
   readonly ollama: boolean;
-  /** Every role is on a provider that cannot answer, and one of them is an unreachable Ollama. */
+  /** Every role an understand run calls is on a provider that cannot answer, one an unreachable Ollama. */
   readonly everyRole: boolean;
 }
 
@@ -57,7 +59,8 @@ export function providersDown(
   states: Readonly<Record<RoleName, RoleState | undefined>>,
   ollama: ModelListState | undefined,
 ): ProvidersDown {
-  const all = Object.values(states);
+  // P9-14: understand calls the reader, the verifier and the summariser, never the planner.
+  const all = UNDERSTAND_ROLE_NAMES.map((role) => states[role]);
   const cannot = (state: RoleState | undefined): boolean =>
     state === 'not-reachable' || state === 'no-key';
   return {

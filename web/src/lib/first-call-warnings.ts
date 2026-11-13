@@ -104,12 +104,18 @@ export function firstCallWarnings(
   estimate: RunEstimate,
   runCapMicros: bigint,
   runCapFromProject = true,
+  approvedLine = false,
 ): readonly FirstCallWarning[] {
   const first = estimate.firstCalls;
   if (first === undefined || first.calls === 0) return [];
-  return shortCaps(estimate, first, runCapMicros).map((cap) => ({
-    id: `first-calls-${cap.kind}`,
-    text: textOf(first, cap),
-    projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
-  }));
+  // P9-14, RF-434: a journey's approved amount replaces the project's run caps, so they are not named.
+  const replaced = (kind: string): boolean =>
+    approvedLine && (kind === 'run-cost' || kind === 'run-tokens');
+  return shortCaps(estimate, first, runCapMicros)
+    .filter((cap) => !replaced(cap.kind))
+    .map((cap) => ({
+      id: `first-calls-${cap.kind}`,
+      text: textOf(first, cap),
+      projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
+    }));
 }
