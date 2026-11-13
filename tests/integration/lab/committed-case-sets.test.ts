@@ -15,7 +15,10 @@ import { listLabTargets } from '../../../src/presentation/lab/lab-targets.js';
 const labFolder = fileURLToPath(new URL('../../../lab/', import.meta.url));
 const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url));
 
-/** The two samples are invented by hand; every other set is built by the capture. */
+/**
+ * The two samples are invented by hand; every other set is built by the capture, or for a repair
+ * prompt on a captured set, and is checked like one (repair-case-sets.test.ts).
+ */
 const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
 const CAPTURED = [
   'cards-card-format',

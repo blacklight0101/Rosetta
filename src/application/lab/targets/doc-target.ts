@@ -13,9 +13,10 @@ export interface DocTargetDefinition<T> {
   /** The agent task the call is logged under, without the case key. */
   readonly task: string;
   readonly schema: z.ZodType<T>;
-  readonly message: (input: T, tags: () => string) => string;
+  /** The user message; a repair prompt is part of it, so the file under test is given too. */
+  readonly message: (input: T, tags: () => string, prompt: PromptFile) => string;
   /** The result of one raw answer: the run's parser, and the label of what it read. */
-  readonly read: (text: string) => TargetOutcome;
+  readonly read: (text: string, input?: T) => TargetOutcome;
   /** The system prompt for the file under test; the file's own text by default. */
   readonly system?: (prompt: PromptFile) => string;
 }
@@ -23,14 +24,14 @@ export interface DocTargetDefinition<T> {
 function preparedOf<T>(definition: DocTargetDefinition<T>, input: T): PreparedCase {
   return {
     run: async (env: TargetEnv, prompt: PromptFile): Promise<TargetOutcome> => {
-      const content = definition.message(input, () => env.ids.dataBlockTag());
+      const content = definition.message(input, () => env.ids.dataBlockTag(), prompt);
       const asked = await askOnce(env, {
         role: 'planner',
         task: definition.task,
         system: definition.system?.(prompt) ?? prompt.text,
         messages: [{ role: 'user', content }],
       });
-      return asked.ok ? definition.read(asked.value.text) : asked.error;
+      return asked.ok ? definition.read(asked.value.text, input) : asked.error;
     },
   };
 }
