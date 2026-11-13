@@ -3234,5 +3234,1041 @@
   "text": "[\"\\\"\\\\\\\"bash -c 'sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"'\\\\\\\"\\\"\", 1]",
   "secrets": [],
   "keep": false
+ },
+ {
+  "text": "sqlcmd -o \"C:\\out\\\" -PAa1Sec -Q \"x\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -o \"C:\\out\\\" -PAa1Sec -Q \"x\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -o \"C:\\out\\\" -PAa1Sec -Q \"x\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -o \"C:\\out\\\" -PAa1Sec -Q \"x\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -o \\\"C:\\\\out\\\\\\\" -PAa1Sec -Q \\\"x\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -o \\\"C:\\\\out\\\\\\\" -PAa1Sec -Q \\\"x\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -o \\\"C:\\\\out\\\\\\\" -PAa1Sec -Q \\\"x\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"sqlcmd -o \\\"C:\\\\out\\\\\\\" -PAa1Sec -Q \\\"x\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec -Q \\\\\\\"x\\\\\\\"\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec -Q \\\\\\\"x\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec -Q \\\\\\\"x\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec -Q \\\\\\\"x\\\\\\\"\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -v Dir=\"C:\\Backups\\\" -S . -U sa -PAa1Sec",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -v Dir=\"C:\\Backups\\\" -S . -U sa -PAa1Sec}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -v Dir=\"C:\\Backups\\\" -S . -U sa -PAa1Sec, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -v Dir=\"C:\\Backups\\\" -S . -U sa -PAa1Sec,\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -v Dir=\\\"C:\\\\Backups\\\\\\\" -S . -U sa -PAa1Sec\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -v Dir=\\\"C:\\\\Backups\\\\\\\" -S . -U sa -PAa1Sec\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -v Dir=\\\"C:\\\\Backups\\\\\\\" -S . -U sa -PAa1Sec\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"sqlcmd -v Dir=\\\"C:\\\\Backups\\\\\\\" -S . -U sa -PAa1Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -v Dir=\\\\\\\"C:\\\\\\\\Backups\\\\\\\\\\\\\\\" -S . -U sa -PAa1Sec\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -v Dir=\\\\\\\"C:\\\\\\\\Backups\\\\\\\\\\\\\\\" -S . -U sa -PAa1Sec\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -v Dir=\\\\\\\"C:\\\\\\\\Backups\\\\\\\\\\\\\\\" -S . -U sa -PAa1Sec\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"sqlcmd -v Dir=\\\\\\\"C:\\\\\\\\Backups\\\\\\\\\\\\\\\" -S . -U sa -PAa1Sec\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bcp db.t out f -o \"C:\\out\\\" -PAa1Sec",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": bcp db.t out f -o \"C:\\out\\\" -PAa1Sec}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[bcp db.t out f -o \"C:\\out\\\" -PAa1Sec, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":bcp db.t out f -o \"C:\\out\\\" -PAa1Sec,\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"bcp db.t out f -o \\\"C:\\\\out\\\\\\\" -PAa1Sec\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"bcp db.t out f -o \\\"C:\\\\out\\\\\\\" -PAa1Sec\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"bcp db.t out f -o \\\"C:\\\\out\\\\\\\" -PAa1Sec\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"bcp db.t out f -o \\\"C:\\\\out\\\\\\\" -PAa1Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"bcp db.t out f -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"bcp db.t out f -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"bcp db.t out f -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"bcp db.t out f -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -PAa1Sec\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[CMD, sqlcmd, -P, Aa1Sec]\", \"[CMD, sqlcmd, -P, Bb2Sec]\"]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": [\"[CMD, sqlcmd, -P, Aa1Sec]\", \"[CMD, sqlcmd, -P, Bb2Sec]\"]}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[[\"[CMD, sqlcmd, -P, Aa1Sec]\", \"[CMD, sqlcmd, -P, Bb2Sec]\"], 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":[\"[CMD, sqlcmd, -P, Aa1Sec]\", \"[CMD, sqlcmd, -P, Bb2Sec]\"],\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"[\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\", \\\"[CMD, sqlcmd, -P, Bb2Sec]\\\"]\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"[\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\", \\\"[CMD, sqlcmd, -P, Bb2Sec]\\\"]\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\", \\\"[CMD, sqlcmd, -P, Bb2Sec]\\\"]\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"[\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\", \\\"[CMD, sqlcmd, -P, Bb2Sec]\\\"]\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"[\\\\\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, sqlcmd, -P, Bb2Sec]\\\\\\\"]\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"[\\\\\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, sqlcmd, -P, Bb2Sec]\\\\\\\"]\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"[\\\\\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, sqlcmd, -P, Bb2Sec]\\\\\\\"]\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"[\\\\\\\"[CMD, sqlcmd, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, sqlcmd, -P, Bb2Sec]\\\\\\\"]\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Aa1Sec\\\"]\", \"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Bb2Sec\\\"]\"]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": [\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Aa1Sec\\\"]\", \"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Bb2Sec\\\"]\"]}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[[\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Aa1Sec\\\"]\", \"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Bb2Sec\\\"]\"], 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":[\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Aa1Sec\\\"]\", \"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Bb2Sec\\\"]\"],\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"[\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Aa1Sec\\\\\\\"]\\\", \\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Bb2Sec\\\\\\\"]\\\"]\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"[\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Aa1Sec\\\\\\\"]\\\", \\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Bb2Sec\\\\\\\"]\\\"]\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Aa1Sec\\\\\\\"]\\\", \\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Bb2Sec\\\\\\\"]\\\"]\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"[\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Aa1Sec\\\\\\\"]\\\", \\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Bb2Sec\\\\\\\"]\\\"]\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Aa1Sec\", \"sqlcmd -P Bb2Sec\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P \"Aa1Sec\", \"sqlcmd -P Bb2Sec\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P \"Aa1Sec\", \"sqlcmd -P Bb2Sec\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -P \"Aa1Sec\", \"sqlcmd -P Bb2Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Aa1Sec\\\", \\\"sqlcmd -P Bb2Sec\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P \\\"Aa1Sec\\\", \\\"sqlcmd -P Bb2Sec\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P \\\"Aa1Sec\\\", \\\"sqlcmd -P Bb2Sec\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"sqlcmd -P \\\"Aa1Sec\\\", \\\"sqlcmd -P Bb2Sec\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"sqlcmd -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec \"sqlcmd -P Bb2Sec\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P Aa1Sec \"sqlcmd -P Bb2Sec\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P Aa1Sec \"sqlcmd -P Bb2Sec\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -P Aa1Sec \"sqlcmd -P Bb2Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P Aa1Sec \\\"sqlcmd -P Bb2Sec\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P Aa1Sec \\\"sqlcmd -P Bb2Sec\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P Aa1Sec \\\"sqlcmd -P Bb2Sec\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"sqlcmd -P Aa1Sec \\\"sqlcmd -P Bb2Sec\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P Aa1Sec \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P Aa1Sec \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P Aa1Sec \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"sqlcmd -P Aa1Sec \\\\\\\"sqlcmd -P Bb2Sec\\\\\\\"\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[CMD, bcp, -P, Aa1Sec]\", \"[CMD, bcp, -P, Bb2Sec]\"]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": [\"[CMD, bcp, -P, Aa1Sec]\", \"[CMD, bcp, -P, Bb2Sec]\"]}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[[\"[CMD, bcp, -P, Aa1Sec]\", \"[CMD, bcp, -P, Bb2Sec]\"], 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":[\"[CMD, bcp, -P, Aa1Sec]\", \"[CMD, bcp, -P, Bb2Sec]\"],\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"[\\\"[CMD, bcp, -P, Aa1Sec]\\\", \\\"[CMD, bcp, -P, Bb2Sec]\\\"]\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"[\\\"[CMD, bcp, -P, Aa1Sec]\\\", \\\"[CMD, bcp, -P, Bb2Sec]\\\"]\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[\\\"[CMD, bcp, -P, Aa1Sec]\\\", \\\"[CMD, bcp, -P, Bb2Sec]\\\"]\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"[\\\"[CMD, bcp, -P, Aa1Sec]\\\", \\\"[CMD, bcp, -P, Bb2Sec]\\\"]\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"[\\\\\\\"[CMD, bcp, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, bcp, -P, Bb2Sec]\\\\\\\"]\\\"\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"[\\\\\\\"[CMD, bcp, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, bcp, -P, Bb2Sec]\\\\\\\"]\\\"\"}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"[\\\\\\\"[CMD, bcp, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, bcp, -P, Bb2Sec]\\\\\\\"]\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"[\\\\\\\"[CMD, bcp, -P, Aa1Sec]\\\\\\\", \\\\\\\"[CMD, bcp, -P, Bb2Sec]\\\\\\\"]\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": {\"a\":sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\",\"b\":1}}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[{\"a\":sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\",\"b\":1}, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":{\"a\":sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\",\"b\":1},\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\", \"b\": 1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": {\"a\": sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\", \"b\": 1}}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[{\"a\": sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\", \"b\": 1}, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":{\"a\": sqlcmd -o \"C:\\out\\\" -P \"Aa1Sec\", \"b\": 1},\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"{\\\"a\\\": sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\", \\\"b\\\": 1}\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"{\\\"a\\\": sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\", \\\"b\\\": 1}\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"{\\\"a\\\": sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\", \\\"b\\\": 1}\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"{\\\"a\\\": sqlcmd -o \\\"C:\\\\out\\\\\\\" -P \\\"Aa1Sec\\\", \\\"b\\\": 1}\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"{\\\\\\\"a\\\\\\\": sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"b\\\\\\\": 1}\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"{\\\\\\\"a\\\\\\\": sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"b\\\\\\\": 1}\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"{\\\\\\\"a\\\\\\\": sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"b\\\\\\\": 1}\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"{\\\\\\\"a\\\\\\\": sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\", \\\\\\\"b\\\\\\\": 1}\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -o \"C:\\out\\\" -P Aa1Sec,\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": {\"a\":sqlcmd -o \"C:\\out\\\" -P Aa1Sec,\"b\":1}}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[{\"a\":sqlcmd -o \"C:\\out\\\" -P Aa1Sec,\"b\":1}, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":{\"a\":sqlcmd -o \"C:\\out\\\" -P Aa1Sec,\"b\":1},\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P Aa1Sec,\\\"b\\\":1}\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P Aa1Sec,\\\"b\\\":1}\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P Aa1Sec,\\\"b\\\":1}\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"{\\\"a\\\":sqlcmd -o \\\"C:\\\\out\\\\\\\" -P Aa1Sec,\\\"b\\\":1}\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P Aa1Sec,\\\\\\\"b\\\\\\\":1}\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P Aa1Sec,\\\\\\\"b\\\\\\\":1}\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P Aa1Sec,\\\\\\\"b\\\\\\\":1}\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -o \\\\\\\"C:\\\\\\\\out\\\\\\\\\\\\\\\" -P Aa1Sec,\\\\\\\"b\\\\\\\":1}\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":sqlcmd -i \"C:\\in.sql\" -P \"Aa1Sec\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": {\"a\":sqlcmd -i \"C:\\in.sql\" -P \"Aa1Sec\",\"b\":1}}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[{\"a\":sqlcmd -i \"C:\\in.sql\" -P \"Aa1Sec\",\"b\":1}, 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":{\"a\":sqlcmd -i \"C:\\in.sql\" -P \"Aa1Sec\",\"b\":1},\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"{\\\"a\\\":sqlcmd -i \\\"C:\\\\in.sql\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"{\\\"a\\\":sqlcmd -i \\\"C:\\\\in.sql\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"{\\\"a\\\":sqlcmd -i \\\"C:\\\\in.sql\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"{\\\"a\\\":sqlcmd -i \\\"C:\\\\in.sql\\\" -P \\\"Aa1Sec\\\",\\\"b\\\":1}\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -i \\\\\\\"C:\\\\\\\\in.sql\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\"",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -i \\\\\\\"C:\\\\\\\\in.sql\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\"}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -i \\\\\\\"C:\\\\\\\\in.sql\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\", 1]",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\":\"\\\"{\\\\\\\"a\\\\\\\":sqlcmd -i \\\\\\\"C:\\\\\\\\in.sql\\\\\\\" -P \\\\\\\"Aa1Sec\\\\\\\",\\\\\\\"b\\\\\\\":1}\\\"\",\"b\":1}",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
  }
 ]

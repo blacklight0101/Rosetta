@@ -139,12 +139,53 @@ describe('the arguments the command skips', () => {
     expect(maskedTwice(text)).toBe(expected);
   });
 
+  it.each([
+    [
+      String.raw`sqlcmd -o "C:\out\" -P${a} -Q "x"`,
+      String.raw`sqlcmd -o "C:\out\" -P${mask} -Q "x"`,
+    ],
+    [
+      String.raw`sqlcmd -v Dir="C:\Backups\" -S . -U sa -P${a}`,
+      String.raw`sqlcmd -v Dir="C:\Backups\" -S . -U sa -P${mask}`,
+    ],
+    [
+      String.raw`{"a":sqlcmd -o "C:\out\" -P "${a}","b":1}`,
+      String.raw`{"a":sqlcmd -o "C:\out\" -P "${mask}","b":1}`,
+    ],
+    [
+      String.raw`{"a":sqlcmd -i "C:\in.sql" -P "${a}","b":1}`,
+      String.raw`{"a":sqlcmd -i "C:\in.sql" -P "${mask}","b":1}`,
+    ],
+  ])('never lets a skipped argument swallow the password after it in %j', (text, expected) => {
+    expect(maskedTwice(text)).toBe(expected);
+  });
+
   it.each(['sqlcmd -P ${{ secrets.X -Q x', 'sqlcmd -P $(cat f -Q x'])(
     'leaves the reference that does not close in %j alone',
     (text) => {
       expect(masker.mask(text).text).toBe(text);
     },
   );
+});
+
+describe('a quoted argument that names a tool', () => {
+  it.each([
+    [
+      `["[CMD, sqlcmd, -P, ${a}]", "[CMD, sqlcmd, -P, ${b}]"]`,
+      `["[CMD, sqlcmd, -P, ${mask}]", "[CMD, sqlcmd, -P, ${mask}]"]`,
+    ],
+    [
+      String.raw`["[\"sqlcmd\", \"-P\", \"${a}\"]", "[\"sqlcmd\", \"-P\", \"${b}\"]"]`,
+      String.raw`["[\"sqlcmd\", \"-P\", \"${mask}\"]", "[\"sqlcmd\", \"-P\", \"${mask}\"]"]`,
+    ],
+    [`sqlcmd -P "${a}", "sqlcmd -P ${b}"`, `sqlcmd -P "${mask}", "sqlcmd -P ${mask}"`],
+    [
+      `sqlcmd -Q "exec xp_cmdshell 'bcp t out f -P ${a}'" -P ${b}`,
+      `sqlcmd -Q "exec xp_cmdshell 'bcp t out f -P ${mask}'" -P ${mask}`,
+    ],
+  ])('reads the command in a quoted argument that names a tool in %j', (text, expected) => {
+    expect(maskedTwice(text)).toBe(expected);
+  });
 });
 
 describe('a value masked between quotes, masked again', () => {
