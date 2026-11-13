@@ -111,3 +111,9 @@ export function calibrationItems(
       };
     });
 }
+
+/** The first `limit` items of each kind and family; all of them when there is no limit. */
+// RF-1405
+export function limitItems(items: readonly CheckItem[], limit: number | undefined): CheckItem[] {
+  throw new Error(`not implemented: ${String(items.length)} ${String(limit)}`);
+}

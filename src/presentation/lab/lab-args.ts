@@ -22,6 +22,8 @@ export type LabArgs =
       readonly kind: 'judge-check';
       readonly model: { readonly provider: string; readonly model: string };
       readonly yes: boolean;
+      /** RF-1405: score only the first n items of each kind and family (a smoke run). */
+      readonly limit?: number;
     }
   | { readonly kind: 'compare'; readonly a: string; readonly b: string }
   | { readonly kind: 'help' };

@@ -72,6 +72,10 @@ describe('the lab judge options', () => {
     expect(parseLabArgs(['--judge-check', 'fake:model-b'])).toMatchObject({
       value: { yes: false },
     });
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--limit', '2', '--yes'])).toMatchObject({
+      value: { limit: 2, yes: true },
+    });
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--limit', '0']).ok).toBe(false);
     expect(parseLabArgs(['--judge-check']).ok).toBe(false);
     expect(parseLabArgs(['--judge-check', 'fake:model-b', '--prompt', 'x']).ok).toBe(false);
   });

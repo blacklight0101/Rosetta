@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   calibrationItems,
+  limitItems,
   parseHandScored,
 } from '../../../../../src/application/lab/judge/judge-check-set.js';
 import { RUBRIC_FAMILIES } from '../../../../../src/application/lab/judge/rubric.js';
@@ -67,5 +68,24 @@ describe('the hand-scored samples', () => {
     expect(parseHandScored(wrap(base)).ok).toBe(true);
     expect(parseHandScored(wrap({ ...base, scores: { grounding: 6 } })).ok).toBe(false);
     expect(parseHandScored(wrap({ ...base, family: 'poems' })).ok).toBe(false);
+  });
+});
+
+describe('the limit of the judge check', () => {
+  it('RF-1405 keeps the first n items of each kind and family', () => {
+    const item = (id: string, kind: 'calibration' | 'hand-scored', family: string) => ({
+      ...{ id, kind, family, source: 's', answer: 'a', label: null },
+      ...{ followsLabel: null, scores: null },
+    });
+    const items = [
+      item('c1', 'calibration', 'verifier'),
+      item('c2', 'calibration', 'verifier'),
+      item('h1', 'hand-scored', 'verifier'),
+      item('h2', 'hand-scored', 'verifier'),
+      item('r1', 'hand-scored', 'reader'),
+    ];
+
+    expect(limitItems(items, 1).map((each) => each.id)).toEqual(['c1', 'h1', 'r1']);
+    expect(limitItems(items, undefined)).toHaveLength(5);
   });
 });

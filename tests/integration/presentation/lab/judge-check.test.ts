@@ -2,7 +2,10 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { CheckItem } from '../../../../src/application/lab/judge/judge-check-set.js';
+import {
+  limitItems,
+  type CheckItem,
+} from '../../../../src/application/lab/judge/judge-check-set.js';
 import type { Rubric } from '../../../../src/application/lab/judge/rubric.js';
 import { loadCheckItems } from '../../../../src/infrastructure/lab/judge-check-files.js';
 import type { LabArgs } from '../../../../src/presentation/lab/lab-args.js';
@@ -100,6 +103,22 @@ describe('the judge check with a judge that agrees', () => {
 });
 
 describe('the judge check inputs and disagreement', () => {
+  it('RF-1405 with a limit scores the first n items of each kind and family only', async () => {
+    const { items, rubrics } = await loaded();
+    const kept = limitItems(items, 1);
+    const router = new ModelRouter({ 'model-b': kept.map((item) => perfect(item, rubrics)) });
+
+    const code = await runJudgeCheck(
+      labParts({ outputDir: out(), router }),
+      { ...args, limit: 1 },
+      folders,
+      () => undefined,
+    );
+
+    expect(code).toBe(0);
+    expect(router.requests).toHaveLength(7);
+  });
+
   it('RF-1405 withholds the hand label from the judge on the calibration claims', async () => {
     const { items, rubrics } = await loaded();
     const router = new ModelRouter({ 'model-b': items.map((item) => perfect(item, rubrics)) });
