@@ -84,6 +84,7 @@ describe('the runbook list of prompt ids', () => {
     const wired = [...rows.values()].filter((state) => state === 'wired').length;
 
     expect(text).toContain(`(${String(wired)} are wired:`);
-    expect(rows.get('shared/secret-risk')).toBe('no call');
+    const unwired = [...rows].filter(([, state]) => state === 'no call').map(([id]) => id);
+    expect(unwired).toEqual(['shared/secret-risk']);
   });
 });

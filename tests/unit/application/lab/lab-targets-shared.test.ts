@@ -18,15 +18,14 @@ import { loadReaderPrompts } from '../../../../src/infrastructure/prompts/prompt
 import {
   parseTextAnswer,
   textProtocolSystem,
+  toolsPlaceholder,
   toolCallBlock,
   toolResultBlock,
 } from '../../../../src/infrastructure/providers/ollama/text-tool-protocol.js';
 import { draftFile, environment, type Answer } from '../../../support/lab-target-env.js';
 
-// RF-1406, ADR-029, P10-10: the lab targets of the shared prompts that a model reads: the note a
-// masked value carries (`shared/masked-value`) and the text tool protocol (`shared/text-tool-protocol`).
-// Both are fragments of a reader turn; the secret-risk text is never sent to a model, so it has no
-// target. The values in these tests are invented.
+// RF-1406, ADR-029, P10-10: the targets of the shared prompts a model reads (masked-value, text
+// protocol), fragments of a reader turn; secret-risk is never sent, so it has none. Values are invented.
 
 const promptsFolder = fileURLToPath(new URL('../../../../prompts/', import.meta.url));
 
@@ -36,6 +35,7 @@ const kit: SharedKit = {
       ? new SecretMasker(undefined, maskedValueReplacement(file))
       : undefined,
   protocol: {
+    toolsPlaceholder,
     systemOf: textProtocolSystem,
     parse: parseTextAnswer,
     toolCallBlock,
@@ -75,7 +75,6 @@ const validCards = JSON.stringify({ cards: [card] });
 const readCall =
   '```tool_call\n{"name": "read_file", "arguments": {"path": "shop/App.config", "startLine": 1, "endLine": 20}}\n```';
 const PROTOCOL = 'PROTOCOL {{tools}}';
-
 let prompts: ReaderPrompts;
 let targets: Map<string, LabTarget>;
 
@@ -129,7 +128,7 @@ describe('the masked-value target', () => {
     if (parsed?.ok !== true) throw new Error('not parsed');
     const { env, requests } = environment([{ text: validCards }]);
 
-    const outcome = await parsed.value.run(env, draftFile('x.v9.md', 'NOTE'));
+    const outcome = await parsed.value.run(env, draftFile('x.v9.md', '[MASKED:{{kind}}]'));
 
     expect(outcome).toEqual({ usable: false, detail: 'Leaked' });
     expect(requests).toHaveLength(0);
@@ -147,6 +146,35 @@ describe('the masked-value target', () => {
 });
 
 describe('the masked-value target, refusals', () => {
+  it('RF-1406 refuses a note that does not start with the marker as BadPrompt, with no call', async () => {
+    const { outcome, requests } = await run(
+      'shared/masked-value',
+      maskedInput,
+      { text: validCards },
+      'NOTE [MASKED:{{kind}}]',
+    );
+
+    expect(outcome).toEqual({ usable: false, detail: 'BadPrompt' });
+    expect(requests).toHaveLength(0);
+  });
+
+  it('RF-1406 calls an answer that repeats the value in a tool call Leaked', async () => {
+    const call = {
+      id: 'c',
+      name: 'read_file',
+      arguments: { path: 'shop/FakeSecret1.cs', startLine: 1, endLine: 2 },
+    };
+
+    const { outcome } = await run('shared/masked-value', maskedInput, {
+      text: '',
+      toolCalls: [call],
+    });
+
+    expect(outcome).toEqual({ usable: false, detail: 'Leaked' });
+  });
+});
+
+describe('the masked-value target, drafts and cases', () => {
   it('RF-1406 refuses a draft without the kind placeholder as BadPrompt, with no call', async () => {
     const { outcome, requests } = await run(
       'shared/masked-value',
@@ -214,6 +242,19 @@ describe('the text-tool-protocol target', () => {
 });
 
 describe('the text-tool-protocol target, after the reads', () => {
+  it('RF-1406 takes the placeholder rule of the run: one or more tools placeholders', async () => {
+    const { outcome } = await run(
+      'shared/text-tool-protocol',
+      protocolInput,
+      { text: readCall },
+      'A {{tools}} B {{tools}}',
+    );
+
+    expect(outcome).toEqual({ usable: true, detail: 'ReadsFiles' });
+  });
+});
+
+describe('the text-tool-protocol target, replay', () => {
   it('RF-1406 sends the replay of the reads as text, since the protocol has no tool role', async () => {
     const { outcome, requests } = await run(
       'shared/text-tool-protocol',

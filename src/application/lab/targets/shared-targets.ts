@@ -44,6 +44,8 @@ export interface SharedKit {
     file: PromptFile,
   ) => { mask(text: string): { readonly text: string } } | undefined;
   readonly protocol: {
+    /** The run's placeholder for the tools in the protocol file (one or more are accepted). */
+    readonly toolsPlaceholder: string;
     readonly systemOf: (
       system: string,
       template: string,

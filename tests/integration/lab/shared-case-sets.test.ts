@@ -137,12 +137,49 @@ describe('the masked-value set', () => {
     expect(kinds.size).toBeGreaterThanOrEqual(4);
   });
 
-  it('RF-1406 holds a line that is already masked and a case with no secret in a decoy line', async () => {
+  it('RF-1406 holds a line that is already masked, and every case is read as Valid', async () => {
     const { set } = await load('shared-masked-value');
     const lines = set.cases.flatMap((each) => linesOf(each.input));
 
     expect(lines.some((line) => line.includes('[MASKED:'))).toBe(true);
     expect(set.cases.every((each) => each.expected === 'Valid')).toBe(true);
+  });
+});
+
+describe('the masked-value set, line by line', () => {
+  it('RF-1404 leaves every line without the token unchanged for the run masker, so no literal value stands in a line', async () => {
+    const { set } = await load('shared-masked-value');
+    const masker = new SecretMasker();
+
+    const changed = set.cases.flatMap((each) =>
+      linesOf(each.input)
+        .filter((line) => !line.includes('{secret}'))
+        .filter((line) => masker.mask(line).text !== line)
+        .map((line) => `${each.id}: ${line.slice(0, 40)}`),
+    );
+
+    expect(changed).toEqual([]);
+  });
+
+  it('RF-1404 makes the masker hide exactly the lines that hold the token', async () => {
+    const { set } = await load('shared-masked-value');
+    const masker = new SecretMasker();
+
+    const problems = set.cases.flatMap((each) => {
+      const input = each.input as MaskedInput;
+      const lines = linesOf(input);
+      const tokens = lines.filter((line) => line.includes('{secret}')).length;
+      const filled = lines.map((line) => line.replaceAll('{secret}', input.secret));
+      const counted = Object.values(masker.mask(filled.join('\n')).counts).reduce(
+        (a, b) => a + b,
+        0,
+      );
+      return counted === tokens
+        ? []
+        : [`${each.id}: ${String(counted)} masked, ${String(tokens)} lines`];
+    });
+
+    expect(problems).toEqual([]);
   });
 });
 
