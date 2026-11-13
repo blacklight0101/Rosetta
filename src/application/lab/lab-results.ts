@@ -19,7 +19,7 @@ const caseSchema = z.strictObject({
   /** The last answer of the model, masked and cut. */
   answer: z.string(),
   usable: z.boolean(),
-  validFirstTry: z.boolean(),
+  validFirstTry: z.boolean().nullable(),
   repaired: z.boolean(),
   refused: z.boolean(),
   rstCode: z.string().nullable(),

@@ -102,6 +102,7 @@ async function requestOf(args: CaptureArgs): Promise<Result<CaptureRequest, stri
     description,
     maxPerRun: args.maxPerRun,
     sha256: sha256Hex,
+    mask: (text) => text,
     runs,
   });
 }

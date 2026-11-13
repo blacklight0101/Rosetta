@@ -67,3 +67,19 @@ describe('the lab over captured case sets', () => {
     );
   });
 });
+
+describe('the first-try validity of a captured first-turn set', () => {
+  it('RF-1403 prints first-try validity as n/a for a first-turn target, even for empty answers', async () => {
+    const router = new ModelRouter({ 'model-a': Array.from({ length: 10 }, () => '') });
+
+    const { lines } = await runLab(
+      labParts({ outputDir: out(), router }),
+      runOf('reader/answers', 'v2', 'reader-answers'),
+    );
+    const [results] = await writtenResults(out());
+
+    expect(results?.cases.every((each) => each.detail === 'Empty')).toBe(true);
+    expect(results?.cases.every((each) => each.validFirstTry === null)).toBe(true);
+    expect(lines).toContain('Valid on the first try: n/a; repaired: 0%; not usable: 100%');
+  });
+});

@@ -155,3 +155,13 @@ describe('the reader card format turn', () => {
     expect(targets.get('reader/task')?.parseInput(bare).ok).toBe(true);
   });
 });
+
+describe('the first-try check of the reader targets', () => {
+  it('RF-1403 is not applicable to a first turn, whose answer may be tool calls the text does not show', () => {
+    const firstTurns = ['reader/task', 'reader/area', 'reader/read-first'];
+
+    expect(firstTurns.map((id) => targets.get(id)?.readsAnswer(''))).toEqual([null, null, null]);
+    expect(firstTurns.map((id) => targets.get(id)?.readsAnswer('Hi.'))).toEqual([null, null, null]);
+    expect(targets.get('cards/card-format')?.readsAnswer('')).toBe(false);
+  });
+});

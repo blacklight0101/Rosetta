@@ -16,6 +16,8 @@ export interface CaptureRequest {
   readonly description: string;
   readonly maxPerRun: number;
   readonly sha256: Sha256;
+  /** Not used yet (red). */
+  readonly mask: (text: string) => string;
   /** One entry per run: the source it belongs to, with the run behind it. */
   readonly runs: readonly {
     readonly source: Omit<LabCaseSource, 'runs'>;
@@ -27,6 +29,8 @@ export interface Captured {
   readonly set: LabCaseSet;
   /** Candidate tasks left out because their input held personal data, per kind. */
   readonly leftOut: readonly string[];
+  /** Not filled yet (red). */
+  readonly repeated: readonly string[];
 }
 
 const slug = (text: string): string =>
@@ -93,7 +97,7 @@ export function buildCaseSet(request: CaptureRequest): Result<Captured, string> 
       input: each.input,
     })),
   });
-  return set.ok ? ok({ set: set.value, leftOut }) : err(set.error.join('; '));
+  return set.ok ? ok({ set: set.value, leftOut, repeated: [] }) : err(set.error.join('; '));
 }
 
 /** Runs of one source are listed once under it. */

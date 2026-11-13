@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareLab,
+  parseLabResults,
   summariseLab,
   type LabCaseResult,
   type LabResults,
@@ -102,6 +103,25 @@ describe('the lab summary', () => {
 
   it('RF-1403 has no rate for a run of no case', () => {
     expect(summariseLab(run('v1', [])).firstTryRate).toBeNull();
+  });
+
+  it('RF-1403 counts first-try validity only where it applies, and has no rate where it never does', () => {
+    const firstTurn = {
+      validFirstTry: null,
+      detail: 'Empty',
+      usable: false,
+      agreed: null,
+    } as const;
+    const none = run('v1', [caseResult('c1', firstTurn), caseResult('c2', firstTurn)]);
+    const mixed = run('v1', [
+      caseResult('c1'),
+      caseResult('c2', unusable),
+      caseResult('c3', firstTurn),
+    ]);
+
+    expect(summariseLab(none)).toMatchObject({ firstTryRate: null, invalidRate: 1 });
+    expect(summariseLab(mixed).firstTryRate).toBe(0.5);
+    expect(parseLabResults(JSON.parse(JSON.stringify(none))).ok).toBe(true);
   });
 });
 

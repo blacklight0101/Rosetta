@@ -35,5 +35,5 @@ export interface LabTarget {
   readonly role: AgentRole;
   parseInput(data: unknown): Result<PreparedCase, string>;
   /** Whether one raw answer is valid for the run's own parser. */
-  readsAnswer(text: string): boolean;
+  readsAnswer(text: string): boolean | null;
 }

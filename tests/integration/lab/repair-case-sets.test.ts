@@ -6,7 +6,8 @@ import { parseLabCaseSet, type LabCaseSet } from '../../../src/application/lab/l
 
 // RF-1405, RF-1406: the repair sets are built from the committed eShopModernizing sets of the call
 // they repair: each case is the input of a captured case of that call, with the problem lines (or,
-// for the card repair, a fixed earlier answer) written by hand. No model answer is stored.
+// for the card repair, a fixed earlier answer) written by hand, and it is on its base case's side
+// of the split (ADR-029). No model answer is stored.
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const REPAIR_SETS: readonly [string, string, string][] = [
@@ -52,6 +53,22 @@ describe('the committed repair sets', () => {
       const lost = set.cases.filter((each) => !captured.has(withoutRepair(each.input)));
 
       expect(lost.map((each) => each.id)).toEqual([]);
+    },
+  );
+
+  it.each(REPAIR_SETS)(
+    'RF-1405 puts every case of %s on the side of its base case, so no base input crosses the split',
+    async (name, _prompt, from) => {
+      const set = await load(name);
+      const sideOf = new Map(
+        (await load(from)).cases.map((each) => [JSON.stringify(each.input), each.split]),
+      );
+
+      const crossed = set.cases.filter(
+        (each) => sideOf.get(withoutRepair(each.input)) !== each.split,
+      );
+
+      expect(crossed.map((each) => `${each.id} ${each.split}`)).toEqual([]);
     },
   );
 });

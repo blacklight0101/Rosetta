@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest';
+import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { fakeValue } from '../../../support/fake-value.js';
+
+// RF-141, RNF-003: the password of a SQL Server command line (`sqlcmd`, `osql`, `bcp`) follows `-P`,
+// as in the healthcheck of a docker-compose file. The rule names no key, so the masker missed it
+// (found in the committed lab sets, P10 lab fixes). FAKE values only.
+
+const masker = new SecretMasker();
+const pw = `Pw@${fakeValue(9)}`;
+const mask = '[MASKED:password]';
+
+describe('the password of a SQL Server command line', () => {
+  it.each([
+    [`sqlcmd -S localhost -U sa -P ${pw} -Q "select 1"`, `-P ${mask} -Q "select 1"`],
+    [
+      `      test: [ "CMD", "sqlcmd", "-U", "sa", "-P", "${pw}", "-Q", "select 1" ]`,
+      `"-P", "${mask}", "-Q", "select 1" ]`,
+    ],
+    [`/opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${pw}'`, `-P '${mask}'`],
+    [`sqlcmd.exe -S . -U sa -P${pw}`, `-P${mask}`],
+    [`osql -S . -U sa -P ${pw}`, `-P ${mask}`],
+    [`bcp dbo.Items out items.dat -S . -U sa -P ${pw} -c`, `-P ${mask} -c`],
+  ])('masks the value after -P in %j', (text, end) => {
+    const result = masker.mask(text);
+
+    expect(result.text).not.toContain(pw);
+    expect(result.text.endsWith(end)).toBe(true);
+    expect(result.counts.password).toBe(1);
+  });
+
+  it.each([
+    'sqlcmd -S db -U sa -P "$SA_PASSWORD" -Q "select 1"',
+    'sqlcmd -S db -U sa -P %SA_PASSWORD%',
+    'sqlcmd -S db -U sa -P $(SA_PASSWORD)',
+    'sqlcmd -S db -E -Q "select 1"',
+    'sqlcmd -S db -U sa -P -Q "select 1"',
+    'mysql -h db -P 3306 -u root',
+    'Run sqlcmd with -P to give the password.',
+    `sqlcmd -U sa -P ${mask}`,
+  ])('leaves %j alone', (text) => {
+    expect(masker.mask(text).text).toBe(text);
+  });
+
+  it('stays linear on a long line of options after the tool name', () => {
+    const long = `sqlcmd ${'-x '.repeat(50_000)}`;
+    const started = performance.now();
+
+    masker.mask(long.repeat(4));
+
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+});

@@ -2,14 +2,16 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { heldBackIds } from '../../../src/application/lab/capture/held-back.js';
+import { inputKey, splitsOf } from '../../../src/application/lab/capture/held-back.js';
 import { personalDataIn } from '../../../src/application/lab/capture/personal-data.js';
 import { parseLabCaseSet, type LabCaseSet } from '../../../src/application/lab/lab-case-set.js';
+import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import { sha256Hex } from '../../../src/infrastructure/lab/run-folder.js';
 import { listLabTargets } from '../../../src/presentation/lab/lab-targets.js';
 
-// RF-1405, DEC-57, DEC-231: the committed case sets are read by their targets, name their source and
-// licence, keep a third back by the fixed rule, hold nothing personal and no model's answer as truth.
+// RF-1405, DEC-57, DEC-231, ADR-029: the committed case sets are read by their targets, name their
+// source and licence, keep a third back by the fixed rule on the input, hold no input twice, nothing
+// personal, no secret the run's masker finds and no model's answer as truth.
 // Each check collects its problems, so one failure names every set and case at fault.
 
 const labFolder = fileURLToPath(new URL('../../../lab/', import.meta.url));
@@ -20,6 +22,8 @@ const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url
  * prompt on a captured set, and is checked like one (repair-case-sets.test.ts).
  */
 const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
+/** The repair sets take the side of their base case (repair-case-sets.test.ts), not the rule. */
+const REPAIRS = new Set(['planner-gap-repair', 'planner-plan-repair', 'cards-repair']);
 const CAPTURED = [
   'cards-card-format',
   'cards-continue',
@@ -70,14 +74,47 @@ function sourceProblems({ name, set }: Loaded): string[] {
 }
 
 function splitProblems({ name, set }: Loaded): string[] {
-  const ids = set.cases.map((each) => each.id);
-  const held = set.cases.filter((each) => each.split === 'held-back').map((each) => each.id);
-  const rule = heldBackIds(set.prompt, ids, sha256Hex);
-  const wrong = held.length !== rule.size || held.some((id) => !rule.has(id));
+  const rule = splitsOf(
+    set.cases.map((each) => each.input),
+    sha256Hex,
+  );
+  const wrong = set.cases.filter((each, index) => each.split !== rule[index]);
+  const held = set.cases.filter((each) => each.split === 'held-back');
   return [
-    ...(wrong ? [`${name}: the held-back cases are not the ones the rule picks`] : []),
-    ...(held.length * 3 < ids.length ? [`${name}: less than a third held back`] : []),
+    ...wrong.map((each) => `${name}: ${each.id} is not on the side the rule picks`),
+    ...(held.length * 3 < set.cases.length ? [`${name}: less than a third held back`] : []),
   ];
+}
+
+/** An input that two cases of one set hold: a twin is measured twice and may cross the split. */
+function repeatProblems({ name, set }: Loaded): string[] {
+  const seen = new Map<string, string>();
+  const problems: string[] = [];
+  for (const each of set.cases) {
+    const key = inputKey(each.input, sha256Hex);
+    const first = seen.get(key);
+    if (first === undefined) seen.set(key, each.id);
+    else problems.push(`${name}: ${each.id} repeats the input of ${first}`);
+  }
+  return problems;
+}
+
+const masker = new SecretMasker();
+
+/** Every text of every case input, as the run's masker would see it before sending. */
+function textsOf(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(textsOf);
+  if (value !== null && typeof value === 'object') return Object.values(value).flatMap(textsOf);
+  return [];
+}
+
+function secretProblems({ name, set }: Loaded): string[] {
+  return set.cases.flatMap((each) =>
+    textsOf(each.input)
+      .filter((text) => masker.mask(text).text !== text)
+      .map((text) => `${name}: ${each.id} holds a secret near ${text.slice(0, 40)}`),
+  );
 }
 
 /** Only code of a known public licence is committed (DEC-03): eShopModernizing, MIT. */
@@ -123,9 +160,21 @@ describe('the committed case sets', () => {
   it('RF-1405 names a source with a licence for every case of a captured set', async () => {
     expect((await captured()).flatMap(sourceProblems)).toEqual([]);
   });
+});
 
+describe('the split and the texts of the committed case sets', () => {
   it('RF-1405 holds back exactly the cases the fixed rule picks, at least a third', async () => {
-    expect((await captured()).flatMap(splitProblems)).toEqual([]);
+    const ruled = (await captured()).filter((each) => !REPAIRS.has(each.name));
+
+    expect(ruled.flatMap(splitProblems)).toEqual([]);
+  });
+
+  it('RF-1405 holds no input twice in a set, so no input is on both sides', async () => {
+    expect((await loadAll()).flatMap(repeatProblems)).toEqual([]);
+  });
+
+  it('RF-1404 holds no secret that the run masker would mask', async () => {
+    expect((await loadAll()).flatMap(secretProblems)).toEqual([]);
   });
 
   it('RF-1404 holds nothing personal and no expected label that a model wrote', async () => {

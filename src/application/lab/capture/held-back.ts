@@ -16,3 +16,18 @@ export function heldBackIds(
   const ordered = [...ids].sort((a, b) => rank(a).localeCompare(rank(b)));
   return new Set(ordered.slice(0, Math.ceil(ids.length / 3)));
 }
+
+/** Not built yet (red). */
+export function canonicalJson(value: unknown): string {
+  return JSON.stringify(value);
+}
+
+/** Not built yet (red). */
+export function inputKey(input: unknown, sha256: Sha256): string {
+  return sha256(canonicalJson(input));
+}
+
+/** Not built yet (red). */
+export function splitsOf(inputs: readonly unknown[], sha256: Sha256): ('tune' | 'held-back')[] {
+  return inputs.map((input) => (inputKey(input, sha256) === '' ? 'held-back' : 'tune'));
+}
