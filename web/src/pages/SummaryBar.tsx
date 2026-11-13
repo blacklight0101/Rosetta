@@ -8,6 +8,7 @@ import {
   totalTokens,
   unpricedRoles,
 } from '../lib/estimate-math.js';
+import { journeyBarText } from '../lib/journey-approval.js';
 import { chosenOf, plural } from './area-selection.js';
 import type { StartForm } from './use-start-form.js';
 
@@ -19,6 +20,8 @@ function estimateText(form: StartForm, chosenAreas: number): string | undefined 
   const { estimate } = form.choice;
   if (chosenAreas === 0) return undefined;
   if (estimate.status !== 'ready') return undefined;
+  const above = journeyBarText(estimate.estimate);
+  if (above !== undefined) return above;
   if (isLocalEstimate(estimate.estimate)) {
     return `Likely ${tokensText(totalTokens(estimate.estimate.total, 'likely'))}`;
   }
