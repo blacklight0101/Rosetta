@@ -43,8 +43,11 @@ At the stop line every call is refused with the words "stop line". Only the owne
 in `lab/config.json` (never above `totalCapMicros`) and committing that change. Spend a card has not used returns to
 the reserve; a builder that reaches its slice stops and reports (Phase 10 intro).
 
-`lab-out/ledger.jsonl` is local to a machine. Builders working in several worktrees must point to one `lab-out/`: run the
-lab from the main checkout, or link the folder, so that the ledger really is shared.
+The ledger is `lab-out/ledger.jsonl` of the checkout unless `ROSETTA_LAB_LEDGER` is set. All Phase 10 lab runs set
+`ROSETTA_LAB_LEDGER` to the same file, e.g. `G:/BuildingFolder/Rosetta-lab/ledger.jsonl`, outside every checkout, so two
+builders in two worktrees share one phase total (put it in `.env`, or set it in the shell). The value must be an absolute
+path ending in `.jsonl`; anything else stops the command with RST-1000 before a call is sent. Its folder is created if
+missing.
 
 ## 3. Compare two versions
 

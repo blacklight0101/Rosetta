@@ -6,6 +6,7 @@ import { ledgerFileFromEnvironment } from '../../../../src/presentation/lab/lab-
 import { ModelRouter } from '../../../support/calibration-harness.js';
 import { labLimits, labParts, verdict } from '../../../support/lab-harness.js';
 import { runLab, verifierArgs, writtenResults } from '../../../support/lab-run-helpers.js';
+import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-1402, ADR-029: ROSETTA_LAB_LEDGER makes every checkout share one ledger file.
@@ -56,9 +57,13 @@ describe('two invocations from different checkouts', () => {
       ...labParts({ outputDir: join(temp.path, 'a'), router: one, limits }),
       ledgerFile: shared,
     };
+    // Two checkouts are two processes: their generators never give the same ids.
+    const otherIds = new SequenceIdGenerator();
+    for (let each = 0; each < 100; each += 1) otherIds.uuid();
     const partsTwo = {
       ...labParts({ outputDir: join(temp.path, 'b'), router: two, limits }),
       ledgerFile: shared,
+      ids: otherIds,
     };
     await runLab(partsOne, verifierArgs);
     await runLab(partsTwo, verifierArgs);

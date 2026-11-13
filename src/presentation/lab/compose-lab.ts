@@ -147,7 +147,7 @@ export async function runLab(
   const { worstCaseOf } = chosen;
   const { clock, ids } = parts;
   const ledger = new FileSpendLedger({
-    ...{ file: join(parts.outputDir, 'ledger.jsonl'), limits: parts.limits },
+    ...{ file: parts.ledgerFile ?? join(parts.outputDir, 'ledger.jsonl'), limits: parts.limits },
     ...{ invocation: ids.uuid(), clock, ids },
   });
   const gate = new LabCallGate({

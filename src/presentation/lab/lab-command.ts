@@ -24,6 +24,7 @@ import { dollars } from '../eval/eval-settings.js';
 import { runLab, type LabParts } from './compose-lab.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
+import { ledgerFileFromEnvironment } from './lab-ledger-path.js';
 import { findLabTarget } from './lab-targets.js';
 
 // RF-1400, RF-1403, DEC-231, ADR-008: `npm run lab`, the opt-in prompt lab. It reads `lab/config.json`
@@ -120,12 +121,15 @@ export async function runLabCompare(
 async function realParts(env: Environment): Promise<LabParts | string> {
   const config = await loadLabConfig(folder('lab/'));
   if (!config.ok) return config.error;
+  const ledgerFile = ledgerFileFromEnvironment(env);
+  if (!ledgerFile.ok) return ledgerFile.error;
   const clock = new SystemClock();
   const masker = new SecretMasker();
   const output = { write: (text: string) => process.stderr.write(text) };
   const logger = new StdoutJsonLogger({ output, clock, masker, minLevel: 'warn' });
   return {
     ...{ outputDir: folder('lab-out/'), promptsFolder: folder('prompts/') },
+    ledgerFile: ledgerFile.value,
     providers: await evaluationProviderFactory(logger),
     serverKeys: { openai: env['OPENAI_API_KEY'], anthropic: env['ANTHROPIC_API_KEY'] },
     ollamaUrl: env['ROSETTA_OLLAMA_URL'],

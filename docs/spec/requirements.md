@@ -2276,10 +2276,11 @@ As a developer I want a case to hold the inputs of a prompt, not its text, so th
 As the product owner I want one ledger for the whole phase so that the lab can never spend past $50 and stops at $40 for me.
 
 - Given `lab/config.json` (`totalCapMicros` 50 000 000, `stopMicros` 40 000 000, `invocationCapMicros`), when a call is about to be sent, then the lab appends a hold of the call's worst case to `lab-out/ledger.jsonl` and sends the call only when what the ledger holds up to that line, spent and held together, stays within the invocation cap, the total cap and the stop line, in that order; otherwise it refuses the call with RST-1600 and the reason, and the rest of the invocation is skipped.
+- Given the environment variable `ROSETTA_LAB_LEDGER` set to an absolute path ending in `.jsonl`, when the lab runs, then it uses that file as the ledger instead of `lab-out/ledger.jsonl` and creates its folder if missing, so two builders in two checkouts share one phase total; a value that is not an absolute `.jsonl` path stops the command with RST-1000 and a plain message, before anything is sent.
 - Given a call that was answered, when its cost is known, then the hold is replaced by a line with the real cost, priced by the price table; a call that failed releases its hold.
 - Given two lab commands that run at the same time, when both write to the ledger, then the file is append-only and each decides on the lines up to its own hold, so both together never pass a cap; a hold older than ten minutes that was never settled stops counting.
 - Given a phase total that has reached the stop line, when the lab runs again, then every call is refused naming the stop line, until the owner raises `stopMicros` in `lab/config.json`.
-  Verification: `tests/unit/application/lab/spend-ledger.test.ts`, `tests/integration/infrastructure/lab/file-spend-ledger.test.ts`, `tests/integration/presentation/lab/lab-caps.test.ts`.
+  Verification: `tests/unit/application/lab/spend-ledger.test.ts`, `tests/integration/infrastructure/lab/file-spend-ledger.test.ts`, `tests/integration/presentation/lab/lab-caps.test.ts`, `tests/integration/presentation/lab/lab-shared-ledger.test.ts`.
 
 **RF-1403 Metrics and comparison** - R2 (Phase 10) - Must - Source DEC-231 - RNF-015
 As a developer I want deterministic metrics per case and a side-by-side report so that a prompt version is kept only when it measurably beats the current one.
