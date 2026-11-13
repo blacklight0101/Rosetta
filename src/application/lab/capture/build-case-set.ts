@@ -10,7 +10,8 @@ import { personalDataIn } from './personal-data.js';
 // left out. Every text of an input is masked again by the run's masker, so a secret shape the masker
 // learnt after the run is masked too. A case whose input equals an earlier case's input (the same
 // area, files and reads from another run) is dropped before the split, which follows the fixed rule
-// of held-back.ts on the input. Nothing here calls a model, and no `expected` is written: an
+// of held-back.ts on the input; a set left with no case on one side is written with a warning.
+// Nothing here calls a model, and no `expected` is written: an
 // expected label is added by hand from the code (DEC-57).
 
 export interface CaptureRequest {
@@ -34,7 +35,7 @@ export interface Captured {
   readonly leftOut: readonly string[];
   /** Candidate tasks dropped because an earlier case holds the same input. */
   readonly repeated: readonly string[];
-  /** Not filled yet (red). */
+  /** What the set lacks for a keep decision: a side with no case (RF-1405). */
   readonly warnings: readonly string[];
 }
 
@@ -137,8 +138,25 @@ export function buildCaseSet(request: CaptureRequest): Result<Captured, string> 
     })),
   });
   return set.ok
-    ? ok({ set: set.value, leftOut, repeated, warnings: [] })
+    ? ok({ set: set.value, leftOut, repeated, warnings: sideWarnings(splits) })
     : err(set.error.join('; '));
+}
+
+/**
+ * A side with no case. The rule cannot move an input to the other side, so the set is still written
+ * (its cases can be tuned on, or measured as a baseline) and the owner is told what it lacks.
+ */
+function sideWarnings(splits: readonly string[]): string[] {
+  const warnings: string[] = [];
+  if (!splits.includes('held-back')) {
+    warnings.push(
+      'The set has no held-back case, so no version can be kept on it (DEC-231): capture more runs.',
+    );
+  }
+  if (!splits.includes('tune')) {
+    warnings.push('The set has no tune case, so no version can be tuned on it: capture more runs.');
+  }
+  return warnings;
 }
 
 /** Runs of one source are listed once under it. */

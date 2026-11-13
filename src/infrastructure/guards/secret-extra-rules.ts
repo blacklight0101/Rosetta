@@ -8,6 +8,7 @@ import {
   tokenValue,
 } from './secret-option-pieces.js';
 import { settingRules } from './secret-setting-rules.js';
+import { sqlToolRules } from './secret-sql-tool-rules.js';
 import { caseless, notMasked, placeholderValue } from './secret-value-pieces.js';
 
 // P2-43 (RF-141, RNF-003): the secret shapes the first rules missed. They run after those rules, so a
@@ -50,18 +51,6 @@ const flagRule = (kind: ExtraRule['kind'], names: string): ExtraRule => ({
     'gi',
   ),
 });
-
-// The SQL Server command-line tools take the password after `-P` (case-sensitive: `-p` prints
-// statistics), as a shell word, attached (`-Ppw`) or as the next item of an exec array
-// (`"-P", "pw"`, a docker-compose healthcheck). The `-P` is on the line of the tool, within 512
-// characters, and starts a word; a variable (`$SA_PASSWORD`, `%PW%`, `$(PW)`), a flag and a word of
-// prose are not values. A quoted value keeps its quotes and runs to the next quote.
-const sqlTool = String.raw`(?<![\w.-])(?:${caseless('sqlcmd')}|${caseless('osql')}|${caseless('bcp')})(?:\.${caseless('exe')})?(?![\w.-])`;
-const sqlPasswordFlag = String.raw`[^\r\n]{0,512}?(?<=[\s"',[])-P(?:[ \t]+|["'][ \t]*,[ \t]*)?["']?`;
-const sqlProse = String.raw`(?:to|as|the|and|or|is|with|for|flag|option|switch)(?![^\s"',\]])`;
-// A quoted value starts with no blank or comma, so the closing quote of `"-P",` is never read as the
-// opening quote of a value `, `.
-const sqlPassword = String.raw`(?:(?<=["'])[^"'\s,][^"'\r\n]*|(?<!["'])[^\s"',\]]+)`;
 
 const authorization = String.raw`\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?`;
 // The literal `://` comes first, so the scan jumps from one to the next; the scheme is checked behind it.
@@ -107,14 +96,7 @@ export const extraRules: readonly ExtraRule[] = [
       'gi',
     ),
   },
-  {
-    // `sqlcmd -U sa -P <password>` and its siblings `osql` and `bcp` (see sqlPasswordFlag).
-    kind: 'password',
-    pattern: new RegExp(
-      String.raw`(?<keep>${sqlTool}${sqlPasswordFlag})${notMasked}(?![$%\-]|${placeholderValue}|${sqlProse})${sqlPassword}`,
-      'g',
-    ),
-  },
+  ...sqlToolRules,
   {
     // The response of an Authorization Digest header (the hash of the password).
     kind: 'bearer-token',
