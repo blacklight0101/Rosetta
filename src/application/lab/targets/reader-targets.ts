@@ -17,6 +17,7 @@ import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-t
 import {
   areaBlock,
   readerCaseSchema,
+  onLastTurn,
   replayOfReads,
   unreadBlock,
   type ReaderCase,
@@ -82,7 +83,7 @@ function messagesOf(
       { role: 'user', content: refusal },
     ];
   }
-  return part === 'cardFormat' ? [task, ...replayOfReads(input, prompts, tag)] : [task];
+  return part === 'cardFormat' ? [task, ...replayOfReads(onLastTurn(input), prompts, tag)] : [task];
 }
 
 const placeholderOf: Partial<Record<Part, string>> = {
@@ -105,7 +106,9 @@ function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): Prep
       );
       const asked = await askOnce(env, {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
-        ...{ messages: messagesOf(part, input, prompts, env), tools: readerToolDefinitions },
+        ...{ messages: messagesOf(part, input, prompts, env) },
+        // The card format is the answer of the last turn, so it carries no tools (P10-09).
+        tools: part === 'cardFormat' ? [] : readerToolDefinitions,
       });
       if (!asked.ok) return asked.error;
       return part === 'cardFormat' ? cardsOutcome(asked.value, prompts) : firstTurn(asked.value);
