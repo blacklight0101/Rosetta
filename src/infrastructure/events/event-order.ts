@@ -12,12 +12,14 @@ import { isRunEnded, type RunEvent } from '../../domain/runs/run-event.js';
 export interface EventTail {
   readonly lastSeq: number;
   readonly ended: boolean;
+  /** P9-14: the last event is the `run.ended` of a wait in the queue that was cancelled. */
+  readonly queueCancelled: boolean;
 }
 
 const RUN_STARTED = 'run.started';
 const QUEUE_CANCEL = 'QueueCancel';
 
-export const emptyTail: EventTail = { lastSeq: 0, ended: false };
+export const emptyTail: EventTail = { lastSeq: 0, ended: false, queueCancelled: false };
 
 function refused(detail: string): RosettaError {
   return new RosettaError(ERROR_CODES.runEventRefused, `A run event was refused: ${detail}.`);
@@ -26,7 +28,7 @@ function refused(detail: string): RosettaError {
 /**
  * P9-05: a resume writes no event while the run waits, so the cancel of that wait is the only
  * `run.ended` that opens no life of its own; it is the end of the life the resume began. Any other
- * `run.ended` after a `run.ended` is a second end within one life.
+ * `run.ended` after a `run.ended` is a second end within one life, and so is a second cancel (P9-14).
  */
 function endsQueuedLife(event: RunEvent): boolean {
   return isRunEnded(event) && event.data['endReason'] === QUEUE_CANCEL;
@@ -36,7 +38,7 @@ function endsQueuedLife(event: RunEvent): boolean {
 // RF-1006
 export function assertNext(tail: EventTail, scope: RunScope, event: RunEvent): void {
   if (event.runId !== scope.runKey) throw refused('it names another run');
-  if (tail.ended && event.type !== RUN_STARTED && !endsQueuedLife(event))
+  if (tail.ended && event.type !== RUN_STARTED && !(endsQueuedLife(event) && !tail.queueCancelled))
     throw refused('the run has already ended');
   if (event.seq !== tail.lastSeq + 1) {
     throw refused(`expected sequence number ${String(tail.lastSeq + 1)}, got ${String(event.seq)}`);
@@ -45,7 +47,7 @@ export function assertNext(tail: EventTail, scope: RunScope, event: RunEvent): v
 
 /** The tail after the event was stored. */
 export function advance(event: RunEvent): EventTail {
-  return { lastSeq: event.seq, ended: isRunEnded(event) };
+  return { lastSeq: event.seq, ended: isRunEnded(event), queueCancelled: endsQueuedLife(event) };
 }
 
 /** How many stored events a replay hands to the receiver at a time. */

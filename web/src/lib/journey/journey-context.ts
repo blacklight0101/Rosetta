@@ -111,7 +111,8 @@ export function unfinishedStep(
     return { state: interruptedState(run.endReason), detail: run.errorCode ?? '' };
   }
   if (run.endState === 'CapReached' && run.endReason === 'StoppedAtApproval') {
-    return { state: 'stopped-here', detail: '' };
+    // P9-14: no code, but the areas the stop left unread are still told.
+    return { state: 'stopped-here', detail: (run.unreadAreas ?? 0) > 0 ? 'Partly read' : '' };
   }
   if (run.endState === 'CapReached') return { state: 'capped', detail: endText(run) };
   return { state: 'failed', detail: endText(run) };

@@ -28,9 +28,9 @@ const AGENT_STATES: readonly AgentState[] = [
   'Stopped',
 ];
 
-function blankAgent(agentTaskId: string): AgentPanelState {
+function blankAgent(agentTaskId: string, life: number): AgentPanelState {
   return {
-    ...{ agentTaskId, area: '', role: 'reader', model: '', state: 'Planned', turn: 0 },
+    ...{ agentTaskId, life, area: '', role: 'reader', model: '', state: 'Planned', turn: 0 },
     ...{ filesRead: [], tool: undefined, pendingRead: undefined, cards: [] },
     ...{ inputTokens: 0, outputTokens: 0, costMicros: undefined },
   };
@@ -41,7 +41,7 @@ function withAgent(state: RunState, event: RunEvent, change: Change): RunState {
   const id = event.agentTaskId;
   if (id === undefined) return state;
   const known = state.agents.some((agent) => agent.agentTaskId === id);
-  const agents = known ? state.agents : [...state.agents, blankAgent(id)];
+  const agents = known ? state.agents : [...state.agents, blankAgent(id, state.starts)];
   return {
     ...state,
     agents: agents.map((agent) => (agent.agentTaskId === id ? change(agent) : agent)),
