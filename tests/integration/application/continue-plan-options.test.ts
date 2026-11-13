@@ -14,7 +14,7 @@ import {
 } from '../../support/suggest-options-harness.js';
 
 // RF-435, RF-432, P9-01, EV-100: after Continue (+N) on a paused step whose journey was used up,
-// Plan setup's options call runs under the raised journey: it answers the options, not RST-1600.
+// Plan setup's options call runs under the raised journey: it answers the options; before it, RST-2311 (P9-02).
 
 const recorded = await loadRecording(
   fileURLToPath(new URL('../../recordings/fake/plan-options.json', import.meta.url)),
@@ -49,7 +49,7 @@ async function pausedDeepen(h: SuggestOptionsHarness, manifests: MemoryRunManife
 }
 
 describe('RF-435 Plan setup after a Continue on a used-up journey', () => {
-  it('RF-435 P9-01 the options call answers its options, not RST-1600', async () => {
+  it('RF-435 P9-01 P9-02 the options call is refused with RST-2311, then answers its options', async () => {
     const h = await createSuggestOptionsHarness({ recording: recorded });
     const manifests = new MemoryRunManifestStore();
     const clock = new FixedClock('2026-11-10T10:00:00.000Z');
@@ -70,7 +70,7 @@ describe('RF-435 Plan setup after a Continue on a used-up journey', () => {
     const continued = await continueRun.execute({ actor: h.actor, runId: paused.id });
     const answered = await ask(h);
 
-    expect(refused).toEqual({ ok: false, error: ERROR_CODES.budgetCapReached });
+    expect(refused).toEqual({ ok: false, error: ERROR_CODES.journeyAmountUsed });
     expect(continued).toMatchObject({ ok: true });
     expect(answered).toMatchObject({ ok: true });
   });

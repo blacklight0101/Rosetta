@@ -5,7 +5,7 @@ import type { ModelList } from '../models/model-list.js';
 import { roleLimits } from '../models/role-limits.js';
 import type { Project } from '../projects/project.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
-import { stepAmountOf } from '../journey/journey-budget.js';
+import { stepLineOf } from '../journey/journey-budget.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { maxPlannerContinuations } from '../plan/plan-continuation.js';
@@ -113,6 +113,30 @@ export class EstimatePlan {
     };
   }
 
+  /**
+   * RF-435, P8-01, P9-02: the caps against the same line the run gets at its start (start-run.ts),
+   * the journey's remainder, and the journey's approved amount with whether it is used up.
+   */
+  private async linesOf(
+    project: Project,
+    ref: { readonly userId: string; readonly projectId: string },
+    planner: RoleEstimate,
+  ) {
+    const line = await stepLineOf(this.deps, ref);
+    const { caps, withinCaps } = await planCaps(this.deps, project, planner, {
+      approved: line?.amount,
+    });
+    const journey = line && { approved: line.approved, usedUp: line.usedUp };
+    return {
+      ...{
+        caps,
+        withinCaps,
+        runLine: line === undefined ? ('project' as const) : ('journey' as const),
+      },
+      ...(journey === undefined ? {} : { journey }),
+    };
+  }
+
   // RF-613, RF-1105
   async execute(request: EstimatePlanRequest): Promise<Result<PlanEstimate, EstimatePlanProblem>> {
     const ref = { userId: request.actor.userId, projectId: request.projectId };
@@ -136,9 +160,7 @@ export class EstimatePlan {
     );
     const planner = calls.map((call) => call.role).reduce(sumRoles);
     const promptTokens = calls.reduce((sum, call) => sum + call.promptTokens, 0);
-    // RF-435, P8-01: the same line the run gets at its start (start-run.ts): the journey's remainder.
-    const approved = await stepAmountOf(this.deps, ref);
-    const { caps, withinCaps } = await planCaps(this.deps, project, planner, { approved });
+    const lines = await this.linesOf(project, ref, planner);
     return ok({
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
@@ -160,7 +182,7 @@ export class EstimatePlan {
           answeredQuestions: planned.answeredQuestions,
         },
       },
-      ...{ caps, withinCaps, runLine: approved === undefined ? 'project' : 'journey' },
+      ...lines,
     });
   }
 }

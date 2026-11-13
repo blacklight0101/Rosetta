@@ -182,8 +182,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     nextStep: 'Look at the new estimate on the start page, then start the run again.',
   },
   'RST-2311': {
-    message: 'The amount you approved for this project is used up, so the step did not start.',
-    nextStep: 'Press Analyse again to approve a new amount, then start the step.',
+    message:
+      'The amount you approved for this project is used up, so nothing more can run under it.',
+    nextStep:
+      'Go to the start page and press Analyse again to approve a new amount, then start the step again.',
   },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',

@@ -1,4 +1,5 @@
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
+import type { Amount } from '../../domain/budget/approved-amount.js';
 import type { ByScenario, RoleEstimate } from './estimate-types.js';
 
 // RF-613, ADR-007, DEC-81: what the estimate before a plan run answers: the planner's one call as
@@ -88,6 +89,12 @@ export interface PlanEstimate {
    * amount; the run pauses there) or `project` (the project run caps; the run ends there).
    */
   readonly runLine: 'journey' | 'project';
+  /**
+   * RF-435, P9-02: the journey's one approved amount and whether it is used up (the rule that
+   * refuses a start, RST-2311); absent for a project with no journey. The approved cap's own
+   * limit is only the remainder, so the amount approved is given here.
+   */
+  readonly journey?: { readonly approved: Amount; readonly usedUp: boolean };
   /**
    * Whether the figure of the scenario fits under every cap. `high` is the budget guard's worst
    * case: when it does not fit, the guard may refuse the call and the run ends `CapReached`.
