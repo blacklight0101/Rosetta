@@ -65,10 +65,16 @@ describe('the time the SQL Server rules take', () => {
     ['exec array items', `[ "sqlcmd", ${'"-P", '.repeat(30_000)}`],
     ['escaped exec array items', `[ \\"sqlcmd\\", ${'\\"-P\\", '.repeat(30_000)}`],
     ['tool names', 'sqlcmd -P '.repeat(20_000)],
+    ['bare tool names', 'sqlcmd '.repeat(30_000)],
+    ['continued lines', 'sqlcmd -x \\\n'.repeat(20_000)],
+    ['continued options', `sqlcmd ${'-x \\\n'.repeat(20_000)}`],
+    ['joined quoted parts', `sqlcmd -P ${'"a"b'.repeat(50_000)}`],
+    ['unclosed escaped quotes', `sqlcmd -P a${'\\"x'.repeat(50_000)}`],
+    ['unclosed quotes in a word', `sqlcmd -P a${'"x'.repeat(50_000)}`],
   ])('stays linear on a long line of %s', (_name, long) => {
     const started = performance.now();
 
-    masker.mask(long.repeat(2));
+    masker.mask(long.repeat(4));
 
     expect(performance.now() - started).toBeLessThan(2000);
   });

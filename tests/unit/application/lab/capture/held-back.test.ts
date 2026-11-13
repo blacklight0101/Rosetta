@@ -24,6 +24,11 @@ describe('the held-back rule', () => {
     expect(heldBackKey('f'.repeat(64))).toBe(false);
   });
 
+  it('RF-1405 refuses a key that is not a SHA-256 in hexadecimal, never treating it as tune', () => {
+    expect(() => heldBackKey('not-a-hash')).toThrow(/SHA-256/u);
+    expect(() => heldBackKey('0'.repeat(63))).toThrow(/SHA-256/u);
+  });
+
   it('RF-1405 holds back about a third of many inputs', () => {
     const count = held(splitsOf(inputs, sha256Hex));
 
