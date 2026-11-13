@@ -20,7 +20,9 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // bypasses them) and does two things: before each call it holds the call's worst case in the
 // shared ledger and refuses the call when a cap or the stop line would be passed (after the first
 // refusal it refuses every call), and after each call it books the cost the budget guard priced and
-// measures the call for the case's metrics. A call that failed releases its hold: its cost is unknown.
+// measures the call for the case's metrics. A call that failed after it was sent may have been billed:
+// it is booked at the larger of the cost the guard knows and the worst case held. Only a call refused
+// before it was sent releases its hold. When the ledger cannot be written, the invocation stops.
 
 /** Where the cost the budget guard priced for the last call is left (the costs sink writes it). */
 export interface CostTap {
@@ -94,13 +96,23 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
     const code = codeOf(error);
     this.failures.push(code);
     if (REFUSED_BEFORE_SENDING.has(code)) {
-      await this.options.ledger.release(ticket);
+      await this.release(ticket, error);
       return;
     }
-    const known = this.options.tap.lastCostMicros;
-    const booked = known > 0 ? known : worst;
+    const booked = Math.max(this.options.tap.lastCostMicros, worst);
     this.unansweredCostMicros += booked;
     await this.book(ticket, booked);
+  }
+
+  /** Gives a hold back; the original error stays the one the caller sees, and the ledger error stops the run. */
+  private async release(ticket: HoldTicket, original: unknown): Promise<void> {
+    try {
+      await this.options.ledger.release(ticket);
+    } catch (error) {
+      const first = original instanceof Error ? original.message : String(original);
+      const reason = error instanceof Error ? error.message : String(error);
+      this.stopReason = `The ledger could not be written (${reason}) after the call failed (${first}), so the invocation stops.`;
+    }
   }
 
   /** Books the cost of a call that was sent; when the ledger cannot be written, no call follows. */

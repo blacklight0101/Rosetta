@@ -24,7 +24,11 @@ import { dollars } from '../eval/eval-settings.js';
 import { runLab, type LabParts } from './compose-lab.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
-import { ledgerFileFromEnvironment, sharedLedgerProblem } from './lab-ledger-path.js';
+import {
+  holdLifetimeProblem,
+  ledgerFileFromEnvironment,
+  sharedLedgerProblem,
+} from './lab-ledger-path.js';
 import { findLabTarget } from './lab-targets.js';
 
 // RF-1400, RF-1403, DEC-231, ADR-008: `npm run lab`, the opt-in prompt lab. It reads `lab/config.json`
@@ -79,6 +83,15 @@ async function resolveRun(args: RunArgs, folders: LabFolders): Promise<Result<Re
   return ok({ target: target.value, loaded: loaded.value, prompt: prompt.value });
 }
 
+/** What stops a run before anything is planned: no shared ledger for a real model, or a hold that could expire. */
+function startProblem(args: RunArgs, parts: LabParts): string | undefined {
+  const provider = parts.settings.providers[args.model.provider];
+  return (
+    sharedLedgerProblem(provider?.kind, parts.ledgerFile) ??
+    holdLifetimeProblem(args.model.provider, provider)
+  );
+}
+
 // RF-1400
 export async function runLabRun(
   parts: LabParts,
@@ -88,11 +101,8 @@ export async function runLabRun(
 ): Promise<number> {
   const resolved = await resolveRun(args, folders);
   if (!resolved.ok) return (print(resolved.error), 1);
-  const missing = sharedLedgerProblem(
-    parts.settings.providers[args.model.provider]?.kind,
-    parts.ledgerFile,
-  );
-  if (missing !== undefined) return (print(missing), 1);
+  const problem = startProblem(args, parts);
+  if (problem !== undefined) return (print(problem), 1);
   const { target, loaded, prompt } = resolved.value;
   for (const line of planLines(args, parts, loaded.set.cases.length, prompt.name)) print(line);
   if (!args.yes) return (print(NOT_STARTED), 1);

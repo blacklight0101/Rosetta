@@ -147,10 +147,7 @@ export class RunLab {
         modelVersion = metered.calls.at(-1)?.modelVersion ?? modelVersion;
         const result = resultOf({ ...one, repetition }, outcome, metered, request.target);
         cases.push(result);
-        if (result.refused)
-          refusal =
-            this.deps.meter.stopped() ??
-            `A guard refused the call (${result.rstCode ?? 'no code'}).`;
+        refusal = this.stopOf(result);
       }
     }
     const results = this.resultsOf(request, { at, planned, cases, modelVersion, refusal });

@@ -53,7 +53,7 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 
 - A target must be written per prompt id; agent-loop prompts (the reader) need their own targets and are not wired by P10-01.
 - The ledger holds worst-case amounts while calls are in flight, so two processes can refuse a call the real cost would have allowed; a crashed process leaves a hold for thirty minutes.
-- A call that failed after being sent is booked at the cost the budget guard knows, else at its held worst case, so the ledger may over-count it; only a call refused before sending is released.
+- A call that failed after being sent is booked at the cost the budget guard knows, else at the larger of that and its held worst case, so the ledger may over-count it; only a call refused before sending is released.
 
 ## References
 
