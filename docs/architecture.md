@@ -607,7 +607,7 @@ sequenceDiagram
   plan (`plan-secrets.ts`) lists each file of the scan that holds one among the risks, from
   `prompts/shared/secret-risk.v1.md`, with path and lines and never the value.
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v12.md` followed by
-  `prompts/cards/card-format.v4.md` (from v3 the parser refuses an `OQ` card without at least three suggested answers, RF-645; v4 says "at least three", P7-17;
+  `prompts/cards/card-format.v6.md` (from v3 the parser refuses an `OQ` card without at least three suggested answers, RF-645; v4 says "at least three", P7-17; v6 says an either-or question gets answers that name a side, never Yes or No, and the parser drops such a Yes/No answer when at least three answers and the recommended one stay, P9-13;
   an earlier format is read without the requirement); `loadReaderPrompts` reads the eight files it uses (the two
   above, the task, the turns-left notice, `prompts/cards/repair.v5.md`, `prompts/cards/continue.v1.md`,
   `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v2.md`), refuses a template without its placeholders
