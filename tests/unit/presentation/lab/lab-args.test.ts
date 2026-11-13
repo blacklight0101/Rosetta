@@ -80,3 +80,25 @@ describe('the lab judge options', () => {
     expect(parseLabArgs(['--judge-check', 'fake:model-b', '--prompt', 'x']).ok).toBe(false);
   });
 });
+
+describe('the lab selection options', () => {
+  it('RF-1409 reads --split and --sample and leaves them out when absent', () => {
+    const parsed = parseLabArgs([...base, '--split', 'tune', '--sample', '5']);
+    const plain = parseLabArgs(base);
+
+    expect(
+      parsed.ok && parsed.value.kind === 'run' && [parsed.value.split, parsed.value.sample],
+    ).toEqual(['tune', 5]);
+    expect(
+      plain.ok && plain.value.kind === 'run' && ['split' in plain.value, 'sample' in plain.value],
+    ).toEqual([false, false]);
+  });
+
+  it('RF-1409 refuses a side that is not tune or held-back and a sample that is not a count', () => {
+    expect(parseLabArgs([...base, '--split', 'all']).ok).toBe(false);
+    expect(parseLabArgs([...base, '--split', 'tune', '--split']).ok).toBe(false);
+    for (const bad of ['0', '-1', '2.5', 'many', '501']) {
+      expect(parseLabArgs([...base, '--sample', bad]).ok).toBe(false);
+    }
+  });
+});

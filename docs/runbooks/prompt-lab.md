@@ -13,13 +13,16 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   --cases verifier-claim-sample --repetitions 3 --yes
 ```
 
-- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (29 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts).
+- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (31 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts, the masked-value note and the text tool protocol; `shared/secret-risk` has no call to measure).
 - `--version v5` is the file `prompts/verifier/claim.v5.md`; any other value is the path of a draft file, so a new
   wording is tried before it is added to `prompts/` (its name, version `file` and SHA-256 go to the results).
 - `--model provider:model` is any model the provider factory serves; the server key comes from the environment
   (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). Nobody reads `.env` but the process that runs the lab. A model without a
   price in `prices/default-prices.yaml` is refused with RST-1601.
 - `--cases` is a file of `lab/cases/` without `.json`; its `prompt` must be the one on the command line.
+- `--split tune|held-back` sends only the cases of that side of the set (RF-1409); a baseline or a tuning round uses `--split tune`, a decision on a version uses `--split held-back`. Without it both sides are sent.
+- `--sample <n>` sends only n cases (1 to 500): the cases of the side asked are sorted by case id in plain code-unit order and the first n are taken, whatever the order of the set. The rule is fixed, so the same command always sends the same cases, a quarter sample is inside a half sample, and an n above the cases left sends them all. The plan says how many cases that is and what the selection is.
+- A selection with no case (`--split held-back` on a set that has none, such as the four planner sets of P10-02) sends nothing, with or without `--yes`. The results record the selection as `selection { split, sample }`.
 - Without `--yes` the command shows the prompt, the model, the number of calls and the caps, and sends nothing.
 
 The command prints the rates of first-try validity, repairs and unusable answers, the refusals and RST codes, the
@@ -57,9 +60,10 @@ npm run lab -- --compare 20261113-101500-lab 20261113-102200-lab
 ```
 
 Both ids are folders of `lab-out/`. The report gives the totals of each version and each case side by side. It refuses
-two runs of different case sets (compared by the SHA-256 of the file) and makes no call. A version is kept only when it
+two runs of different case sets (compared by the SHA-256 of the file) and two runs over different case selections (`--split` and `--sample`, RF-1409; a run that records none counts as every case), and makes no call. Run the versions on the same `--split` and `--sample` to compare them. A version is kept only when it
 beats the current one on the held-back cases without a regression on any check (DEC-231). When the runs have no
-held-back case, the report ends with a `Warning:` line: such a comparison cannot keep a version.
+held-back case (a set with none, or `--split tune`), the report ends with a `Warning:` line: such a comparison cannot
+keep a version.
 
 ## 4. Add a case set
 
@@ -137,6 +141,8 @@ tuning card, and read its `Warning:` lines.
 
 **The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`). `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is fixed text (`{"cards": [{"type": "BR", "title": "`) and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. Committed sets `cards-continue` (8 cases, 3 held back), `cards-flows` (9, 1) and `cards-screens` (8, 1), captured as 10 each before the twins were dropped, come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. The tuning rounds wait for an API key.
 
+**The shared prompts (P10-10, part 1).** `shared/masked-value` and `shared/text-tool-protocol` are wired with `--prompt shared/<stem>`; both are fragments of a reader turn, so a case is a reader case and the capture has no rule for them (the cases are written by hand from invented code, committed as `shared-masked-value` and `shared-text-tool-protocol`, with no source and a label each, and split by the fixed rule on the input). `shared/masked-value` is the note a masked value is replaced with: a case holds reads whose lines name an invented secret as the token `{secret}` and the value itself in the case field `secret` (`FakeSecret1` and so on, never a real key shape), so no value stands in the file. The target puts the value in, masks the reads with the run's own masker using the file under test as its replacement (lines stay where they were), and sends the task and the replay of the reads. `detail` is `Leaked` when the value is still in the text sent (the masker missed it; no call is made) or is repeated in the answer, in its text or in the arguments of a tool call, and `BadPrompt` (no call) for a draft without `{{kind}}` or whose note does not start with `[MASKED:` (the run's masker contract; the lab's own egress masker would mask such a note again, so the model would not see the draft), else the card parser's `Valid`, `Partial`, `Unusable` or `ReadsMore`. A missed secret is a regression no score can buy back: a version with any `Leaked` case is never kept, whatever else it scores. `shared/text-tool-protocol` is the text a model without native tool calling gets after the system prompt, with the tools in it: the target appends the file under test as the Ollama adapter does, sends no native tools and sends the replay of the reads as `tool_call` and `tool_result` blocks, reads the answer with the run's text parser and then as a first turn (`ReadsFiles`, `BadToolCall`, `Answered`, `Empty`; first-try validity is not applicable) or, for a case with reads, as cards; a draft without the run's tools placeholder (`{{tools}}`, one or more) is `BadPrompt`. `shared/secret-risk` is **not** wired: it is the sentence the domain writes into the plan's risks for a file that holds a masked secret, filled with the path and the lines and sent to no model, so the lab has no call to run and no answer to read. Its wording is held by its own tests (`tests/unit/application/plan/`), and the `shared` rubric's `secret-detection` veto applies to the two wired prompts. A tuning round for the shared family therefore varies the two wired prompts only. Known limits: the lab sends the protocol in the system prompt itself with no native tools, so a role whose provider is configured with `toolMode: "text"` could add the protocol a second time (the run adds it only for such a provider; this is not handled); and `shared/masked-value` has no parser of a first answer, so its first-try validity is `n/a` and `detail` and "not usable" are the measure.
+
 **Agent-loop prompts (the reader).** The lab does not run a reader loop. A reader case measures one turn: the area's
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
 first turn of `reader/task` and `reader/area` is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; `reader/read-first` is
@@ -175,7 +181,7 @@ read `detail` and "not usable". The later turns of a loop are not measured (ADR-
 A prompt id is live when the newest version of its family in `prompts/` is the one the run loads. A tuning card
 (P10-05..P10-10) wires the remaining members of its own family first, with the steps of section 5, and changes the row
 to `wired`. `tests/integration/lab/runbook-prompt-list.test.ts` keeps this table equal to the live families and to the
-targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalogue/` are not prompts.
+targets the lab has, so a row cannot be forgotten. `no call` marks a live prompt that no model is ever sent (`shared/secret-risk`), so the lab has nothing to run. Data files of `prompts/catalogue/` are not prompts.
 
 | Prompt id                   | State   | Case set                                           |
 | --------------------------- | ------- | -------------------------------------------------- |
@@ -207,9 +213,9 @@ targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalo
 | `reader/task`               | wired   | reader-task (first turn)                           |
 | `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)     |
 | `reader/workbook`           | wired   | reader-workbook-workbooks (local only)             |
-| `shared/masked-value`       | not yet |                                                    |
-| `shared/secret-risk`        | not yet |                                                    |
-| `shared/text-tool-protocol` | not yet |                                                    |
+| `shared/masked-value`       | wired   | shared-masked-value (invented, by hand)            |
+| `shared/secret-risk`        | no call | none (the domain fills it, no model reads it)      |
+| `shared/text-tool-protocol` | wired   | shared-text-tool-protocol (invented, by hand)      |
 | `summariser/merge`          | wired   | summariser-merge                                   |
 | `summariser/overview`       | wired   | summariser-overview, overview-sample               |
 | `verifier/claim`            | wired   | verifier-claim-sample (invented)                   |

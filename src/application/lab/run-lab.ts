@@ -7,6 +7,7 @@ import { judgeStopReason, type CaseJudge } from './judge/answer-judge.js';
 import type { JudgeInfo } from './judge/judge-results.js';
 import { sourceText } from './judge/judge-source.js';
 import type { LabCaseSet } from './lab-case-set.js';
+import { ALL_CASES, type LabSelection } from './lab-selection.js';
 import { REFUSED_BEFORE_SENDING, type LabCallMeter, type MeteredCase } from './lab-meter.js';
 import type { LabCaseResult, LabResults } from './lab-results.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from './lab-target.js';
@@ -41,6 +42,8 @@ export interface RunLabRequest {
   readonly caseSet: LabCaseSet;
   readonly setSha256: string;
   readonly repetitions: number;
+  /** RF-1409: which cases of the set caseSet holds, recorded in the results; every case when absent. */
+  readonly selection?: LabSelection;
 }
 
 export interface LabProblem {
@@ -226,6 +229,7 @@ export class RunLab {
       model: { ...model, modelVersion: done.modelVersion },
       ...this.judgeOf(request),
       caseSet: { version: caseSet.version, sha256: request.setSha256 },
+      selection: request.selection ?? ALL_CASES,
       repetitions: request.repetitions,
       planned: done.planned,
       endState: done.refusal === null ? 'Completed' : 'Refused',

@@ -4,6 +4,13 @@ import type { PromptFile } from '../../application/agent/prompt-file.js';
 import type { LabTarget } from '../../application/lab/lab-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { compareLab } from '../../application/lab/lab-results.js';
+import {
+  ALL_CASES,
+  describeSelection,
+  sameSelection,
+  selectCases,
+  type LabSelection,
+} from '../../application/lab/lab-selection.js';
 import { loadModelList } from '../../infrastructure/models/model-list-file.js';
 import { loadPriceTable } from '../../infrastructure/budget/price-file.js';
 import { readAppVersion } from '../../infrastructure/config/app-version.js';
@@ -75,12 +82,21 @@ function withJudge<T extends object>(
 
 const NOT_STARTED = 'Nothing was sent. Run again with --yes to start.';
 
-function planLines(args: RunArgs, parts: LabParts, cases: number, promptName: string): string[] {
+function planLines(
+  args: RunArgs,
+  parts: LabParts,
+  chosen: { readonly cases: number; readonly selection: LabSelection },
+  promptName: string,
+): string[] {
+  const { cases, selection } = chosen;
   const calls = cases * args.repetitions;
   const { limits } = parts;
   return [
     `npm run lab sends the prompt ${promptName} over ${String(cases)} cases, ${String(args.repetitions)} time(s) each,`,
     `at least ${String(calls)} calls, to ${args.model.provider}:${args.model.model} (case set ${args.cases}).`,
+    ...(sameSelection(selection, ALL_CASES)
+      ? []
+      : [`Selection of the set: ${describeSelection(selection)}.`]),
     ...(args.judge === undefined
       ? []
       : [
@@ -94,6 +110,7 @@ interface Resolved {
   readonly target: LabTarget;
   readonly loaded: LoadedLabSet;
   readonly prompt: PromptFile;
+  readonly selection: LabSelection;
   readonly judge?: JudgeSetup;
 }
 
@@ -108,11 +125,22 @@ async function resolveRun(args: RunArgs, folders: LabFolders): Promise<Result<Re
       `The case set ${args.cases} is written for ${loaded.value.set.prompt}, not for ${args.prompt}.`,
     );
   }
+  const selection: LabSelection = {
+    split: args.split ?? 'all',
+    sample: args.sample ?? null,
+  };
+  const chosen = selectCases(loaded.value.set.cases, selection);
+  if (chosen.length === 0) {
+    return err(
+      `The case set ${args.cases} has no case for the selection (${describeSelection(selection)}): nothing to send.`,
+    );
+  }
   const prompt = await loadPromptVersion(folders.promptsFolder, target.value.id, args.version);
   if (!prompt.ok) return prompt;
   const judge = await judgeSetupOf(args, target.value, folders);
   if (!judge.ok) return judge;
-  const found = { target: target.value, loaded: loaded.value, prompt: prompt.value };
+  const narrowed = { ...loaded.value, set: { ...loaded.value.set, cases: chosen } };
+  const found = { target: target.value, loaded: narrowed, prompt: prompt.value, selection };
   return ok(judge.value === undefined ? found : { ...found, judge: judge.value });
 }
 
@@ -141,11 +169,12 @@ export async function runLabRun(
   if (!resolved.ok) return (print(resolved.error), 1);
   const problem = startProblem(args, parts);
   if (problem !== undefined) return (print(problem), 1);
-  const { target, loaded, prompt } = resolved.value;
-  for (const line of planLines(args, parts, loaded.set.cases.length, prompt.name)) print(line);
+  const { target, loaded, prompt, selection } = resolved.value;
+  const chosen = { cases: loaded.set.cases.length, selection };
+  for (const line of planLines(args, parts, chosen, prompt.name)) print(line);
   if (!args.yes) return (print(NOT_STARTED), 1);
   const { model, repetitions } = args;
-  const request = { target, prompt, model, loaded, repetitions };
+  const request = { target, prompt, model, loaded, repetitions, selection };
   const run = await runLab(parts, withJudge(request, parts, resolved.value.judge));
   if (!run.ok) {
     print(`${run.error.code}: ${run.error.message}`);
