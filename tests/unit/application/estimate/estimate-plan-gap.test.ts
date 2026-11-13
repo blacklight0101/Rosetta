@@ -27,7 +27,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const { assumptions } = await estimateOf();
 
     const system = (await readFile('prompts/planner/gap.v6.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(7);
+    expect(assumptions.calls).toBe(8);
     expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(assumptions.gapPromptTokens).not.toBe(assumptions.coveragePromptTokens);
   });
@@ -40,7 +40,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
     expect(high).toBeGreaterThan(reservation(assumptions.gapPromptTokens));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 });
 

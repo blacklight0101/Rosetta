@@ -31,6 +31,8 @@ interface PlanAssumptions {
   readonly gapPromptTokens: number;
   /** The part of `promptTokens` that belongs to the repair attempt of the gap call (Q-54). */
   readonly gapRepairPromptTokens: number;
+  /** P9-15: the part of `promptTokens` that belongs to the check of the data model against the decision records (RF-623); 0 when none is counted. */
+  readonly adrModelPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** RF-604: the continuations one planner call may make when its answer is cut off; the high figure reserves them. */

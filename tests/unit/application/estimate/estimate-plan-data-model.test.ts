@@ -29,10 +29,10 @@ describe('EstimatePlan: the data model call', () => {
 
     const { assumptions, planner } = estimate;
     const system = (await readFile('prompts/planner/data-model.v5.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(7);
+    expect(assumptions.calls).toBe(8);
     expect(assumptions.dataModelPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-623 does not count it when no ENT claim is supported, since no call is made', async () => {
@@ -59,7 +59,8 @@ describe('EstimatePlan: the data model call', () => {
       assumptions.coveragePromptTokens -
       assumptions.gapPromptTokens -
       assumptions.gapRepairPromptTokens -
-      assumptions.gapPromptTokens;
+      assumptions.gapPromptTokens -
+      assumptions.adrModelPromptTokens;
     const sum =
       reservation(plan) +
       reservation(assumptions.prdPromptTokens) +
@@ -67,7 +68,8 @@ describe('EstimatePlan: the data model call', () => {
       reservation(assumptions.coveragePromptTokens) +
       reservation(assumptions.gapPromptTokens) +
       reservation(assumptions.gapRepairPromptTokens) +
-      reservation(assumptions.gapPromptTokens);
+      reservation(assumptions.gapPromptTokens) +
+      reservation(assumptions.adrModelPromptTokens);
     expect(planner.points.high.inputTokens + planner.points.high.outputTokens).toBe(sum);
   });
 });
@@ -88,7 +90,7 @@ describe('EstimatePlan: the data model in batches (P5-38)', () => {
     );
     const batches = dataModelBatches(sources, assumptions.maxOutputTokens).length;
     expect(batches).toBeGreaterThan(1);
-    expect(assumptions.calls).toBe(6 + batches);
+    expect(assumptions.calls).toBe(7 + batches);
     expect(planner.points.high.outputTokens).toBe(
       assumptions.calls * 3 * assumptions.maxOutputTokens,
     );

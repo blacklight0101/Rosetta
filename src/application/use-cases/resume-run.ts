@@ -5,6 +5,7 @@ import { reopenManifest } from '../../domain/runs/reopen-manifest.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import { OVERVIEW_END_STATES, RESUMABLE_END_STATES, type Run } from '../../domain/runs/run.js';
 import type { Clock } from '../ports/clock.js';
+import type { JourneyRecords } from '../ports/journey-records.js';
 import type { Project } from '../projects/project.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -29,6 +30,9 @@ import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.j
 // run starts when the queue has room, like a new one. Another user's run and an unknown id answer
 // the same; only an understand run that ended at a cap, failed or was interrupted can be resumed,
 // and once at a time. A reader that would send code off this machine needs the run's consent (RF-143).
+// P9-16, RF-435, RF-1108: a run queued before the current journey keeps its queue time when resumed,
+// as Continue does (P9-01), so its spend never moves into the newer journey; that queue time puts it
+// ahead of the runs queued after it. Any other run is queued at the end of the queue.
 
 export interface ResumeRunDependencies {
   readonly projects: ProjectRepository;
@@ -42,6 +46,8 @@ export interface ResumeRunDependencies {
   readonly ollamaHost?: string;
   /** RF-431: whether each role of the run has a usable key; checked before the run is queued. */
   readonly roleKeys: RoleKeyDependencies;
+  /** RF-435: the journey records; none (the evaluation tools' wiring) queues every run at the end. */
+  readonly journeys?: JourneyRecords | undefined;
 }
 
 export type ResumeProblem =
@@ -119,7 +125,7 @@ export class ResumeRun {
     project: Project,
     stored: RunManifest,
   ): Promise<Run | undefined> {
-    const at = this.deps.clock.now().getTime();
+    const at = await this.queuedAt(run);
     const only = readUnderstandOptions(stored.options).overviewOnly === true;
     const reopened = await this.deps.runs.reopen(
       ...([userId, run.id, at, only ? OVERVIEW_END_STATES : undefined] as const),
@@ -129,6 +135,14 @@ export class ResumeRun {
     const next = reopenManifest(stored, caps);
     await this.write(reopened, next.ok ? next.value : { ...stored, caps });
     return reopened;
+  }
+
+  /** P9-16: the run's own queue time when it was queued before the current journey, else now. */
+  private async queuedAt(run: Run): Promise<number> {
+    const record = await this.deps.journeys?.find(run.userId, run.projectId);
+    return record !== undefined && run.queuedAt < record.createdAt
+      ? run.queuedAt
+      : this.deps.clock.now().getTime();
   }
 
   /** A manifest that cannot be rewritten leaves the run ended again, and the failure is rethrown. */

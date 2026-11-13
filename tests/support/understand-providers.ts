@@ -66,6 +66,8 @@ class HookedProvider implements LlmProvider {
   readonly coverage: FakeProvider;
   /** Q-45: the planner's call for the items no task card builds replays a recording of its own. */
   readonly gap: FakeProvider;
+  /** P9-15: the check of the data model against the decision records replays a recording of its own. */
+  readonly adrModel: FakeProvider;
   private readonly hooks: Hooks;
   private calls = 0;
   private verifierCalls = 0;
@@ -76,6 +78,7 @@ class HookedProvider implements LlmProvider {
       readonly verifier: Recording | undefined;
       readonly coverage: Recording | undefined;
       readonly gap: Recording | undefined;
+      readonly adrModel: Recording | undefined;
     },
     hooks: Hooks,
   ) {
@@ -83,6 +86,7 @@ class HookedProvider implements LlmProvider {
     this.verifier = new FakeProvider({ testMode: true, recording: recordings.verifier ?? noCalls });
     this.coverage = new FakeProvider({ testMode: true, recording: recordings.coverage ?? noCalls });
     this.gap = new FakeProvider({ testMode: true, recording: recordings.gap ?? noCalls });
+    this.adrModel = new FakeProvider({ testMode: true, recording: recordings.adrModel ?? noCalls });
     this.hooks = hooks;
   }
 
@@ -98,6 +102,9 @@ class HookedProvider implements LlmProvider {
     }
     if (request.context.agentTaskId === 'planner-coverage') {
       return this.coverage.complete(request, observer);
+    }
+    if (request.context.agentTaskId === 'planner-adr-model') {
+      return this.adrModel.complete(request, observer);
     }
     this.calls += 1;
     await this.hooks.before?.(this.calls, request.signal);
@@ -118,6 +125,8 @@ export interface UnderstandProviders {
   readonly coverageRequests: () => readonly LlmRequest[];
   /** The requests of the planner's call for the items no task card builds (Q-45). */
   readonly gapRequests: () => readonly LlmRequest[];
+  /** P9-15: the requests of the check of the data model against the decision records. */
+  readonly adrModelRequests: () => readonly LlmRequest[];
   readonly runSinks: (scope: RunScope) => Pick<ProviderSinks, 'recorder' | 'egressLog'>;
 }
 
@@ -134,6 +143,8 @@ export interface UnderstandProviderParts {
   readonly coverageRecording?: Recording;
   /** Q-45: what the planner answers to the call for the items no card builds (task cards). */
   readonly gapRecording?: Recording;
+  /** P9-15: what the planner answers to the check of the data model (no answer if absent). */
+  readonly adrModelRecording?: Recording;
   /** Runs before the gap call reaches the fake; a rejection is the guard refusing it. */
   readonly beforeGapCall?: BeforeCall;
   readonly beforeCall?: BeforeCall;
@@ -165,6 +176,7 @@ function recordingsOf(parts: UnderstandProviderParts) {
     verifier: parts.verifierRecording,
     coverage: parts.coverageRecording,
     gap: parts.gapRecording,
+    adrModel: parts.adrModelRecording,
   };
 }
 
@@ -248,6 +260,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     verifierRequests: () => adapter.verifier.requests,
     coverageRequests: () => adapter.coverage.requests,
     gapRequests: () => adapter.gap.requests,
+    adrModelRequests: () => adapter.adrModel.requests,
     runSinks: (scope) => ({
       recorder: new JsonlProviderCallLog({
         runDir: join(dataDir, 'users', scope.userId, runPath(scope.projectId, scope.runKey)),

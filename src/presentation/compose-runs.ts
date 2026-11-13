@@ -189,7 +189,7 @@ function runServices(service: ServiceParts): RunServices {
     ...answerServices({ runs, manifests, queue, clock: parts.clock, journeys }),
     resumeRun: composeResume({
       ...{ projects, runs, manifests, queue, scans, writer },
-      ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys },
+      ...{ clock: parts.clock, masker: parts.masker, ollamaHost, roleKeys, journeys },
     }),
     ...composeDeepen({
       ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },

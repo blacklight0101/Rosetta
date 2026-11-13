@@ -39,6 +39,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadAdrModelPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -87,6 +88,7 @@ const laterPrompts = {
   coveragePrompt: () => loadCoveragePrompt('prompts'),
   gapPrompt: () => loadGapPrompt('prompts'),
   gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+  adrModelPrompt: () => loadAdrModelPrompt('prompts'),
 };
 
 /** The zip upload, the workbook batches and the renderer check (RF-128, RF-150, P3-108). */
