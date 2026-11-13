@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { readDataBlocks, type ReadDataBlock } from './data-blocks.js';
 import type { TranscriptTask } from './capture-types.js';
 import { captureReaderInput, readerPromptIds } from './capture-reader.js';
+import { capturePlanDocInput, planDocPromptIds } from './capture-plan-docs.js';
 
 // RF-1404, DEC-57: which agent task is an input of which prompt id, and what of it is kept. Only
 // the first user message is read, back from its data blocks; the system prompt and every assistant
@@ -93,6 +94,7 @@ export const capturablePromptIds: readonly string[] = [
   'summariser/merge',
   'summariser/overview',
   ...readerPromptIds,
+  ...planDocPromptIds,
 ];
 
 // RF-1404
@@ -101,6 +103,7 @@ export function captureInput(
   task: TranscriptTask,
   context: { readonly maxTurns: number },
 ): unknown {
+  if (planDocPromptIds.includes(promptId)) return capturePlanDocInput(promptId, task);
   switch (promptId) {
     case 'planner/gap':
       return gapInput(task);

@@ -13,16 +13,21 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 // choice with its type names (null for a database the code does not know) and data migration note.
 // Both blocks are data; nothing of them is in the system prompt.
 
+/** RF-1406: what of the brief this message reads: the stack and the data migration note. */
+type DataModelBrief = Pick<PlanningBrief, 'stack'> & {
+  readonly context: Pick<PlanningBrief['context'], 'dataMigration'>;
+};
+
 export interface DataModelMessageInput {
   readonly cards: readonly SourceCard[];
-  readonly brief: PlanningBrief;
+  readonly brief: DataModelBrief;
   /** P3-113: the ids of the `ENT` and rule cards the prompt names by title only, to fit the planner's window. */
   readonly omitted?: ReadonlySet<string>;
   /** P5-38: the `ENT` cards this call writes tables for; the others are named, and another call writes them. */
   readonly batch?: readonly SourceCard[] | undefined;
 }
 
-function cardsText(input: DataModelMessageInput): string {
+function cardsText(input: DataModelMessageInput, rules: readonly SourceCard[]): string {
   const omitted = input.omitted ?? new Set<string>();
   const all = input.cards.filter((card) => card.type === 'ENT');
   const inBatch = new Set((input.batch ?? all).map((card) => card.id));
@@ -41,7 +46,6 @@ function cardsText(input: DataModelMessageInput): string {
           citations: citations.map(formatCitation),
         })),
     }));
-  const rules = ruleCandidates(input.cards);
   const ruleCards = rules
     .filter((card) => !omitted.has(card.id))
     .map(({ id, title, claims }) => ({
@@ -69,7 +73,7 @@ export function packableCards(
   return [...(batch ?? cards.filter((card) => card.type === 'ENT')), ...ruleCandidates(cards)];
 }
 
-function ownerText(brief: PlanningBrief): string {
+function ownerText(brief: DataModelBrief): string {
   const choice = (layer: string): string | null =>
     brief.stack.find((entry) => entry.layer === layer)?.choice ?? null;
   return JSON.stringify(
@@ -88,7 +92,19 @@ function ownerText(brief: PlanningBrief): string {
 /** The user message: the cards block, then the owner's block, each with a tag of its own. */
 // RF-623, RF-145
 export function dataModelMessage(input: DataModelMessageInput, tags: () => string): string {
-  const cards = renderDataBlock({ source: 'cards', excerpts: [], text: cardsText(input) }, tags());
+  return dataModelMessageFor(input, ruleCandidates(input.cards), tags);
+}
+
+/** RF-1406: the message over the rule cards already chosen; the lab holds the ones a run sent. */
+export function dataModelMessageFor(
+  input: DataModelMessageInput,
+  rules: readonly SourceCard[],
+  tags: () => string,
+): string {
+  const cards = renderDataBlock(
+    { source: 'cards', excerpts: [], text: cardsText(input, rules) },
+    tags(),
+  );
   const owner = renderDataBlock(
     { source: 'owner_answers', excerpts: [], text: ownerText(input.brief) },
     tags(),

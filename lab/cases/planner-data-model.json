@@ -1,0 +1,798 @@
+{
+  "schemaVersion": 1,
+  "version": "planner-data-model-1",
+  "prompt": "planner/data-model",
+  "description": "Inputs of planner/data-model captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-071300-plan",
+        "20261102-203736-plan",
+        "20261102-030541-plan",
+        "20261029-152045-plan",
+        "20261023-152751-plan"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-071300-plan-planner-data-model",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "CatalogItem (product entity, legacy and modernized)",
+            "summary": "A sellable catalog product with an id, a name (max 50), an optional description, a price (decimal, money), a picture file name (default dummy.png), required links to one brand and one type, and stock figures (available stock, restock threshold, max stock threshold) plus an on-reorder flag. In the legacy EF model it is the CatalogItems set; in the modernized model it is the Catalog table. PictureUri and TempImageName are not stored. Ids are assigned by the application (hi-lo or sequence) or by the seed, and the foreign keys cascade deletes by EF default in some versions.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:18-22"]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:13-15",
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:21-25",
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:30-32"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs:18-31"]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "The brand and type names are stored as non-Unicode strings.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:26-28",
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:36-38"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-003",
+            "title": "CatalogBrand table"
+          },
+          {
+            "id": "ENT-004",
+            "title": "CatalogType table"
+          },
+          {
+            "id": "ENT-005",
+            "title": "CatalogItemsStock"
+          },
+          {
+            "id": "ENT-006",
+            "title": "DiscountItem"
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogDBContext database connection"
+          },
+          {
+            "id": "ENT-026",
+            "title": "eShop database on the workshop SQL server"
+          },
+          {
+            "id": "ENT-027",
+            "title": "Catalog brand seed data (CatalogBrands.csv)"
+          },
+          {
+            "id": "ENT-028",
+            "title": "Catalog type seed data (CatalogTypes.csv)"
+          },
+          {
+            "id": "ENT-029",
+            "title": "Catalog item seed data (CatalogItems.csv)"
+          },
+          {
+            "id": "ENT-034",
+            "title": "Not applicable: no data entities in deployer.rb"
+          }
+        ],
+        "rules": [
+          {
+            "id": "BR-006",
+            "title": "Catalog item id generation with hi-lo sequences",
+            "claims": [
+              {
+                "claimId": "BR-006.c1",
+                "text": "The hi-lo generator fetches a new block from the sequence catalog_hilo every ten ids and hands out the ids in between from memory."
+              },
+              {
+                "claimId": "BR-006.c4",
+                "text": "When no IDs remain in the current block, the generator reads the next value of catalog_hilo and then serves nine further IDs from memory before it queries the sequence again."
+              },
+              {
+                "claimId": "BR-006.c6",
+                "text": "The catalog_hilo, catalog_brand_hilo and catalog_type_hilo sequences each start at 1 and increment by 10."
+              },
+              {
+                "claimId": "BR-006.c7",
+                "text": "The generator fetches a new block from the sequence catalog_hilo when no IDs remain, and then hands out the following nine IDs in memory."
+              }
+            ]
+          },
+          {
+            "id": "BR-055",
+            "title": "Catalog item ids come from a HiLo sequence generator",
+            "claims": [
+              {
+                "claimId": "BR-055.c1",
+                "text": "The generator sets HiLoIncrement to 10. When no ids are left in its block, it reads NEXT VALUE FOR catalog_hilo and then uses the next nine values in memory."
+              },
+              {
+                "claimId": "BR-055.c3",
+                "text": "The sequences catalog_hilo, catalog_brand_hilo and catalog_type_hilo are each created with START WITH 1 and INCREMENT BY 10, bigint, with the default minimum and maximum."
+              },
+              {
+                "claimId": "BR-055.c5",
+                "text": "The generator fetches the next value of catalog_hilo only when its local block is used up; it then gives out that value and nine more in memory, before fetching again."
+              },
+              {
+                "claimId": "BR-055.c9",
+                "text": "Each sequence (catalog_hilo, catalog_brand_hilo, catalog_type_hilo) is a bigint sequence with START WITH 1, INCREMENT BY 10, the bigint minimum and maximum, and a bare CACHE keyword with no size."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-057",
+            "title": "First-run catalog database creation and seeding",
+            "claims": [
+              {
+                "claimId": "FEAT-057.c23",
+                "text": "Seed runs the three sequence scripts for catalog_hilo, catalog_brand_hilo and catalog_type_hilo, then adds types, brands, items and pictures, in that order."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-062",
+            "title": "Catalog service operations on catalog items",
+            "claims": [
+              {
+                "claimId": "FEAT-062.c25",
+                "text": "The generator is a hi-lo id source: when its local block is empty it runs SELECT NEXT VALUE FOR catalog_hilo once, takes that value as the current id and reserves the following nine ids (HiLoIncrement of 10) to hand out without a database call."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261102-203736-plan-planner-data-model",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "eShop database on the workshop SQL server",
+            "summary": "The setup creates an empty database named eShop at the S0 service level. The scripts create no tables; the comment says the data is populated later when the web app is migrated.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "The database name is eShop.",
+                "citations": ["Setup/environment.ps1:21-21"]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "The database is created with the requested service objective S0 on the workshop SQL server.",
+                "citations": ["Setup/setup.ps1:19-21"]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The code states that the database is populated later, when the web app is migrated; no schema or data load is in this area.",
+                "citations": ["Setup/setup.ps1:19-20"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "title": "CatalogBrand and CatalogType lookup tables",
+            "summary": "Two lookup tables referenced by catalog items. CatalogBrand has an integer key and a Brand name of up to 100 characters. CatalogType has an integer key and a Type name of up to 100 characters. The migrations seed five brands and four types. Key generation differs by project (identity, application-generated, or HiLo sequences).",
+            "claims": [
+              {
+                "claimId": "ENT-002.c1",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key (PK_CatalogBrand).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-21"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c2",
+                "text": "Column CatalogBrand.Brand: string with max length 100, NOT NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-16"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c4",
+                "text": "The table is seeded with five brands: 1 Azure, 2 .NET, 3 Visual Studio, 4 SQL Server, 5 Other.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:70-80",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:35-60"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c5",
+                "text": "CatalogBrand has the primary key Id, an integer generated on add with the SQL Server identity strategy, and Brand is a required string with a maximum length of 100.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:21-33"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-004",
+            "title": "Catalog item entity"
+          },
+          {
+            "id": "ENT-012",
+            "title": "Catalog seed CSV files"
+          },
+          {
+            "id": "ENT-022",
+            "title": "Catalog stock and discount records"
+          },
+          {
+            "id": "ENT-025",
+            "title": "Catalog item and image blob layout"
+          },
+          {
+            "id": "ENT-029",
+            "title": "Catalog database connection string held in the manifest"
+          },
+          {
+            "id": "ENT-030",
+            "title": "Catalog items stock table"
+          },
+          {
+            "id": "ENT-031",
+            "title": "Catalog item as seen by the WinForms client"
+          },
+          {
+            "id": "ENT-032",
+            "title": "CatalogBrand and CatalogType data contracts"
+          }
+        ],
+        "rules": [
+          {
+            "id": "BR-022",
+            "title": "Catalog ids come from HiLo sequences",
+            "claims": [
+              {
+                "claimId": "BR-022.c9",
+                "text": "Type ids start at the next value of catalog_type_hilo and increase by one for each type added."
+              },
+              {
+                "claimId": "BR-022.c10",
+                "text": "Brand ids start at the next value of catalog_brand_hilo and increase by one for each brand added."
+              },
+              {
+                "claimId": "BR-022.c14",
+                "text": "The brand seeding follows the same pattern: one NEXT VALUE FOR catalog_brand_hilo read, then each brand gets the current value and the counter goes up by one."
+              },
+              {
+                "claimId": "BR-022.c18",
+                "text": "The sequence catalog_brand_hilo has the same definition: bigint, start 1, increment 10."
+              }
+            ]
+          },
+          {
+            "id": "BR-043",
+            "title": "Catalog seed data on database creation",
+            "claims": [
+              {
+                "claimId": "BR-043.c4",
+                "text": "Types and brands take their ids from the database sequences catalog_type_hilo and catalog_brand_hilo, counting up one by one from the value returned."
+              },
+              {
+                "claimId": "BR-043.c26",
+                "text": "Type and brand IDs start from the value read from the catalog_type_hilo or catalog_brand_hilo sequence and increase by one per row, so they do not use the item hi-lo generator."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-073",
+            "title": "Database seeding and catalog pictures extraction",
+            "claims": [
+              {
+                "claimId": "FEAT-073.c5",
+                "text": "Type and brand IDs are taken from the named sequences (catalog_type_hilo, catalog_brand_hilo) and incremented by one per row."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-113",
+            "title": "Deploy the eShop MVC web app to a Service Fabric cluster",
+            "claims": [
+              {
+                "claimId": "FEAT-113.c7",
+                "text": "The cloud parameter file holds placeholder tokens such as #{your_storage_connection_string}# and #{your_aad_client_id}# for storage, Application Insights, Azure Active Directory and the logout redirect URI, which the deployment must replace before use."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261102-030541-plan-planner-data-model",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "CatalogBrand and CatalogType entities",
+            "summary": "The CatalogBrand and CatalogType lookup tables: integer keys, required name up to 100 characters, seeded with brands (Azure, .NET, Visual Studio, SQL Server, Other) and types (Mug, T-Shirt, Sheet, USB Memory Stick). Keys come from identity in migrations or from hi-lo sequences in the modernized code. Services read these sets and the client lists them in filter drop-downs.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-15",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:20-20"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "Column CatalogBrand.Brand: string, maxLength 100, NOT NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-16"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The table is seeded with five rows: 1 Azure, 2 .NET, 3 Visual Studio, 4 SQL Server, 5 Other.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:70-80"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity, primary key (PK_CatalogBrand).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-20"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-003",
+            "title": "Catalog item table (CatalogItem)"
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogDb connection"
+          },
+          {
+            "id": "ENT-011",
+            "title": "Catalog item seed file (CatalogItems.csv)"
+          },
+          {
+            "id": "ENT-014",
+            "title": "Catalog item stock by date"
+          },
+          {
+            "id": "ENT-017",
+            "title": "Catalog brand seed file (CatalogBrands.csv)"
+          },
+          {
+            "id": "ENT-018",
+            "title": "Catalog type seed file (CatalogTypes.csv)"
+          },
+          {
+            "id": "ENT-023",
+            "title": "Catalog database model and preconfigured seed data"
+          },
+          {
+            "id": "ENT-024",
+            "title": "Hi-lo key sequences"
+          },
+          {
+            "id": "ENT-030",
+            "title": "Home page product list"
+          }
+        ],
+        "rules": [
+          {
+            "id": "BR-022",
+            "title": "Catalog item ids from a HiLo sequence in blocks of ten",
+            "claims": [
+              {
+                "claimId": "BR-022.c1",
+                "text": "The generator uses a HiLo increment of 10. When its local block is empty it reads NEXT VALUE FOR catalog_hilo and then returns the following nine ids by counting up."
+              },
+              {
+                "claimId": "BR-022.c4",
+                "text": "Catalog type and brand ids are read from the catalog_type_hilo and catalog_brand_hilo sequences when the database is seeded, and each row takes the next number."
+              },
+              {
+                "claimId": "BR-022.c5",
+                "text": "The catalog_hilo sequence starts at 1 and increments by 10."
+              },
+              {
+                "claimId": "BR-022.c7",
+                "text": "The generator uses a block size of 10 (HiLoIncrement). It queries NEXT VALUE FOR catalog_hilo only when no ids remain in the current block, and otherwise returns the next id in memory."
+              }
+            ]
+          },
+          {
+            "id": "BR-042",
+            "title": "Initial database seeding of catalog data",
+            "claims": [
+              {
+                "claimId": "BR-042.c3",
+                "text": "Types and brands take their ids from their own sequences (catalog_type_hilo and catalog_brand_hilo), incremented by one per row. Each CSV or built-in list falls back to PreconfiguredData when the file is missing."
+              },
+              {
+                "claimId": "BR-042.c9",
+                "text": "Seed runs the three sequence scripts (catalog_hilo, catalog_brand_hilo and catalog_type_hilo) one after another before it adds any catalog rows."
+              },
+              {
+                "claimId": "BR-042.c13",
+                "text": "The sequence name passed for catalog types is the constant catalog_type_hilo."
+              }
+            ]
+          },
+          {
+            "id": "BR-044",
+            "title": "Sequence scripts define id blocks",
+            "claims": [
+              {
+                "claimId": "BR-044.c2",
+                "text": "catalog_brand_hilo is a bigint sequence starting at 1 and incrementing by 10, the same settings as catalog_hilo."
+              },
+              {
+                "claimId": "BR-044.c3",
+                "text": "catalog_type_hilo is a bigint sequence starting at 1 and incrementing by 10, the same settings as catalog_hilo."
+              }
+            ]
+          },
+          {
+            "id": "BR-064",
+            "title": "Catalog item keys come from a hi-lo generator",
+            "claims": [
+              {
+                "claimId": "BR-064.c4",
+                "text": "The catalog_hilo sequence starts at 1 and increments by 10, so each block is 10 keys wide."
+              },
+              {
+                "claimId": "BR-064.c5",
+                "text": "The generator fetches the next value of the catalog_hilo sequence and hands out ten ids from it before fetching again."
+              },
+              {
+                "claimId": "BR-064.c10",
+                "text": "The generator reads the value with SELECT NEXT VALUE FOR catalog_hilo and calls are serialised with a lock."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-127",
+            "title": "Catalog seed data files shipped with the web project",
+            "claims": [
+              {
+                "claimId": "FEAT-127.c2",
+                "text": "The project includes three sequence scripts for the catalog hi-lo ID generators (catalog_brand_hilo, catalog_hilo and catalog_type_hilo), each copied to the output directory when newer."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261029-152045-plan-planner-data-model",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "CatalogBrand table and entity",
+            "summary": "A lookup table of product brands with an int identity key and a required brand name of at most 100 characters. Catalog items refer to it. The seed rows are Azure, .NET, Visual Studio, SQL Server and Other, supplied by PreconfiguredData.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:10-21"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "Column CatalogBrand.Brand: nvarchar(100) as declared by maxLength 100, NOT NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-16"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The model snapshot also declares Brand as required with a maximum length of 100.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:27-33"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (value generated on add), primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:25-33"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "title": "CatalogType table and entity",
+            "summary": "A lookup table of product types, such as Mug, T-Shirt, Sheet and USB Memory Stick, with an int identity key and a required type name of at most 100 characters. The seed rows are Mug (1), T-Shirt (2), Sheet (3) and USB Memory Stick (4), written inline in the configuration.",
+            "claims": [
+              {
+                "claimId": "ENT-002.c1",
+                "text": "Column CatalogType.Id: int, NOT NULL, identity, primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:23-34"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c2",
+                "text": "Column CatalogType.Type: nvarchar(100), NOT NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:29-29"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c3",
+                "text": "Column CatalogType.Id: int, NOT NULL, identity (value generated on add), primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:275-283"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c4",
+                "text": "Column CatalogType.Type: string, NOT NULL, max length 100.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:279-281"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-003",
+            "title": "Catalog table and CatalogItem entity (products)"
+          },
+          {
+            "id": "ENT-007",
+            "title": "Catalog item, catalog type and catalog brand"
+          },
+          {
+            "id": "ENT-008",
+            "title": "Kubernetes extensions/v1beta1 API schema (generated Swagger 1.2 document)"
+          }
+        ],
+        "rules": [],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261023-152751-plan-planner-data-model",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "Catalog database used by the web apps",
+            "summary": "The MVC and WebForms containers connect to a SQL Server database named Microsoft.eShopOnContainers.Services.CatalogDb on the sql.data service.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "The MVC and WebForms containers receive a CatalogDBContext connection string pointing at server sql.data and database Microsoft.eShopOnContainers.Services.CatalogDb.",
+                "citations": [
+                  "docker-compose.override.yml:6-6",
+                  "docker-compose.override.yml:21-21"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "The sql.data service is a Microsoft SQL Server Windows developer image, exposed on host port 5433.",
+                "citations": ["docker-compose.yml:29-30", "docker-compose.override.yml:43-44"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "title": "Catalog database used by the WCF service",
+            "summary": "The WCF service connects to a different database name, eShopDatabase, on the same sql.data server.",
+            "claims": [
+              {
+                "claimId": "ENT-002.c1",
+                "text": "The WCF service's CatalogDBContext points to server sql.data and database eShopDatabase.",
+                "citations": ["docker-compose.override.yml:36-36"]
+              },
+              {
+                "claimId": "ENT-002.c2",
+                "text": "The WCF service container depends on sql.data and is published on host port 5113.",
+                "citations": ["docker-compose.yml:5-11", "docker-compose.override.yml:37-38"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "title": "SQL Server database instance (sql-data)",
+            "summary": "The manifest deploys one Windows SQL Server container, sql-data, that listens on port 1433. It is the database the application services connect to.",
+            "claims": [
+              {
+                "claimId": "ENT-003.c1",
+                "text": "The deployment runs the image microsoft/mssql-server-windows-developer on a Windows node, selected by the beta.kubernetes.io/os: windows node selector.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:12-20"
+                ]
+              },
+              {
+                "claimId": "ENT-003.c2",
+                "text": "The Service named sql-data exposes the same database on port 1433.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:27-33"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "title": "eShopDatabase SQL Server instance hosted in Kubernetes",
+            "summary": "The manifests deploy a Windows SQL Server container named sql-data-for-wcf, exposed on port 1433, which the WCF service connects to for the eShopDatabase database.",
+            "claims": [
+              {
+                "claimId": "ENT-004.c1",
+                "text": "A Deployment named sql-data-for-wcf runs the image microsoft/mssql-server-windows-developer on Windows nodes, with the ACCEPT_EULA variable set to Y.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-sql-container-deployment.yml:1-20"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c2",
+                "text": "A LoadBalancer Service named sql-data-for-wcf exposes port 1433 to the cluster and to outside clients.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-sql-container-deployment.yml:22-35"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c3",
+                "text": "The WCF deployment's connection string points at Server=sql-data-for-wcf and Database=eShopDatabase, so the service uses this SQL instance as its database.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:24-25"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-005",
+            "title": "eShop WCF service hosted in Kubernetes",
+            "summary": "The manifests deploy the eshop/wcfservice container on Windows nodes, with one replica behind a LoadBalancer on port 80.",
+            "claims": [
+              {
+                "claimId": "ENT-005.c1",
+                "text": "A Deployment named eshop-modernized-wcf runs one replica of the image eshop/wcfservice on Windows nodes, listening on container port 80.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:4-27"
+                ]
+              },
+              {
+                "claimId": "ENT-005.c2",
+                "text": "A rolling update strategy allows one extra pod and one unavailable pod, with minReadySeconds set to 5. The image pull policy is Always.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:6-11",
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:22-22"
+                ]
+              },
+              {
+                "claimId": "ENT-005.c3",
+                "text": "A LoadBalancer Service named eshop-modernized-wcf maps port 80 to container port 80.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:29-41"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-007",
+            "title": "Application parameters",
+            "summary": "Application-level settings for the MVC app: instance count, Azure storage, Application Insights key, Azure AD sign-in and post-logout URI. The cloud file uses placeholders and the local files are empty.",
+            "claims": [
+              {
+                "claimId": "ENT-007.c1",
+                "text": "The manifest declares eight parameters, with defaults for instance count -1, storage and Azure AD flags False, and empty strings for the keys and IDs.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:8-15"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-008",
+            "title": "SQL Server container service (eshopmodernized.sqldata)",
+            "summary": "The Service Fabric application runs a Windows SQL Server container as a stateless singleton service, reachable on TCP port 1433 under the DNS name eshopmodernized.sqldata. It is the database host that the eShop application relies on.",
+            "claims": [
+              {
+                "claimId": "ENT-008.c1",
+                "text": "The service type SQL_ContainerType runs the SQL Server image microsoft/mssql-server-windows-developer:2017 as a container host.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:10-10",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:17-19"
+                ]
+              },
+              {
+                "claimId": "ENT-008.c2",
+                "text": "The application deploys the service as a stateless singleton with DNS name eshopmodernized.sqldata. Its instance count comes from the SQL_Container_InstanceCount parameter, default 1, and the Cloud.xml parameter file also sets it to 1.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:8-8",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:30-33",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Cloud.xml:4-4"
+                ]
+              },
+              {
+                "claimId": "ENT-008.c3",
+                "text": "The endpoint SqlData_ContainerTypeEndpoint listens on TCP port 1433 and is bound to container port 1433.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:39-39",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:19-19"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-009",
+            "title": "Catalog database context",
+            "summary": "The catalog data is held in a CatalogDBContext Entity Framework context backed by an eShopPorted SQL Server database.",
+            "claims": [
+              {
+                "claimId": "ENT-009.c1",
+                "text": "CatalogDBContext is registered with SQL Server and the DefaultConnection string.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:31-35"]
+              },
+              {
+                "claimId": "ENT-009.c2",
+                "text": "The default connection points at a local SQL Server LocalDB database named eShopPorted with trusted connection.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/appsettings.json:3-3"]
+              }
+            ]
+          }
+        ],
+        "rules": [],
+        "database": "SQL Server (as per legacy context)",
+        "dataAccess": "Entity Framework Core",
+        "dataMigration": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,1107 @@
+{
+  "schemaVersion": 1,
+  "version": "planner-coverage-1",
+  "prompt": "planner/coverage",
+  "description": "Inputs of planner/coverage captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-071300-plan",
+        "20261102-203736-plan",
+        "20261102-030541-plan",
+        "20261029-152045-plan",
+        "20261023-152751-plan"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-071300-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Create the catalog item model and mapping",
+            "acceptanceCriteria": [
+              "Given a catalog item with name of 51 characters, when it is saved, then the save is refused.",
+              "Given a price of 1000000.01, when the item is validated, then it is refused.",
+              "Given an available stock of 10000001, when the item is validated, then it is refused."
+            ]
+          },
+          {
+            "title": "Implement the catalog service paging and lookup",
+            "acceptanceCriteria": [
+              "Given a page index of 0 and page size of 10 with 12 items, when the page is read, then 10 items are returned.",
+              "Given an id that matches no item, when it is read, then null is returned.",
+              "Given a page size of 0, when the page is requested, then the request is refused."
+            ]
+          },
+          {
+            "title": "Implement the hi-lo id generator",
+            "acceptanceCriteria": [
+              "Given an empty block, when the next id is requested, then a new block is fetched from catalog_hilo and the first id is returned.",
+              "Given nine ids have been handed out from a block, when the tenth is requested, then a new block is fetched."
+            ]
+          },
+          {
+            "title": "Seed the first-run catalog data",
+            "acceptanceCriteria": [
+              "Given an empty database, when the seeder runs, then 4 types, 5 brands and 12 items are created.",
+              "Given a CSV item row whose brand name is not loaded, when the seeder runs, then the row is rejected with an error."
+            ]
+          },
+          {
+            "title": "Build the catalog browse and create screens",
+            "acceptanceCriteria": [
+              "Given a visitor opens the catalog with no page values, when the page loads, then the first 10 items are shown.",
+              "Given a create post with a name of 51 characters, when submitted, then the form is shown again without saving."
+            ]
+          },
+          {
+            "title": "Build the catalog edit, view and delete screens",
+            "acceptanceCriteria": [
+              "Given an edit request without an id, when submitted, then the response is 400.",
+              "Given a delete request for an id that does not exist, when submitted, then the response is 404."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Paginated product catalog browsing",
+            "detail": "Lists catalogue items one page at a time, ten per page by default, with Previous and Next links hidden at the ends."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Catalog item details",
+            "detail": "Shows one catalogue item with its picture, returning 400 for a missing id and 404 for an unknown id."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Maintain catalog items",
+            "detail": "Create, edit, view and delete catalogue items through the catalogue screens."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Create a catalog item",
+            "detail": "A form creates a catalogue item with brand and type lists, price, stock levels; picture upload is not offered in the MVC create form."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Edit a catalog item",
+            "detail": "An edit form loads an item by id and saves valid changes; the picture file name is read-only."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Delete a catalog item",
+            "detail": "A confirmation page shows the item and a confirmed post removes it."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Returns the picture file of a catalogue item with a MIME type taken from its extension."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Sign in and sign out with OpenID Connect",
+            "detail": "Signs users in and out through OpenID Connect when Azure Active Directory is enabled."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Daily discount banner",
+            "detail": "Shows the discount valid today with its percentage and end date on the catalogue screen."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Browse the catalog with brand and type filters",
+            "detail": "Lists items in the WinForms client and filters them by brand and type, where 0 means all."
+          },
+          {
+            "id": "feature:F-011",
+            "kind": "feature",
+            "name": "Check and record stock for an item on a date",
+            "detail": "Records a stock shipment for an item on a date and searches available stock for an item and date."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps each sellable catalog product with its name, price, picture file name, brand, type and stock figures."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Keeps one product brand that catalog items can belong to."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Keeps one product type, such as Mug or T-Shirt, that catalog items can have."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Keeps the quantity of a catalog item available on a date."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Keeps a discount with its size and the start and end dates it covers in the catalog."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Record a stock shipment",
+            "detail": "The stock record is saved or updated and the form is cleared."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Open the catalog screen",
+            "detail": "The form shows the discount banner, the catalog items with discounted prices, the brand and type filters and the shipment entry list."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Check available stock for an item on a date",
+            "detail": "A row with the date, item id and quantity is added to the stock result list."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Application start of the MVC web site",
+            "detail": "The container, routes, filters and bundles are registered, the database initializer is set when mock data is off, catalog images are initialised and telemetry is configured."
+          },
+          {
+            "id": "flow:FLOW-013",
+            "kind": "flow",
+            "name": "Create a catalog item",
+            "detail": "A new catalog item is saved, with its picture if one was uploaded, and the browser is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-015",
+            "kind": "flow",
+            "name": "Edit a catalog item",
+            "detail": "The item is updated through the catalog service and the browser is redirected to the root."
+          },
+          {
+            "id": "flow:FLOW-016",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item is removed through the catalog service and the browser is redirected to the root."
+          },
+          {
+            "id": "flow:FLOW-017",
+            "kind": "flow",
+            "name": "Browse, page and open a catalog item",
+            "detail": "The user sees one page of catalog items, and can open an item for editing, viewing or deletion."
+          },
+          {
+            "id": "flow:FLOW-021",
+            "kind": "flow",
+            "name": "Request a catalog item picture",
+            "detail": "The image bytes are returned with a MIME type, or an error status is returned."
+          },
+          {
+            "id": "flow:FLOW-022",
+            "kind": "flow",
+            "name": "Handling an HTTP request",
+            "detail": "The request is answered by a static file, an MVC action, or the error page."
+          },
+          {
+            "id": "flow:FLOW-024",
+            "kind": "flow",
+            "name": "Show a page of the product catalog",
+            "detail": "The product list shows one page of catalog items with working Previous and Next links."
+          },
+          {
+            "id": "screen:SCRN-001",
+            "kind": "screen",
+            "name": "Catalog list",
+            "detail": "Lists catalog products one page at a time and gives access to create, view, edit and delete each product."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Create catalog item",
+            "detail": "Lets a user enter a new catalog product with its name, description, brand, type, price and stock levels and save it."
+          },
+          {
+            "id": "screen:SCRN-003",
+            "kind": "screen",
+            "name": "Edit catalog item",
+            "detail": "Lets a user change an existing catalog product, with its picture shown and its picture file name read-only."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Delete catalog item confirmation",
+            "detail": "Asks the user to confirm the deletion of a product after showing its details."
+          },
+          {
+            "id": "screen:SCRN-005",
+            "kind": "screen",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog product read-only with links to edit it or return to the list."
+          },
+          {
+            "id": "screen:SCRN-020",
+            "kind": "screen",
+            "name": "Error page",
+            "detail": "Tells the user that an error occurred while processing the request."
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "detail": "Project files: eShopLegacy.Utilities.csproj; languages: csharp, xml; 3 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopPorted",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopPorted",
+            "detail": "Project files: eShopPorted.csproj; languages: javascript, css, csharp; 104 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "detail": "Project files: eShopLegacyMVC.csproj, packages.config; languages: javascript, css, csharp; 115 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 20 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, packages.config; languages: csharp, xml; 39 files"
+          },
+          {
+            "id": "module:eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "kind": "module",
+            "name": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "detail": "Project files: eShopLegacyWebForms.csproj, packages.config; languages: javascript, css, csharp; 143 files"
+          },
+          {
+            "id": "module:eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "kind": "module",
+            "name": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "detail": "Project files: eShopModernizedMVC.csproj, packages.config; languages: javascript, css, csharp; 126 files"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-203736-plan-planner-coverage",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalog list and details",
+            "acceptanceCriteria": [
+              "Given no page values, when the list is opened, then the first 10 items by Id are shown with Previous hidden.",
+              "Given no id, when details is opened, then the response is 400."
+            ]
+          },
+          {
+            "title": "Catalog create, edit and delete with sign-in",
+            "acceptanceCriteria": [
+              "Given an anonymous visitor, when the create page is opened, then the visitor is sent to sign-in.",
+              "Given a price of 1000000.01, when an item is saved, then the item is refused."
+            ]
+          },
+          {
+            "title": "Id assignment with HiLo blocks",
+            "acceptanceCriteria": [
+              "Given a fresh sequence, when 11 items are created, then the ids are block values 1 to 10 and then the next block value."
+            ]
+          },
+          {
+            "title": "Seeding and pictures",
+            "acceptanceCriteria": [
+              "Given an empty database, when seeding runs, then 12 items, 5 brands and 4 types are created."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Browse the paginated catalog",
+            "detail": "Lists catalog items one page at a time, with page size and page index taken from the request and defaults of 10 and 0."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "View catalog item details",
+            "detail": "Shows one catalog item by id, returning 400 for a missing id and 404 for an unknown one."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Create, edit and delete catalog items",
+            "detail": "Signed-in users create, edit and delete catalog items through forms, with brand and type drop-downs."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Returns the picture of a catalog item with a MIME type chosen from its file extension."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Sign in and sign out with Azure Active Directory",
+            "detail": "Signs users in and out through OpenID Connect against Azure AD; anonymous visitors see a Sign in link."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Browse the catalog with brand and type filters",
+            "detail": "Lists catalog items filtered by brand and type, with today's discount applied to the shown price."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Check and record stock for an item on a date",
+            "detail": "Shows the stock recorded for an item on a date, and records a shipment that overwrites the quantity for that item and day."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Brands web API",
+            "detail": "Lists all catalog brands and returns one brand by id."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Seed the catalog database on creation",
+            "detail": "Creates the catalog database when it is absent and fills it with brands, types and items from CSV files or built-in data, depending on the customisation switch."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Switch between mobile and desktop view",
+            "detail": "Shows a link that returns the visitor to the same page in the alternate view."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Lookup table that lists the brands a catalog item can carry."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Lookup table that lists the product types a catalog item can have."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps one row per sellable catalog item with its name, price, picture file name, brand and type, and stock figures."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Keeps the available stock figure for one catalog item on one date."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Keeps one discount, its fraction size and its start and end dates."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Browser request to the default MVC route",
+            "detail": "The request is served as a static file, or dispatched to an MVC controller action, or to the error page on failure."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "Request a catalog item picture",
+            "detail": "The image bytes are returned with a MIME type, or a 400 or 404 response is returned."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Add a catalog item",
+            "detail": "The form is posted with the entered values; the handler that saves the item is outside this area."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Application start-up and container wiring",
+            "detail": "MVC, Web API, areas, filters, routes and bundles are registered, and the catalog database initializer is set when mock data is off."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Create a catalog item from the admin form",
+            "detail": "The new item is saved and the user is sent to the catalog list, or the form is shown again with the errors."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Open the home page product list",
+            "detail": "The product list and pager show one page of catalog items."
+          },
+          {
+            "id": "flow:FLOW-009",
+            "kind": "flow",
+            "name": "Create a catalog item",
+            "detail": "A new catalog item is created through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-010",
+            "kind": "flow",
+            "name": "Edit a catalog item",
+            "detail": "The catalog item is updated through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-011",
+            "kind": "flow",
+            "name": "View item details",
+            "detail": "The item is shown as read-only labels, with links to edit it or go back to the list."
+          },
+          {
+            "id": "flow:FLOW-012",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item is removed through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-015",
+            "kind": "flow",
+            "name": "Create a catalogue item with a picture",
+            "detail": "The item is saved and the user is returned to the catalogue list, or the form is shown again with its errors."
+          },
+          {
+            "id": "screen:SCRN-001",
+            "kind": "screen",
+            "name": "Catalog list",
+            "detail": "Lists catalog items one page at a time, with row actions and a way to add a new item."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Catalog table",
+            "detail": "Shows the catalog items as rows with a thumbnail, the item values and Edit, Details and Delete links."
+          },
+          {
+            "id": "screen:SCRN-003",
+            "kind": "screen",
+            "name": "Create catalog item",
+            "detail": "Collects the fields of a new catalog item and saves it, with Cancel back to the list."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Edit catalog item",
+            "detail": "Shows a catalog item's fields for change, with the picture file name read-only, and saves the changes."
+          },
+          {
+            "id": "screen:SCRN-005",
+            "kind": "screen",
+            "name": "Delete catalog item",
+            "detail": "Asks the user to confirm and then deletes a catalog item, with Cancel back to the list."
+          },
+          {
+            "id": "screen:SCRN-006",
+            "kind": "screen",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog item read-only with links to edit it and back to the list."
+          },
+          {
+            "id": "screen:SCRN-007",
+            "kind": "screen",
+            "name": "Error",
+            "detail": "Tells the user that a request failed."
+          },
+          {
+            "id": "screen:SCRN-013",
+            "kind": "screen",
+            "name": "Catalog home",
+            "detail": "Lists the catalog products as the home page of the site, with row links and paging."
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "detail": "Project files: eShopLegacy.Utilities.csproj; languages: csharp, xml; 3 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopPorted",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopPorted",
+            "detail": "Project files: eShopPorted.csproj; languages: javascript, css, csharp; 104 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "detail": "Project files: eShopLegacyMVC.csproj, packages.config; languages: javascript, css, csharp; 115 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 20 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, packages.config; languages: csharp, xml; 39 files"
+          },
+          {
+            "id": "module:eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "kind": "module",
+            "name": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "detail": "Project files: eShopLegacyWebForms.csproj, packages.config; languages: javascript, css, csharp; 143 files"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-030541-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalog list and detail pages",
+            "acceptanceCriteria": [
+              "Given 12 seeded items and page size 10, when the index is requested with pageIndex 0, then 10 items are shown with ids 1 to 10",
+              "Given page size 10 and pageIndex 1, when the index is requested, then items 11 and 12 are shown",
+              "Given an id of 0, when the details page is requested, then the response is bad request"
+            ]
+          },
+          {
+            "title": "Catalog item create, edit and delete",
+            "acceptanceCriteria": [
+              "Given a name of 50 characters and price 1000000.00, when created, then the item is saved",
+              "Given a price of 1000000.01, when created, then the form is shown again with an error",
+              "Given a stock value of 10000001, when saved, then the form is shown again with an error"
+            ]
+          },
+          {
+            "title": "Brand and type lists and item rules",
+            "acceptanceCriteria": [
+              "Given an item with brand id 99 that does not exist, when saved, then the save is refused",
+              "Given the edit page for item 1, when opened, then its brand and type are selected"
+            ]
+          },
+          {
+            "title": "Picture serving and upload checks",
+            "acceptanceCriteria": [
+              "Given a file named 1.png that is a valid PNG, when uploaded, then the response is accepted",
+              "Given a text file renamed to 1.png, when uploaded, then the response is bad request with 'image is not valid'",
+              "Given an item id of 0, when the picture is requested, then the response is bad request"
+            ]
+          },
+          {
+            "title": "Shipment and stock by date",
+            "acceptanceCriteria": [
+              "Given a shipment of 5 for item 1 on a date with stock 3, when added, then that day shows 8",
+              "Given no stock row for item 1 on a date, when queried, then the result is 0"
+            ]
+          },
+          {
+            "title": "Discount price and banner",
+            "acceptanceCriteria": [
+              "Given a 30% discount for the day and a price of 10.00, when shown, then the price is 7.00",
+              "Given no discount for the day, when shown, then the price is unchanged"
+            ]
+          },
+          {
+            "title": "Sign-in and session footer",
+            "acceptanceCriteria": [
+              "Given an anonymous request to the create page, when opened, then the user is sent to sign-in",
+              "Given an anonymous request to the index page, when opened, then the page is shown"
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Browse the catalog page by page",
+            "detail": "Lists catalog items one page at a time, ordered by item id, with page size and page index from the request (defaults 10 and 0)."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "View catalog item details",
+            "detail": "Shows one catalog item by id; a missing id gives a bad request and an unknown id gives not found."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Create a catalog item",
+            "detail": "Staff open a create form, fill brand and type drop-downs and submit a new item; valid posts are saved and the user returns to the index."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Edit a catalog item",
+            "detail": "Staff change an existing catalog item through an edit form; valid posts update the item and return to the index."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Delete a catalog item",
+            "detail": "Staff confirm and remove a catalog item from a delete page, then return to the index."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Returns the picture file of a catalog item with a content type chosen from its file extension."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Sign in and sign out",
+            "detail": "When Azure Active Directory is enabled, visitors sign in with OpenID Connect and signed-in users sign out."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Shared site layout and error page",
+            "detail": "All catalog pages share one layout with a header, a footer showing machine name and session start time, and a generic error page."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Seed catalog data on first creation",
+            "detail": "When the catalog database is created, the sequences and sample types, brands and items are loaded."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Catalog brands list API",
+            "detail": "Returns all catalog brands as JSON and one brand by id, or not found when it is missing."
+          },
+          {
+            "id": "feature:F-011",
+            "kind": "feature",
+            "name": "Upload a temporary catalog image",
+            "detail": "Checks an uploaded picture as a JPEG, PNG or GIF and stores it as a temporary file, returning its name and URL."
+          },
+          {
+            "id": "feature:F-012",
+            "kind": "feature",
+            "name": "Record a stock shipment for an item",
+            "detail": "A user picks a product, enters a quantity and an arrival date; the entry adds to the stock already recorded for that day."
+          },
+          {
+            "id": "feature:F-013",
+            "kind": "feature",
+            "name": "Check available stock for an item on a date",
+            "detail": "A user selects an item and a date and sees the stock available for that day, or 0 when no row exists."
+          },
+          {
+            "id": "feature:F-014",
+            "kind": "feature",
+            "name": "Browse catalog items by brand and type",
+            "detail": "A user picks a brand or a type and sees only matching items; 0 means All."
+          },
+          {
+            "id": "feature:F-015",
+            "kind": "feature",
+            "name": "Show the discount banner and discounted prices",
+            "detail": "Shows the discount valid today as a banner with its percentage and end date, and reduces each shown price by the discount size."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Keeps the product brands that catalog items can be assigned to."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Keeps the product types that catalog items can be assigned to."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps one product the shop sells, with its name, price, picture file, brand, type and stock figures."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Keeps the available stock count of one catalog item on one date."
+          },
+          {
+            "id": "table:catalog_item",
+            "kind": "table",
+            "name": "catalog_item",
+            "detail": "Keeps the catalog items with their price, identified by an integer key."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Keeps discounts with their start and end dates and size."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item is removed through the catalog service and the user is redirected to the catalog index."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Save a new catalog item",
+            "detail": "The item is created and the user is redirected to the catalog list, or the form is shown again with its validation errors."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Edit a catalog item",
+            "detail": "The item is updated through the catalog service and the browser is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-007",
+            "kind": "flow",
+            "name": "Create a catalog item with an uploaded image",
+            "detail": "The new catalog item is saved with its picture file name and the user is redirected to the catalog list."
+          },
+          {
+            "id": "flow:FLOW-009",
+            "kind": "flow",
+            "name": "Show the product catalog page",
+            "detail": "The product list shows one page of catalog items with working pager links."
+          },
+          {
+            "id": "screen:SCRN-001",
+            "kind": "screen",
+            "name": "Catalog list",
+            "detail": "Lists the catalog items in pages, with links to create, view, edit and delete each item."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Create catalog item",
+            "detail": "Collects the details of a new catalog item and saves it."
+          },
+          {
+            "id": "screen:SCRN-003",
+            "kind": "screen",
+            "name": "Edit catalog item",
+            "detail": "Shows an existing catalog item in a form, lets the user change it and saves the change."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog item read-only, with links to edit it or return to the list."
+          },
+          {
+            "id": "screen:SCRN-005",
+            "kind": "screen",
+            "name": "Delete catalog item confirmation",
+            "detail": "Asks the user to confirm the deletion of one catalog item and deletes it on confirmation."
+          },
+          {
+            "id": "screen:SCRN-011",
+            "kind": "screen",
+            "name": "Error page",
+            "detail": "Tells the user that a request failed."
+          },
+          {
+            "id": "screen:SCRN-013",
+            "kind": "screen",
+            "name": "Contact",
+            "detail": "Shows the company address, phone number and support and marketing e-mail links."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152045-plan-planner-coverage",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalogue schema and seed data",
+            "acceptanceCriteria": [
+              "Given an empty database, when the migration runs, then the brand, type and item tables contain 5, 4 and 12 rows.",
+              "Given a populated database, when the seed runs again, then no row is duplicated and the existing 12 items remain."
+            ]
+          },
+          {
+            "title": "Validate catalogue item create and edit",
+            "acceptanceCriteria": [
+              "Given a price of 1000000, when an item is created, then it is accepted.",
+              "Given a price of 1000000.01, when an item is created, then it is refused with a price error.",
+              "Given AvailableStock of 10000001, when an item is edited, then it is refused with a stock error."
+            ]
+          },
+          {
+            "title": "Guard catalogue item delete",
+            "acceptanceCriteria": [
+              "Given an item id 999 that does not exist, when delete is confirmed, then the request returns not found and no row is removed.",
+              "Given a brand with two items, when the brand is deleted, then the two items remain in the catalogue."
+            ]
+          },
+          {
+            "title": "Validate paging values",
+            "acceptanceCriteria": [
+              "Given pageIndex -1, when the list is requested, then the request is refused with a paging error.",
+              "Given pageIndex 0 and pageSize 10, when the list is requested, then the first 10 items are returned."
+            ]
+          },
+          {
+            "title": "Serve pictures from a fixed folder",
+            "acceptanceCriteria": [
+              "Given item 1 with PictureFileName 1.png, when its picture is requested, then the response is image/png.",
+              "Given an item whose PictureFileName is ../appsettings.json, when its picture is requested, then the request is refused and no file outside the picture folder is read.",
+              "Given item id 0, when its picture is requested, then the response is 400."
+            ]
+          },
+          {
+            "title": "Brands API list and no-op delete",
+            "acceptanceCriteria": [
+              "Given the seed data, when the brands list is requested, then five brands return with HTTP 200.",
+              "Given brand id 1, when DELETE is requested, then the response is OK and the brand is still listed.",
+              "Given brand id 999, when DELETE is requested, then the response is not found."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Browse the catalog list and item details",
+            "detail": "Show a paginated list of catalog items and a details page for one item, with its picture."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Create, edit and delete catalog items",
+            "detail": "Maintain catalog items through create, edit and delete pages with brand and type drop-down lists."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Return the picture file stored for a catalog item with a MIME type taken from its extension."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Brands API: list and delete",
+            "detail": "List catalog brands over an API; the delete endpoint is a demo stub that finds the brand and returns success without removing it."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Browse the catalog by default route",
+            "detail": "Open the site on the catalog list when no route is given."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Lookup table of product brands that catalog items refer to."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Lookup table of product types, such as Mug, T-Shirt, Sheet and USB Memory Stick."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps one product in the catalog, with its name, price, type, brand and stock figures."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item has been passed to the service for removal and the user is redirected to the catalog list."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261023-152751-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalog item rules and validation",
+            "acceptanceCriteria": [
+              "Given a price of 1000000.01, when the item is validated, then it is rejected.",
+              "Given a price of 1000000 with two decimals, when the item is validated, then it is accepted.",
+              "Given AvailableStock of 10000001, when the item is validated, then it is rejected.",
+              "Given a name of 51 characters, when the item is validated, then it is rejected."
+            ]
+          },
+          {
+            "title": "Catalog data access and seed",
+            "acceptanceCriteria": [
+              "Given an empty catalog database, when the seed runs, then four types, five brands and twelve items with AvailableStock 100 exist.",
+              "Given a brand with catalog items, when the brand is deleted, then its catalog items are deleted too."
+            ]
+          },
+          {
+            "title": "Catalog pages with anti-forgery create, edit and delete",
+            "acceptanceCriteria": [
+              "Given a create form submitted without an anti-forgery token, when it is posted, then it is rejected and nothing is saved.",
+              "Given an edit request with no id, when it is sent, then the response is bad request.",
+              "Given a delete confirmation for an unknown id, when it is opened, then the response is not found."
+            ]
+          },
+          {
+            "title": "Picture route with extension-based MIME type",
+            "acceptanceCriteria": [
+              "Given an item id of 0, when the picture is requested, then the response is bad request.",
+              "Given a picture file named logo.svg, when it is served, then its MIME type is image/svg+xml.",
+              "Given a picture file named file.exe, when it is served, then its MIME type is application/octet-stream."
+            ]
+          },
+          {
+            "title": "Data source switch by configuration",
+            "acceptanceCriteria": [
+              "Given the mock flag set to true, when the catalog is started, then the catalog uses the shared mock service.",
+              "Given the mock flag set to false, when the catalog is started, then the database context is registered."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Catalog index with paging",
+            "detail": "Lists catalog items page by page, with page size and page index taken from the query string."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog item with its picture and all its fields, by id."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Create catalog item",
+            "detail": "A form to create a catalog item with brand and type dropdowns, saved after validation."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Edit catalog item",
+            "detail": "A form to change an existing catalog item, showing its picture and preselected brand and type."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Delete catalog item",
+            "detail": "A confirmation page, then removal of the catalog item."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Catalog item picture",
+            "detail": "Returns the picture file for a catalog item, with a MIME type chosen from its extension."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Switch between mock data and the real database",
+            "detail": "The apps can run on in-memory mock data or on the SQL Server database, chosen by configuration."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Brands Web API",
+            "detail": "Lists catalog brands as JSON and returns one brand by id."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Brand list as binary download",
+            "detail": "Returns the catalog brand list as a serialized binary response."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Keeps the brands that catalog items belong to."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Keeps the product types (for example Mug or T-Shirt) that catalog items belong to."
+          },
+          {
+            "id": "table:catalog_item",
+            "kind": "table",
+            "name": "catalog_item",
+            "detail": "Keeps one catalog product with its name, price, picture, type, brand and stock levels."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Handling an incoming web request",
+            "detail": "The request is served by a static file or routed to an MVC controller action, and unhandled errors go to the error page in non-development environments."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Create a catalog item",
+            "detail": "The new item is saved and the user is redirected to the catalog index, or the form is shown again with errors."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "Show a catalog picture",
+            "detail": "The image bytes are returned with the matching MIME type, or the request ends with a 400 or 404 response."
+          }
+        ]
+      }
+    }
+  ]
+}

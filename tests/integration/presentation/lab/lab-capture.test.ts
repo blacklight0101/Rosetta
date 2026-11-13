@@ -84,14 +84,23 @@ describe('the capture command refuses', () => {
     const lines: string[] = [];
 
     const code = await runLabCapture(
-      ['--prompt', 'planner/prd', '--name', 'prd-test', '--sources', file, '--run', `shop=${run}`],
+      [
+        '--prompt',
+        'planner/options',
+        '--name',
+        'options-test',
+        '--sources',
+        file,
+        '--run',
+        `shop=${run}`,
+      ],
       lab,
       (line) => lines.push(line),
     );
 
     expect(code).toBe(1);
     expect(lines.join('\n')).toContain('planner/gap');
-    await expect(readFile(join(lab, 'cases', 'prd-test.json'), 'utf8')).rejects.toThrow();
+    await expect(readFile(join(lab, 'cases', 'options-test.json'), 'utf8')).rejects.toThrow();
   });
 
   it('RF-1404 stops on a source the sources file does not list, and on a missing option', async () => {

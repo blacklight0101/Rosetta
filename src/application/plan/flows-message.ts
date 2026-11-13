@@ -16,8 +16,8 @@ export interface FlowsMessageInput {
   /** The verified `FLOW` cards. */
   readonly flowCards: readonly SourceCard[];
   /** All the supported cards, so a step can name the card it touches. */
-  readonly cards: readonly SourceCard[];
-  readonly components: readonly DraftComponent[];
+  readonly cards: readonly Pick<SourceCard, 'id'>[];
+  readonly components: readonly Pick<DraftComponent, 'name' | 'responsibility'>[];
 }
 
 function flowsText(input: FlowsMessageInput): string {
@@ -35,7 +35,7 @@ function flowsText(input: FlowsMessageInput): string {
   return JSON.stringify({ flowCards: flows }, null, 2);
 }
 
-function architectureText(components: readonly DraftComponent[]): string {
+function architectureText(components: FlowsMessageInput['components']): string {
   return JSON.stringify(
     {
       components: components.map(({ name, responsibility }) => ({

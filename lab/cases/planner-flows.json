@@ -1,0 +1,828 @@
+{
+  "schemaVersion": 1,
+  "version": "planner-flows-1",
+  "prompt": "planner/flows",
+  "description": "Inputs of planner/flows captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-071300-plan",
+        "20261102-203736-plan",
+        "20261102-030541-plan",
+        "20261029-152045-plan",
+        "20261023-152751-plan"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-071300-plan-planner-flows",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "flowCards": [
+          {
+            "id": "FLOW-001",
+            "title": "Open the catalog screen",
+            "summary": "The catalog form loads the discount, items, filters and shipment list when it opens.",
+            "trigger": "The application starts and the program's Main creates the view and controller and calls LoadView.",
+            "outcome": "The grid, brand and type filters, discount banner and shipment list are filled.",
+            "steps": [
+              {
+                "claimId": "FLOW-001.c1",
+                "text": "Main creates the catalog view and a service client, wires them into the controller, and calls LoadView before showing the dialog.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Program.cs:17-27"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "The controller clears the grid, loads all items with the discount, and fills the grid with discounted prices.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:75-85",
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:48-63"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "title": "Record a stock shipment",
+            "summary": "A user adds stock for an item on a date and the stock record is saved.",
+            "trigger": "The user presses the Add Shipment button with an item, quantity and date filled in.",
+            "outcome": "The stock record is saved or updated and the form is cleared.",
+            "steps": [
+              {
+                "claimId": "FLOW-002.c1",
+                "text": "The view checks that the item, quantity and date are present, and returns without action otherwise.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:157-161"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c2",
+                "text": "The view parses the values and raises the availability event for the controller.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:162-167"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c3",
+                "text": "The controller passes the shipment to the service, which overwrites or inserts the stock record.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:35-43",
+                  "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:99-117"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c4",
+                "text": "The view shows the confirmation message and clears the inputs.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:189-196"],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "title": "Start the WinForms catalog application",
+            "summary": "The WinForms program creates the catalog view, a WCF client and the controller, then loads the screen.",
+            "trigger": "The WinForms executable starts.",
+            "outcome": "The catalog form is shown with its data loaded from the catalog service.",
+            "steps": [
+              {
+                "claimId": "FLOW-003.c1",
+                "text": "Main creates the CatalogView, a CatalogServiceClient as the ICatalogService, and the CatalogController that joins them.",
+                "citations": ["eShopModernizedNTier/src/eShopWinForms/Program.cs:22-24"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c2",
+                "text": "Main calls LoadView on the controller and then shows the form as a dialog.",
+                "citations": ["eShopModernizedNTier/src/eShopWinForms/Program.cs:26-27"],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-004",
+            "title": "Open the catalog screen",
+            "summary": "The controller loads the discount banner, the catalog grid, the filters and the shipment list from the catalog service.",
+            "trigger": "The controller's LoadView is called at start-up.",
+            "outcome": "The form shows the discount banner, the catalog items with discounted prices, the brand and type filters and the shipment entry list.",
+            "steps": [
+              {
+                "claimId": "FLOW-004.c1",
+                "text": "LoadView sets the controller on the view, then runs the discount check, the catalog load, the brand filter load, the type filter load and the shipment view load.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:150-158"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c2",
+                "text": "CheckForDiscounts asks the service for the discount valid today and, if one exists, sets the banner to a text giving the percentage and the end date.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:60-69"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c3",
+                "text": "LoadCatalogItems clears the grid, fetches the items for the brand and type filter, takes today's discount size and passes both to the view.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:75-85"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c4",
+                "text": "The view adds one grid row per item with its thumbnail, id, name, description and discounted price.",
+                "citations": ["eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs:48-62"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c5",
+                "text": "LoadBrandFilters and LoadTypeFilters fetch all brands and types and bind them to the combo boxes, each with an All entry of key 0.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:98-144",
+                  "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs:85-100"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c6",
+                "text": "SetShipmentView loads all items and fills the shipment list and the product id input.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:88-92",
+                  "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs:65-72"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-005",
+            "title": "Add stock received for an item",
+            "summary": "A user records a quantity for an item on a date; the service overwrites an existing stock row for that item and date or inserts a new one.",
+            "trigger": "The user presses the add availability button on the catalog form.",
+            "outcome": "A stock row for the item and date holds the entered quantity, and the form shows a confirmation and clears its inputs.",
+            "steps": [
+              {
+                "claimId": "FLOW-005.c1",
+                "text": "The button handler reads the selected item id, the quantity and the arrival date.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs:157-168"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c2",
+                "text": "The controller builds a CatalogItemsStock and calls CreateAvailableStock on the service.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Controllers/CatalogController.cs:35-43"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c3",
+                "text": "The service looks for an existing stock row with the same item and date; if one exists it sets its quantity and saves, otherwise it assigns the next StockId and inserts a new row.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:99-118"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c4",
+                "text": "The view then shows the message that the shipment was added and clears the product, quantity and date inputs.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWinForms/Views/CatalogView.cs:189-196"
+                ],
+                "touches": null
+              }
+            ]
+          }
+        ],
+        "components": [
+          {
+            "name": "Catalog web UI",
+            "responsibility": "Razor Pages screens for browsing, creating, editing, viewing and deleting catalog items, and for the picture upload."
+          },
+          {
+            "name": "Catalog service",
+            "responsibility": "Business rules for catalog items: paging, validation, id generation, stock updates and discount lookup."
+          },
+          {
+            "name": "Image service",
+            "responsibility": "Stores temporary and final catalog pictures and builds picture URLs."
+          },
+          {
+            "name": "Catalog data access",
+            "responsibility": "Entity Framework Core context for catalog items, brands, types, stock and discounts, with the hi-lo id generator."
+          },
+          {
+            "name": "Catalog seeder",
+            "responsibility": "Creates the database on first run and seeds built-in or CSV catalog data."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-203736-plan-planner-flows",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "flowCards": [
+          {
+            "id": "FLOW-001",
+            "title": "Browser request to the default MVC route",
+            "summary": "A browser request is handled by the web host, static files or MVC, and the default route.",
+            "trigger": "A browser sends an HTTP request to the site.",
+            "outcome": "The request is served as a static file, or dispatched to an MVC controller action, or to the error page on failure.",
+            "steps": [
+              {
+                "claimId": "FLOW-001.c1",
+                "text": "The web host created in Program runs the Startup pipeline.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Program.cs:10-15"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "Static file requests are answered first by the static files middleware.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:60-60"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "Other requests are matched by the default route and sent to a controller action, Catalog Index when no route values are given.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:62-65"],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "title": "Create a catalog item",
+            "summary": "A user submits the create form and the item is saved or the form is shown again with errors.",
+            "trigger": "The user submits the Create catalog item form (POST Catalog/Create).",
+            "outcome": "The item is created and the user sees the catalog index, or the form is shown again with its drop-downs filled.",
+            "steps": [
+              {
+                "claimId": "FLOW-002.c1",
+                "text": "The POST checks the anti-forgery token and binds the submitted fields to a CatalogItem.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:61-63"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c2",
+                "text": "The controller checks the model state and, when valid, passes the item to the catalog service to create it.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:66-68"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c3",
+                "text": "After a successful create the user is redirected to the catalog index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:69-69"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "title": "Request a catalog item picture",
+            "summary": "A browser asks for the picture of a catalog item and receives the image bytes or an error status.",
+            "trigger": "An HTTP GET for items/{catalogItemId}/pic arrives.",
+            "outcome": "The image bytes are returned with a MIME type, or a 400 or 404 response is returned.",
+            "steps": [
+              {
+                "claimId": "FLOW-003.c1",
+                "text": "The action rejects an id of zero or less with a 400 status.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:29-32"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c2",
+                "text": "The action loads the catalog item and builds the file path from an empty web root and the item's stored picture file name.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:34-40"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c3",
+                "text": "The MIME type is chosen from the file extension and the file bytes are read from disk and returned.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:42-47"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-004",
+            "title": "Add a catalog item",
+            "summary": "A user opens the catalog list, goes to the create form, fills it in and submits it.",
+            "trigger": "The user presses Create New on the catalog index page.",
+            "outcome": "The form is posted with the entered values; the handler that saves the item is outside this area.",
+            "steps": [
+              {
+                "claimId": "FLOW-004.c1",
+                "text": "The catalog index page shows the Create New link that goes to the Create action.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:9-9"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c2",
+                "text": "The create page shows the form with the brand and type drop-downs and the stock and price inputs.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:10-87"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c3",
+                "text": "The user presses Create to post the form, or Cancel to return to the Index action without posting.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:89-94"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-005",
+            "title": "Application start-up and container wiring",
+            "summary": "When the web application starts, it builds the dependency container, registers the MVC and Web API configuration and sets up the database initializer unless mock data is used.",
+            "trigger": "The ASP.NET application starts (Application_Start in Global.asax.cs).",
+            "outcome": "MVC, Web API, areas, filters, routes and bundles are registered, and the catalog database initializer is set when mock data is off.",
+            "steps": [
+              {
+                "claimId": "FLOW-005.c1",
+                "text": "Application_Start builds the Autofac container through RegisterContainer.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:27-29"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c2",
+                "text": "RegisterContainer registers the MVC and Web API controllers from this assembly and reads the UseMockData app setting to register ApplicationModule.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:60-69"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c3",
+                "text": "The container is set as the resolver for both MVC and Web API.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:74-78"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c4",
+                "text": "Application_Start then registers the Web API config, all areas, the global filters, the routes and the bundles.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:30-34"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c5",
+                "text": "ConfigDataBase sets the CatalogDBContext initializer to CatalogDBInitializer only when UseMockData is false.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:83-90"],
+                "touches": null
+              }
+            ]
+          }
+        ],
+        "components": [
+          {
+            "name": "Catalog web pages",
+            "responsibility": "Razor Pages and MVC views for browsing, creating, editing, deleting and viewing catalog items and pictures."
+          },
+          {
+            "name": "Catalog service",
+            "responsibility": "Applies catalog rules: paging, item lookup, create, update and delete, price and stock limits, and id assignment."
+          },
+          {
+            "name": "Catalog data access",
+            "responsibility": "Reads and writes brands, types, items and stock in SQL Server through Entity Framework Core and the HiLo sequences."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-030541-plan-planner-flows",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "flowCards": [
+          {
+            "id": "FLOW-001",
+            "title": "Delete a catalog item",
+            "summary": "A user confirms the removal of a catalog item from a delete page; the item is removed and the user returns to the index.",
+            "trigger": "The user opens the delete page for a catalog item and submits the confirmation form.",
+            "outcome": "The item is removed through the catalog service and the user is redirected to the catalog index.",
+            "steps": [
+              {
+                "claimId": "FLOW-001.c1",
+                "text": "The delete page (GET) returns BadRequest without an id, loads the item by id and returns NotFound when none exists, then shows the item.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-129"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "The confirmed POST (action name Delete) requires an anti-forgery token, loads the item by id and passes it to RemoveCatalogItem, then redirects to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:133-140"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "title": "Save a new catalog item",
+            "summary": "A posted new item is saved and the user returns to the catalog list, or the form is shown again with errors.",
+            "trigger": "The user submits the Create catalog item form (POST Catalog/Create).",
+            "outcome": "The item is created and the user is redirected to the catalog list, or the form is shown again with its validation errors.",
+            "steps": [
+              {
+                "claimId": "FLOW-002.c1",
+                "text": "The POST action checks the anti-forgery token and binds only the listed catalog item fields.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:60-62"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c2",
+                "text": "The action passes the item to the catalog service to create it and redirects to the Index action.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:64-68"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "title": "Show a page of the product catalogue",
+            "summary": "A visitor opens the home page and sees one page of products with pager links.",
+            "trigger": "The visitor requests Default.aspx, optionally with size and index route values.",
+            "outcome": "The product list shows one page of catalogue items and the pager links point to the previous and next pages.",
+            "steps": [
+              {
+                "claimId": "FLOW-003.c1",
+                "text": "The page checks whether the route carries both size and index values.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:24-24",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:43-46"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c2",
+                "text": "The page asks the catalogue service for one page of items and logs the request.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:26-29"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c3",
+                "text": "The page binds the returned items to the product list and the list renders them.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:37-38"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c4",
+                "text": "The page sets the Previous and Next links to the ProductsByPageRoute with the neighbouring index, and hides Previous on the first page and Next on the last page.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:48-57"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-004",
+            "title": "Create a catalog item",
+            "summary": "A user fills in the create form and submits it; a valid item is saved and the user is sent to the home page.",
+            "trigger": "The user presses the Create button on the Create catalog item page.",
+            "outcome": "A new catalog item is created through the catalog service and the browser is redirected to the home page.",
+            "steps": [
+              {
+                "claimId": "FLOW-004.c1",
+                "text": "The page load writes a log entry and the page does nothing else on load.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:15-18"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c2",
+                "text": "Create_Click runs only when the page model state is valid; it builds a CatalogItem from the form fields, parsing Brand and Type ids as integers, Price as a decimal and the stock values as integers.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:30-44"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c3",
+                "text": "The item is passed to CatalogService.CreateCatalogItem.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:46-46"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-004.c4",
+                "text": "The browser is redirected to the root URL (~).",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:48-48"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-005",
+            "title": "Edit a catalog item",
+            "summary": "The edit form is pre-filled on first load; a valid save updates the item and returns to the home page.",
+            "trigger": "The user opens the edit page for an item, then presses Save.",
+            "outcome": "The item is updated through the catalog service and the browser is redirected to the home page.",
+            "steps": [
+              {
+                "claimId": "FLOW-005.c1",
+                "text": "On the first load, not on a postback, the page reads the item id from the route, loads the item and fills the Brand and Type dropdowns.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs:18-33"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-005.c3",
+                "text": "The item is passed to CatalogService.UpdateCatalogItem and the browser is redirected to the root URL (~).",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs:64-66"
+                ],
+                "touches": null
+              }
+            ]
+          }
+        ],
+        "components": [
+          {
+            "name": "Catalog web layer",
+            "responsibility": "Serves the catalog pages and forms and handles the anti-forgery and sign-in checks on writes."
+          },
+          {
+            "name": "Catalog business service",
+            "responsibility": "Lists, finds, creates, updates and deletes catalog items, checks item rules and pages results."
+          },
+          {
+            "name": "Catalog data access",
+            "responsibility": "Reads and writes brands, types, items and stock in SQL Server through Entity Framework Core and issues hi-lo ids."
+          },
+          {
+            "name": "Picture service",
+            "responsibility": "Serves and stores catalog item pictures and validates uploaded images."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152045-plan-planner-flows",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "flowCards": [
+          {
+            "id": "FLOW-001",
+            "title": "Host start-up and request pipeline",
+            "summary": "The web host builds the service container, then routes each HTTP request to a controller action by the default MVC route.",
+            "trigger": "The application starts, and afterwards each HTTP request reaches the host.",
+            "outcome": "The request is served by an MVC controller action, or by the error page in a non-development environment.",
+            "steps": [
+              {
+                "claimId": "FLOW-001.c1",
+                "text": "Main builds the default web host with Startup as its startup class and runs it.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Program.cs:8-15"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "ConfigureServices registers MVC, reads the UseMockData setting, and when it is false registers the CatalogDBContext against the DefaultConnection string on SQL Server.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:25-36"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "ConfigureServices builds an Autofac container, populates it from the service collection, registers ApplicationModule with the UseMockData flag, and returns it as the service provider.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:38-45"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c4",
+                "text": "Configure shows the developer exception page in development, otherwise it routes errors to /Home/Error, and it enables static files.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:49-60"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c5",
+                "text": "The MVC default route maps a URL of the form controller/action/id to the Catalog controller and Index action when no controller or action is given.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:62-65"],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "title": "Delete a catalog item",
+            "summary": "An editor confirms the deletion of a catalog item and the list is shown again.",
+            "trigger": "A POST to Catalog/Delete with an item id, sent from the delete confirmation page.",
+            "outcome": "The item has been passed to the service for removal and the user is redirected to the catalog list.",
+            "steps": [
+              {
+                "claimId": "FLOW-002.c1",
+                "text": "The Delete GET action first checks the id and loads the item, showing it for confirmation.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-129"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c2",
+                "text": "DeleteConfirmed loads the item by id through the service and passes it to RemoveCatalogItem without checking for null.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:135-139"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c3",
+                "text": "The action redirects to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:140-140"
+                ],
+                "touches": null
+              }
+            ]
+          }
+        ],
+        "components": [
+          {
+            "name": "Catalogue web layer",
+            "responsibility": "Razor Pages and minimal API endpoints for the catalogue list, details, create, edit, delete, brands and pictures."
+          },
+          {
+            "name": "Catalogue business layer",
+            "responsibility": "Catalogue rules: paging, item validation, picture URI, brand delete no-op and the rule that deletes do not cascade."
+          },
+          {
+            "name": "Catalogue data layer",
+            "responsibility": "EF Core context and SQL Server 2022 catalogue tables with the seed data."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261023-152751-plan-planner-flows",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "flowCards": [
+          {
+            "id": "FLOW-001",
+            "title": "Handling an incoming web request",
+            "summary": "The web host starts the application with Startup, then each HTTP request goes through the static-file step and the MVC default route, which points at the Catalog controller.",
+            "trigger": "An HTTP request arrives at the web host started by Program.Main.",
+            "outcome": "The request is served by a static file or routed to an MVC controller action, and unhandled errors go to the error page in non-development environments.",
+            "steps": [
+              {
+                "claimId": "FLOW-001.c1",
+                "text": "Program.Main builds a default web host with Startup as its startup class and runs it.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Program.cs:8-15"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "The runtime calls ConfigureServices, which registers MVC and, when mock data is off, a CatalogDBContext on SQL Server, then builds an Autofac container with the ApplicationModule.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:25-45"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "The runtime calls Configure, which enables the developer exception page in development, or the /Home/Error exception handler otherwise.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:51-58"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c4",
+                "text": "Static files are served before MVC routing.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:60-60"],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-001.c5",
+                "text": "MVC maps the default route {controller=Catalog}/{action=Index}/{id?}, so a request with no path reaches the Catalog controller's Index action.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:62-65"],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "title": "Create a catalog item",
+            "summary": "An administrator opens the create form, submits it, and the item is saved and the index is shown.",
+            "trigger": "The user opens Catalog/Create and then submits the form.",
+            "outcome": "The new item is saved and the user is redirected to the catalog index, or the form is shown again with errors.",
+            "steps": [
+              {
+                "claimId": "FLOW-002.c1",
+                "text": "The GET action loads brand and type drop-down lists from the catalog service and shows an empty form.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:50-56"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c2",
+                "text": "The POST action checks the anti-forgery token and binds the form fields to a CatalogItem.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:61-63"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-002.c3",
+                "text": "A valid item is passed to the catalog service's CreateCatalogItem, then the user is redirected to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:66-69"
+                ],
+                "touches": null
+              }
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "title": "Show a catalog picture",
+            "summary": "A browser requests a picture for a catalog item and gets the image file or an error.",
+            "trigger": "A request arrives at items/{catalogItemId}/pic.",
+            "outcome": "The image bytes are returned with the matching MIME type, or the request ends with a 400 or 404 response.",
+            "steps": [
+              {
+                "claimId": "FLOW-003.c1",
+                "text": "The action rejects ids of zero or less with a 400 Bad Request.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:29-31"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c2",
+                "text": "The catalog service looks up the item by id.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:34-34"
+                ],
+                "touches": null
+              },
+              {
+                "claimId": "FLOW-003.c3",
+                "text": "The file path is built from an empty web root and the item's PictureFileName, the MIME type is picked from the extension, and the file bytes are returned.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:38-47"
+                ],
+                "touches": null
+              }
+            ]
+          }
+        ],
+        "components": [
+          {
+            "name": "Catalog web front end",
+            "responsibility": "Serves the catalog list, details, create, edit, delete confirmation and picture pages to back-office users."
+          },
+          {
+            "name": "Catalog business service",
+            "responsibility": "Applies catalog item rules such as paging, lookups, validation ranges and create, update and delete."
+          },
+          {
+            "name": "Catalog data access",
+            "responsibility": "Reads and writes catalog items, brands and types in the SQL Server catalog database through Entity Framework Core."
+          }
+        ]
+      }
+    }
+  ]
+}
