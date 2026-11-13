@@ -76,7 +76,7 @@ describe('RF-432 a run that reaches its approved amount', () => {
     });
   });
 
-  it('RF-432 Stop here ends it CapReached with the same end as a cap', async () => {
+  it('RF-432 Stop here ends it CapReached for its own reason, with no cap code', async () => {
     const h = createRunHarness();
     const run = await pausedRun(h);
 
@@ -84,12 +84,18 @@ describe('RF-432 a run that reaches its approved amount', () => {
 
     expect(stopped).toMatchObject({ ok: true });
     const ended = await h.runs.find(userAmy.userId, run.id);
-    expect(ended).toMatchObject({ queueState: 'Ended', endState: 'CapReached', unreadAreas: 1 });
+    expect(ended).toMatchObject({
+      queueState: 'Ended',
+      endState: 'CapReached',
+      endReason: 'StoppedAtApproval',
+      unreadAreas: 1,
+    });
     const events = await h.events.read(h.scopeOf(run), 0);
     expect(events.at(-1)).toMatchObject({
       type: 'run.ended',
-      data: { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached, unreadAreas: 1 },
+      data: { endState: 'CapReached', endReason: 'StoppedAtApproval', unreadAreas: 1 },
     });
+    expect(events.at(-1)?.data).not.toHaveProperty('errorCode');
     expect((await h.manifests.read(h.scopeOf(run)))?.endState).toBe('CapReached');
   });
 });

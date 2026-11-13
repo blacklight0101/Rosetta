@@ -94,6 +94,11 @@ const positions = [
     'Understand stopped at its cap',
   ],
   [
+    'a scan its owner stopped at the approved amount',
+    [ended('scan', { endState: 'CapReached', endReason: 'StoppedAtApproval' }), null],
+    'Scan stopped at the approved amount',
+  ],
+  [
     'an understand run stopped by the user',
     journeyRow(
       'stoppedByYou',
