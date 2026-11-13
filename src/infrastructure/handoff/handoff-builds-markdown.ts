@@ -20,6 +20,7 @@ const kindLabels: Readonly<Record<CoverageKind, string>> = {
   operation: 'Operation',
   flow: 'Flow',
   screen: 'Screen',
+  requirement: 'Requirement',
   module: 'Module',
   deployment: 'Deployment',
 };
@@ -31,6 +32,8 @@ function documentOf(item: CoverageItem): string {
     operation: handoffFiles.apiContract,
     flow: flowFile(item.id.slice('flow:'.length)),
     screen: handoffFiles.ux,
+    // P9-06: a requirement is listed by the card, never in `builds`.
+    requirement: handoffFiles.checks,
     // P8-06: checks.md lists the modules of the source and the deployment material.
     module: handoffFiles.checks,
     deployment: handoffFiles.checks,

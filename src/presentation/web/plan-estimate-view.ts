@@ -28,6 +28,17 @@ export function planEstimateView(estimate: PlanEstimate): Record<string, unknown
   return {
     ...{ priceTableVersion, currency, assumptions, withinCaps, keyAvailable },
     runLine: estimate.runLine,
+    ...(estimate.journey === undefined
+      ? {}
+      : {
+          journey: {
+            approved: {
+              tokens: estimate.journey.approved.tokens.toString(),
+              costMicros: estimate.journey.approved.costMicros.toString(),
+            },
+            usedUp: estimate.journey.usedUp,
+          },
+        }),
     planner: {
       ...{ role: planner.role, provider: planner.provider, kind: planner.kind },
       ...{ model: planner.model, keySource: planner.keySource, priced: planner.priced },

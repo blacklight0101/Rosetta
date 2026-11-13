@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import {
   capFigure,
+  journeyShortOf,
   capName,
   overCapText,
   overCaps,
@@ -19,6 +20,7 @@ import type { EstimateLoad } from './use-plan-estimate.js';
 // behind the figures are shown only when the estimate names them.
 
 export interface PlanEstimateCardProps {
+  readonly projectId: string;
   readonly load: EstimateLoad;
   readonly blockers: readonly Blocker[];
 }
@@ -35,9 +37,13 @@ function CapRow({ cap }: { readonly cap: PlanCap }): JSX.Element {
 
 /** RF-613, P8-01: a figure over a cap never reads as fitting; the likely one first, then the high. */
 function warningsOf(estimate: PlanEstimate): readonly string[] {
-  const likely = overCaps(estimate, 'likely');
+  // P9-02: the approved amount that is short has its own notice below the figures.
+  const short = journeyShortOf(estimate)?.cap.kind;
+  const likely = overCaps(estimate, 'likely').filter((cap) => cap.kind !== short);
   const names = new Set(likely.map(capName));
-  const high = overCaps(estimate, 'high').filter((cap) => !names.has(capName(cap)));
+  const high = overCaps(estimate, 'high').filter(
+    (cap) => !names.has(capName(cap)) && cap.kind !== short,
+  );
   return [
     ...likely.map((cap) => overCapText(estimate, 'likely', cap)),
     ...high.map((cap) => overCapText(estimate, 'high', cap)),
@@ -52,7 +58,11 @@ function windowWarning(estimate: PlanEstimate): string | undefined {
   return `The prompt of the planner call (${calls}) cannot fit the ${windowTokens.toLocaleString('en-US')}-token window of the planner model. Choose a model with a larger window, or set a larger context for it in the project settings.`;
 }
 
-function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element {
+function Figures(props: {
+  readonly estimate: PlanEstimate;
+  readonly projectId: string;
+}): JSX.Element {
+  const { estimate } = props;
   const calls = estimate.assumptions.calls;
   return (
     <>
@@ -77,12 +87,32 @@ function Figures({ estimate }: { readonly estimate: PlanEstimate }): JSX.Element
           {windowWarning(estimate)}
         </p>
       )}
+      <JourneyShortNotice estimate={estimate} projectId={props.projectId} />
       {warningsOf(estimate).map((text) => (
         <p key={text} class="rst-plan-warning">
           {text}
         </p>
       ))}
     </>
+  );
+}
+
+/** RF-435, P9-02: what is short of the approved amount and the one action that lets the plan start. */
+function JourneyShortNotice(props: {
+  readonly estimate: PlanEstimate;
+  readonly projectId: string;
+}): JSX.Element | null {
+  const short = journeyShortOf(props.estimate);
+  if (short === undefined) return null;
+  return (
+    <div class="rst-plan-warning" role="status" data-testid="plan-journey-short">
+      <p>{short.text}</p>
+      {short.usedUp ? (
+        <p>
+          <Link href={`/projects/${props.projectId}/start`}>Analyse again on the start page</Link>
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -105,7 +135,11 @@ function Blockers({ blockers }: { readonly blockers: readonly Blocker[] }): JSX.
 }
 
 // RF-613
-export function PlanEstimateCard({ load, blockers }: PlanEstimateCardProps): JSX.Element {
+export function PlanEstimateCard({
+  projectId,
+  load,
+  blockers,
+}: PlanEstimateCardProps): JSX.Element {
   return (
     <section
       class="rst-plan-card"
@@ -121,7 +155,7 @@ export function PlanEstimateCard({ load, blockers }: PlanEstimateCardProps): JSX
         <p class="rst-plan-note">The estimate appears once your answers are saved.</p>
       ) : null}
       {load.status === 'failed' ? <ErrorBanner error={load.error} /> : null}
-      {load.status === 'ready' ? <Figures estimate={load.estimate} /> : null}
+      {load.status === 'ready' ? <Figures estimate={load.estimate} projectId={projectId} /> : null}
       <Blockers blockers={blockers} />
     </section>
   );

@@ -43,7 +43,8 @@ function unbuiltRequirements(handoff: HandoffPackage): string {
 function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { items, uncovered } = coverageOf(coverageItems(handoff), handoff.content.tasks);
   const requirements = unbuiltRequirements(handoff);
-  const also = requirements === '' ? '' : `; ${requirements}`;
+  // P9-06: a requirement built by no card also ends the run RST-1806.
+  const also = requirements === '' ? '' : `; ${requirements}, so the run is not complete`;
   const head = [
     '## Plan coverage',
     '',

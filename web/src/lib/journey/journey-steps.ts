@@ -5,7 +5,7 @@ import type {
 } from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
 import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
-import { NO_COST, leftText, stepCostsOf } from './journey-costs.js';
+import { NO_COST, journeySpentOf, leftText, stepCostsOf } from './journey-costs.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
@@ -285,13 +285,12 @@ export function journeyOf(
       links: part.links ?? [],
     };
   });
-  const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
   return {
     projectId,
     steps,
     action: next.action,
     secondary: next.secondary,
-    totalCostMicros: spent,
+    totalCostMicros: journeySpentOf(facts),
     left: leftText(facts),
     approved: approvedViewOf(approvedLineOf(facts.budget), 'micros'),
     facts,
