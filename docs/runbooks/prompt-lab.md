@@ -80,22 +80,31 @@ the run sent, read back from the data blocks of the task's first user message: t
 assistant message. The planner and summariser inputs (cards, plan titles) were written by models earlier in the run; they
 are inputs here, not truth, and no `expected` is written. Add an `expected` by hand, from the code, only where a check
 needs one (DEC-57). A task whose input holds an e-mail address, a drive path, a home folder or a key-like string is left
-out and named in the output. `--max-per-run` cases are taken per run in the order of a hash of the task name, never by
+out and named in the output. Every text of a kept input is masked again by the run's secret masker, with the note of
+`prompts/shared/masked-value.v1.md`, so a secret shape learnt after the run was saved is masked in the case too. A task
+whose input equals an earlier case's input (the same area, files and reads from another run) is dropped and named. `--max-per-run` cases are taken per run in the order of a hash of the task name, never by
 content. Prompt ids it can capture: `planner/gap`, `summariser/merge`, `summariser/overview`, `reader/task`,
 `reader/area`, `reader/read-first`, `cards/card-format`, `cards/continue`, `cards/flows`, `cards/screens`.
 
 `lab/sources.json` names each source by key: name, address, the commit (or the SHA-256 of an uploaded archive) and the
 licence. The set copies the entry and the run ids into `sources`; each case says which source it is from (`from`).
 
-**Held-back part.** The capture marks the first `ceil(n / 3)` cases in the order of the SHA-256 of `<prompt id>:<case id>`
-as `held-back`. The rule reads no input, so the split exists before any version is tried; tuning never looks at those
-cases, and a version is kept only when it beats the current one on them (DEC-231). Do not move a case between splits:
-`tests/integration/lab/committed-case-sets.test.ts` recomputes the rule for every committed set.
+**Held-back part.** The side of a case is decided by its input: the distinct inputs of the set are ordered by the
+SHA-256 of their canonical JSON (keys sorted at every level, no case id, no prompt id) and the first `ceil(m / 3)` of
+the `m` distinct inputs are `held-back`. A set holds no input twice (the capture drops a twin before the split), and the
+sets of other prompts over the same inputs hold back the same inputs. A repair set built by hand on a captured set puts
+each case on the side of its base case. The rule reads no answer and no prompt version, so the split exists before any
+version is tried; tuning never looks at those cases, and a version is kept only when it beats the current one on them
+(DEC-231). Do not move a case between splits: `tests/integration/lab/committed-case-sets.test.ts` recomputes the rule for
+every committed set and refuses an input held twice or a text the run's masker would mask, and
+`tests/integration/lab/repair-case-sets.test.ts` checks the side of every repair case (ADR-029, amendment of the P10 lab
+fixes; the earlier rule ranked `<prompt id>:<case id>` and let twins and repairs cross the split).
 
 **The committed sets (2026-11-13).** Built from saved Haiku 5.5 evaluation runs of one published source,
 eShopModernizing (MIT, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d, `lab/sources.json`): 5 cases for `planner-gap`,
-10 for `summariser-merge`, 3 for `summariser-overview`, 10 for each of `reader-task`, `reader-area`,
-`reader-read-first` and `cards-card-format`; a third of each, rounded up, is held back by the fixed rule. Runs:
+10 for `summariser-merge`, 3 for `summariser-overview`, 8 for each of `reader-task`, `reader-area`,
+`reader-read-first` and `cards-card-format` (10 were captured; two repeated an earlier run's input and were dropped);
+a third of the distinct inputs of each, rounded up, is held back by the fixed rule. Runs:
 `p6/p7/p8/p8w3-haiku-eshop-{understand,plan}`, `p8w3-haiku-eshop-deepen` and `h-eshop2-plan`. Excerpts are at most two
 reads of forty lines per case. The sets are small samples to start tuning, not a benchmark.
 
@@ -106,28 +115,31 @@ not in the image); `npm run lab -- --capture --local --sources lab/local-sources
 `--cases <name>` finds a set in `lab/cases/` first and in `lab/local-cases/` otherwise. On the machine that has the runs,
 the sets `<prompt>-workbooks` (for example `planner-gap-workbooks`) are rebuilt with that command from the runs
 `p8w3-haiku-{am,inv}-{understand,deepen}`, `p8w3-haiku-am-plan`, `p6/p8-haiku-am-plan` and `p6/p7/p8-haiku-inv-plan`. A tuning
-card may use them for tuning on that machine; a result on them is not published with its inputs.
+card may use them for tuning on that machine; a result on them is not published with its inputs. The local sets
+captured before the P10 lab fixes still hold twins, a split by case id and texts the masker now masks: rebuild each one
+with the same capture command before it is used for P10-04 or a tuning card.
 
 **The plan documents (P10-08).** `planner/data-model`, `planner/prd`, `planner/api-contract`, `planner/ux`, `planner/flows`, `planner/coverage`, `planner/package` (the plan call itself), `planner/workbook` and `planner/adr-model` are wired with `--prompt planner/<stem>` over the saved `planner-<stem>` tasks of the plan runs (`planner-package` for both package and workbook). Committed sets `planner-<stem>` come from the eShopModernizing plan runs (`p8w3-haiku-eshop-plan`, `p8-haiku-eshop-plan`, `p7-haiku-eshop-plan`, `p6-haiku-eshop-plan`, `h-eshop2-plan`, an older run whose cards have no claim ids is not read); a case keeps at most 8 cards of 4 claims and the owner block as the run sent it. The local sets `planner-<stem>-workbooks` come from the Asset Manager and Invoice Generator plan runs with `--local`. `planner/workbook` has a local set only: the guidance is appended to the package prompt of a workbook plan, so its set is the package message of the workbook runs (capture it from those runs only) and the target sends the run's package prompt followed by the file under test. `planner/adr-model` has a target and a capture rule but no set yet, since no saved run holds its call. The lab replays the one call, not the domain checks, the repair or the continuation of the run.
 
 **The repairs (P10-07).** `planner/gap-repair`, `planner/plan-repair` and `cards/repair` are wired; the capture has no rule for them. A planner repair is the call it repairs sent again with the file under test and one line per problem after the data; it is logged under the same task, and the transcript of a task adds only the messages it does not hold yet, so the repair message is not saved, and its problem lines come from the refused answer, which no capture may read (DEC-57). The card repair follows an answer of the reader, which no case may hold. Their committed sets are therefore built by hand on the committed eShopModernizing sets of the call they repair: `planner-gap-repair` (5 cases) is each `planner-gap` input with problem lines in the run's own words (position, field, fixed reason), `planner-plan-repair` (4) each `planner-package` input with failing paths (list, position, field, and the reason of an item the check left out), and `cards-repair` (5) five `cards-card-format` inputs with an earlier answer written for the case from its reads, with a fault the card parser finds. A gap repair is sent under the run's gap prompt and a plan repair under the run's package prompt, which the lab does not vary; the answer is read like the gap (`Cards`, `NoCards`, `Unusable`) or the package (`Tasks`, `NoTasks`, `Unusable`). A card repair replays the reads, the earlier answer and the repair request the run builds from the problems the card parser finds in it, and is read like the card format; a draft without `{{problems}}` is `BadPrompt`. The lab makes the one repair call, not the second card repair, the workbook rule hints or the checks after a planner repair. The repair rate of a run is not a lab number: the lab measures how well a repair prompt fixes a fixed fault.
 
-**The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`). `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is fixed text (`{"cards": [{"type": "BR", "title": "`) and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. Committed sets `cards-continue`, `cards-flows` and `cards-screens` (10 cases each, 4 held back) come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. The tuning rounds wait for an API key.
+**The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`). `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is fixed text (`{"cards": [{"type": "BR", "title": "`) and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. Committed sets `cards-continue` (8 cases, 3 held back), `cards-flows` (9, 3) and `cards-screens` (8, 3), captured as 10 each before the twins were dropped, come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. The tuning rounds wait for an API key.
 
 **Agent-loop prompts (the reader).** The lab does not run a reader loop. A reader case measures one turn: the area's
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
 first turn of `reader/task` and `reader/area` is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; `reader/read-first` is
 the turn after a fixed premature answer and the refusal under test; `cards/card-format` is the answer after the replay
-(`Valid`, `Partial`, `Unusable`, `ReadsMore`). A first turn has no answer parser, so its "valid on the first try" only says
-the call was answered; read `detail`. The later turns of a loop are not measured (ADR-029).
+(`Valid`, `Partial`, `Unusable`, `ReadsMore`). A first turn has no answer parser of the run and may answer with tool
+calls, so its "valid on the first try" is not applicable: `null` in `results.json`, `n/a` in the summary (RF-1403);
+read `detail` and "not usable". The later turns of a loop are not measured (ADR-029).
 
-**The other reader prompts (P10-05).** `reader/answers`, `reader/reread` and `reader/parent-cards` are the parts a re-run or a Deepen task adds to the first user message; a case holds the text of the data block the run rendered (the owner's answers, the first four rejected claims, the first thirty parent cards) and only the part under test is added, so a result is the effect of that file alone; the kinds are those of a first turn. `reader/read-more` is the turn after the refusal of an answer given after reading little: the replay of the reads, a fixed answer, and the refusal built from the numbers and unread files the run wrote (`readMore`, `turns` is the turns left plus one); the kinds are those of a first turn, and `ReadsFiles` is what the prompt asks for. `reader/turns-left` is the message after the reads, put to the model with one turn left, and the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`); a late final answer is what it asks for. `reader/workbook` is the guidance added to the system prompt of an area that holds a rendered workbook, measured like the turns-left message; no eShopModernizing run has a workbook, so it has a local set only (`reader-workbook-workbooks`, rebuilt with `--local` from the Asset Manager and Invoice Generator runs); `lab/cases/` holds no `reader-workbook` set. The other five also have local sets `reader-<name>-workbooks` from the same runs. The committed sets (2026-11-13, 10 cases each, 4 held back) come from the eShopModernizing runs `p6/p7/p8/p8w3-haiku-eshop-understand`, `p6-haiku-eshop-v2-understand` and the matching `-deepen` runs; the parts of the first message occur only in Deepen runs, the refusal only in runs where a reader answered early.
+**The other reader prompts (P10-05).** `reader/answers`, `reader/reread` and `reader/parent-cards` are the parts a re-run or a Deepen task adds to the first user message; a case holds the text of the data block the run rendered (the owner's answers, the first four rejected claims, the first thirty parent cards) and only the part under test is added, so a result is the effect of that file alone; the kinds are those of a first turn. `reader/read-more` is the turn after the refusal of an answer given after reading little: the replay of the reads, a fixed answer, and the refusal built from the numbers and unread files the run wrote (`readMore`, `turns` is the turns left plus one); the kinds are those of a first turn, and `ReadsFiles` is what the prompt asks for. `reader/turns-left` is the message after the reads, put to the model with one turn left, and the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`); a late final answer is what it asks for. `reader/workbook` is the guidance added to the system prompt of an area that holds a rendered workbook, measured like the turns-left message; no eShopModernizing run has a workbook, so it has a local set only (`reader-workbook-workbooks`, rebuilt with `--local` from the Asset Manager and Invoice Generator runs); `lab/cases/` holds no `reader-workbook` set. The other five also have local sets `reader-<name>-workbooks` from the same runs. The committed sets (2026-11-13; 10 cases and 4 held back each, except `reader-turns-left`, 6 cases and 2 held back once its twins were dropped) come from the eShopModernizing runs `p6/p7/p8/p8w3-haiku-eshop-understand`, `p6-haiku-eshop-v2-understand` and the matching `-deepen` runs; the parts of the first message occur only in Deepen runs, the refusal only in runs where a reader answered early.
 
 ## 5. Wire another prompt id
 
 1. Write `src/application/lab/targets/<name>-target.ts`: a `LabTarget` with the prompt id (`<folder>/<stem>`, the files
    are `<folder>/<stem>.vN.md`), the role, a `parseInput` that parses the case input with a zod schema and returns the
-   case ready to run, and `readsAnswer`, which is the run's own parser of one answer. The case's `run(env, prompt)` must call the
+   case ready to run, and `readsAnswer`, which is the run's own parser of one answer (`null` when the run has none, as for a reader's first turn: first-try validity is then n/a). The case's `run(env, prompt)` must call the
    run's own message builder with the prompt file it is given (never a copy of the prompt text), send through
    `env.role.provider`, and return `{ usable, detail }`; the lab counts the calls, tokens, latency and cost itself.
 2. Add the target to `findLabTarget` in `src/presentation/lab/lab-targets.ts`.
@@ -136,7 +148,10 @@ the call was answered; read `detail`. The later turns of a loop are not measured
 
 ## 6. What the numbers mean
 
-- _Valid on the first try_: the first answer of the case is accepted by the run's own parser.
+- _Valid on the first try_: the first answer of the case is accepted by the run's own parser. `n/a` (`null` per case) for
+  a target with no parser of a first answer: the first turn of a reader task (`reader/task`, `reader/area`,
+  `reader/read-first`, `reader/answers`, `reader/reread`, `reader/parent-cards`, `reader/read-more`), whose answer may
+  be tool calls; for those, read _not usable_ and `detail`. A rate over a mix counts only the cases it applies to.
 - _Repaired_: the first answer was not, a later call of the same case was, and the final answer is usable.
 - _Refused_: a guard or the ledger refused a call (RST-1600, RST-1601, RST-1515, RST-1516); _RST code_: the code of the
   first call that failed.

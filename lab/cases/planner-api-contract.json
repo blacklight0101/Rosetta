@@ -382,7 +382,7 @@
     {
       "id": "eshop-20261029-152045-plan-planner-api-contract",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "featureCards": [
           {
@@ -660,7 +660,7 @@
     {
       "id": "eshop-20261023-152751-plan-planner-api-contract",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "featureCards": [
           {

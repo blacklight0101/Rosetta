@@ -224,3 +224,23 @@ describe('the workbook guidance', () => {
     ]);
   });
 });
+
+describe('the first-try check of the other reader targets', () => {
+  it('RF-1403 is not applicable to the first-turn kinds, and read by the card parser otherwise', () => {
+    const firstTurns = [
+      'reader/answers',
+      'reader/parent-cards',
+      'reader/read-more',
+      'reader/reread',
+    ];
+
+    expect(firstTurns.map((id) => targets.get(id)?.readsAnswer(''))).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+    expect(targets.get('reader/turns-left')?.readsAnswer('')).toBe(false);
+    expect(targets.get('reader/workbook')?.readsAnswer(validCards)).toBe(true);
+  });
+});

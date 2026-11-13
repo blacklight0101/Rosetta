@@ -23,7 +23,7 @@
     {
       "id": "eshop-20261109-054942-understand-reader-005",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
         "files": [
@@ -268,7 +268,7 @@
     {
       "id": "eshop-20261109-054942-understand-reader-011",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
         "files": [
@@ -423,7 +423,7 @@
     {
       "id": "eshop-20261109-063857-understand-reader-196",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/eShopPorted/Views",
         "files": [
@@ -673,7 +673,7 @@
     {
       "id": "eshop-20261101-235310-understand-reader-073",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
         "files": [
@@ -840,161 +840,6 @@
               "                }",
               "",
               "                var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);"
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": "eshop-20261101-235310-understand-reader-034",
-      "from": "eshop",
-      "split": "tune",
-      "input": {
-        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
-        "files": [
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
-            "language": "razor",
-            "lines": 81
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
-            "language": "razor",
-            "lines": 104
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Delete.cshtml",
-            "language": "razor",
-            "lines": 101
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Details.cshtml",
-            "language": "razor",
-            "lines": 91
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
-            "language": "razor",
-            "lines": 105
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
-            "language": "razor",
-            "lines": 46
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml",
-            "language": "razor",
-            "lines": 13
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/_Layout.cshtml",
-            "language": "razor",
-            "lines": 47
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Web.config",
-            "language": "xml",
-            "lines": 43
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/_ViewStart.cshtml",
-            "language": "razor",
-            "lines": 3
-          }
-        ],
-        "turns": 12,
-        "reads": [
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
-            "startLine": 1,
-            "lines": [
-              "﻿@model eShopLegacyMVC.ViewModel.PaginatedItemsViewModel<eShopLegacyMVC.Models.CatalogItem>",
-              "",
-              "@{",
-              "    ViewBag.Title = \"Index\";",
-              "}",
-              "",
-              "<div class=\"esh-table\">",
-              "    <p class=\"esh-link-wrapper\">",
-              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
-              "    </p>",
-              "",
-              "    @Html.Partial(\"CatalogTable\", Model.Data)",
-              "",
-              "    <div class=\"esh-pager\">",
-              "        <div class=\"container\">",
-              "            <article class=\"esh-pager-wrapper row\">",
-              "                <nav>",
-              "",
-              "                    @if (Model.ActualPage > 0)",
-              "                    {",
-              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
-              "                    }",
-              "                    else",
-              "                    {",
-              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
-              "                    }",
-              "",
-              "                    <span class=\"esh-pager-item\">",
-              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
-              "                    </span>",
-              "",
-              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
-              "                    {",
-              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
-              "                    }",
-              "                    else",
-              "                    {",
-              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
-              "                    }",
-              ""
-            ]
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
-            "startLine": 1,
-            "lines": [
-              "﻿@model IEnumerable<eShopLegacyMVC.Models.CatalogItem>",
-              "",
-              "<table class=\"table\">",
-              "    <thead>",
-              "        <tr class=\"esh-table-header\">",
-              "            <th>",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Name)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Description)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Price)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.PictureFileName)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.AvailableStock)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
-              "            </th>",
-              "            <th></th>",
-              "        </tr>",
-              "    </thead>",
-              "    <tbody>",
-              "        @foreach (var item in Model)",
-              "            {"
             ]
           }
         ]
@@ -1176,161 +1021,6 @@
       }
     },
     {
-      "id": "eshop-20261102-185338-understand-reader-034",
-      "from": "eshop",
-      "split": "tune",
-      "input": {
-        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
-        "files": [
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
-            "language": "razor",
-            "lines": 81
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
-            "language": "razor",
-            "lines": 104
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Delete.cshtml",
-            "language": "razor",
-            "lines": 101
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Details.cshtml",
-            "language": "razor",
-            "lines": 91
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
-            "language": "razor",
-            "lines": 105
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
-            "language": "razor",
-            "lines": 46
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml",
-            "language": "razor",
-            "lines": 13
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/_Layout.cshtml",
-            "language": "razor",
-            "lines": 47
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Web.config",
-            "language": "xml",
-            "lines": 43
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/_ViewStart.cshtml",
-            "language": "razor",
-            "lines": 3
-          }
-        ],
-        "turns": 12,
-        "reads": [
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
-            "startLine": 1,
-            "lines": [
-              "﻿@model eShopLegacyMVC.ViewModel.PaginatedItemsViewModel<eShopLegacyMVC.Models.CatalogItem>",
-              "",
-              "@{",
-              "    ViewBag.Title = \"Index\";",
-              "}",
-              "",
-              "<div class=\"esh-table\">",
-              "    <p class=\"esh-link-wrapper\">",
-              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
-              "    </p>",
-              "",
-              "    @Html.Partial(\"CatalogTable\", Model.Data)",
-              "",
-              "    <div class=\"esh-pager\">",
-              "        <div class=\"container\">",
-              "            <article class=\"esh-pager-wrapper row\">",
-              "                <nav>",
-              "",
-              "                    @if (Model.ActualPage > 0)",
-              "                    {",
-              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
-              "                    }",
-              "                    else",
-              "                    {",
-              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
-              "                    }",
-              "",
-              "                    <span class=\"esh-pager-item\">",
-              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
-              "                    </span>",
-              "",
-              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
-              "                    {",
-              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
-              "                    }",
-              "                    else",
-              "                    {",
-              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
-              "                    }",
-              ""
-            ]
-          },
-          {
-            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
-            "startLine": 1,
-            "lines": [
-              "﻿@model IEnumerable<eShopLegacyMVC.Models.CatalogItem>",
-              "",
-              "<table class=\"table\">",
-              "    <thead>",
-              "        <tr class=\"esh-table-header\">",
-              "            <th>",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Name)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Description)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.Price)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.PictureFileName)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.AvailableStock)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
-              "            </th>",
-              "            <th>",
-              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
-              "            </th>",
-              "            <th></th>",
-              "        </tr>",
-              "    </thead>",
-              "    <tbody>",
-              "        @foreach (var item in Model)",
-              "            {"
-            ]
-          }
-        ]
-      }
-    },
-    {
       "id": "eshop-20261029-152308-understand-reader-091",
       "from": "eshop",
       "split": "held-back",
@@ -1493,7 +1183,7 @@
     {
       "id": "eshop-20261029-152308-understand-reader-063",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
         "files": [

@@ -19,7 +19,8 @@ const caseSchema = z.strictObject({
   /** The last answer of the model, masked and cut. */
   answer: z.string(),
   usable: z.boolean(),
-  validFirstTry: z.boolean(),
+  /** Null when the target has no parser of a first answer (a reader's first turn): not applicable. */
+  validFirstTry: z.boolean().nullable(),
   repaired: z.boolean(),
   refused: z.boolean(),
   rstCode: z.string().nullable(),
@@ -74,7 +75,10 @@ export function parseLabResults(data: unknown): Result<LabResults, string> {
 export interface LabSummary {
   readonly cases: number;
   readonly calls: number;
-  /** The share of cases whose first answer was valid; null for a run of no case. */
+  /**
+   * The share of cases whose first answer was valid, among the cases it applies to; null for a run
+   * of no such case (no case, or a target with no parser of a first answer).
+   */
   readonly firstTryRate: number | null;
   readonly repairedRate: number | null;
   readonly invalidRate: number | null;
@@ -114,10 +118,14 @@ export function summariseLab(results: LabResults): LabSummary {
   const calls = sum(cases, (each) => each.calls);
   const labelled = cases.filter((each) => each.agreed !== null);
   const invalid = cases.filter((each) => !each.usable && !each.refused && each.rstCode === null);
+  const checked = cases.filter((each) => each.validFirstTry !== null);
   return {
     cases: cases.length,
     calls,
-    firstTryRate: rate(cases.filter((each) => each.validFirstTry).length, cases.length),
+    firstTryRate: rate(
+      checked.filter((each) => each.validFirstTry === true).length,
+      checked.length,
+    ),
     repairedRate: rate(cases.filter((each) => each.repaired).length, cases.length),
     invalidRate: rate(invalid.length, cases.length),
     refusedCount: cases.filter((each) => each.refused).length,

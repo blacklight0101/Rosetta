@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCaseSet } from '../../../../../src/application/lab/capture/build-case-set.js';
-import { heldBackIds } from '../../../../../src/application/lab/capture/held-back.js';
+import { splitsOf } from '../../../../../src/application/lab/capture/held-back.js';
 import { parseLabCaseSet } from '../../../../../src/application/lab/lab-case-set.js';
 import { sha256Hex } from '../../../../../src/infrastructure/lab/run-folder.js';
 import { block, capturedRun, message, taskOf } from '../../../../support/capture-fixtures.js';
@@ -34,6 +34,7 @@ const request = (maxPerRun: number, list = tasks) => ({
   description: 'test',
   maxPerRun,
   sha256: sha256Hex,
+  mask: (text: string) => text,
   runs: [{ source, run: capturedRun('shop', 'run-1', list) }],
 });
 
@@ -49,10 +50,14 @@ describe('building a case set', () => {
     expect(set.cases.every((each) => each.from === 'shop' && each.expected === undefined)).toBe(
       true,
     );
-    const ids = set.cases.map((each) => each.id);
-    const held = set.cases.filter((each) => each.split === 'held-back').map((each) => each.id);
-    expect(new Set(held)).toEqual(heldBackIds('reader/area', ids, sha256Hex));
-    expect(held).toHaveLength(2);
+    const splits = set.cases.map((each) => each.split);
+    expect(splits).toEqual(
+      splitsOf(
+        set.cases.map((each) => each.input),
+        sha256Hex,
+      ),
+    );
+    expect(splits.filter((each) => each === 'held-back')).toHaveLength(2);
   });
 
   it('RF-1404 takes at most the most per run, chosen by the task name, not the input', () => {
@@ -65,7 +70,9 @@ describe('building a case set', () => {
       built.value.set.cases.map((each) => each.id),
     );
   });
+});
 
+describe('the inputs of a case set built from runs', () => {
   it('RF-1404 leaves out a task whose input holds personal data and says so', () => {
     const leaky = area('reader-007', ' mailto jane@example.com');
 
@@ -82,5 +89,35 @@ describe('building a case set', () => {
 
     expect(unknown.ok ? '' : unknown.error).toContain('Prompts it can capture');
     expect(none.ok).toBe(false);
+  });
+
+  it('RF-1405 drops a case whose input another run already gave, before the split, and says so', () => {
+    const twice = {
+      ...request(6),
+      runs: [
+        { source, run: capturedRun('shop', 'run-1', tasks) },
+        { source, run: capturedRun('shop', 'run-2', tasks.slice(0, 2)) },
+      ],
+    };
+
+    const built = buildCaseSet(twice);
+
+    if (!built.ok) throw new Error(built.error);
+    expect(built.value.set.cases).toHaveLength(6);
+    expect(built.value.set.cases.every((each) => each.id.includes('run-1'))).toBe(true);
+    expect(built.value.repeated).toHaveLength(2);
+    expect(built.value.repeated[0]).toMatch(/^run-2\/reader-00\d: the input of shop-run-1-/u);
+  });
+
+  it('RF-1404 masks every text of a captured input with the run masker before it is kept', () => {
+    const leaky = area('reader-007', ' sqlcmd -U sa -P HIDE');
+    const mask = (text: string): string => text.replaceAll('HIDE', '[MASKED:password]');
+
+    const built = buildCaseSet({ ...request(7, [...tasks, leaky]), mask });
+
+    if (!built.ok) throw new Error(built.error);
+    const text = JSON.stringify(built.value.set);
+    expect(text).not.toContain('HIDE');
+    expect(text).toContain('-P [MASKED:password]');
   });
 });

@@ -70,3 +70,43 @@ describe('a run whose ledger stopped it on the last call', () => {
     expect(written[0]?.cases).toHaveLength(1);
   });
 });
+
+describe('a run of a target with no first-try check', () => {
+  it('RF-1403 writes the first-try validity of each case as not applicable (null), never as valid', async () => {
+    const written: LabResults[] = [];
+    const firstTurn: LabTarget = {
+      ...target,
+      parseInput: () => ok({ run: () => Promise.resolve({ usable: false, detail: 'Empty' }) }),
+      readsAnswer: () => null,
+    };
+    const lab = new RunLab({
+      output: {
+        write: (results) => {
+          written.push(results);
+          return Promise.resolve('folder');
+        },
+      },
+      meter: { ...meter, stopped: () => undefined },
+      role: {
+        provider: { complete: () => Promise.reject(new Error('unused')) },
+        model: 'm',
+        maxOutputTokens: 10,
+      },
+      clock: new FixedClock('2026-11-13T09:00:00Z'),
+      ids: new SequenceIdGenerator(),
+      rosettaVersion: 'test',
+    });
+
+    await lab.execute({
+      ...{ target: firstTurn, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [{ id: 'only', expected: undefined, split: 'tune', input: {} }],
+      },
+      setSha256: '1'.repeat(64),
+      repetitions: 1,
+    });
+
+    expect(written[0]?.cases[0]).toMatchObject({ validFirstTry: null, repaired: false });
+  });
+});

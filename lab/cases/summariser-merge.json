@@ -275,7 +275,7 @@
     {
       "id": "eshop-20261109-063857-understand-summariser-feat-3",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "type": "FEAT",
         "cards": [
@@ -1100,7 +1100,7 @@
     {
       "id": "eshop-20261029-142029-understand-summariser-br",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "type": "BR",
         "cards": [

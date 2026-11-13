@@ -34,6 +34,10 @@ export interface LabTarget {
   readonly id: string;
   readonly role: AgentRole;
   parseInput(data: unknown): Result<PreparedCase, string>;
-  /** Whether one raw answer is valid for the run's own parser. */
-  readsAnswer(text: string): boolean;
+  /**
+   * Whether one raw answer is valid for the run's own parser; null when the target has no parser of
+   * the answer (the first turn of a reader task, which may answer with tool calls the text does not
+   * show), so first-try validity does not apply to it (RF-1403).
+   */
+  readsAnswer(text: string): boolean | null;
 }

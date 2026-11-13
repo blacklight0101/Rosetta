@@ -23,7 +23,7 @@
     {
       "id": "eshop-20261109-071300-plan-planner-package",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "cards": [
           {
@@ -793,7 +793,7 @@
     {
       "id": "eshop-20261102-030541-plan-planner-package",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "cards": [
           {

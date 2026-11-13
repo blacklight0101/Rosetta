@@ -64,15 +64,17 @@ export function summaryLines(results: LabResults, folder: string): string[] {
   return results.refusal === null ? lines : [...lines, `Stopped: ${results.refusal}`];
 }
 
+/** How a case ended; a case with no first-try check (null) is only usable or not. */
+function howOf(each: LabCaseResult): string {
+  if (each.refused) return 'refused';
+  if (each.validFirstTry === true) return 'first try';
+  if (each.repaired) return 'repaired';
+  return each.validFirstTry === null && each.usable ? 'usable' : 'not usable';
+}
+
 function mark(each: LabCaseResult | undefined): string {
   if (each === undefined) return '-';
-  const how = each.refused
-    ? 'refused'
-    : each.validFirstTry
-      ? 'first try'
-      : each.repaired
-        ? 'repaired'
-        : 'not usable';
+  const how = howOf(each);
   const agreed = each.agreed === null ? '' : each.agreed ? ', agrees' : ', differs';
   const overall = each.judge?.overall ?? null;
   const judged = overall === null ? '' : `, judge ${overall.toFixed(1)}`;

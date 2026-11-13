@@ -88,6 +88,15 @@ const total = (
   pick: (call: MeteredCase['calls'][number]) => number,
 ): number => metered.calls.reduce((sum, call) => sum + pick(call), 0);
 
+/** RF-1403: whether the first answer was valid; null when the target has no parser of it. */
+function firstTryOf(
+  first: MeteredCase['calls'][number] | undefined,
+  target: LabTarget,
+): boolean | null {
+  const read = target.readsAnswer(first?.text ?? '');
+  return read === null ? null : first !== undefined && read;
+}
+
 /** RF-1403: the deterministic metrics of one finished case. */
 function resultOf(
   one: Prepared & { readonly repetition: number },
@@ -97,13 +106,13 @@ function resultOf(
 ): LabCaseResult {
   const { repetition } = one;
   const first = metered.calls[0];
-  const validFirstTry = first !== undefined && target.readsAnswer(first.text);
+  const validFirstTry = firstTryOf(first, target);
   const last = metered.calls.at(-1);
   return {
     ...{ caseId: one.caseId, repetition, split: one.split, expected: one.expected ?? null },
     ...{ detail: outcome.detail, answer: (last?.text ?? '').slice(0, ANSWER_CHARS) },
     ...{ usable: outcome.usable, validFirstTry },
-    repaired: outcome.usable && !validFirstTry && metered.calls.length > 1,
+    repaired: outcome.usable && validFirstTry === false && metered.calls.length > 1,
     refused: metered.failures.some((code) => REFUSED_BEFORE_SENDING.has(code)),
     rstCode: metered.failures[0] ?? null,
     agreed: one.expected === undefined ? null : outcome.detail === one.expected,
