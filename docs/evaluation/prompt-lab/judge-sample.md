@@ -2,6 +2,16 @@
 
 Status 2026-11-13: **the judge has not scored anything yet.** The judge (`--judge`) and the judge check (`--judge-check`) are built and tested with the fake provider (RF-1404, RF-1405), but the first real run, `npm run lab -- --judge-check anthropic:claude-opus-5-5 --yes`, was refused by Anthropic with RST-1518 (the key was rejected) on every call, so no real judge score exists. The ledger booked the failed calls at their worst case: **$2.1247** of the card slice of $3 (31 calls, none answered; a rejected key is probably not billed by Anthropic, but the ledger cannot tell). The rest of the slice ($0.8753) is kept, because every further run would fail the same way until the key in the file given to `--env-file` is valid. No judge agreement figure is reported below because there is none.
 
+## Smoke run on a local model, not the calibration (2026-11-13)
+
+Both cloud keys were rejected (Anthropic 401, OpenAI 401), so the chain was checked on the local Ollama model `gemma4:e4b` (priced at zero; `tev1` was tried first and cannot be used, because Ollama reports only the capability `decision` for it and answers every chat with HTTP 400). This shows that the chain works. **It is not the judge calibration**: a 7.5B local judge says nothing about how far Opus agrees with a person.
+
+- Judged run, `verifier/claim.v5` on `verifier-claim-sample` (4 cases), target and judge both `ollama:gemma4:e4b`: 4 of 4 valid on the first try, agreement with the labels 75%, 1445 input and 39 output tokens and 34 s per call, cost $0.0000. Judge: 4 scored, mean overall 4.5 (grounding 4.5, verdict-correct 4.0, reason-quality 4.5, form 5.0), per case 5.0, 4.8, 3.3, 5.0; the 3.3 is the case where the answer disagrees with its label.
+- `--compare` of that run with itself: totals, per-case marks and `judge n.n` per case printed; nothing sent.
+- `--judge-check ollama:gemma4:e4b --limit 1 --yes` (7 judge calls, 28 s): all 7 scored; judge overall per sample verifier 4.0 and 5.0, reader 3.5, cards 2.3, planner 4.0, summariser 5.0, shared 5.0; overall in the same band as the hand score for 4 of 6 families; the one calibration claim shown with the label's verdict was scored below 4 on `verdict-correct` (disagreement). One item per family is too few for any agreement figure.
+- Ledger: every Ollama call was held and settled at $0 in the shared ledger; the total of the card stays $2.1247 (the failed Anthropic calls).
+- Two gaps found and fixed: the hold lifetime check refused any Ollama provider with the template's settings (120 s, 3 retries is 40 minutes), and a judge check could not be limited (`--limit n`).
+
 ## To finish this card
 
 1. Put a valid `ANTHROPIC_API_KEY` in the environment file the lab is started with.
