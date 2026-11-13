@@ -124,7 +124,7 @@ describe('parseDataModelAnswer: answers that are no answer', () => {
     expect(parseDataModelAnswer('No tables today.')).toBeUndefined();
   });
 
-  it('P10-08 an empty table list with a reason for every dropped claim is a valid answer', () => {
+  it('RF-623 an empty table list with a reason for every dropped claim is a valid answer', () => {
     const dropped = [{ claim: 'ENT-001.c1', field: 'Connection', reason: 'It names a server.' }];
 
     const parsed = parseDataModelAnswer(JSON.stringify({ tables: [], dropped }));
@@ -133,7 +133,7 @@ describe('parseDataModelAnswer: answers that are no answer', () => {
     expect(parsed?.draft.dropped).toEqual(dropped);
   });
 
-  it('P10-08 an empty table list whose dropped claims are all unreadable is no answer', () => {
+  it('RF-623 an empty table list whose dropped claims are all unreadable is no answer', () => {
     const bad = JSON.stringify({ tables: [], dropped: [{ claim: 'ENT-001.c1' }] });
 
     expect(parseDataModelAnswer(bad)).toBeUndefined();

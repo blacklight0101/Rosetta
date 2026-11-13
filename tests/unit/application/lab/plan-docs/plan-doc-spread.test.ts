@@ -7,7 +7,7 @@ import { shippedCatalogue } from '../../../../support/planning-brief-harness.js'
 import { SequenceIdGenerator } from '../../../../support/sequence-id-generator.js';
 import { feature } from './plan-doc-fixtures.js';
 
-// RF-1404, P10-08: the 8 cards of a plan case are taken in turns over the card types.
+// RF-1404: the 8 cards of a plan case are taken in turns over the card types.
 
 const ids = new SequenceIdGenerator();
 const ownBrief = {
@@ -28,7 +28,7 @@ const typed = (type: 'FEAT' | 'BR' | 'ENT', index: number) => ({
 });
 
 describe('the capture of the cards of a plan case', () => {
-  it('P10-08 spreads the 8 cards over the card types, in the order they came', () => {
+  it('RF-1404 spreads the 8 cards over the card types, in the order they came', () => {
     const many = (['FEAT', 'BR', 'ENT'] as const).flatMap((type) =>
       [1, 2, 3, 4, 5, 6].map((index) => typed(type, index)),
     );

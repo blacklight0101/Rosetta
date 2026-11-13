@@ -21,6 +21,9 @@ import { missingNamed } from './data-model-named.js';
 const copiedReason =
   'The planner answer for this table failed after a retry, so its names, columns, types and keys are copied from the legacy claims; confirm them.';
 
+const reasonedReason =
+  'The planner found no stored data in the cards of this table, so it is named after them or copied from the legacy claims; confirm that the new system needs it.';
+
 function mergeNote(merge: MergedTable): DataModelProblem {
   const names = merge.merged.join(', ');
   const twins =
@@ -51,6 +54,7 @@ export function checkedModel(
   assembled: DataModelAssembly,
   cards: readonly SourceCard[],
   brief: PlanningBrief,
+  reasoned = false,
 ): CheckedModel {
   const keys = keepLegacyKeys(assembled.model, cards, brief);
   const facts = applyColumnFacts(keys.model, cards);
@@ -63,7 +67,11 @@ export function checkedModel(
     .map((table) => table.name);
   const found = readable
     ? [
-        ...copied.map((item) => ({ item, field: `table ${item}`, reason: copiedReason })),
+        ...copied.map((item) => ({
+          item,
+          field: `table ${item}`,
+          reason: reasoned ? reasonedReason : copiedReason,
+        })),
         ...assembled.merged.map(mergeNote),
         ...(model.splits ?? []).map(splitNote),
         ...genericTables(model),
@@ -101,4 +109,24 @@ export function withoutKeptLeftOut(
     const kept = table?.columns.some((column) => column.name === problem.item) === true;
     return kept ? { ...problem, kind: 'check', reason: copyReason } : problem;
   });
+}
+
+/** The warning about the tables kept only because the model is never empty (P5-38, RF-623, P10-08). */
+export function copiedWarnings(planned: {
+  readonly copied: readonly string[];
+  readonly reasoned?: boolean | undefined;
+  readonly cutOffNote: string;
+}): string[] {
+  const { copied, reasoned, cutOffNote } = planned;
+  const count = String(copied.length);
+  if (copied.length === 0) return [];
+  if (reasoned === true) {
+    return [
+      `The planner found no stored data in the cards of ${count} table(s); they are named after the cards or copied from the legacy claims and marked, to confirm: ${copied.join(', ')}.`,
+    ];
+  }
+  const cut = cutOffNote === '' ? '' : ` ${cutOffNote}`;
+  return [
+    `The planner answer for ${count} table(s) failed after a retry; they are copied from the legacy claims and marked: ${copied.join(', ')}.${cut}`,
+  ];
 }

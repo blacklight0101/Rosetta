@@ -69,8 +69,8 @@ function dataModel(): LabTarget {
     },
     read: (answer) => {
       const read = parseDataModelAnswer(answer);
-      // P10-08: no table with nothing refused is a reasoned answer (the cards store no data).
-      const reasoned = read?.problems.length === 0;
+      // RF-623: no table, no refused table and a reason for a dropped claim is a reasoned answer.
+      const reasoned = read?.problems.every((problem) => !problem.field.startsWith('table'));
       return labelled(read, read?.draft.tables.length ?? 0, ['Tables', 'NoTables'], reasoned);
     },
   });

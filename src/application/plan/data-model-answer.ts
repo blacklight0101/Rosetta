@@ -10,7 +10,7 @@ import { NO_REAL_COLUMN, withoutPlaceholders } from './data-model-placeholders.j
 // not here. A part the answer leaves out takes its empty value. A part that fails its schema (a
 // column, a table, a key, a dropped claim) is dropped alone and named in `problems`, so one long
 // field does not cost the whole model (EV-02); an answer with no table at all is no answer, unless
-// it gives a reason for a dropped claim (P10-08: the cards describe no stored data, and the prompt
+// it gives a reason for a dropped claim (RF-623: the cards describe no stored data, and the prompt
 // tells the planner to write no table then).
 
 const MAX_TABLES = 100;
