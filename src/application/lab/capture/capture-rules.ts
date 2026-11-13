@@ -5,8 +5,9 @@ import { captureReaderInput, readerPromptIds } from './capture-reader.js';
 import { capturePlanDocInput, planDocPromptIds } from './capture-plan-docs.js';
 
 // RF-1404, DEC-57: which agent task is an input of which prompt id, and what of it is kept. Only
-// the first user message is read, back from its data blocks; the system prompt and every assistant
-// message are ignored, so no answer of a model can reach a case. The planner and summariser inputs
+// the first user message is read, back from its data blocks; the system prompt is read only to find
+// a fragment heading (cards/flows, cards/screens) and none of its text is stored, and every
+// assistant message is ignored, so no answer of a model can reach a case. The planner and summariser inputs
 // were written by models earlier in the run (cards, plan titles); they are inputs, never truth.
 
 /** A case stays small: the first cards of a list, the first claims of a card. */
