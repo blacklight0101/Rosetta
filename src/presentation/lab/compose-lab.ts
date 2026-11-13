@@ -43,6 +43,8 @@ export interface LabParts {
   /** The git-ignored `lab-out/`: results folders and the shared ledger `ledger.jsonl`. */
   readonly outputDir: string;
   readonly promptsFolder: string;
+  /** RF-1402: the ledger file shared by every checkout (`ROSETTA_LAB_LEDGER`); `ledger.jsonl` in `outputDir` when absent. */
+  readonly ledgerFile?: string | undefined;
   /** The guarded provider factory over the lab's own stores (the release adapters, or a fake). */
   readonly providers: GuardedFactoryMaker;
   readonly serverKeys: ServerKeys;
