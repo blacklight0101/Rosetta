@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed at the next 06:00 Madrid run); Phase 9 is carded and held. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 is built and merged into `develop` and not released; its follow-ups P9-14..P9-17 are held. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-228.
+- `docs/decision-log.md` - decisions DEC-01..DEC-229.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -29,6 +29,8 @@ _Last updated 2026-11-09. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-13, Phase 9 built).** The owner cleared Phase 9 on 2026-11-12 with two builders and two verifiers at a time (DEC-229). All thirteen cards are merged into `develop` and none is released: P9-07 #1354, P9-05 #1355, P9-01 #1356, P9-04 #1357, P9-06 #1358, P9-02 #1359, P9-11 #1360, P9-08 #1361, P9-13 #1362, P9-03 #1363, P9-09 #1364, P9-10 #1365, P9-12 #1366. Seven needed a second round (P9-01, P9-02, P9-04, P9-09, P9-10, P9-13; P9-03 an out-of-date test). Notable changes: Continue raises the journey and offers only the room it has (EV-100); "Stop here" ends with its own reason `StoppedAtApproval` (migration 0026); a stopped reader reads Stopped, not failed; a plan fails RST-1806 when a requirement has no card (prompt gap.v6); the card format prompt is card-format.v6; the e2e suite stubs the Ollama model list outside settings and admin pages. The owner questions each card raised are in its pull request with the default built. Held follow-ups: P9-14 (Phase 9 minors), P9-15 (data model against decided ADRs), P9-16 (Resume keeps a run in its journey), P9-17 (stress job skips release pull requests).
 
 **Resume (2026-11-09, release of Phase 8 waves 2 and 3).** On the owner's word `develop` was merged into `main` by #1351 (merge commit `344bdc9d`). First #1350 brought `full-understand.spec.ts` back to the 300-line limit, which the merges of P8-84 and P8-86 together had broken on `develop`. Every required check passed; the non-required stress job was cancelled on the release pull request (it reruns every changed test of the whole release and ran out of time and database connections; each card had passed its own stress run). After the merge CI, CodeQL and the release checks passed: the image is pushed, the ZAP baseline passed, the staging check was skipped (staging is not enabled) and `release/ready` is set. EV-100 ships as a known Major (P9-01, held). The owner answered the key question (DEC-228). Follow-up not carded: the stress job could skip release pull requests.
 
