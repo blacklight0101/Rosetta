@@ -69,3 +69,8 @@ export function withPhaseNames(names: readonly string[]): Promise<Recording> {
     };
   });
 }
+
+/** P9-15: the recording whose plan has these decision records (the other parts of the plan stay). */
+export function withDecisions(decisions: readonly unknown[]): Promise<Recording> {
+  return withPlan({ decisions });
+}
