@@ -63,7 +63,7 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
   // P3-79, Q-51: the roles are local, so the estimate is in tokens against the token cap.
   await expect(table).not.toContainText('$');
   await expect(page.getByRole('meter')).toHaveAccessibleDescription(
-    /run token cap of [\d,]+ tokens/u,
+    /approved amount of [\d,]+ tokens/u,
   );
   await expect(page.getByText(/Assumptions: \d+ areas?,/u)).toBeVisible();
   const areas = page.getByRole('group', { name: 'Areas from the code map' }).getByRole('checkbox');
@@ -138,8 +138,9 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
 }) => {
   await openStartPage(page);
   const projectId = projectIdOf(page);
-  // RF-436: the cap is the project settings'; the page warns against it and links to it.
-  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  // RF-436: the cap is the project settings'; the page warns against it. P9-12: a journey's start page
+  // has no link to the caps (the approved amount is its one limit), so the settings are opened here.
+  await page.goto(`/projects/${projectId}/settings#caps`);
   const cap = page.getByLabel('Run cost cap (USD)', { exact: true });
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
   // P8-16: read what the project has now and put exactly that back in finally, also when an
@@ -260,7 +261,7 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
     "OpenAI runs on the server's key",
   );
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
-  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  await page.goto(`/projects/${projectIdOf(page)}/settings#caps`);
   await expect(threshold).toHaveValue('0.25');
 
   // RF-436: the cap and the threshold are the project settings'; the threshold may not be above the cap.
