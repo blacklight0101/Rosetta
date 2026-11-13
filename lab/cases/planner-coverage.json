@@ -15,7 +15,16 @@
         "20261102-203736-plan",
         "20261102-030541-plan",
         "20261029-152045-plan",
-        "20261023-152751-plan"
+        "20261023-152751-plan",
+        "20261029-175606-plan",
+        "20261029-180026-plan",
+        "20261029-141853-plan",
+        "20261102-025517-plan",
+        "20261102-025520-plan",
+        "20261102-202910-plan",
+        "20261102-023125-plan",
+        "20261023-020712-plan",
+        "20261023-021158-plan"
       ]
     }
   ],
@@ -1099,6 +1108,1305 @@
             "kind": "flow",
             "name": "Show a catalog picture",
             "detail": "The image bytes are returned with the matching MIME type, or the request ends with a 400 or 404 response."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-175606-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalogue item list and paging",
+            "acceptanceCriteria": [
+              "Given no page size and no index, when the list is requested, then ten items from index 0 are shown and Previous is hidden.",
+              "Given page index 1 and page size 10 on a set of 11 items, when the list is requested, then one item is shown and Next is hidden."
+            ]
+          },
+          {
+            "title": "Catalogue item validation",
+            "acceptanceCriteria": [
+              "Given a price of 1000000.01, when the item is saved, then it is refused.",
+              "Given AvailableStock of 10000001, when the item is saved, then it is refused.",
+              "Given a name of 51 characters, when the item is saved, then it is refused."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Browse the catalog page by page",
+            "detail": "Show catalogue items in pages, ordered by Id, with Previous and Next links and a pager that reports item count and page numbers."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "View catalog item details",
+            "detail": "Show one catalog item read-only with its picture and fields, and return 400 for a missing id or 404 for an unknown one."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Create, edit and delete catalog items",
+            "detail": "Create, change and delete catalog items through forms with brand and type lists, with delete shown after a confirmation page."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Return the picture file of a catalog item by item id, with a MIME type chosen from the file extension."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Sign-in with Azure Active Directory",
+            "detail": "Sign users in through OpenID Connect against the configured Azure AD tenant, and require sign-in for catalog create, edit and delete."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Seed the catalog database on first creation",
+            "detail": "When the database is first created, load the item, brand and type lists and the hi-lo sequences."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Look up and list catalogue types and brands",
+            "detail": "Return one catalogue item by id and list all catalogue types and brands."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Brand list Web API",
+            "detail": "List catalog brands through the Web API and return 404 for an unknown brand id."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Catalog service operations over WCF",
+            "detail": "Expose catalog reads and writes, stock operations and the discount lookup as SOAP operations, used by the WinForms client."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Record stock shipments and check stock by date",
+            "detail": "Record how many units of an item arrive on a date, overwriting any existing quantity for that item and date, and look up stock for an item and date."
+          },
+          {
+            "id": "feature:F-011",
+            "kind": "feature",
+            "name": "Show a daily discount on displayed prices",
+            "detail": "Reduce displayed prices by the discount whose date range contains today and show a banner with its percentage and end date."
+          },
+          {
+            "id": "feature:F-012",
+            "kind": "feature",
+            "name": "Run the catalog in containers with SQL Server",
+            "detail": "Run the web apps and the SQL Server database together with Docker Compose."
+          },
+          {
+            "id": "feature:F-013",
+            "kind": "feature",
+            "name": "Deploy a secured Service Fabric cluster",
+            "detail": "Deploy a Service Fabric cluster from an ARM template with a PowerShell or shell script."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps one row per sellable catalog item with its name, price, picture file name, brand, type and stock levels."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Classifies catalogue items by brand."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Classifies catalogue items by type."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Keeps the stock level of one catalog item on one date. The stock id is supplied by the application, not generated by the database."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Keeps one discount with its size fraction and the period it applies to."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item is removed through the catalog service and the user returns to the catalog list."
+          },
+          {
+            "id": "flow:FLOW-012",
+            "kind": "flow",
+            "name": "Application start-up of the MVC web site",
+            "detail": "The Autofac container, MVC filters, routes, bundles, database initializer, catalog images and telemetry are configured, and the site is ready to serve requests."
+          },
+          {
+            "id": "flow:FLOW-015",
+            "kind": "flow",
+            "name": "Upload a temporary picture for a catalog item",
+            "detail": "The image is stored as a temp file and the caller receives its name and URL as JSON, or a 400 response when the file is not a valid image."
+          },
+          {
+            "id": "flow:FLOW-018",
+            "kind": "flow",
+            "name": "Load the paged product list on the home page",
+            "detail": "The page shows one page of products with working Previous and Next links."
+          },
+          {
+            "id": "flow:FLOW-020",
+            "kind": "flow",
+            "name": "Add a catalog item from the list",
+            "detail": "The form is posted back to the same action; the views show the fields and validation messages."
+          },
+          {
+            "id": "flow:FLOW-022",
+            "kind": "flow",
+            "name": "Signed-in user creates a catalog item with a picture",
+            "detail": "The item is saved and the user is redirected to the catalog index."
+          },
+          {
+            "id": "screen:SCRN-001",
+            "kind": "screen",
+            "name": "Catalog list",
+            "detail": "Lists the catalog products in a paged table with links to create, view, edit and delete each product."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Create catalog item",
+            "detail": "Collects the details of a new catalog product and saves it."
+          },
+          {
+            "id": "screen:SCRN-003",
+            "kind": "screen",
+            "name": "Edit catalog item",
+            "detail": "Shows an existing catalog product in a form so its details can be changed and saved."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Delete catalog item confirmation",
+            "detail": "Shows one catalog product and asks the user to confirm its deletion or cancel."
+          },
+          {
+            "id": "screen:SCRN-005",
+            "kind": "screen",
+            "name": "Catalog item details",
+            "detail": "Shows the full details of one catalog product, read-only, with links to edit it or return to the list."
+          },
+          {
+            "id": "screen:SCRN-007",
+            "kind": "screen",
+            "name": "About",
+            "detail": "Shows a static About page."
+          },
+          {
+            "id": "screen:SCRN-008",
+            "kind": "screen",
+            "name": "Contact",
+            "detail": "Shows the postal address, phone number and support and marketing e-mail links."
+          },
+          {
+            "id": "screen:SCRN-018",
+            "kind": "screen",
+            "name": "Shared page layout and sign-in",
+            "detail": "Provides the common header, footer, sign-in and error message around every page."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-141853-plan-planner-coverage",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "tasks": [
+          {
+            "title": "Implement Catalog CRUD via Service",
+            "acceptanceCriteria": [
+              "Given a valid CatalogItem object, when CreateCatalogItem is called, then a new CatalogItem is persisted with an auto-generated ID.",
+              "Given a valid CatalogItem ID, when FindCatalogItem is called, then the complete CatalogItem, including its Brand and Type, is returned.",
+              "Given a specific CatalogItem ID, when UpdateCatalogItem is called with valid data, then the item is marked as Modified and saved to the database.",
+              "Given a specific CatalogItem ID, when RemoveCatalogItem is called, then the item is successfully removed from the data source."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Catalog Item CRUD Operations",
+            "detail": "The system allows users to create, retrieve (with pagination and filtering), update, and delete catalog items, supporting linking to Brands and Types."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Stock Level Tracking",
+            "detail": "The system allows staff to view available stock for a specific item and date, and input new shipment or stock data to update stock records."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Discount Availability Check",
+            "detail": "The system can check if a discount is active for a given day and retrieve the corresponding discount item."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Catalog Browsing and Filtering",
+            "detail": "Users can view a paginated list of catalog items, optionally filtered by Brand ID and Type ID."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "System Image Retrieval",
+            "detail": "A dedicated endpoint exists to retrieve catalog item pictures by mapping an ID and filename."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Mobile View Switching",
+            "detail": "The application dynamically switches between mobile and desktop views based on the request type."
+          },
+          {
+            "id": "table:sql_data_deployment_configuration",
+            "kind": "table",
+            "name": "sql_data_deployment_configuration",
+            "detail": "Stores configuration details related to SQL data deployment."
+          },
+          {
+            "id": "table:catalog_database_context_registration",
+            "kind": "table",
+            "name": "catalog_database_context_registration",
+            "detail": "Stores context and registration details for the Catalog Database connection."
+          },
+          {
+            "id": "table:application_configuration_parameters",
+            "kind": "table",
+            "name": "application_configuration_parameters",
+            "detail": "Stores various application settings and configuration flags."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Defines catalog brands in the system."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Defines catalog types."
+          },
+          {
+            "id": "table:catalog_item",
+            "kind": "table",
+            "name": "catalog_item",
+            "detail": "Represents a catalog item."
+          },
+          {
+            "id": "table:paginated_items_viewmodel",
+            "kind": "table",
+            "name": "paginated_items_viewmodel",
+            "detail": "A view model for paginated lists, holding read-only properties for current page, items per page, and total items, and a settable property for total pages. It also holds a read-only collection of data items."
+          },
+          {
+            "id": "table:catalog_brands",
+            "kind": "table",
+            "name": "catalog_brands",
+            "detail": "Stores the list of available catalog brands."
+          },
+          {
+            "id": "table:catalog_types",
+            "kind": "table",
+            "name": "catalog_types",
+            "detail": "Stores the list of available catalog types."
+          },
+          {
+            "id": "table:catalog_items",
+            "kind": "table",
+            "name": "catalog_items",
+            "detail": "Stores the details of each catalog item."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Tracks the available inventory for a specific item on a given date."
+          },
+          {
+            "id": "table:discount_items",
+            "kind": "table",
+            "name": "discount_items",
+            "detail": "Defines time-bound discounts for catalog items."
+          },
+          {
+            "id": "table:activity_id_helper",
+            "kind": "table",
+            "name": "activity_id_helper",
+            "detail": "Generates and manages unique activity IDs for tracking requests."
+          },
+          {
+            "id": "table:web_request_info",
+            "kind": "table",
+            "name": "web_request_info",
+            "detail": "Captures information about the incoming web request."
+          },
+          {
+            "id": "table:catalog_item_hi_lo_generator",
+            "kind": "table",
+            "name": "catalog_item_hi_lo_generator",
+            "detail": "Contains logic related to catalog item high/low categorization."
+          },
+          {
+            "id": "table:catalog_configuration_settings",
+            "kind": "table",
+            "name": "catalog_configuration_settings",
+            "detail": "Stores configuration settings used by the application."
+          },
+          {
+            "id": "table:service_container",
+            "kind": "table",
+            "name": "service_container",
+            "detail": "Describes the configuration and port mappings for containerized eShop services."
+          },
+          {
+            "id": "table:webforms_service",
+            "kind": "table",
+            "name": "webforms_service",
+            "detail": "Describes the configuration and port mappings for containerized WebForms services."
+          },
+          {
+            "id": "table:sql_data_service",
+            "kind": "table",
+            "name": "sql_data_service",
+            "detail": "Describes the configuration for the SQL.data container service in the MVC setup."
+          },
+          {
+            "id": "table:sqlwf_data_service",
+            "kind": "table",
+            "name": "sqlwf_data_service",
+            "detail": "Describes the configuration for the SQLWF.data container service in the WebForms setup."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Stores information about discount items."
+          },
+          {
+            "id": "operation:getCatalogBrands",
+            "kind": "operation",
+            "name": "getCatalogBrands",
+            "detail": "GET /catalog-brands: Retrieves a list of all available catalog brands."
+          },
+          {
+            "id": "operation:getCatalogItems",
+            "kind": "operation",
+            "name": "getCatalogItems",
+            "detail": "GET /catalog-items: Retrieves a paginated list of catalog items, optionally filtered by brand and type."
+          },
+          {
+            "id": "operation:createCatalogItem",
+            "kind": "operation",
+            "name": "createCatalogItem",
+            "detail": "POST /catalog-items: Creates a new catalog item in the system."
+          },
+          {
+            "id": "operation:getCatalogItemById",
+            "kind": "operation",
+            "name": "getCatalogItemById",
+            "detail": "GET /catalog-items/{id}: Retrieves details for a specific catalog item by its ID."
+          },
+          {
+            "id": "operation:updateCatalogItem",
+            "kind": "operation",
+            "name": "updateCatalogItem",
+            "detail": "PUT /catalog-items/{id}: Updates an existing catalog item identified by ID."
+          },
+          {
+            "id": "operation:deleteCatalogItem",
+            "kind": "operation",
+            "name": "deleteCatalogItem",
+            "detail": "DELETE /catalog-items/{id}: Deletes a catalog item by its ID after user confirmation."
+          },
+          {
+            "id": "operation:getAvailableStock",
+            "kind": "operation",
+            "name": "getAvailableStock",
+            "detail": "GET /catalog-items/{id}/stock: Checks the available stock quantity for a specific catalog item on a given date."
+          },
+          {
+            "id": "operation:createStockRecord",
+            "kind": "operation",
+            "name": "createStockRecord",
+            "detail": "POST /catalog-items/{id}/stock: Creates or updates a stock record for an item on a specific date."
+          },
+          {
+            "id": "operation:getCatalogTypes",
+            "kind": "operation",
+            "name": "getCatalogTypes",
+            "detail": "GET /catalog-types: Retrieves a list of all available catalog types."
+          },
+          {
+            "id": "operation:uploadItemImage",
+            "kind": "operation",
+            "name": "uploadItemImage",
+            "detail": "POST /pics/uploadimage: Uploads a temporary image file for a catalog item."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Application Startup and Configuration",
+            "detail": "The application is fully configured and ready to handle web requests using MVC and Web API."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Initialization of Catalog Data",
+            "detail": "The database is populated with baseline catalog information (types, brands, items, stock, discounts)."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "Accessing Catalog Items",
+            "detail": "A list of catalog items is displayed on Default.aspx, and pagination controls are rendered."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-025517-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Implement Catalog Item retrieval by ID",
+            "acceptanceCriteria": [
+              "Given an integer ID, when FindCatalogItem is called, then the system returns the matching CatalogItem.",
+              "Given the catalog item exists, when FindCatalogItem is called, then the returned item populates its CatalogBrand and CatalogType properties.",
+              "Given the catalog item does not exist, when FindCatalogItem is called, then the system returns a not found indicator."
+            ]
+          },
+          {
+            "title": "Implement Paginated Catalog Listing",
+            "acceptanceCriteria": [
+              "Given a page size of 20 and page index 1, when GetCatalogItemsPaginated is called, then the system returns a list containing 20 items.",
+              "Given a total of 100 items, when GetCatalogItemsPaginated is called with page size 20, then the total pages calculated must be 5."
+            ]
+          },
+          {
+            "title": "Implement Catalog Item Creation",
+            "acceptanceCriteria": [
+              "Given valid data for a new item, when CreateCatalogItem is called, then the system persists the item and assigns it a unique ID.",
+              "Given the CreateCatalogItem call includes a temporary image name, when CreateCatalogItem succeeds, then the system calls ImageService to update the image record.",
+              "Given required fields (Name) are missing during creation, when CreateCatalogItem is called, then the persistence layer rejects the operation."
+            ]
+          },
+          {
+            "title": "Implement Catalog Item Update",
+            "acceptanceCriteria": [
+              "Given an existing item ID, when UpdateCatalogItem is called with modified data, then the system persists the changes after marking the entity as modified.",
+              "Given the update includes a temporary image name, when UpdateCatalogItem succeeds, then the system updates the product image record via ImageService."
+            ]
+          },
+          {
+            "title": "Implement Catalog Item Deletion",
+            "acceptanceCriteria": [
+              "Given an item ID, when DeleteCatalogItem is called, then the system removes the item record from the data store.",
+              "Given the item ID does not exist, when DeleteCatalogItem is called, then the system reports that no item was deleted."
+            ]
+          },
+          {
+            "title": "Implement Image URL Generation and Management",
+            "acceptanceCriteria": [
+              "Given a catalog item ID, when BuildImageUrl is called, then a full URI string is constructed using the BaseUrl and ID.",
+              "Given a valid item ID and image file, when UploadTempImage is called, then the system returns the generated URI for the blob.",
+              "Given an item exists, when InitializeCatalogImages is called, then placeholder images (1.png to 12.png) are created in storage.",
+              "Given an item ID, when GetDefaultImageUrl is called, then the system returns the predefined default image URI."
+            ]
+          },
+          {
+            "title": "Implement Catalog View Filtering and Display",
+            "acceptanceCriteria": [
+              "Given the CatalogView is initialized, when SetCatalogItems is called, then the data grid is populated with items matching the provided filter/discount logic.",
+              "Given a specific Brand or Type is selected in the view, when filterChanged is triggered, then the view refreshes the catalog grid with filtered results.",
+              "Given a list of items and a discount value, when SetCatalogItems is called, then the view displays the discount banner if applicable.",
+              "Given the view is loaded, when displaying items, then the grid correctly shows Item Name, Description, Brand, Type, Price, and Stock levels."
+            ]
+          },
+          {
+            "title": "Implement Catalog Item Delete Confirmation",
+            "acceptanceCriteria": [
+              "Given an item ID is selected for deletion, when the Delete view loads, then it displays all item details (Name, Price, Stock, etc.) for confirmation.",
+              "Given the Delete view is displayed, when the user clicks Cancel, then the system redirects to the Index view.",
+              "Given the Delete view is displayed, when the user confirms deletion, then the system calls DeleteCatalogItem via the service."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Product Catalog CRUD Operations",
+            "detail": "Users can find, list (with pagination and filtering by Brand and Type), create, update, and remove catalog items using a catalog service."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Catalog Item Detail Viewing",
+            "detail": "Users can view detailed information for a specific catalog item, including its name, description, price, stock levels, brand, and type."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Catalog Listing with Pagination and Filtering",
+            "detail": "The system supports viewing a paginated list of catalog items, allowing filtering by brand and type, and displaying total item count and page navigation."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Image Management",
+            "detail": "The system supports uploading temporary images for catalog items and retrieving image URLs, which can be stored in Azure Blob Storage."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Inventory Stock Tracking",
+            "detail": "The system can retrieve the available stock for a specific catalog item on a given date."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Discount Rule Retrieval",
+            "detail": "The system can retrieve the discount item applicable for a specific day."
+          },
+          {
+            "id": "table:container_group_outputs",
+            "kind": "table",
+            "name": "container_group_outputs",
+            "detail": "Stores public IPv4 addresses assigned to container groups."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Maintains a record of available brands in the system."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Defines product categories."
+          },
+          {
+            "id": "table:catalog_item",
+            "kind": "table",
+            "name": "catalog_item",
+            "detail": "Represents a specific item available in the catalog, tracking stock and pricing."
+          },
+          {
+            "id": "table:catalog_item_stock",
+            "kind": "table",
+            "name": "catalog_item_stock",
+            "detail": "Tracks inventory levels for catalog items on a specific date."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Defines discounts applicable to catalog items."
+          },
+          {
+            "id": "table:catalog_type_entity",
+            "kind": "table",
+            "name": "catalog_type_entity",
+            "detail": "Represents a catalog type."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Tracks product availability on specific dates."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Browse Product Catalog",
+            "detail": "The page displays a list of catalog items, and pagination controls are visible."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new CatalogItem is created and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "View Product Details",
+            "detail": "The Details page displays all information for the requested product."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Edit Existing Catalog Item",
+            "detail": "The Edit page displays the existing product data, allowing for modification."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Save Changes to Catalog Item",
+            "detail": "The existing CatalogItem is updated in the database, and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Edit and Update Catalog Item",
+            "detail": "The catalog item record is updated in the database, and the user is redirected to the root page."
+          },
+          {
+            "id": "flow:FLOW-007",
+            "kind": "flow",
+            "name": "Browse Product Catalog",
+            "detail": "The user views the next or previous page of the product catalog."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Initialization and Seeding of Catalog Data",
+            "detail": "The database contains preconfigured records for CatalogTypes, CatalogBrands, CatalogItems, CatalogItemsStocks, and DiscountItems."
+          },
+          {
+            "id": "flow:FLOW-010",
+            "kind": "flow",
+            "name": "View Switching",
+            "detail": "The application loads the corresponding view (Mobile or Desktop)."
+          },
+          {
+            "id": "flow:FLOW-013",
+            "kind": "flow",
+            "name": "Delete Catalog Item",
+            "detail": "The catalog item is removed from the system, and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-014",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new catalog item is saved via the CatalogService."
+          },
+          {
+            "id": "flow:FLOW-017",
+            "kind": "flow",
+            "name": "Load Catalog View Initialization Flow",
+            "detail": "The CatalogView is configured, displays all available catalog data, and shows any active discount banner."
+          },
+          {
+            "id": "flow:FLOW-018",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new catalog item record is submitted for creation."
+          },
+          {
+            "id": "flow:FLOW-019",
+            "kind": "flow",
+            "name": "Edit and Update Catalog Item",
+            "detail": "The existing catalog item record is updated in the system."
+          },
+          {
+            "id": "flow:FLOW-020",
+            "kind": "flow",
+            "name": "Load Catalog View Initialization Flow",
+            "detail": "The CatalogView dialog is shown to the user."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Catalog Edit Form",
+            "detail": "Allows a user to modify an existing catalog item's attributes."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Site Information",
+            "detail": "Provides general information and contact details about the application."
+          },
+          {
+            "id": "screen:SCRN-006",
+            "kind": "screen",
+            "name": "Catalog Listing",
+            "detail": "Displays a sortable and paginated list of all catalog items with options to view details, edit, or delete each item."
+          },
+          {
+            "id": "screen:SCRN-017",
+            "kind": "screen",
+            "name": "Catalog Detail View",
+            "detail": "Displays all descriptive attributes for a specific catalog item."
+          },
+          {
+            "id": "screen:SCRN-028",
+            "kind": "screen",
+            "name": "Catalog Create Form",
+            "detail": "Provides the interface for users to add a new catalog item to the system."
+          },
+          {
+            "id": "screen:SCRN-030",
+            "kind": "screen",
+            "name": "Catalog Delete Confirmation",
+            "detail": "Displays item details and prompts for confirmation before permanent deletion."
+          },
+          {
+            "id": "screen:SCRN-031",
+            "kind": "screen",
+            "name": "Error Page",
+            "detail": "Displays a standardized message when an application request fails processing."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-202910-plan-planner-coverage",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "tasks": [
+          {
+            "title": "Catalog list with paging",
+            "acceptanceCriteria": [
+              "Given no page size and no page index, when the list is requested, then it shows page 0 with 10 items.",
+              "Given page size 10 and page index 1, when the list is requested, then it shows the second page of items ordered by Id."
+            ]
+          },
+          {
+            "title": "Catalog item validation rules",
+            "acceptanceCriteria": [
+              "Given a price of 1000001, when the item is saved, then it is refused as above the limit.",
+              "Given an available stock of 10000001, when the item is saved, then it is refused."
+            ]
+          },
+          {
+            "title": "Create, edit and delete catalog items for signed-in users",
+            "acceptanceCriteria": [
+              "Given an anonymous visitor, when the create page is posted, then the visitor is sent to sign in.",
+              "Given a signed-in user and a valid item, when it is saved, then the user is returned to the list."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Browse the paginated catalog",
+            "detail": "Shows catalog items one page at a time, with page size and page index taken from the request and defaulting to 10 and 0, with Previous and Next links."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "View catalog item details",
+            "detail": "Shows one catalog item by id; a missing id returns 400 and an unknown id returns 404."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Create a catalog item",
+            "detail": "A form creates a catalog item with brand and type drop-downs; a valid submission saves the item and returns to the list, and an invalid one shows the form again."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Edit a catalog item",
+            "detail": "An edit form loads an existing item and saves changes through the catalog service; the picture file name is read-only."
+          },
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Delete a catalog item",
+            "detail": "A confirmation page shows the item before it is removed through the catalog service and the user returns to the list."
+          },
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Returns the picture file of a catalog item with a MIME type chosen from its file extension."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Sign in and sign out with Azure Active Directory",
+            "detail": "Signed-in users are shown a greeting and sign-out link, and sign-in is handled through OpenID Connect against Azure AD."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Filter the catalog by brand and type",
+            "detail": "The WinForms catalog screen filters items by brand and type, where 0 means no filter, and shows prices after the current discount."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Check and record stock per item and date",
+            "detail": "The WinForms inventory tab shows the stock of an item on a date and saves a shipment, overwriting the quantity already held for that item and date."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Brands web API",
+            "detail": "A JSON API lists all catalog brands and returns one brand by id."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Keeps the list of product brands that catalog items refer to."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Keeps the list of product types that catalog items refer to."
+          },
+          {
+            "id": "table:catalog",
+            "kind": "table",
+            "name": "catalog",
+            "detail": "Keeps one row per sellable catalog item with its name, price, picture file name, brand and type, and stock figures."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Keeps the available stock of one catalog item on one date. The stock_id is supplied by the code, not generated by the database."
+          },
+          {
+            "id": "table:discount_item",
+            "kind": "table",
+            "name": "discount_item",
+            "detail": "Keeps one discount: a fraction size, read as a percentage after multiplying by 100, and its start and end dates."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Browser request to the default MVC route",
+            "detail": "The request is served as a static file, or dispatched to an MVC controller action, or to the error page on failure."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Create a catalog item",
+            "detail": "The item is created and the user sees the catalog index, or the form is shown again with its drop-downs filled."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "Request a catalog item picture",
+            "detail": "The image bytes are returned with a MIME type, or a 400 or 404 response is returned."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Add a catalog item",
+            "detail": "The form is posted with the entered values; the handler that saves the item is outside this area."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Application start-up and container wiring",
+            "detail": "MVC, Web API, areas, filters, routes and bundles are registered, and the catalog database initializer is set when mock data is off."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Create a catalog item from the admin form",
+            "detail": "The new item is saved and the user is sent to the catalog list, or the form is shown again with the errors."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Open the home page product list",
+            "detail": "The product list and pager show one page of catalog items."
+          },
+          {
+            "id": "flow:FLOW-009",
+            "kind": "flow",
+            "name": "Create a catalog item",
+            "detail": "A new catalog item is created through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-010",
+            "kind": "flow",
+            "name": "Edit a catalog item",
+            "detail": "The catalog item is updated through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-011",
+            "kind": "flow",
+            "name": "View item details",
+            "detail": "The item is shown as read-only labels, with links to edit it or go back to the list."
+          },
+          {
+            "id": "flow:FLOW-012",
+            "kind": "flow",
+            "name": "Delete a catalog item",
+            "detail": "The item is removed through the catalog service and the user is redirected to the site root."
+          },
+          {
+            "id": "flow:FLOW-013",
+            "kind": "flow",
+            "name": "Application start-up of the MVC site",
+            "detail": "The container, routes, bundles, database initializer, catalog images and telemetry are configured and the site can serve requests."
+          },
+          {
+            "id": "flow:FLOW-015",
+            "kind": "flow",
+            "name": "Create a catalogue item with a picture",
+            "detail": "The item is saved and the user is returned to the catalogue list, or the form is shown again with its errors."
+          },
+          {
+            "id": "flow:FLOW-017",
+            "kind": "flow",
+            "name": "Add a stock shipment for a catalog item",
+            "detail": "The stock row for the item and date holds the entered quantity, the user sees a confirmation message and the inputs are cleared."
+          },
+          {
+            "id": "flow:FLOW-018",
+            "kind": "flow",
+            "name": "Check available stock for an item on a date",
+            "detail": "A row with the date, the item id and the stock number is added to the stock result list."
+          },
+          {
+            "id": "screen:SCRN-001",
+            "kind": "screen",
+            "name": "Catalog list",
+            "detail": "Lists catalog items in a paged table, with links to create, view, edit and delete an item."
+          },
+          {
+            "id": "screen:SCRN-003",
+            "kind": "screen",
+            "name": "Create catalog item",
+            "detail": "Collects the fields of a new catalog item and saves it, with a cancel link back to the list."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "Edit catalog item",
+            "detail": "Lets a user change an existing catalog item, with the picture file name read-only."
+          },
+          {
+            "id": "screen:SCRN-005",
+            "kind": "screen",
+            "name": "Delete catalog item confirmation",
+            "detail": "Shows an item and asks the user to confirm its deletion before it is removed."
+          },
+          {
+            "id": "screen:SCRN-006",
+            "kind": "screen",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog item in read-only form, with links to edit it and to go back to the list."
+          },
+          {
+            "id": "screen:SCRN-007",
+            "kind": "screen",
+            "name": "Error page",
+            "detail": "Tells the user that a request failed."
+          },
+          {
+            "id": "screen:SCRN-014",
+            "kind": "screen",
+            "name": "Contact",
+            "detail": "Shows the postal address, phone number and support e-mail links."
+          },
+          {
+            "id": "screen:SCRN-015",
+            "kind": "screen",
+            "name": "About",
+            "detail": "Shows the about text for the application."
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "detail": "Project files: eShopLegacy.Utilities.csproj; languages: csharp, xml; 3 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopPorted",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopPorted",
+            "detail": "Project files: eShopPorted.csproj; languages: javascript, css, csharp; 104 files"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-023125-plan-planner-coverage",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "tasks": [
+          {
+            "title": "Implement Image Handling Service",
+            "acceptanceCriteria": [
+              "Given an upload request for a catalog item, when UploadTempImage is called, then the system validates the file format and returns a temporary URL.",
+              "Given a temporary image name and CatalogItem ID, when the system updates the record, then the persistent URL is correctly generated and stored.",
+              "Given a request to get the BaseUrl, when ImageService is called, then the predefined base path is returned."
+            ]
+          }
+        ],
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Product Catalog Management (CRUD)",
+            "detail": "The system must allow users to search for, create, update, and remove catalog items, supporting filtering by Brand and Type, and pagination for listing items."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Image Asset Management",
+            "detail": "The system must support uploading temporary images, updating item images, and retrieving image URLs using a base URL."
+          },
+          {
+            "id": "feature:F-003",
+            "kind": "feature",
+            "name": "Stock Availability Tracking",
+            "detail": "The system must allow retrieval of stock levels for a specific item on a specific date, and update stock availability."
+          },
+          {
+            "id": "feature:F-004",
+            "kind": "feature",
+            "name": "Discount Retrieval",
+            "detail": "The system must retrieve the applicable discount item based on a specific date."
+          },
+          {
+            "id": "table:container_group_outputs",
+            "kind": "table",
+            "name": "container_group_outputs",
+            "detail": "Stores the public IPv4 address assigned to a container group deployment."
+          },
+          {
+            "id": "table:catalog_item",
+            "kind": "table",
+            "name": "catalog_item",
+            "detail": "Contains details about a product in the catalog."
+          },
+          {
+            "id": "table:catalog_brand",
+            "kind": "table",
+            "name": "catalog_brand",
+            "detail": "Maintains a record of available brands in the system."
+          },
+          {
+            "id": "table:catalog_type",
+            "kind": "table",
+            "name": "catalog_type",
+            "detail": "Defines product categories."
+          },
+          {
+            "id": "table:catalog_items_stock",
+            "kind": "table",
+            "name": "catalog_items_stock",
+            "detail": "Tracks inventory levels for catalog items on a specific date."
+          },
+          {
+            "id": "table:discount_items",
+            "kind": "table",
+            "name": "discount_items",
+            "detail": "Defines discounts applicable to catalog items."
+          },
+          {
+            "id": "table:catalog_type_entity",
+            "kind": "table",
+            "name": "catalog_type_entity",
+            "detail": "Represents a catalog type."
+          },
+          {
+            "id": "operation:listCatalogBrands",
+            "kind": "operation",
+            "name": "listCatalogBrands",
+            "detail": "GET /catalog-brands: Retrieves a list of all available catalog brands."
+          },
+          {
+            "id": "operation:getBrandDetails",
+            "kind": "operation",
+            "name": "getBrandDetails",
+            "detail": "GET /catalog-brands/{brandId}: Fetches details for a specific catalog brand."
+          },
+          {
+            "id": "operation:getCatalogItems",
+            "kind": "operation",
+            "name": "getCatalogItems",
+            "detail": "GET /catalog-items: Retrieves a paginated list of catalog items, optionally filtered by brand and type."
+          },
+          {
+            "id": "operation:createCatalogItem",
+            "kind": "operation",
+            "name": "createCatalogItem",
+            "detail": "POST /catalog-items: Creates a new catalog item in the system."
+          },
+          {
+            "id": "operation:initializeCatalogImages",
+            "kind": "operation",
+            "name": "initializeCatalogImages",
+            "detail": "POST /catalog-items/initialize-images: Initializes the catalog images for all existing catalog items."
+          },
+          {
+            "id": "operation:getCatalogItemById",
+            "kind": "operation",
+            "name": "getCatalogItemById",
+            "detail": "GET /catalog-items/{catalogItemId}: Retrieves a single catalog item by its unique ID, including brand and type information."
+          },
+          {
+            "id": "operation:updateCatalogItem",
+            "kind": "operation",
+            "name": "updateCatalogItem",
+            "detail": "PUT /catalog-items/{catalogItemId}: Updates an existing catalog item identified by its ID."
+          },
+          {
+            "id": "operation:deleteCatalogItem",
+            "kind": "operation",
+            "name": "deleteCatalogItem",
+            "detail": "DELETE /catalog-items/{catalogItemId}: Removes a catalog item from the system based on its ID."
+          },
+          {
+            "id": "operation:getItemPicture",
+            "kind": "operation",
+            "name": "getItemPicture",
+            "detail": "GET /catalog-items/{catalogItemId}/pic: Retrieves the actual image content for a catalog item."
+          },
+          {
+            "id": "operation:uploadItemImage",
+            "kind": "operation",
+            "name": "uploadItemImage",
+            "detail": "POST /catalog-items/{catalogItemId}/upload-image: Uploads an image for a specific catalog item and returns a temporary URL."
+          },
+          {
+            "id": "operation:listCatalogTypes",
+            "kind": "operation",
+            "name": "listCatalogTypes",
+            "detail": "GET /catalog-types: Retrieves a list of all available catalog types."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Browse Product Catalog",
+            "detail": "The page displays a list of catalog items, and pagination controls are visible."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new CatalogItem is created and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-003",
+            "kind": "flow",
+            "name": "View Product Details",
+            "detail": "The Details page displays all information for the requested product."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Edit Existing Catalog Item",
+            "detail": "The Edit page displays the existing product data, allowing for modification."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Save Changes to Catalog Item",
+            "detail": "The existing CatalogItem is updated in the database, and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Edit and Update Catalog Item",
+            "detail": "The catalog item record is updated in the database, and the user is redirected to the root page."
+          },
+          {
+            "id": "flow:FLOW-007",
+            "kind": "flow",
+            "name": "Browse Product Catalog",
+            "detail": "The user views the next or previous page of the product catalog."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Initialization and Seeding of Catalog Data",
+            "detail": "The database contains preconfigured records for CatalogTypes, CatalogBrands, CatalogItems, CatalogItemsStocks, and DiscountItems."
+          },
+          {
+            "id": "flow:FLOW-010",
+            "kind": "flow",
+            "name": "View Switching",
+            "detail": "The application loads the corresponding view (Mobile or Desktop)."
+          },
+          {
+            "id": "flow:FLOW-013",
+            "kind": "flow",
+            "name": "Delete Catalog Item",
+            "detail": "The catalog item is removed from the system, and the user is redirected to the home page."
+          },
+          {
+            "id": "flow:FLOW-014",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new catalog item is saved via the CatalogService."
+          },
+          {
+            "id": "flow:FLOW-017",
+            "kind": "flow",
+            "name": "Load Catalog View Initialization Flow",
+            "detail": "The CatalogView is configured, displays all available catalog data, and shows any active discount banner."
+          },
+          {
+            "id": "flow:FLOW-018",
+            "kind": "flow",
+            "name": "Create New Catalog Item",
+            "detail": "A new catalog item record is submitted for creation."
+          },
+          {
+            "id": "flow:FLOW-019",
+            "kind": "flow",
+            "name": "Edit and Update Catalog Item",
+            "detail": "The existing catalog item record is updated in the system."
+          },
+          {
+            "id": "flow:FLOW-020",
+            "kind": "flow",
+            "name": "Load Catalog View Initialization Flow",
+            "detail": "The CatalogView dialog is shown to the user."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Catalog Item Edit",
+            "detail": "Allows users to modify the attributes of an existing catalog item."
+          },
+          {
+            "id": "screen:SCRN-004",
+            "kind": "screen",
+            "name": "General Information Pages",
+            "detail": "Provides general information about the application."
+          },
+          {
+            "id": "screen:SCRN-010",
+            "kind": "screen",
+            "name": "Catalog List",
+            "detail": "Displays a paginated table of catalog items with options to view details, edit, and delete each item."
           }
         ]
       }

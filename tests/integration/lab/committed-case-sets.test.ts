@@ -41,7 +41,7 @@ const REPAIR_KEYS = new Set(['problems', 'answer']);
  * kept on them until more runs are captured (runbook section 4). A change to this list is a change
  * to what the lab can decide, so it is stated here.
  */
-const ONE_SIDED = ['planner-api-contract', 'planner-package', 'planner-plan-repair', 'planner-prd'];
+const ONE_SIDED: string[] = [];
 const CAPTURED = [
   'cards-card-format',
   'cards-continue',
@@ -92,11 +92,13 @@ function sourceProblems({ name, set }: Loaded): string[] {
 }
 
 function splitProblems({ name, set }: Loaded): string[] {
+  // A hand-made variant (id ending -spa) is on its base case's side (variant-case-sets.test.ts).
+  const own = set.cases.filter((each) => !each.id.endsWith('-spa'));
   const rule = splitsOf(
-    set.cases.map((each) => each.input),
+    own.map((each) => each.input),
     sha256Hex,
   );
-  const wrong = set.cases.filter((each, index) => each.split !== rule[index]);
+  const wrong = own.filter((each, index) => each.split !== rule[index]);
   return wrong.map((each) => `${name}: ${each.id} is not on the side the rule picks`);
 }
 
