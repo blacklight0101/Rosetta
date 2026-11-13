@@ -24,7 +24,7 @@ import { dollars } from '../eval/eval-settings.js';
 import { runLab, type LabParts } from './compose-lab.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
-import { ledgerFileFromEnvironment } from './lab-ledger-path.js';
+import { ledgerFileFromEnvironment, sharedLedgerProblem } from './lab-ledger-path.js';
 import { findLabTarget } from './lab-targets.js';
 
 // RF-1400, RF-1403, DEC-231, ADR-008: `npm run lab`, the opt-in prompt lab. It reads `lab/config.json`
@@ -88,6 +88,8 @@ export async function runLabRun(
 ): Promise<number> {
   const resolved = await resolveRun(args, folders);
   if (!resolved.ok) return (print(resolved.error), 1);
+  const missing = sharedLedgerProblem(args.model.provider, parts.ledgerFile);
+  if (missing !== undefined) return (print(missing), 1);
   const { target, loaded, prompt } = resolved.value;
   for (const line of planLines(args, parts, loaded.set.cases.length, prompt.name)) print(line);
   if (!args.yes) return (print(NOT_STARTED), 1);

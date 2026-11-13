@@ -23,3 +23,15 @@ export function ledgerFileFromEnvironment(
   }
   return ok(value);
 }
+
+/**
+ * RF-1402, DEC-231: the $50 is one maximum for all builders together, so a model that is not the
+ * fake provider of the tests needs the shared ledger. The message when it has none, else undefined.
+ */
+export function sharedLedgerProblem(
+  provider: string,
+  ledgerFile: string | undefined,
+): string | undefined {
+  if (provider === 'fake' || ledgerFile !== undefined) return undefined;
+  return `${ERROR_CODES.configurationInvalid}: set ${LEDGER_VARIABLE} to the shared Phase 10 ledger (an absolute .jsonl path). The $50 total and the $40 stop line cover all builders together, so a real call must use the one ledger they share.`;
+}

@@ -28,7 +28,7 @@ supplies that schema, a function that calls the run's own builder with the promp
 parser as the check of an answer. The lab composes the same guarded provider factory as `npm run eval`, and puts one
 decorator on top of it that holds, settles and releases the cost of each call in `lab-out/ledger.jsonl`. The ledger is
 append-only JSON lines of hold, settle and release; a process decides on the lines up to its own hold, so two processes
-never pass a cap together, and a hold older than ten minutes stops counting. The ledger file is `lab-out/ledger.jsonl`, or the absolute `.jsonl` path in the environment variable `ROSETTA_LAB_LEDGER`, which all Phase 10 builders set to the same file outside every checkout so the phase total does not depend on the worktree that runs the lab. `lab/config.json` holds the total
+never pass a cap together, and a hold older than ten minutes stops counting. The ledger file is `lab-out/ledger.jsonl`, or the absolute `.jsonl` path in the environment variable `ROSETTA_LAB_LEDGER`, which all Phase 10 builders set to the same file outside every checkout so the phase total does not depend on the worktree that runs the lab. The variable is required for every real provider: the $50 is one maximum for all builders together (DEC-231), so the lab refuses to start a real model without it; only the fake provider of the tests may keep the per-checkout default. `lab/config.json` holds the total
 ($50), the stop line ($40) and the cap of one invocation.
 
 ## Rationale
