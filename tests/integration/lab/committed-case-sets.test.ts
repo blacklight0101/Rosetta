@@ -20,9 +20,14 @@ const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
 const CAPTURED = [
   'cards-card-format',
   'planner-gap',
+  'reader-answers',
   'reader-area',
+  'reader-parent-cards',
   'reader-read-first',
+  'reader-read-more',
+  'reader-reread',
   'reader-task',
+  'reader-turns-left',
   'summariser-merge',
   'summariser-overview',
 ];
