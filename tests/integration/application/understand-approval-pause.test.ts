@@ -84,7 +84,7 @@ describe('RF-432 a run that reaches its approved amount', UNDERSTAND_TIMEOUT, ()
     expect(latest).toMatchObject({ id: paused.id, endState: 'Completed' });
   });
 
-  it('RF-432 Stop here gives the same saved result as a run that reached its cap', async () => {
+  it('RF-432 P9-03 Stop here saves what a capped run saves, with its own reason and no RST-1600', async () => {
     const today = await harnessWith(capped);
     const capRun = await today.understand({ areas });
     const h = await harnessWith(roomy);
@@ -93,8 +93,17 @@ describe('RF-432 a run that reaches its approved amount', UNDERSTAND_TIMEOUT, ()
     const stopped = await h.stopPaused(paused);
 
     expect(capRun.endState).toBe('CapReached');
-    expect(stopped).toMatchObject({ endState: 'CapReached', unreadAreas: capRun.unreadAreas });
-    expect(await endedData(h, stopped)).toEqual(await endedData(today, capRun));
+    expect(capRun.endReason).toBeNull();
+    expect(stopped).toMatchObject({
+      endState: 'CapReached',
+      endReason: 'StoppedAtApproval',
+      unreadAreas: capRun.unreadAreas,
+    });
+    expect(await endedData(today, capRun)).toEqual({
+      endState: 'CapReached',
+      errorCode: 'RST-1600',
+    });
+    expect(await endedData(h, stopped)).toEqual({ endState: 'CapReached', errorCode: undefined });
     expect(await indexOf(h, stopped)).toEqual(await indexOf(today, capRun));
   });
 });
