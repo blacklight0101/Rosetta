@@ -57,7 +57,7 @@ Against the proposed default (at least 80 percent of calibration claims: met, 10
 | `20261113-164046-lab` | verifier/claim.v5, verifier-claim-sample | 4     | 100%            | 100%                  | 5.0 (4 scored)     | grounding 5.0, verdict-correct 5.0, reason-quality 5.0, form 5.0 | $0.0007     | $0.0326    |
 | `20261113-164102-lab` | summariser/overview.v1, overview-sample  | 2     | 100%            | n/a (no labels)       | 4.5 (2 scored)     | grounding 4.5, citation-accuracy 5.0, coverage 4.5, form 4.0     | $0.0009     | $0.0193    |
 
-No case was vetoed, refused or errored; no RST code. The two runs cost $0.0535 in all. Ledger for this card: $2.1247 (rejected key) + $0.3633 (judge check) + $0.0535 = **$2.5415 of the $3 slice**. Four and two cases are too few to say anything about the prompts; they show the judge works inside a run.
+No case was vetoed, refused or errored; no RST code. The two runs cost $0.0534 in all (33 297 and 20 128 micro-dollars). Ledger for this card: $2.1247 (rejected key) + $0.3633 (judge check) + $0.0534 = **$2.5414 of the $3 slice**. Four and two cases are too few to say anything about the prompts; they show the judge works inside a run.
 
 ## Smoke run on a local model (history, 2026-11-13)
 

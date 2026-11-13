@@ -39,7 +39,7 @@ const request = (maxPerRun: number, list = tasks) => ({
 });
 
 describe('building a case set', () => {
-  it('RF-1405 writes a set the lab reads, with its source, run and a third held back', () => {
+  it('RF-1405 writes a set the lab reads, with its source, run and the sides of the rule', () => {
     const built = buildCaseSet(request(6));
 
     expect(built.ok).toBe(true);
@@ -57,7 +57,6 @@ describe('building a case set', () => {
         sha256Hex,
       ),
     );
-    expect(splits.filter((each) => each === 'held-back')).toHaveLength(2);
   });
 
   it('RF-1404 takes at most the most per run, chosen by the task name, not the input', () => {
@@ -119,5 +118,37 @@ describe('the inputs of a case set built from runs', () => {
     const text = JSON.stringify(built.value.set);
     expect(text).not.toContain('HIDE');
     expect(text).toContain('-P [MASKED:password]');
+  });
+});
+
+describe('the sides of a captured set', () => {
+  const many = Array.from({ length: 30 }, (_, index) => area(`reader-${String(100 + index)}`));
+  const sideOf = new Map(
+    many.map((task) => {
+      const built = buildCaseSet(request(1, [task]));
+      return [task.name, built.ok ? built.value.set.cases[0]?.split : undefined];
+    }),
+  );
+  const on = (side: string) => many.filter((task) => sideOf.get(task.name) === side).slice(0, 3);
+
+  it('RF-1405 warns when a set has no held-back case: no version can be kept on it yet', () => {
+    const built = buildCaseSet(request(3, on('tune')));
+
+    if (!built.ok) throw new Error(built.error);
+    expect(built.value.set.cases.every((each) => each.split === 'tune')).toBe(true);
+    expect(built.value.warnings).toEqual([
+      'The set has no held-back case, so no version can be kept on it (DEC-231): capture more runs.',
+    ]);
+  });
+
+  it('RF-1405 warns when a set has no tune case, and not when it has both', () => {
+    const held = buildCaseSet(request(3, on('held-back')));
+    const both = buildCaseSet(request(6, [...on('tune'), ...on('held-back')]));
+
+    if (!held.ok || !both.ok) throw new Error('not built');
+    expect(held.value.warnings).toEqual([
+      'The set has no tune case, so no version can be tuned on it: capture more runs.',
+    ]);
+    expect(both.value.warnings).toEqual([]);
   });
 });

@@ -382,7 +382,7 @@
     {
       "id": "eshop-20261029-152045-plan-planner-api-contract",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "featureCards": [
           {

@@ -23,7 +23,7 @@
     {
       "id": "eshop-20261109-054942-understand-reader-005",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
         "files": [

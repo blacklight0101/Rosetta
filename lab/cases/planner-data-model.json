@@ -177,7 +177,7 @@
     {
       "id": "eshop-20261102-203736-plan-planner-data-model",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "entities": [
           {

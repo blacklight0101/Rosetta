@@ -29,7 +29,7 @@ async function arrange(): Promise<{ lab: string; run: string; file: string }> {
 }
 
 describe('the capture command', () => {
-  it('RF-1404 writes the case set of the prompt from the run, with its source and a held-back case', async () => {
+  it('RF-1404 writes the case set of the prompt from the run, with its source, and warns of a one-sided set', async () => {
     const { lab, run, file } = await arrange();
     const lines: string[] = [];
 
@@ -46,8 +46,9 @@ describe('the capture command', () => {
     expect(set.ok).toBe(true);
     if (!set.ok) return;
     expect(set.value.sources?.[0]).toMatchObject({ key: 'shop', licence: 'MIT', runs: ['run-1'] });
-    expect(set.value.cases.map((each) => each.split)).toEqual(['held-back']);
-    expect(lines.join('\n')).toContain('1 cases, 1 held back');
+    expect(set.value.cases.map((each) => each.split)).toEqual(['tune']);
+    expect(lines.join('\n')).toContain('1 cases, 0 held back');
+    expect(lines.join('\n')).toContain('Warning: The set has no held-back case');
   });
 });
 
