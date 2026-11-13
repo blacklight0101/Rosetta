@@ -56,6 +56,16 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 - A call that failed after being sent is booked at the larger of the cost the budget guard knows and its held worst case, so the ledger may over-count it; only a call refused before sending is released.
 - A hold is not renewed while a call runs: the lab refuses to start when the provider settings could keep one call longer than a hold lasts (30 minutes, counted as the budget guard counts its own reservation), and when a hold or a settle cannot be written the invocation stops, so nothing is sent without a hold.
 
+## Amendment (2026-11-13, P10-03)
+
+The lab gets a judge (RF-1404, RF-1405). The decision above is unchanged; the judge adds, without changing the structure:
+a judge call is one more provider call made through a second `LabCallGate` over the same guarded provider factory and the
+same ledger object as the target's, so it is held, settled and capped like every lab call; its cost is kept in the case's
+`judge` and not in the target's `costMicros`. The judge's inputs and the answer are untrusted, so three data block sources
+(`lab_source`, `lab_answer`, `lab_label`) were added to the egress guard's list. A judge call that fails after it was sent
+stops the invocation, because a failed call is booked at its worst case (a rejected key would otherwise be booked on every case).
+The judge check is a mode of the same command, not a second entry point, so every real call still goes through `npm run lab`.
+
 ## References
 
 - RF-1400..RF-1403, RNF-015, DEC-231, ADR-003, ADR-007, ADR-008.
