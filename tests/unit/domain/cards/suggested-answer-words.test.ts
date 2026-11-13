@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isEitherOrQuestion,
   isOpenQuestion,
   startsWithYesOrNo,
 } from '../../../../src/domain/cards/suggested-answer.js';
+import { eitherOrQuestion, eitherOrYesBut } from '../../../support/eshop-near-repeats.js';
 import { agentCardsSchema } from '../../../../src/application/cards/card-schema.js';
 
 // RF-645, P8-08 (EV-89): "In which" and "For whom" questions are open questions, "No one" answers a
@@ -61,5 +63,34 @@ describe('P8-08 the words of a suggested answer', () => {
 
     expect(parsed.success).toBe(true);
     expect(parsed.data?.cards[0]?.suggestedAnswers?.[0]?.answer).toBe(expected);
+  });
+});
+
+describe('P9-13 an either-or question', () => {
+  it.each([
+    eitherOrQuestion,
+    'Are the rates fixed or variable?',
+    'Does the basket keep items for a day or for a week?',
+  ])('RF-645 detects "%s"', (question) => {
+    expect(isEitherOrQuestion(question)).toBe(true);
+  });
+  it.each([
+    'Is the rate fixed?',
+    'Is the rate fixed or not?',
+    'Is the order and/or the basket cleared?',
+    'Which team runs the catalog or the basket?',
+  ])('RF-645 does not take "%s" for an either-or question', (question) => {
+    expect(isEitherOrQuestion(question)).toBe(false);
+  });
+  it('RF-645 refuses "Yes, but" on an either-or question and accepts a side', () => {
+    const withAnswer = (first: string) => ({
+      cards: [{ ...card(first).cards[0], question: eitherOrQuestion }],
+    });
+    const refused = agentCardsSchema.safeParse(withAnswer(eitherOrYesBut));
+    expect(refused.success).toBe(false);
+    expect(JSON.stringify(refused.error?.issues)).toContain('two sides');
+    expect(
+      agentCardsSchema.safeParse(withAnswer('Another system, with a shared catalog')).success,
+    ).toBe(true);
   });
 });

@@ -6,6 +6,7 @@ import {
 } from '../../../../src/application/understand/open-questions.js';
 import { assignCardIds } from '../../../../src/domain/cards/card-ids.js';
 import { draftOf } from '../../../support/card-fixtures.js';
+import { distinctPairs, nearRepeatPairs } from '../../../support/eshop-near-repeats.js';
 
 // RF-646, RF-243, Q-52, EV-57, P8-05: the two repeats of the evaluation (synthetic names, the shapes
 // of the real pairs: an opener in front of the same question, and a plural) merge; the distinct but
@@ -79,5 +80,18 @@ describe('RF-243 EV-57 P8-05 one run asks a near-repeat once, by the shared rule
         ...{ mergedCardId: 'OQ-002', mergedQuestion: ollamaAgain, mergedRunKey: 'r1' },
       },
     ]);
+  });
+});
+
+describe('RF-646 P9-13 near-repeat pairs of the eShop evaluation (threshold 75%)', () => {
+  it.each(nearRepeatPairs)('merges %s / %s', (first, second) => {
+    expect(sameQuestion(first, second)).toBe(true);
+  });
+  it.each(distinctPairs)('keeps %s / %s apart', (first, second) => {
+    expect(sameQuestion(first, second)).toBe(false);
+  });
+  it('leaves no pair of the recorded questions in the open list', () => {
+    const cards = cardsOf(...nearRepeatPairs.flat());
+    expect(openQuestionsOf(cards, 'r1')).toHaveLength(nearRepeatPairs.length);
   });
 });

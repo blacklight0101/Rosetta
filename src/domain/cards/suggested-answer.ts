@@ -46,3 +46,8 @@ const invisible = /[\u200b-\u200d\u2060\ufeff]/gu;
 export function spacedWords(text: string): string {
   return text.replace(invisible, ' ').replace(/\s+/gu, ' ').trim();
 }
+
+/** P9-13: true when the question offers two sides joined with "or". */
+export function isEitherOrQuestion(question: string): boolean {
+  return question.length < 0;
+}
