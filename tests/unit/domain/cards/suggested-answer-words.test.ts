@@ -69,28 +69,60 @@ describe('P8-08 the words of a suggested answer', () => {
 describe('P9-13 an either-or question', () => {
   it.each([
     eitherOrQuestion,
-    'Are the rates fixed or variable?',
     'Does the basket keep items for a day or for a week?',
+    'Is the catalog read by the web shop or by the admin tool?',
   ])('RF-645 detects "%s"', (question) => {
     expect(isEitherOrQuestion(question)).toBe(true);
   });
   it.each([
     'Is the rate fixed?',
     'Is the rate fixed or not?',
+    'Are the rates fixed or variable?',
     'Is the order and/or the basket cleared?',
     'Which team runs the catalog or the basket?',
+    'Can a customer cancel or return an order?',
+    'Is the user required to log in or register first?',
+    'Does the shop ship to Spain or Portugal?',
+    'Is the data stored in SQL or NoSQL, or both?',
+    'Is the data stored in SQL or in NoSQL, or both?',
   ])('RF-645 does not take "%s" for an either-or question', (question) => {
     expect(isEitherOrQuestion(question)).toBe(false);
   });
-  it('RF-645 refuses "Yes, but" on an either-or question and accepts a side', () => {
-    const withAnswer = (first: string) => ({
-      cards: [{ ...card(first).cards[0], question: eitherOrQuestion }],
-    });
-    const refused = agentCardsSchema.safeParse(withAnswer(eitherOrYesBut));
-    expect(refused.success).toBe(false);
-    expect(JSON.stringify(refused.error?.issues)).toContain('two sides');
-    expect(
-      agentCardsSchema.safeParse(withAnswer('Another system, with a shared catalog')).success,
-    ).toBe(true);
+});
+
+function answered(question: string, answers: readonly string[]) {
+  const suggestedAnswers = answers.map((each, index) => ({
+    answer: each,
+    description: 'What follows from it.',
+    recommended: index === 0,
+  }));
+  const base = card('x').cards[0];
+  const parsed = agentCardsSchema.safeParse({ cards: [{ ...base, question, suggestedAnswers }] });
+  return parsed.data?.cards[0]?.suggestedAnswers?.map((each) => each.answer);
+}
+
+describe('P9-13 a Yes or No answer to an either-or question is dropped, never the card', () => {
+  const side = 'Another system, with a shared catalog';
+  it('RF-645 drops only the Yes/No answer when the recommended one and three others stay', () => {
+    expect(answered(eitherOrQuestion, [side, eitherOrYesBut, 'This team', 'A mix'])).toEqual([
+      side,
+      'This team',
+      'A mix',
+    ]);
+  });
+  it('RF-645 keeps the card as written when dropping would leave fewer than three answers', () => {
+    const written = [side, eitherOrYesBut, 'This team'];
+    expect(answered(eitherOrQuestion, written)).toEqual(written);
+  });
+  it('RF-645 keeps the card as written when the recommended answer is the Yes', () => {
+    const written = [eitherOrYesBut, side, 'This team', 'A mix'];
+    expect(answered(eitherOrQuestion, written)).toEqual(written);
+  });
+  it('RF-645 keeps a plain yes/no question with its qualified Yes', () => {
+    const written = ['Yes', 'No', eitherOrYesBut];
+    expect(answered('Is the rate fixed?', written)).toEqual(written);
+  });
+  it('RF-645 still refuses a Yes on an open question', () => {
+    expect(answered('Who sets the rate?', ['Yes', 'The team', 'Finance'])).toBeUndefined();
   });
 });

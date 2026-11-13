@@ -25,6 +25,16 @@ export const distinctPairs: readonly (readonly [string, string])[] = [
     'Which catalog item fields does the basket validate before checkout creates an order for a signed-in customer?',
     'Which catalog item fields does the basket validate before checkout creates a shipment for a signed-in customer?',
   ],
+  // an opposite word swapped and one word added: the swap may be the decisive one
+  [
+    'Which orders does the basket reject when the total is above the limit set for a signed-in customer at checkout?',
+    'Which orders does the basket reject when the total is below the limit set for a signed-in customer at checkout daily?',
+  ],
+  // a number swapped and one word added
+  [
+    'Which discount does the basket apply when the order has more than 10 items for a signed-in customer at checkout?',
+    'Which discount does the basket apply when the order has more than 20 items for a signed-in customer at checkout today?',
+  ],
   ['How is the nightly export job scheduled?', 'How is the nightly import job scheduled?'],
 ];
 
