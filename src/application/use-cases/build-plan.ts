@@ -10,6 +10,7 @@ import { readPlanAnswer } from '../plan/plan-answer.js';
 import { draftAfterRepair } from '../plan/plan-repair.js';
 import { repairedAssembly } from '../plan/plan-assembly.js';
 import { planLinks } from '../plan/plan-links.js';
+import { withAdrModelCheck } from '../plan/plan-adr-model.js';
 import { windowOfRole } from '../plan/plan-window.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments } from '../plan/plan-documents.js';
@@ -166,7 +167,10 @@ export class BuildPlan implements RunExecutor {
     });
   }
 
-  /** RF-621..RF-627: the documents, the task card links and the package; an unbuilt item: RST-1806. */
+  /**
+   * RF-621..RF-627: the documents, the task card links and the package; an unbuilt item: RST-1806.
+   * RF-623, P9-15: the data model is checked against the decision records before it is written.
+   */
   private async finish(parts: Finish): Promise<RunOutcome> {
     const { run, call, input, assembly, inputs, files, proposal } = parts;
     const deps = { ...this.deps, scans: parts.scans };
@@ -190,12 +194,11 @@ export class BuildPlan implements RunExecutor {
       { coverage: linking, gap: gapping, repairPrompt: prompts.gapRepair, specificationDriven },
       { content: assembly.content, documents: { ...documents, modules } },
     );
-    const covered = links.planned;
     // P8-96, RF-627: the run records how many gap rounds ran.
     await parts.events.emit('plan.gap.rounds', { rounds: links.gapRounds });
     for (const message of links.warnings) await warn(message);
     const facts = await planScanFacts(deps, inputs, prompts.secretRisk.text);
-    const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
+    const handoff = handoffPackageOf(inputs, links.planned.content, input.catalogue, {
       ...{ ...documents, ...facts, examples, proposal, modules },
       moduleReasons: links.moduleReasons,
       leftOut: [
@@ -203,14 +206,17 @@ export class BuildPlan implements RunExecutor {
         ...links.leftOut,
       ],
     });
-    await this.deps.handoff.write(scopeOf(run), handoff);
+    const planned = { warn, refused: links.refusal, records: assembly.content.decisions };
+    const adrCall = { ...linking, prompt: prompts.adrModel };
+    const checked = await withAdrModelCheck(adrCall, handoff, planned);
+    await this.deps.handoff.write(scopeOf(run), checked);
     // Q-45: the extra call was refused or failed; the package of the first call stays as it is.
     if (links.refusal !== undefined) {
       const message =
         'The package was written, but the task cards for the items no card builds could not be asked for.';
       return this.refusedBy(run, links.refusal, message);
     }
-    const gaps = covered.report.uncovered.length;
+    const gaps = links.planned.report.uncovered.length;
     if (gaps === 0) return { endState: 'Completed' };
     const message = `The package was written, but ${String(gaps)} item(s) are built by no task card; see checks.md.`;
     return this.fail(run, ERROR_CODES.planCoverageGap, message);

@@ -20,7 +20,7 @@ import { handoffOf } from '../../support/handoff-package-fixture.js';
 
 function decision(id: string, title: string, text: string): PlanDecision {
   return {
-    ...{ id, title, context: 'The catalog needs ids.', decision: text, consequences: '' },
+    ...{ id, title, context: 'The legacy catalog.', decision: text, consequences: '' },
     ...{ sources: [], status: 'Proposed' as const, options: [] },
   };
 }

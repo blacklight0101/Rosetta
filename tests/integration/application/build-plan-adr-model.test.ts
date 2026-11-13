@@ -40,6 +40,10 @@ describe('BuildPlan: the data model is checked against the decision records', ()
     expect(h.providers.adrModelRequests()).toHaveLength(1);
     const [request] = h.providers.adrModelRequests();
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-adr-model' });
+    // The records Rosetta writes from the brief's choices are not the planner's and are not sent.
+    const message = request?.messages.map((each) => each.content).join('\n') ?? '';
+    expect(message).toContain('Hi-lo ids generated in the application');
+    expect(message).not.toContain('Architecture style');
     const metered = h.providers.ledger.entries.filter(
       (entry) => entry.agentTaskId === 'planner-adr-model',
     );
@@ -48,7 +52,9 @@ describe('BuildPlan: the data model is checked against the decision records', ()
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toContain('planner/adr-model.v1.md');
   });
+});
 
+describe('BuildPlan: what the check writes in checks.md', () => {
   it('RF-623 P9-15 checks.md names the structures and the run still completes', async () => {
     const h = await checkedPlan('planner-adr-model-eshop-ev108.json');
 

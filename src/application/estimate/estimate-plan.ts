@@ -201,6 +201,7 @@ function callTokens(
     coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
     gapPromptTokens: tokensOf(calls, prompts, 'gap'),
     gapRepairPromptTokens: tokensOf(calls, prompts, 'gapRepair'),
+    adrModelPromptTokens: tokensOf(calls, prompts, 'adrModel'),
   };
 }
 

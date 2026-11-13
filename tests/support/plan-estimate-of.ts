@@ -14,6 +14,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadAdrModelPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -64,6 +65,7 @@ export async function planEstimateOf(
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
     gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+    adrModelPrompt: () => loadAdrModelPrompt('prompts'),
     journeys,
   });
   const request = { actor, projectId: project.id };
