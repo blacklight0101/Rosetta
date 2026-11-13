@@ -77,6 +77,18 @@ function reopensTests(name: string, fresh: FreshRuns): void {
     },
   );
 
+  it(`RF-1108 P9-16 ${name} queues a run at the time it is given, so an earlier one goes ahead of a newer run`, async () => {
+    const index = await fresh();
+    const run = await ended(index, 'Failed');
+    const newer = await stored(index);
+
+    const reopened = await index.reopen(runAmy, run.id, run.queuedAt);
+
+    expect(reopened?.queuedAt).toBe(run.queuedAt);
+    expect(run.queuedAt).toBeLessThan(newer.queuedAt);
+    expect((await index.listQueued()).map((each) => each.id)).toEqual([run.id, newer.id]);
+  });
+
   it(`RF-006 ${name} reopens a run once: the second call finds it queued`, async () => {
     const index = await fresh();
     const run = await ended(index, 'CapReached');

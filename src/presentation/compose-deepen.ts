@@ -1,5 +1,6 @@
 import { EstimateDeepen } from '../application/estimate/deepen-estimate.js';
 import type { Clock } from '../application/ports/clock.js';
+import type { JourneyRecords } from '../application/ports/journey-records.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import type { RunQueue } from '../application/runs/run-queue.js';
 import { resumeProblemCheck } from '../application/understand/resume-problem.js';
@@ -78,11 +79,13 @@ export function composeResume(
     readonly queue: RunQueue;
     readonly clock: Clock;
     readonly ollamaHost: string | undefined;
+    readonly journeys?: JourneyRecords | undefined;
   },
 ): ResumeRun {
   const { projects, runs, manifests, queue, clock, scans, ollamaHost } = parts;
   return new ResumeRun({
     ...{ projects, runs, manifests, queue, clock, roleKeys: parts.roleKeys },
+    journeys: parts.journeys,
     problem: resumeProblemCheck({
       ...{ runs, scans },
       taskResults: new FileTaskResults({ writer: parts.writer, masker: parts.masker }),
