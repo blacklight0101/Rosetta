@@ -197,28 +197,26 @@ function laterLifeEndTests(name: string, fresh: FreshEventStore): void {
 }
 
 function queueCancelTests(name: string, fresh: FreshEventStore): void {
-  it(`RF-006 ${name} P9-14 refuses a second QueueCancel end within one life`, async () => {
+  // A resume writes no event while the run waits, so the store cannot tell one cancel of a life
+  // from the cancel of the next queued life: both sequences are legitimate (P9-05, P9-14).
+  it(`RF-006 ${name} accepts a cancel of each queued life after a stop and two resumes`, async () => {
     const { sink, history } = await fresh();
     await sink.publish(scope, eventFor(scope, 1, 'run.started'));
     await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'UserStop' }));
     await sink.publish(scope, eventFor(scope, 3, 'run.ended', { endReason: 'QueueCancel' }));
 
-    await expect(
-      sink.publish(scope, eventFor(scope, 4, 'run.ended', { endReason: 'QueueCancel' })),
-    ).rejects.toMatchObject({ code: ERROR_CODES.runEventRefused });
-    expect(await history.read(scope, 0)).toHaveLength(3);
+    await sink.publish(scope, eventFor(scope, 4, 'run.ended', { endReason: 'QueueCancel' }));
+
+    expect(await history.read(scope, 0)).toHaveLength(4);
   });
 
-  it(`RF-006 ${name} accepts a run.started and a new queue cancel after a queue cancel`, async () => {
+  it(`RF-006 ${name} accepts a cancel while first queued, a resume and a second cancel`, async () => {
     const { sink, history } = await fresh();
-    await sink.publish(scope, eventFor(scope, 1, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 1, 'run.ended', { endReason: 'QueueCancel' }));
+
     await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'QueueCancel' }));
-    await sink.publish(scope, eventFor(scope, 3, 'run.started'));
-    await sink.publish(scope, eventFor(scope, 4, 'run.ended', { endReason: 'UserStop' }));
 
-    await sink.publish(scope, eventFor(scope, 5, 'run.ended', { endReason: 'QueueCancel' }));
-
-    expect(await history.read(scope, 0)).toHaveLength(5);
+    expect(await history.read(scope, 0)).toHaveLength(2);
   });
 }
 
