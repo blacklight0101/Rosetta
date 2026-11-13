@@ -27,6 +27,7 @@ export const test = base.extend<{
   network: NetworkGuard;
   clientAddress: string;
   capsTurn: boolean;
+  ollamaInstalled: boolean;
 }>({
   // RF-1106, P1-131: a test tagged @caps writes the server-wide caps, so it waits for its turn
   // (caps-lock.ts) and keeps it until it ends. The wait is added to the time the test may take.
@@ -54,6 +55,26 @@ export const test = base.extend<{
       const address = clientAddressFor(`${testInfo.project.name}:${testInfo.testId}`);
       await context.setExtraHTTPHeaders({ 'x-forwarded-for': address });
       await use(address);
+    },
+    { auto: true },
+  ],
+  // P9-09: the start page holds Analyse off while Ollama answers that it cannot be reached, and
+  // nothing listens on the machine's port 11434 in CI. A test sees Ollama answer with one model on
+  // every page except the settings pages (which keep the real answer their specs rely on), unless
+  // it sets its own answer on the page (answerOllama, which wins over this route).
+  ollamaInstalled: [
+    async ({ context }, use) => {
+      await context.route('**/api/models/ollama', (route) => {
+        const from = route.request().headers()['referer'] ?? '';
+        if (from.includes('/settings') || from.includes('/admin')) return route.fallback();
+        return route.fulfill({
+          json: {
+            provider: 'ollama',
+            models: [{ model: 'gemma4:e4b', label: 'gemma4:e4b', priced: true }],
+          },
+        });
+      });
+      await use(true);
     },
     { auto: true },
   ],
