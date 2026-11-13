@@ -31,9 +31,10 @@ const card = {
   claims: [{ text: 'An order has a total.', citations: ['shop/Orders.cs:10-11'] }],
 };
 const validCards = JSON.stringify({ cards: [card] });
-const CUT = '{"cards": [{"type": "BR", "title": "';
-/** What a model would send to finish the cut answer: the rest of the same cards. */
-const rest = JSON.stringify({ cards: [card] }).slice('{"cards":[{"type":"BR","title":"'.length);
+const CUT =
+  '{"cards": [{"type": "BR", "title": "Late fee after 30 days", "area": "billing", "summary": "An invoice unpaid after 30 days gets a late fee.", "confidence": "High", "claims": [{"text": "The late fee is added when the invoice is more than 30 days old.", "citations": ["src/Billing/Invoices.cs:40-52"]}, {"text": "The fee is a flat 5 percent of the open amount and is';
+/** What a model would send to finish the cut answer: the rest of the claim and the cards. */
+const rest = ' added once.", "citations": ["src/Billing/Invoices.cs:40-52"]}]}]}';
 
 let prompts: ReaderPrompts;
 let targets: Map<string, LabTarget>;
@@ -78,7 +79,7 @@ describe('the surface fragments', () => {
       expect(request?.system).toBe(readerSystemPrompt(readerPromptsFor(tested, marks)));
       expect(request?.system).toContain('DRAFT-TEXT');
       expect(request?.system).not.toContain(other);
-      expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
+      expect(request?.tools).toEqual([]);
     },
   );
 
@@ -133,6 +134,25 @@ describe('the continue target', () => {
       usable: false,
       detail: 'Unusable',
     });
+  });
+});
+
+describe('the last turn of the card surface targets', () => {
+  it.each(['cards/flows', 'cards/screens'])(
+    'RF-1406 makes %s the last turn: one turn left, whatever the case holds',
+    async (id) => {
+      const { request } = await run(id, { text: validCards });
+
+      expect(request?.messages.at(-1)?.content).toContain('Turns left: 1.');
+      expect(request?.messages.at(-1)?.content).not.toContain('Turns left: 5.');
+    },
+  );
+
+  it('RF-1406 keeps the tools on a continuation, as a run does, with one turn left', async () => {
+    const { request } = await run('cards/continue', { text: rest });
+
+    expect(request?.messages[3]?.content).toContain('Turns left: 1.');
+    expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
   });
 });
 
