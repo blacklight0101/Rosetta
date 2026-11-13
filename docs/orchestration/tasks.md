@@ -9966,7 +9966,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: S
 - **Depends on**: P10-02, P10-03
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Done (2026-11-13, PRs #1403 (lab options --split and --sample, RF-1409) and PRNUM (baseline.md); the baseline spent $3.4573 of its $6 slice, ledger total $5.9987)
+- **Status**: Done (2026-11-13, PRs #1403 (lab options --split and --sample, RF-1409) and #1405 (baseline.md); the baseline spent $3.4573 of its $6 slice, ledger total $5.9987)
 - **Evidence** (2026-11-13): tuning needs a measured starting point, and the budget split needs the figures.
 - **Reads**: P10-01..P10-03, the manifest of current prompt versions.
 - **Do**: run every live prompt's current version on its tuning cases on Haiku (all cases), Sonnet (half) and Opus (a quarter), with the judge; report per prompt and model the metrics of DEC-231 and the worst cases with a short reason. Rank the prompts by cost share times failure and propose the order and budget slices of P10-05..P10-10 (adjusting the defaults below within the $50).
