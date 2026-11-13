@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "version": "reader-reread-1",
+  "prompt": "reader/reread",
+  "description": "Inputs of reader/reread captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-063857-understand",
+        "20261102-195943-understand",
+        "20261102-012533-understand",
+        "20261029-164343-understand",
+        "20261029-150101-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-063857-understand-reader-191",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"BR-024.c18\",\n      \"text\": \"A plain-text bearer-token is written at eShopLegacyMVC.csproj:71.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj:71-71\"\n      ],\n      \"reason\": \"Line 71 is a Reference Include with a PublicKeyToken attribute, which is an assembly strong-name public key token, not a bearer token; the masked marker is for a bearer-token kind but the line is a standard strong-name reference, so the cited lines do not show a plain-text bearer token.\"\n    },\n    {\n      \"claimId\": \"BR-024.c38\",\n      \"text\": \"A plain-text bearer-token is written at eShopLegacyMVC.csproj:205.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj:205-205\"\n      ],\n      \"reason\": \"The cited lines 202-208 show assembly references whose PublicKeyToken values are masked as [MASKED:bearer-token]; these are strong-name public key tokens, not a bearer token, and the claim cites line 205 which is a Reference Include for System.Web.Mvc, a public key token rather than a credential.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"FLOW-012.c1\",\n      \"text\": \"Application_Start builds the Autofac container through RegisterContainer.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:27-29\"\n      ],\n      \"reason\": \"The cited lines show Application_Start calling RegisterContainer() and assigning the result to the container field, but they do not show the Autofac container being built inside RegisterContainer; that method's body is not in the citation.\",\n      \"reasonKind\": \"definedElsewhere\"\n    },\n    {\n      \"claimId\": \"INT-009.c2\",\n      \"text\": \"Telemetry is sent through the ServerTelemetryChannel in the default sink.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config:131-131\"\n      ],\n      \"reason\": \"The cited line configures a ServerTelemetryChannel inside a TelemetrySinks Add element, but the sink's opening tag and any name are not visible, so nothing in these lines shows that this sink is the default one.\",\n      \"reasonKind\": \"definedElsewhere\"\n    },\n    {\n      \"claimId\": \"INT-009.c4\",\n      \"text\": \"Adaptive sampling caps telemetry at 5 items per second in the default sink.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config:122-129\"\n      ],\n      \"reason\": \"The cited lines show two AdaptiveSamplingTelemetryProcessor entries, each capped at 5 per second, one excluding and one including Event, so the combined cap is not shown to be 5, and \\\"default sink\\\" is not shown in the cited lines.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopLegacy.Utilities/eShopLegacy.Utilities.csproj",
+            "language": "xml",
+            "lines": 48
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"OQ-006.c3\",\n      \"text\": \"The assembly is a .NET Framework 4.6.1 class library with only one compiled source file besides AssemblyInfo.cs, so the area holds no feature, rule or entity of its own.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopLegacy.Utilities/eShopLegacy.Utilities.csproj:12-12\",\n        \"eShopLegacyMVCSolution/eShopLegacy.Utilities/eShopLegacy.Utilities.csproj:43-46\"\n      ],\n      \"reason\": \"The csproj lines show target framework v4.6.1 and only Serializing.cs plus AssemblyInfo.cs as compile items, but nothing shows that Serializing.cs contains no feature, rule or entity, so the conclusion is not established.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-116",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"BR-032.c2\",\n      \"text\": \"The discount size is a fraction (for example 0.3) and the controller passes it unchanged to the view.\",\n      \"citations\": [\n        \"eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:79-84\"\n      ],\n      \"reason\": \"The cited lines show discountVal set from discount.Size (a double) and passed unchanged to _view.SetCatalogItems(items, discountVal); the claim that the size is a fraction like 0.3 is not shown by these lines, since the value's units are defined elsewhere in DiscountItem.\",\n      \"reasonKind\": \"definedElsewhere\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/FilesController.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 166
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"FEAT-007.c2\",\n      \"text\": \"When the item is found, its picture URI is set and the details view is rendered.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:44-46\"\n      ],\n      \"reason\": \"The cited lines show the found-item path calling AddUriPlaceHolder(catalogItem) and then rendering View(catalogItem), but whether that call sets a picture URI depends on the method body, which is not visible.\",\n      \"reasonKind\": \"definedElsewhere\"\n    },\n    {\n      \"claimId\": \"BR-003.c1\",\n      \"text\": \"The picture URI of an item is set to /Pics/{id}.png for the index, details, edit and delete pages.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:161-164\"\n      ],\n      \"reason\": \"The cited lines define AddUriPlaceHolder, which sets PictureUri to /Pics/{id}.png, but they do not show which pages (index, details, edit, delete) call this method, so the page-by-page claim is not shown.\"\n    },\n    {\n      \"claimId\": \"OQ-009.c1\",\n      \"text\": \"The files API returns the brands through the legacy Serializing utility as binary data rather than JSON.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopPorted/Controllers/Api/FilesController.cs:28-32\"\n      ],\n      \"reason\": \"The cited lines show `new Serializing()` calling `SerializeBinary(brands)` and returning it through `Ok(data)`, which supports binary output, but they do not show the utility is legacy or that the response is non-JSON, so the claim is not fully shown.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-196",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+        "files": [
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 354
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"ENT-022.c10\",\n      \"text\": \"Seeding reads the starting value of the brand key with NEXT VALUE FOR catalog_brand_hilo, then assigns each brand a key by incrementing that value by one, and saves the brands.\",\n      \"citations\": [\n        \"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:66-74\",\n        \"eShopModernizedMVCSolution/src/eShopModernizedMVC/Models/Infrastructure/CatalogDBInitializer.cs:324-329\"\n      ],\n      \"reason\": \"The cited lines show the sequence value read via SELECT NEXT VALUE FOR the name in DBBrandSequenceName, then each brand's Id incremented by one before SaveChanges, but they do not show that the name is catalog_brand_hilo.\",\n      \"reasonKind\": \"definedElsewhere\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "VM",
+        "files": [
+          {
+            "path": "VM/DockerCerts-Generation/CreateDockerCerts.ps1",
+            "language": "powershell",
+            "lines": 101
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml",
+            "language": "yaml",
+            "lines": 5
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.nosql.yml",
+            "language": "yaml",
+            "lines": 22
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"FEAT-006.c7\",\n      \"text\": \"The script writes progress messages and ends by saying the CA, server and client files are in the same folder.\",\n      \"citations\": [\n        \"VM/DockerCerts-Generation/CreateDockerCerts.ps1:96-101\"\n      ],\n      \"reason\": \"The cited lines show only the final Write-Host saying the CA, Server and Client certificate files should be generated in this folder; the claim's \\\"writes progress messages\\\" part is not shown in the cited range, and the lines state intent rather than confirming the files are produced.\"\n    },\n    {\n      \"claimId\": \"INT-022.c2\",\n      \"text\": \"In the no-SQL override, Azure Storage and Azure Active Directory are switched off with literal False values, and only the storage connection string and the Insights key remain as variables.\",\n      \"citations\": [\n        \"VM/eShopModernizedMVC/docker-compose.override.nosql.yml:9-14\"\n      ],\n      \"reason\": \"The cited lines set UseAzureStorage=False and UseAzureActiveDirectory=false as literal values, but they also set AzureActiveDirectoryClientId and AzureActiveDirectoryTenant as variables, so the claim that only the storage connection string and the Insights key remain as variables is contradicted.\"\n    },\n    {\n      \"claimId\": \"FEAT-009.c2\",\n      \"text\": \"The nobuild no-SQL file starts only the eshop/modernizedmvc image.\",\n      \"citations\": [\n        \"VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml:4-5\"\n      ],\n      \"reason\": \"The cited lines (1-5) show a single service, eshop.modernized.mvc, using image eshop/modernizedmvc, but the excerpt ends at line 5, so other services later in the file cannot be ruled out.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-116",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs",
+            "language": "csharp",
+            "lines": 88
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 64
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs",
+            "language": "csharp",
+            "lines": 35
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 356
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"ENT-007.c5\",\n      \"text\": \"Column Catalog.Id: int, NOT NULL, primary key; database-generated option None, so the value is supplied by the application (hi-lo generator).\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogDBContext.cs:61-65\",\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:14-14\"\n      ],\n      \"reason\": \"The cited lines show HasKey on Id, DatabaseGeneratedOption.None and IsRequired, but no hi-lo generator; that generator is not visible in these lines.\"\n    },\n    {\n      \"claimId\": \"ENT-007.c11\",\n      \"text\": \"Column Catalog.Description is mapped by convention (no explicit configuration); AvailableStock, RestockThreshold, MaxStockThreshold and OnReorder are model properties with range validation of 0 to 10,000,000 for the three stock counts.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:19-19\",\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItem.cs:45-62\"\n      ],\n      \"reason\": \"Lines 42-64 show AvailableStock, RestockThreshold and MaxStockThreshold each with Range(0, 10000000), and OnReorder as a plain property. Lines 16-22 show Description as a plain property with no attributes, but they cannot show that no explicit mapping configuration exists elsewhere.\"\n    },\n    {\n      \"claimId\": \"BR-027.c2\",\n      \"text\": \"Otherwise the generator returns the next local id; access is serialized with a lock.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:27-31\"\n      ],\n      \"reason\": \"The cited lines show only the else branch that decrements remainningLoIds and returns ++sequenceId; the lock, the surrounding branch and the fetch of a new hi value are outside the cited range, so the claim about locking is not shown here.\"\n    },\n    {\n      \"claimId\": \"FEAT-041.c1\",\n      \"text\": \"The initializer derives from CreateDatabaseIfNotExists, so the seed runs only when the database does not yet exist.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/Infrastructure/CatalogDBInitializer.cs:15-15\"\n      ],\n      \"reason\": \"Lines 12-18 show the class declared as CreateDatabaseIfNotExists<CatalogDBContext>, but the cited range contains no Seed override or method body, so whether the seed runs only on creation is not visible here; the base class behaviour is outside the cited lines.\",\n      \"reasonKind\": \"definedElsewhere\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-049",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/appsettings.json",
+            "language": "json",
+            "lines": 13
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/eShopPorted.csproj",
+            "language": "xml",
+            "lines": 33
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"BR-010.c1\",\n      \"text\": \"The UseMockData setting is set to the string true in appsettings.json, so the application uses mock data by default.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopPorted/appsettings.json:11-11\"\n      ],\n      \"reason\": \"The cited line 10 in appsettings.json sets \\\"UseMockData\\\" to the string \\\"true\\\", which supports the configuration part of the claim; whether the application actually uses mock data by default depends on code reading this setting, which is not visible in the cited lines.\",\n      \"reasonKind\": \"definedElsewhere\"\n    },\n    {\n      \"claimId\": \"OQ-017.c1\",\n      \"text\": \"The project targets net461 and references ASP.NET Core 2.2 and EF Core 2.2 packages.\",\n      \"citations\": [\n        \"eShopLegacyMVCSolution/eShopPorted/eShopPorted.csproj:3-3\",\n        \"eShopLegacyMVCSolution/eShopPorted/eShopPorted.csproj:7-7\"\n      ],\n      \"reason\": \"The cited lines show TargetFramework net461 and a Microsoft.AspNetCore 2.2.0 reference, but no EF Core 2.2 package appears in the cited ranges, so that part of the claim is not shown.\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-041",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+        "files": [
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb",
+            "language": "ruby",
+            "lines": 71
+          }
+        ],
+        "turns": 12,
+        "rejected": "{\n  \"rejected\": [\n    {\n      \"claimId\": \"INT-013.c3\",\n      \"text\": \"DeploymentHelper.cs and deployer.rb call the Resource Manager client to create or update resource groups and deployments.\",\n      \"citations\": [\n        \"ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs:35-42\",\n        \"ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb:22-46\"\n      ],\n      \"reason\": \"The C# lines only construct a ResourceManagementClient and set SubscriptionId; the create or update calls are not in the cited range, so the claim about DeploymentHelper.cs is not shown, though deployer.rb's calls are.\"\n    }\n  ]\n}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,2621 @@
+{
+  "schemaVersion": 1,
+  "version": "reader-read-more-1",
+  "prompt": "reader/read-more",
+  "description": "Inputs of reader/read-more captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-054942-understand",
+        "20261102-185338-understand",
+        "20261101-235310-understand",
+        "20261029-152308-understand",
+        "20261029-142029-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-054942-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx",
+            "language": "aspnet",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Bundle.config",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx",
+            "language": "aspnet",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx",
+            "language": "aspnet",
+            "lines": 137
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "language": "csharp",
+            "lines": 59
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "language": "csharp",
+            "lines": 100
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+            "language": "aspnet",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs",
+            "language": "csharp",
+            "lines": 20
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.designer.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master",
+            "language": "aspnet",
+            "lines": 23
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.designer.cs",
+            "language": "csharp",
+            "lines": 51
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx",
+            "language": "aspnet",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config",
+            "language": "xml",
+            "lines": 99
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using eShopLegacyWebForms.ViewModel;",
+              "using System;",
+              "using System.Linq;",
+              "using System.Web.UI;",
+              "using log4net;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public partial class _Default : Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public const int DefaultPageIndex = 0;",
+              "        public const int DefaultPageSize = 10;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected PaginatedItemsViewModel<CatalogItem> Model { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            if (PaginationParamsAreSet())",
+              "            {",
+              "                var size = Convert.ToInt32(Page.RouteData.Values[\"size\"]);",
+              "                var index = Convert.ToInt32(Page.RouteData.Values[\"index\"]);",
+              "                Model = CatalogService.GetCatalogItemsPaginated(size, index);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={size}&index={index}\");",
+              "            }",
+              "            else",
+              "            {",
+              "                Model = CatalogService.GetCatalogItemsPaginated(DefaultPageSize, DefaultPageIndex);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={DefaultPageSize}&index={DefaultPageIndex}\");",
+              "            }",
+              "",
+              "            productList.DataSource = Model.Data;",
+              "            productList.DataBind();",
+              "            ConfigurePagination();",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Web;",
+              "using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Models.Infrastructure;",
+              "using eShopLegacyWebForms.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Web;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public class Global : HttpApplication, IContainerProviderAccessor",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        static IContainerProvider _containerProvider;",
+              "        IContainer container;",
+              "",
+              "        public IContainerProvider ContainerProvider",
+              "        {",
+              "            get { return _containerProvider; }",
+              "        }",
+              "",
+              "        protected void Application_Start(object sender, EventArgs e)",
+              "        {",
+              "            // Code that runs on application startup",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigureContainer();",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 25,
+          "readTokens": 5106,
+          "tokens": 20198,
+          "unread": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Release.config",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Debug.config",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.designer.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.cs",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Bundle.config",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-001",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using System.Collections.Generic;",
+              "using System.Net;",
+              "using eShopWinForms.eShopServiceReference;",
+              "using System;",
+              "",
+              "namespace eShopWinForms.Controllers",
+              "{",
+              "    public class CatalogController",
+              "    {",
+              "        /*Reference to the service (for fetching data) and the view (so we can tell the view how to update)*/",
+              "        private ICatalogService _service;",
+              "        private ICatalogView _view;",
+              "",
+              "        public CatalogController(ICatalogService service, ICatalogView view)",
+              "        {",
+              "            this._service = service;",
+              "            this._view = view;",
+              "            this._view.filterChanged += new ViewHandler<ICatalogView>(this.filterChanged);",
+              "            this._view.availabilityButtonClicked += new AvailabilityHandler<ICatalogView>(this.addAvailability);",
+              "            this._view.searchStockButtonClicked += new SearchStockHandler<ICatalogView>(this.searchStockAvailable);",
+              "        }",
+              "",
+              "        /*",
+              "         * When a filter is changed in the view, we need to request all catalog items",
+              "         * in the database which satisfy the new filter",
+              "         */",
+              "        private void filterChanged(ICatalogView view, FilterEventArgs e)",
+              "        {",
+              "            LoadCatalogItems(e.brandFilterValue, e.typeFilterValue);",
+              "        }",
+              "",
+              "        /*",
+              "         * Adds a new \"shipment\" to the database for the given day, item id, and stock quantity",
+              "         */",
+              "        private void addAvailability(ICatalogView view, AvailabilityEventArgs e)",
+              "        {",
+              "            CatalogItemsStock shipment = new CatalogItemsStock();",
+              "            shipment.CatalogItemId = e.itemId;",
+              "            shipment.AvailableStock = e.itemStock;",
+              "            shipment.Date = e.shipDate;"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 12,
+          "readTokens": 7209,
+          "tokens": 59835,
+          "unread": [
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the interface name \"IService1\" in both code and config file together.",
+              "    [ServiceContract]",
+              "    public interface ICatalogService : IDisposable",
+              "    {",
+              "        [OperationContract]",
+              "        CatalogItem FindCatalogItem(int id);",
+              "        [OperationContract]",
+              "        List<CatalogBrand> GetCatalogBrands();",
+              "        [OperationContract]",
+              "        List<CatalogItem> GetCatalogItems(int brandIdFilter, int typeIdFilter);",
+              "        [OperationContract]",
+              "        List<CatalogType> GetCatalogTypes();",
+              "        [OperationContract]",
+              "        int GetAvailableStock(System.DateTime date, int catalogItemId);",
+              "        [OperationContract]",
+              "        void CreateAvailableStock(CatalogItemsStock catalogItemsStock);",
+              "        [OperationContract]",
+              "        void CreateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void UpdateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void RemoveCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        DiscountItem GetDiscount(DateTime day);",
+              "    }",
+              "}"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 11,
+          "readTokens": 6769,
+          "tokens": 59835,
+          "unread": [
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-097",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
+        "files": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/Config/Settings.xml",
+            "language": "xml",
+            "lines": 9
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Cloud.xml",
+            "language": "xml",
+            "lines": 6
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.1Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml",
+            "language": "xml",
+            "lines": 28
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "language": "powershell",
+            "lines": 258
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/eShopModernizedSQL_ServiceFabricApp.sfproj",
+            "language": "xml",
+            "lines": 46
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/packages.config",
+            "language": "xml",
+            "lines": 4
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/Config/Settings.xml",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\" ?>",
+              "<Settings xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://schemas.microsoft.com/2011/01/fabric\">",
+              "  <!-- Add your custom configuration sections and parameters here -->",
+              "  <!--",
+              "  <Section Name=\"MyConfigSection\">",
+              "    <Parameter Name=\"MyParameter\" Value=\"Value1\" />",
+              "  </Section>",
+              "  -->",
+              "</Settings>"
+            ]
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+              "<ServiceManifest Name=\"SQL_ContainerPkg\"",
+              "                 Version=\"1.0.0\"",
+              "                 xmlns=\"http://schemas.microsoft.com/2011/01/fabric\"",
+              "                 xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"",
+              "                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">",
+              "  <ServiceTypes>",
+              "    <!-- This is the name of your ServiceType.",
+              "         The UseImplicitHost attribute indicates this is a guest service. -->",
+              "    <StatelessServiceType ServiceTypeName=\"SQL_ContainerType\" UseImplicitHost=\"true\" />",
+              "  </ServiceTypes>",
+              "",
+              "  <!-- Code package is your service executable. -->",
+              "  <CodePackage Name=\"Code\" Version=\"1.0.0\">",
+              "    <EntryPoint>",
+              "      <!-- Follow this link for more information about deploying Windows containers to Service Fabric: https://aka.ms/sfguestcontainers -->",
+              "      <ContainerHost>",
+              "        <ImageName>microsoft/mssql-server-windows-developer:2017</ImageName>",
+              "      </ContainerHost>",
+              "    </EntryPoint>",
+              "    <!-- Pass environment variables to your container: -->",
+              "",
+              "    <EnvironmentVariables>",
+              "      <EnvironmentVariable Name=\"SA_PASSWORD\" Value=\"[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\"/>",
+              "      <EnvironmentVariable Name=\"ACCEPT_EULA\" Value=\"Y\"/>",
+              "    </EnvironmentVariables>",
+              "",
+              "  </CodePackage>",
+              "",
+              "  <!-- Config package is the contents of the Config directoy under PackageRoot that contains an ",
+              "       independently-updateable and versioned set of custom configuration settings for your service. -->",
+              "  <ConfigPackage Name=\"Config\" Version=\"1.0.0\" />",
+              "",
+              "  <Resources>",
+              "    <Endpoints>",
+              "      <!-- This endpoint is used by the communication listener to obtain the port on which to ",
+              "           listen. Please note that if your service is partitioned, this port is shared with ",
+              "           replicas of different partitions that are placed in your code. -->",
+              "      <Endpoint Name=\"SqlData_ContainerTypeEndpoint\" Port=\"1433\" Protocol=\"tcp\"/>",
+              "    </Endpoints>"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 23,
+          "readTokens": 1205,
+          "tokens": 5203,
+          "unread": [
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/eShopModernizedSQL_ServiceFabricApp.sfproj",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/packages.config"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the interface name \"IService1\" in both code and config file together.",
+              "    [ServiceContract]",
+              "    public interface ICatalogService : IDisposable",
+              "    {",
+              "        [OperationContract]",
+              "        CatalogItem FindCatalogItem(int id);",
+              "        [OperationContract]",
+              "        List<CatalogBrand> GetCatalogBrands();",
+              "        [OperationContract]",
+              "        List<CatalogItem> GetCatalogItems(int brandIdFilter, int typeIdFilter);",
+              "        [OperationContract]",
+              "        List<CatalogType> GetCatalogTypes();",
+              "        [OperationContract]",
+              "        int GetAvailableStock(System.DateTime date, int catalogItemId);",
+              "        [OperationContract]",
+              "        void CreateAvailableStock(CatalogItemsStock catalogItemsStock);",
+              "        [OperationContract]",
+              "        void CreateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void UpdateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void RemoveCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        DiscountItem GetDiscount(DateTime day);",
+              "    }",
+              "}"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 12,
+          "readTokens": 7382,
+          "tokens": 59835,
+          "unread": [
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-073",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 120
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 84
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 105
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 124
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 94
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 114
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs",
+            "language": "csharp",
+            "lines": 82
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "        protected string pictureUri;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "",
+              "            // Send an OpenID Connect sign-in request.",
+              "            if (!Request.IsAuthenticated)",
+              "            {",
+              "                Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "            }",
+              "",
+              "            if (!CatalogConfiguration.UseAzureStorage)",
+              "            {",
+              "                UploadButton.Visible = false;",
+              "            }",
+              "",
+              "            pictureUri = ImageService.UrlDefaultImage();",
+              "            this.DataBind();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()"
+            ]
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "using System.Web.UI;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Edit : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        protected CatalogItem product;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Edit.aspx\");",
+              "",
+              "            if (!Page.IsPostBack)",
+              "            {",
+              "                // Send an OpenID Connect sign-in request.",
+              "                if (!Request.IsAuthenticated)",
+              "                {",
+              "                    Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "                }",
+              "                if (!CatalogConfiguration.UseAzureStorage)",
+              "                {",
+              "                    UploadButton.Visible = false;",
+              "                }",
+              "",
+              "                var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 29,
+          "readTokens": 2870,
+          "tokens": 9764,
+          "unread": [
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-023",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+        "files": [
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json",
+            "language": "json",
+            "lines": 717
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json",
+            "language": "json",
+            "lines": 72
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/metadata.json",
+            "language": "json",
+            "lines": 7
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/PowerShell Commands.txt",
+            "language": "text",
+            "lines": 66
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.ps1",
+            "language": "powershell",
+            "lines": 107
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.sh",
+            "language": "shell",
+            "lines": 117
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb",
+            "language": "ruby",
+            "lines": 71
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json",
+            "language": "json",
+            "lines": 99
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json",
+            "language": "json",
+            "lines": 1732
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.ps1",
+            "language": "powershell",
+            "lines": 107
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.sh",
+            "language": "shell",
+            "lines": 117
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb",
+            "language": "ruby",
+            "lines": 71
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/parameters.json",
+            "language": "json",
+            "lines": 84
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/template.json",
+            "language": "json",
+            "lines": 1797
+          }
+        ],
+        "turns": 10,
+        "reads": [
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.ps1",
+            "startLine": 1,
+            "lines": [
+              "<#",
+              " .SYNOPSIS",
+              "    Deploys a template to Azure",
+              "",
+              " .DESCRIPTION",
+              "    Deploys an Azure Resource Manager template",
+              "",
+              " .PARAMETER subscriptionId",
+              "    The subscription id where the template will be deployed.",
+              "",
+              " .PARAMETER resourceGroupName",
+              "    The resource group where the template will be deployed. Can be the name of an existing or a new resource group.",
+              "",
+              " .PARAMETER resourceGroupLocation",
+              "    Optional, a resource group location. If specified, will try to create a new resource group in this location. If not specified, assumes resource group is existing.",
+              "",
+              " .PARAMETER deploymentName",
+              "    The deployment name.",
+              "",
+              " .PARAMETER templateFilePath",
+              "    Optional, path to the template file. Defaults to template.json.",
+              "",
+              " .PARAMETER parametersFilePath",
+              "    Optional, path to the parameters file. Defaults to parameters.json. If file is not found, will prompt for parameter values based on template.",
+              "#>",
+              "",
+              "param(",
+              " [Parameter(Mandatory=$True)]",
+              " [string]",
+              " $subscriptionId,",
+              "",
+              " [Parameter(Mandatory=$True)]",
+              " [string]",
+              " $resourceGroupName,",
+              "",
+              " [string]",
+              " $resourceGroupLocation,",
+              "",
+              " [Parameter(Mandatory=$True)]",
+              " [string]"
+            ]
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs",
+            "startLine": 1,
+            "lines": [
+              "// Requires the following Azure NuGet packages and related dependencies:",
+              "// package id=\"Microsoft.Azure.Management.Authorization\" version=\"2.0.0\"",
+              "// package id=\"Microsoft.Azure.Management.ResourceManager\" version=\"1.4.0-preview\"",
+              "// package id=\"Microsoft.Rest.ClientRuntime.Azure.Authentication\" version=\"2.2.8-preview\"",
+              "  ",
+              "using Microsoft.Azure.Management.ResourceManager;",
+              "using Microsoft.Azure.Management.ResourceManager.Models;",
+              "using Microsoft.Rest.Azure.Authentication;",
+              "using Newtonsoft.Json;",
+              "using Newtonsoft.Json.Linq;",
+              "using System;",
+              "using System.IO;",
+              "",
+              "namespace PortalGenerated",
+              "{",
+              "    /// <summary>",
+              "    /// This is a helper class for deploying an Azure Resource Manager template",
+              "    /// More info about template deployments can be found here https://go.microsoft.com/fwLink/?LinkID=733371",
+              "    /// </summary>",
+              "    class DeploymentHelper",
+              "    {",
+              "        string subscriptionId = \"your-subscription-id\";",
+              "        string clientId = \"your-service-principal-clientId\";",
+              "        string clientSecret = \"[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\";",
+              "        string resourceGroupName = \"resource-group-name\";",
+              "        string deploymentName = \"deployment-name\";",
+              "        string resourceGroupLocation = \"resource-group-location\"; // must be specified for creating a new resource group",
+              "        string pathToTemplateFile = \"path-to-template.json-on-disk\";",
+              "        string pathToParameterFile = \"path-to-parameters.json-on-disk\";",
+              "        string tenantId = \"tenant-id\";",
+              "",
+              "        public async void Run()",
+              "        {",
+              "            // Try to obtain the service credentials",
+              "            var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(tenantId, clientId, clientSecret);",
+              "",
+              "            // Read the template and parameter file contents",
+              "            JObject templateFileContents = GetJsonFileContents(pathToTemplateFile);",
+              "            JObject parameterFileContents = GetJsonFileContents(pathToParameterFile);",
+              ""
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 25,
+          "readTokens": 4357,
+          "tokens": 17113,
+          "unread": [
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.ps1",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/PowerShell Commands.txt",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.sh",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.sh",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/parameters.json",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/metadata.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-044",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config",
+            "language": "xml",
+            "lines": 119
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/packages.config",
+            "language": "xml",
+            "lines": 45
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Mvc;",
+              "using Autofac.Integration.WebApi;",
+              "using eShopLegacyMVC.Models;",
+              "using eShopLegacyMVC.Models.Infrastructure;",
+              "using eShopLegacyMVC.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Reflection;",
+              "using System.Web;",
+              "using System.Web.Http;",
+              "using System.Web.Mvc;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyMVC",
+              "{",
+              "    public class MvcApplication : HttpApplication",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        IContainer container;",
+              "",
+              "        protected void Application_Start()",
+              "        {",
+              "            container = RegisterContainer();",
+              "            GlobalConfiguration.Configure(WebApiConfig.Register);",
+              "            AreaRegistration.RegisterAllAreas();",
+              "            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+              "<!--",
+              "  For more information on how to configure your ASP.NET application, please visit",
+              "  https://go.microsoft.com/fwlink/?LinkId=301880",
+              "  -->",
+              "<configuration>",
+              "  <configSections>",
+              "    <section name=\"entityFramework\" type=\"System.Data.Entity.Internal.ConfigFile.EntityFrameworkSection, EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\" requirePermis",
+              "    ",
+              "  <!-- For more information on Entity Framework configuration, visit http://go.microsoft.com/fwlink/?LinkID=237468 --></configSections>",
+              "  <connectionStrings>",
+              "    <add name=\"CatalogDBContext\" connectionString=\"Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=Microsoft.eShopOnContainers.Services.CatalogDb; Integrated Security=True; MultipleActiveResultSets=True;\" providerName=\"System.Data.SqlClient\" />",
+              "  </connectionStrings>",
+              "  <appSettings>",
+              "    <add key=\"webpages:Version\" value=\"3.0.0.0\" />",
+              "    <add key=\"webpages:Enabled\" value=\"false\" />",
+              "    <add key=\"ClientValidationEnabled\" value=\"true\" />",
+              "    <add key=\"UnobtrusiveJavaScriptEnabled\" value=\"true\" />",
+              "    <add key=\"UseMockData\" value=\"false\" />",
+              "    <add key=\"UseCustomizationData\" value=\"false\" />",
+              "  </appSettings>",
+              "  <!--",
+              "    For a description of web.config changes see http://go.microsoft.com/fwlink/?LinkId=235367.",
+              "",
+              "    The following attributes can be set on the <httpRuntime> tag.",
+              "      <system.Web>",
+              "        <httpRuntime targetFramework=\"4.7\" />",
+              "      </system.Web>",
+              "  -->",
+              "  <system.web>",
+              "    <compilation debug=\"true\" targetFramework=\"4.7.2\" />",
+              "    <httpRuntime targetFramework=\"4.6.1\" />",
+              "    <sessionState mode=\"InProc\" />",
+              "    <httpModules>",
+              "      <add name=\"TelemetryCorrelationHttpModule\" type=\"Microsoft.AspNet.TelemetryCorrelation.TelemetryCorrelationHttpModule, Microsoft.AspNet.TelemetryCorrelation\" />",
+              "      <add name=\"ApplicationInsightsWebTracking\" type=\"Microsoft.ApplicationInsights.Web.ApplicationInsightsHttpModule, Microsoft.AI.Web\" />",
+              "    </httpModules>",
+              "    <globalization uiCulture=\"en-US\" culture=\"en-US\" />",
+              "  </system.web>",
+              "  <runtime>"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 21,
+          "readTokens": 2978,
+          "tokens": 14503,
+          "unread": [
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/packages.config",
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Release.config",
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Debug.config",
+            "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-reader-023",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+        "files": [
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json",
+            "language": "json",
+            "lines": 717
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json",
+            "language": "json",
+            "lines": 72
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/metadata.json",
+            "language": "json",
+            "lines": 7
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/PowerShell Commands.txt",
+            "language": "text",
+            "lines": 66
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.ps1",
+            "language": "powershell",
+            "lines": 107
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.sh",
+            "language": "shell",
+            "lines": 117
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb",
+            "language": "ruby",
+            "lines": 71
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json",
+            "language": "json",
+            "lines": 99
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json",
+            "language": "json",
+            "lines": 1732
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.ps1",
+            "language": "powershell",
+            "lines": 107
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.sh",
+            "language": "shell",
+            "lines": 117
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb",
+            "language": "ruby",
+            "lines": 71
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/parameters.json",
+            "language": "json",
+            "lines": 84
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/template.json",
+            "language": "json",
+            "lines": 1797
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.ps1",
+            "startLine": 1,
+            "lines": [
+              "<#",
+              " .SYNOPSIS",
+              "    Deploys a template to Azure",
+              "",
+              " .DESCRIPTION",
+              "    Deploys an Azure Resource Manager template",
+              "",
+              " .PARAMETER subscriptionId",
+              "    The subscription id where the template will be deployed.",
+              "",
+              " .PARAMETER resourceGroupName",
+              "    The resource group where the template will be deployed. Can be the name of an existing or a new resource group.",
+              "",
+              " .PARAMETER resourceGroupLocation",
+              "    Optional, a resource group location. If specified, will try to create a new resource group in this location. If not specified, assumes resource group is existing.",
+              "",
+              " .PARAMETER deploymentName",
+              "    The deployment name.",
+              "",
+              " .PARAMETER templateFilePath",
+              "    Optional, path to the template file. Defaults to template.json.",
+              "",
+              " .PARAMETER parametersFilePath",
+              "    Optional, path to the parameters file. Defaults to parameters.json. If file is not found, will prompt for parameter values based on template.",
+              "#>",
+              "",
+              "param(",
+              " [Parameter(Mandatory=$True)]",
+              " [string]",
+              " $subscriptionId,",
+              "",
+              " [Parameter(Mandatory=$True)]",
+              " [string]",
+              " $resourceGroupName,",
+              "",
+              " [string]",
+              " $resourceGroupLocation,",
+              "",
+              " [Parameter(Mandatory=$True)]",
+              " [string]"
+            ]
+          },
+          {
+            "path": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb",
+            "startLine": 1,
+            "lines": [
+              "require 'azure_mgmt_resources'",
+              "",
+              "class Deployer",
+              "",
+              "  # Initialize the deployer class with subscription, resource group and resource group location. The class will raise an",
+              "  # ArgumentError if there are empty values for Tenant Id, Client Id or Client Secret environment variables.",
+              "  #",
+              "  # @param [String] subscription_id the subscription to deploy the template",
+              "  # @param [String] resource_group the resource group to create or update and then deploy the template",
+              "  # @param [String] resource_group_location the location of the resource group",
+              "  def initialize(subscription_id, resource_group, resource_group_location)",
+              "    raise ArgumentError.new(\"Missing template file 'template.json' in current directory.\") unless File.exist?('template.json')",
+              "    raise ArgumentError.new(\"Missing parameters file 'parameters.json' in current directory.\") unless File.exist?('parameters.json')",
+              "    @resource_group = resource_group",
+              "    @subscription_id = subscription_id",
+              "\t@resource_group_location = resource_group_location",
+              "    provider = MsRestAzure::ApplicationTokenProvider.new(",
+              "        ENV['AZURE_TENANT_ID'],",
+              "        ENV['AZURE_CLIENT_ID'],",
+              "        ENV['AZURE_CLIENT_SECRET'])",
+              "    credentials = MsRest::TokenCredentials.new(provider)",
+              "    @client = Azure::ARM::Resources::ResourceManagementClient.new(credentials)",
+              "    @client.subscription_id = @subscription_id",
+              "  end",
+              "",
+              "  # Deploy the template to a resource group",
+              "  def deploy",
+              "    # ensure the resource group is created",
+              "    params = Azure::ARM::Resources::Models::ResourceGroup.new.tap do |rg|",
+              "      rg.location = @resource_group_location",
+              "    end",
+              "    @client.resource_groups.create_or_update(@resource_group, params).value!",
+              "",
+              "    # build the deployment from a json file template from parameters",
+              "    template = File.read(File.expand_path(File.join(__dir__, 'template.json')))",
+              "    deployment = Azure::ARM::Resources::Models::Deployment.new",
+              "    deployment.properties = Azure::ARM::Resources::Models::DeploymentProperties.new",
+              "    deployment.properties.template = JSON.parse(template)",
+              "    deployment.properties.mode = Azure::ARM::Resources::Models::DeploymentMode::Incremental",
+              ""
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 25,
+          "readTokens": 4274,
+          "tokens": 17113,
+          "unread": [
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.ps1",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/PowerShell Commands.txt",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.sh",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.sh",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/parameters.json",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json",
+            "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/metadata.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-reader-025",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
+        "files": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/Config/Settings.xml",
+            "language": "xml",
+            "lines": 9
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Cloud.xml",
+            "language": "xml",
+            "lines": 6
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.1Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml",
+            "language": "xml",
+            "lines": 28
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "language": "powershell",
+            "lines": 258
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/eShopModernizedSQL_ServiceFabricApp.sfproj",
+            "language": "xml",
+            "lines": 46
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/packages.config",
+            "language": "xml",
+            "lines": 4
+          }
+        ],
+        "turns": 11,
+        "reads": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+              "<ServiceManifest Name=\"SQL_ContainerPkg\"",
+              "                 Version=\"1.0.0\"",
+              "                 xmlns=\"http://schemas.microsoft.com/2011/01/fabric\"",
+              "                 xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"",
+              "                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">",
+              "  <ServiceTypes>",
+              "    <!-- This is the name of your ServiceType.",
+              "         The UseImplicitHost attribute indicates this is a guest service. -->",
+              "    <StatelessServiceType ServiceTypeName=\"SQL_ContainerType\" UseImplicitHost=\"true\" />",
+              "  </ServiceTypes>",
+              "",
+              "  <!-- Code package is your service executable. -->",
+              "  <CodePackage Name=\"Code\" Version=\"1.0.0\">",
+              "    <EntryPoint>",
+              "      <!-- Follow this link for more information about deploying Windows containers to Service Fabric: https://aka.ms/sfguestcontainers -->",
+              "      <ContainerHost>",
+              "        <ImageName>microsoft/mssql-server-windows-developer:2017</ImageName>",
+              "      </ContainerHost>",
+              "    </EntryPoint>",
+              "    <!-- Pass environment variables to your container: -->",
+              "",
+              "    <EnvironmentVariables>",
+              "      <EnvironmentVariable Name=\"SA_PASSWORD\" Value=\"[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\"/>",
+              "      <EnvironmentVariable Name=\"ACCEPT_EULA\" Value=\"Y\"/>",
+              "    </EnvironmentVariables>",
+              "",
+              "  </CodePackage>",
+              "",
+              "  <!-- Config package is the contents of the Config directoy under PackageRoot that contains an ",
+              "       independently-updateable and versioned set of custom configuration settings for your service. -->",
+              "  <ConfigPackage Name=\"Config\" Version=\"1.0.0\" />",
+              "",
+              "  <Resources>",
+              "    <Endpoints>",
+              "      <!-- This endpoint is used by the communication listener to obtain the port on which to ",
+              "           listen. Please note that if your service is partitioned, this port is shared with ",
+              "           replicas of different partitions that are placed in your code. -->",
+              "      <Endpoint Name=\"SqlData_ContainerTypeEndpoint\" Port=\"1433\" Protocol=\"tcp\"/>",
+              "    </Endpoints>"
+            ]
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/Config/Settings.xml",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\" ?>",
+              "<Settings xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://schemas.microsoft.com/2011/01/fabric\">",
+              "  <!-- Add your custom configuration sections and parameters here -->",
+              "  <!--",
+              "  <Section Name=\"MyConfigSection\">",
+              "    <Parameter Name=\"MyParameter\" Value=\"Value1\" />",
+              "  </Section>",
+              "  -->",
+              "</Settings>"
+            ]
+          }
+        ],
+        "readMore": {
+          "percent": 23,
+          "readTokens": 1205,
+          "tokens": 5203,
+          "unread": [
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/eShopModernizedSQL_ServiceFabricApp.sfproj",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml",
+            "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/packages.config"
+          ]
+        }
+      }
+    }
+  ]
+}
