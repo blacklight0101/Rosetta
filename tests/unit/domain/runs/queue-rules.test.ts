@@ -108,7 +108,7 @@ describe('runsToStart and the free scan', () => {
 });
 
 describe('holdingRunOf', () => {
-  it('RF-1108 EP-106 names the running paid run of the same user that holds a queued paid run', () => {
+  it('RF-1108 EV-106 names the running paid run of the same user that holds a queued paid run', () => {
     const running = runningRun({ userId: amy, stage: 'understand' });
     const waiting = sampleRun({ userId: amy, stage: 'plan' });
 
