@@ -1,11 +1,12 @@
 import type { LabTarget } from '../../application/lab/lab-target.js';
 import { gapTarget } from '../../application/lab/targets/gap-target.js';
 import { mergeTarget } from '../../application/lab/targets/merge-target.js';
+import { planDocTargets } from '../../application/lab/targets/plan-doc-targets.js';
 import { overviewTarget } from '../../application/lab/targets/overview-target.js';
 import { readerTargets } from '../../application/lab/targets/reader-targets.js';
 import { verifierClaimTarget } from '../../application/lab/targets/verifier-claim-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { loadReaderPrompts } from '../../infrastructure/prompts/prompt-files.js';
+import { loadPlannerPrompt, loadReaderPrompts } from '../../infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 
 // RF-1401, RF-1406, ADR-029: the registry of the prompts the lab can run. To wire another prompt id:
@@ -19,10 +20,12 @@ import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-promp
 export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]> {
   const verifier = await loadVerifierPrompts(promptsFolder);
   const reader = await loadReaderPrompts(promptsFolder);
+  const planner = await loadPlannerPrompt(promptsFolder);
   return [
     verifierClaimTarget(verifier.retry),
     overviewTarget(),
     gapTarget(),
+    ...planDocTargets(planner),
     mergeTarget(),
     ...readerTargets(reader),
   ];

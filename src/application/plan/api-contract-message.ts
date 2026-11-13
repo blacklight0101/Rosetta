@@ -15,7 +15,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
 export interface ApiContractMessageInput {
   readonly cards: readonly SourceCard[];
-  readonly brief: PlanningBrief;
+  readonly brief: Pick<PlanningBrief, 'stack'>;
   /** P8-09: the style the components are judged against (an own answer may name another than the brief's). */
   readonly style: ArchitectureStyleId;
   /** P3-113: the ids of the `FEAT` and `FLOW` cards the prompt names by title only, to fit the planner's window. */
@@ -47,7 +47,7 @@ function cardsText(cards: readonly SourceCard[], omitted: ReadonlySet<string>): 
 ${summary}`;
 }
 
-function ownerText(brief: PlanningBrief, style: ArchitectureStyleId): string {
+function ownerText(brief: Pick<PlanningBrief, 'stack'>, style: ArchitectureStyleId): string {
   const choice = (layer: string): string | null =>
     brief.stack.find((entry) => entry.layer === layer)?.choice ?? null;
   const targetStack = {

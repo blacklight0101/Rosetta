@@ -77,7 +77,7 @@ describe('building a case set', () => {
   });
 
   it('RF-1404 refuses a prompt id it has no rule for, and a run with no task for it', () => {
-    const unknown = buildCaseSet({ ...request(3), prompt: 'planner/prd' });
+    const unknown = buildCaseSet({ ...request(3), prompt: 'planner/options' });
     const none = buildCaseSet({ ...request(3), prompt: 'planner/gap' });
 
     expect(unknown.ok ? '' : unknown.error).toContain('Prompts it can capture');

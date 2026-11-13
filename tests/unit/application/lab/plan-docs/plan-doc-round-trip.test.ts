@@ -34,10 +34,13 @@ const tags = (): (() => string) => {
   return () => ids.dataBlockTag();
 };
 
-const ownBrief = buildBrief(
-  { stack: [{ layer: 'database', choice: 'SQL Server 2022', custom: false }] },
-  shippedCatalogue,
-);
+const ownBrief = {
+  ...buildBrief(
+    { stack: [{ layer: 'database', choice: 'SQL Server 2022', custom: false }] },
+    shippedCatalogue,
+  ),
+  savedAt: '2026-10-12T09:30:00.000Z',
+};
 const planInput = {
   cards: [feature, entity],
   brief: ownBrief,
@@ -46,14 +49,14 @@ const planInput = {
     { cardId: 'OQ-1', question: 'Who cancels?', context: 'src/A.cs:1-2', answer: 'Staff.' },
   ],
 };
-const setup = { words: 'Windows sign-in', defaulted: true };
+const setup = { option: 'windows', words: 'Windows sign-in', defaulted: true };
 const workbook = { signIn: setup, secrets: setup, screens: setup };
 const taskOf = (name: string, user: string): TranscriptTask => ({
   name,
   messages: [
     { role: 'system', content: 'The prompt of the run.' },
     { role: 'user', content: user },
-    { role: 'assistant', content: '{"never":"captured"}' },
+    { role: 'assistant', content: '{"marker":"ANSWER-MARKER"}' },
   ],
 });
 
@@ -135,7 +138,7 @@ describe('a plan document message captured and rendered again', () => {
       await parsed.value.run(env, draftFile('x.v9.md', 'The prompt under test.'));
 
       expect(requests[0]?.messages[0]?.content).toBe(text);
-      expect(JSON.stringify(captured)).not.toContain('never');
+      expect(JSON.stringify(captured)).not.toContain('ANSWER-MARKER');
     },
   );
 });
@@ -151,13 +154,13 @@ describe('the capture of the plan documents', () => {
     expect(capturePlanDocInput('planner/gap', taskOf('planner-gap', text))).toBeUndefined();
   });
 
-  it('RF-1404 leaves the package without a workbook setup out of the workbook set', () => {
+  it('RF-1404 reads the message of a workbook plan as the package message', () => {
     const plain = taskOf('planner-package', planMessage(planInput, tags()));
-    const withSetup = taskOf('planner-package', planMessage({ ...planInput, workbook }, tags()));
 
-    expect(capturePlanDocInput('planner/workbook', plain)).toBeUndefined();
-    expect(capturePlanDocInput('planner/workbook', withSetup)).toBeDefined();
-    expect(capturePlanDocInput('planner/package', withSetup)).toBeDefined();
+    expect(capturePlanDocInput('planner/workbook', plain)).toEqual(
+      capturePlanDocInput('planner/package', plain),
+    );
+    expect(capturePlanDocInput('planner/workbook', plain)).toBeDefined();
   });
 
   it('RF-1404 keeps at most 8 cards of 4 claims, whatever the input says', () => {

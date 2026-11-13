@@ -24,7 +24,7 @@ const inputs: Record<string, unknown> = {
   'planner/package': { cards: [card], owner: { planningBrief: {} } },
   'planner/workbook': { cards: [card], owner: { workbookSetup: {} } },
   'planner/data-model': {
-    entities: [{ ...card, id: 'ENT-001', type: undefined }],
+    entities: [{ id: 'ENT-001', title: 'Order', summary: 'S', claims: card.claims }],
     database: null,
     dataAccess: null,
     dataMigration: null,
@@ -49,7 +49,8 @@ const answers: readonly (readonly [string, string, string])[] = [
     '{"features":[{"title":"A","description":"B","priority":"Must","sources":[]}]}',
     'Features',
   ],
-  ['planner/data-model', '{"tables":[]}', 'NoTables'],
+  ['planner/data-model', '{"tables":[{"name":"orders"}]}', 'NoTables'],
+  ['planner/data-model', '{"tables":[]}', 'Unusable'],
   ['planner/api-contract', '{"applies":false,"reason":"none"}', 'NoOperations'],
   ['planner/flows', '{"flows":[]}', 'Unusable'],
   ['planner/coverage', '{"links":[]}', 'NoLinks'],

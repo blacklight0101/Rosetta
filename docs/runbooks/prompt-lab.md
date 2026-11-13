@@ -108,6 +108,8 @@ the sets `<prompt>-workbooks` (for example `planner-gap-workbooks`) are rebuilt 
 `p8w3-haiku-{am,inv}-{understand,deepen}`, `p8w3-haiku-am-plan`, `p6/p8-haiku-am-plan` and `p6/p7/p8-haiku-inv-plan`. A tuning
 card may use them for tuning on that machine; a result on them is not published with its inputs.
 
+**The plan documents (P10-08).** `planner/data-model`, `planner/prd`, `planner/api-contract`, `planner/ux`, `planner/flows`, `planner/coverage`, `planner/package` (the plan call itself), `planner/workbook` and `planner/adr-model` are wired with `--prompt planner/<stem>` over the saved `planner-<stem>` tasks of the plan runs (`planner-package` for both package and workbook). Committed sets `planner-<stem>` come from the eShopModernizing plan runs (`p8w3-haiku-eshop-plan`, `p8-haiku-eshop-plan`, `p7-haiku-eshop-plan`, `p6-haiku-eshop-plan`, `h-eshop2-plan`, an older run whose cards have no claim ids is not read); a case keeps at most 8 cards of 4 claims and the owner block as the run sent it. The local sets `planner-<stem>-workbooks` come from the Asset Manager and Invoice Generator plan runs with `--local`. `planner/workbook` has a local set only: the guidance is appended to the package prompt of a workbook plan, so its set is the package message of the workbook runs (capture it from those runs only) and the target sends the run's package prompt followed by the file under test. `planner/adr-model` has a target and a capture rule but no set yet, since no saved run holds its call. The lab replays the one call, not the domain checks, the repair or the continuation of the run.
+
 **Agent-loop prompts (the reader).** The lab does not run a reader loop. A reader case measures one turn: the area's
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
 first turn of `reader/task` and `reader/area` is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; `reader/read-first` is
@@ -149,20 +151,20 @@ targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalo
 | `cards/flows`               | not yet |                                                    |
 | `cards/repair`              | not yet |                                                    |
 | `cards/screens`             | not yet |                                                    |
-| `planner/adr-model`         | not yet |                                                    |
-| `planner/api-contract`      | not yet |                                                    |
+| `planner/adr-model`         | wired   | none yet (no saved run holds this call)            |
+| `planner/api-contract`      | wired   | planner-api-contract (+ local set)                 |
 | `planner/continue`          | not yet |                                                    |
-| `planner/coverage`          | not yet |                                                    |
-| `planner/data-model`        | not yet |                                                    |
-| `planner/flows`             | not yet |                                                    |
+| `planner/coverage`          | wired   | planner-coverage (+ local set)                     |
+| `planner/data-model`        | wired   | planner-data-model (+ local set)                   |
+| `planner/flows`             | wired   | planner-flows (+ local set)                        |
 | `planner/gap`               | wired   | planner-gap                                        |
 | `planner/gap-repair`        | not yet |                                                    |
 | `planner/options`           | not yet |                                                    |
-| `planner/package`           | not yet |                                                    |
+| `planner/package`           | wired   | planner-package (+ local set)                      |
 | `planner/plan-repair`       | not yet |                                                    |
-| `planner/prd`               | not yet |                                                    |
-| `planner/ux`                | not yet |                                                    |
-| `planner/workbook`          | not yet |                                                    |
+| `planner/prd`               | wired   | planner-prd (+ local set)                          |
+| `planner/ux`                | wired   | planner-ux (+ local set)                           |
+| `planner/workbook`          | wired   | local only: planner-workbook-workbooks             |
 | `reader/answers`            | not yet |                                                    |
 | `reader/area`               | wired   | reader-area (first turn)                           |
 | `reader/parent-cards`       | not yet |                                                    |
