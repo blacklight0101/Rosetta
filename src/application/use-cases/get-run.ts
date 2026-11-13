@@ -1,5 +1,6 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { holdingRunOf } from '../../domain/runs/queue-rules.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -20,6 +21,12 @@ export interface QueuePositions {
   positionOf(runId: string): Promise<number | undefined>;
 }
 
+/** The run a queued run waits for: its id (the page link) and its folder name (the words). */
+interface WaitsFor {
+  readonly id: string;
+  readonly runId: string;
+}
+
 export interface GetRunDependencies {
   readonly runs: RunIndex;
   readonly queue: QueuePositions;
@@ -35,6 +42,8 @@ export interface RunDetail {
   readonly reportBuilt: boolean;
   /** The place of a queued run in the server's queue, counted from 1; null for any other run. */
   readonly position: number | null;
+  /** RF-1108, EV-106: the user's running run that holds this queued run back; null for any other. */
+  readonly waitsFor: WaitsFor | null;
   /** P7-38: the cloud consent the run recorded in its manifest. */
   readonly cloudConsent: boolean;
   /** P7-25: for a plan run, the understand run it was made from. */
@@ -58,8 +67,23 @@ export class GetRun {
   }): Promise<Result<RunDetail, 'not-found'>> {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
-    const [reportBuilt, position] = await Promise.all([this.reportBuilt(run), this.position(run)]);
-    return ok({ run, reportBuilt, position, ...(await this.recorded(run)) });
+    const [reportBuilt, position, waitsFor] = await Promise.all([
+      this.reportBuilt(run),
+      this.position(run),
+      this.waitsForOf(run),
+    ]);
+    return ok({ run, reportBuilt, position, waitsFor, ...(await this.recorded(run)) });
+  }
+
+  /** RF-1108, EV-106: only a queued paid run can wait for the user's own running run. */
+  private async waitsForOf(run: Run): Promise<WaitsFor | null> {
+    if (run.queueState !== 'Queued') return null;
+    const [queued, running] = await Promise.all([
+      this.deps.runs.listQueued(),
+      this.deps.runs.listRunning(),
+    ]);
+    const holder = holdingRunOf(queued, running, run.id);
+    return holder === undefined ? null : { id: holder.id, runId: holder.runKey };
   }
 
   /** P7-38, P7-25: what the manifest recorded; none when there is no manifest store or file. */

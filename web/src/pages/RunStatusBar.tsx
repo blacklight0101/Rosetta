@@ -7,7 +7,7 @@ import { Link } from '../components/Link.js';
 import { RunEndBadge } from '../components/RunEndBadge.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
-import { queueText } from '../lib/live-run/queue-text.js';
+import { queueText, waitsForText } from '../lib/live-run/queue-text.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 
 // RF-1002, RF-1003, RF-1108, design-system.md section 14 (live run): the head of the page: the run's
@@ -73,14 +73,21 @@ function Badge({
   );
 }
 
-/** EV-80: the place of a queued run and the runs ahead of it. */
+/** EV-80: the place of a queued run and the runs ahead of it; EV-106: the user's run it waits for. */
 function QueuePlace({ phase }: { readonly phase: RunPhase }): JSX.Element | null {
   if (phase.kind !== 'queued' || phase.position === null || phase.position === undefined) {
     return null;
   }
+  const { waitsFor } = phase;
   return (
     <span class="rst-live-head__note" data-testid="queue-position">
       {queueText(phase.position)}
+      {waitsFor === undefined || waitsFor === null ? null : (
+        <>
+          . {waitsForText(waitsFor.runId)}.{' '}
+          <Link href={`/runs/${encodeURIComponent(waitsFor.id)}`}>Open that run</Link>
+        </>
+      )}
     </span>
   );
 }
