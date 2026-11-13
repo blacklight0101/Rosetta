@@ -5,9 +5,11 @@ import type { ProviderKind } from '../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 
-// RF-1402, ADR-029: `ROSETTA_LAB_LEDGER`, an optional absolute path of the ledger file. When it is
-// set every lab command uses that file instead of `lab-out/ledger.jsonl`, so the phase total does not
-// depend on the checkout that runs the lab. A value that is not an absolute `.jsonl` path is refused.
+// RF-1402, ADR-029: `ROSETTA_LAB_LEDGER`, the absolute path of the shared ledger file. It is required
+// for every real provider: the lab refuses to start a real model without it (see `sharedLedgerProblem`);
+// only the fake provider of the tests may leave it unset and use `lab-out/ledger.jsonl` of the checkout.
+// When it is set every lab command uses that file, so the phase total does not depend on the checkout
+// that runs the lab. A value that is not an absolute `.jsonl` path is refused.
 
 const LEDGER_VARIABLE = 'ROSETTA_LAB_LEDGER';
 

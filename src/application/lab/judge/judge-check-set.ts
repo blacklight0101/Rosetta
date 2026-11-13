@@ -3,7 +3,7 @@ import { err, ok, type Result } from '../../../domain/errors/result.js';
 import type { CalibrationSet } from '../../eval/calibration-set-schema.js';
 import { RUBRIC_FAMILIES } from './rubric.js';
 
-// RF-1405: the items the judge check scores. (a) A fixed sample of the hand-labelled calibration
+// RF-1408: the items the judge check scores. (a) A fixed sample of the hand-labelled calibration
 // claims (RF-305): each is shown to the judge with the verdict the hand label gives or its opposite,
 // alternately, and the judge is not told the label. (b) The hand-scored samples of
 // `eval/judge-check/hand-scored.json`: an answer, its source and the scores a person gave it.
@@ -45,7 +45,7 @@ const setSchema = z.strictObject({
 
 export type HandScoredSample = z.infer<typeof sampleSchema>;
 
-// RF-1405
+// RF-1408
 export function parseHandScored(data: unknown): Result<HandScoredSample[], string> {
   const parsed = setSchema.safeParse(data);
   if (!parsed.success) {
@@ -59,7 +59,7 @@ export function parseHandScored(data: unknown): Result<HandScoredSample[], strin
   return ok(parsed.data.samples);
 }
 
-// RF-1405
+// RF-1408
 export function handScoredItems(samples: readonly HandScoredSample[]): CheckItem[] {
   return samples.map((sample) => ({
     ...{ id: sample.id, kind: 'hand-scored', family: sample.family },
@@ -87,7 +87,7 @@ function fileText(
   return [head, ...body].join('\n');
 }
 
-// RF-1405
+// RF-1408
 export function calibrationItems(
   set: CalibrationSet,
   files: Readonly<Record<string, string>>,
@@ -113,7 +113,7 @@ export function calibrationItems(
 }
 
 /** The first `limit` items of each kind and family; all of them when there is no limit. */
-// RF-1405
+// RF-1408
 export function limitItems(items: readonly CheckItem[], limit: number | undefined): CheckItem[] {
   if (limit === undefined) return [...items];
   const seen = new Map<string, number>();

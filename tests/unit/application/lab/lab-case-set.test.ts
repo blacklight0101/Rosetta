@@ -50,3 +50,36 @@ describe('the lab case set', () => {
     expect(parseLabCaseSet({ ...valid, cases: [] }).ok).toBe(false);
   });
 });
+
+describe('the sources of a case set', () => {
+  it('RF-1405 reads the sources of a set and the source a case names', () => {
+    const source = {
+      key: 'shop',
+      name: 'Invented shop',
+      commit: 'abcdef1234567',
+      licence: 'MIT',
+      runs: ['run-1'],
+    };
+    const result = parseLabCaseSet({
+      ...valid,
+      sources: [source],
+      cases: [{ id: 'a-1', from: 'shop', input: {} }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.sources).toEqual([source]);
+    expect(result.value.cases[0]?.from).toBe('shop');
+  });
+
+  it('RF-1405 refuses a case that names a source the set does not list, and a source with no commit or snapshot', () => {
+    const lost = parseLabCaseSet({ ...valid, cases: [{ id: 'a-1', from: 'shop', input: {} }] });
+    const bare = parseLabCaseSet({
+      ...valid,
+      sources: [{ key: 'shop', name: 'x', licence: 'MIT', runs: [] }],
+    });
+
+    expect(lost.ok ? '' : lost.error.join()).toContain('shop');
+    expect(bare.ok).toBe(false);
+  });
+});

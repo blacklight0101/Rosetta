@@ -30,7 +30,7 @@ export interface RunLabDependencies {
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly rosettaVersion: string;
-  /** RF-1404: scores each answered case against the rubric of the prompt's family. */
+  /** RF-1407: scores each answered case against the rubric of the prompt's family. */
   readonly judge?: CaseJudge;
 }
 
@@ -162,7 +162,7 @@ export class RunLab {
     return this.write(results);
   }
 
-  /** RF-1404: the case with the judge's scores, when a judge is set and the case was answered. */
+  /** RF-1407: the case with the judge's scores, when a judge is set and the case was answered. */
   private async judged(
     result: LabCaseResult,
     one: Prepared,

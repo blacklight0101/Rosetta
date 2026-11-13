@@ -36,3 +36,7 @@ lab-out/
 test-results/
 playwright-report/
 graphify-out/
+
+# Case sets that may not be published (P10-02)
+lab/local-cases/
+lab/local-sources.json

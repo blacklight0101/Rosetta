@@ -25,6 +25,7 @@ import { runLab, type JudgeMaker, type LabParts } from './compose-lab.js';
 import { composeJudge, type JudgeSetup } from './compose-judge.js';
 import { judgeSetupOf } from './judge-setup.js';
 import { runJudgeCheck } from './judge-check-command.js';
+import { runLabCapture } from './lab-capture-command.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
 import {
@@ -56,7 +57,7 @@ export interface LabFolders {
   readonly promptsFolder: string;
 }
 
-/** RF-1404: the judge is built once the lab has its guarded factory and its ledger. */
+/** RF-1407: the judge is built once the lab has its guarded factory and its ledger. */
 const judgeMaker =
   (parts: LabParts, setup: JudgeSetup): JudgeMaker =>
   ({ guarded, ledger }) =>
@@ -198,6 +199,7 @@ export async function runLabCommand(
   env: Environment,
   print: Print,
 ): Promise<number> {
+  if (argv[0] === '--capture') return runLabCapture(argv.slice(1), folder('lab/'), print);
   const args = parseLabArgs(argv);
   if (!args.ok) return (print(`${args.error}\n${LAB_USAGE}`), 1);
   if (args.value.kind === 'help') return (print(LAB_USAGE), 0);

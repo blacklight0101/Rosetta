@@ -43,9 +43,11 @@ export async function loadLabCaseSet(
   name: string,
 ): Promise<Result<LoadedLabSet, string>> {
   if (!setName.test(name)) return err(`${name} is not the name of a case set.`);
+  // RF-1405: `lab/local-cases/` (git-ignored) holds sets that may not be published; a committed set wins.
   const reference = `cases/${name}.json`;
-  const bytes = await readEvalFile(labFolder, reference);
-  if (!bytes.ok) return bytes;
+  const committed = await readEvalFile(labFolder, reference);
+  const bytes = committed.ok ? committed : await readEvalFile(labFolder, `local-${reference}`);
+  if (!bytes.ok) return err(committed.ok ? bytes.error : committed.error);
   const data = jsonOf(bytes.value, reference);
   if (!data.ok) return data;
   const set = parseLabCaseSet(data.value);

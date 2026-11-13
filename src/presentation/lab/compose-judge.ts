@@ -8,7 +8,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { LabCallGate } from '../../infrastructure/lab/lab-call-gate.js';
 import type { Guarded, LabParts } from './compose-lab.js';
 
-// Architecture section 2 (composition root), RF-1404, RF-1402, ADR-029: the judge of a lab
+// Architecture section 2 (composition root), RF-1407, RF-1402, ADR-029: the judge of a lab
 // invocation. Its model is built by the same guarded provider factory as the target's (egress and
 // budget guards innermost), under the planner role, and sits behind a ledger gate of its own over
 // the invocation's ledger, so a judge call is held, settled and capped like every other lab call.
@@ -44,7 +44,7 @@ function judgeSettings(parts: LabParts, setup: JudgeSetup): ProjectSettings {
 }
 
 /** Builds the judge before any call is sent, so a judge that cannot be used stops the command first. */
-// RF-1404
+// RF-1407
 export async function composeJudge(
   parts: LabParts,
   guarded: Guarded,

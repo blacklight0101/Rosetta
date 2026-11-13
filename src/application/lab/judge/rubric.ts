@@ -1,6 +1,6 @@
 import { err, ok, type Result } from '../../../domain/errors/result.js';
 
-// RF-1404: the written rubric of a prompt family (`lab/rubrics/<family>.md`). A criterion is a
+// RF-1407: the written rubric of a prompt family (`lab/rubrics/<family>.md`). A criterion is a
 // heading `## <id> - <title>` (with ` [veto]` at the end when a score of 1 on it makes the overall
 // score 1) and the text under it, which says what scores 1 to 5 look like. The whole text is what
 // the judge reads; the headings are what its reply must score.
@@ -31,7 +31,7 @@ export interface Rubric {
 const MIN_CRITERIA = 3;
 const heading = /^## ([a-z][a-z0-9-]{0,39}) - (.+?)( \[veto\])?\s*$/u;
 
-// RF-1404
+// RF-1407
 export function parseRubric(family: string, text: string, sha256: string): Result<Rubric, string> {
   const criteria: RubricCriterion[] = [];
   for (const line of text.split(/\r?\n/u)) {

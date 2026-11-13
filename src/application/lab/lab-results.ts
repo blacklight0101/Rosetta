@@ -28,7 +28,7 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
-  /** RF-1404: the judge's scores, present only in a run made with `--judge`. */
+  /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
   judge: judgementSchema.optional(),
 });
 
@@ -87,7 +87,7 @@ export interface LabSummary {
   readonly meanOutputTokens: number | null;
   readonly meanLatencyMs: number | null;
   readonly costMicros: number;
-  /** RF-1404: the judge's means; null for a run without a judge. */
+  /** RF-1407: the judge's means; null for a run without a judge. */
   readonly judge: JudgeSummary | null;
 }
 

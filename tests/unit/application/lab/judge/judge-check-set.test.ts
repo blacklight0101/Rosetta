@@ -9,7 +9,7 @@ import {
 import { RUBRIC_FAMILIES } from '../../../../../src/application/lab/judge/rubric.js';
 import { parseCalibrationSet } from '../../../../../src/application/eval/calibration-set-schema.js';
 
-// RF-1405: the judge check reads the calibration claims and the hand-scored samples.
+// RF-1408: the judge check reads the calibration claims and the hand-scored samples.
 
 const root = fileURLToPath(new URL('../../../../../', import.meta.url));
 
@@ -18,7 +18,7 @@ async function json(path: string): Promise<unknown> {
 }
 
 describe('the calibration items of the judge check', () => {
-  it('RF-1405 shows the verdict of the label and its opposite alternately, without the label', async () => {
+  it('RF-1408 shows the verdict of the label and its opposite alternately, without the label', async () => {
     const set = parseCalibrationSet(await json('eval/calibration/webforms-shop.json'));
     if (!set.ok) throw new Error(set.error.join('; '));
     const files = { 'Catalog/Details.aspx.cs': 'line one\nline two\n' };
@@ -39,7 +39,7 @@ describe('the calibration items of the judge check', () => {
 });
 
 describe('the hand-scored samples', () => {
-  it('RF-1405 hold at least three per family, each with its origin, licence and a score for every criterion', async () => {
+  it('RF-1408 hold at least three per family, each with its origin, licence and a score for every criterion', async () => {
     const parsed = parseHandScored(await json('eval/judge-check/hand-scored.json'));
     if (!parsed.ok) throw new Error(parsed.error);
 
@@ -53,7 +53,7 @@ describe('the hand-scored samples', () => {
     }
   });
 
-  it('RF-1405 refuses a sample with a score out of range or an unknown family', () => {
+  it('RF-1408 refuses a sample with a score out of range or an unknown family', () => {
     const base = {
       id: 'a-1',
       family: 'reader',
@@ -72,7 +72,7 @@ describe('the hand-scored samples', () => {
 });
 
 describe('the limit of the judge check', () => {
-  it('RF-1405 keeps the first n items of each kind and family', () => {
+  it('RF-1408 keeps the first n items of each kind and family', () => {
     const item = (id: string, kind: 'calibration' | 'hand-scored', family: string) => ({
       ...{ id, kind, family, source: 's', answer: 'a', label: null },
       ...{ followsLabel: null, scores: null },

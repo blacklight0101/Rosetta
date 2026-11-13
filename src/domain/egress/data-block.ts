@@ -30,7 +30,7 @@ import { breakMarkers, holdsMarker } from './marker-skeleton.js';
  * The verifier's judgement (RF-301) sends the claim a reader wrote (`claim`, model output) and
  * the lines it cites (`cited_lines`). The planner (RF-608, RF-609) gets the verified cards (`cards`)
  * and what the scan found of the legacy stack (`scan_summary`: file names, languages, area names).
- * The prompt lab's judge (RF-1404) gets the inputs of a case (`lab_source`), the model's answer
+ * The prompt lab's judge (RF-1407) gets the inputs of a case (`lab_source`), the model's answer
  * (`lab_answer`) and the case's hand label (`lab_label`), all untrusted text.
  */
 export type DataBlockSource =

@@ -1,0 +1,941 @@
+{
+  "schemaVersion": 1,
+  "version": "planner-gap-1",
+  "prompt": "planner/gap",
+  "description": "Inputs of planner/gap captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-071300-plan",
+        "20261102-030541-plan",
+        "20261029-152045-plan",
+        "20261102-203736-plan",
+        "20261023-152751-plan"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-071300-plan-planner-gap",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "items": [
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Serve catalog item pictures",
+            "detail": "Returns the picture file of a catalogue item with a MIME type taken from its extension."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Sign in and sign out with OpenID Connect",
+            "detail": "Signs users in and out through OpenID Connect when Azure Active Directory is enabled."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Daily discount banner",
+            "detail": "Shows the discount valid today with its percentage and end date on the catalogue screen."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Browse the catalog with brand and type filters",
+            "detail": "Lists items in the WinForms client and filters them by brand and type, where 0 means all."
+          },
+          {
+            "id": "feature:F-011",
+            "kind": "feature",
+            "name": "Check and record stock for an item on a date",
+            "detail": "Records a stock shipment for an item on a date and searches available stock for an item and date."
+          },
+          {
+            "id": "flow:FLOW-002",
+            "kind": "flow",
+            "name": "Record a stock shipment",
+            "detail": "The stock record is saved or updated and the form is cleared."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Open the catalog screen",
+            "detail": "The form shows the discount banner, the catalog items with discounted prices, the brand and type filters and the shipment entry list."
+          },
+          {
+            "id": "flow:FLOW-006",
+            "kind": "flow",
+            "name": "Check available stock for an item on a date",
+            "detail": "A row with the date, item id and quantity is added to the stock result list."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Application start of the MVC web site",
+            "detail": "The container, routes, filters and bundles are registered, the database initializer is set when mock data is off, catalog images are initialised and telemetry is configured."
+          },
+          {
+            "id": "flow:FLOW-021",
+            "kind": "flow",
+            "name": "Request a catalog item picture",
+            "detail": "The image bytes are returned with a MIME type, or an error status is returned."
+          },
+          {
+            "id": "flow:FLOW-022",
+            "kind": "flow",
+            "name": "Handling an HTTP request",
+            "detail": "The request is answered by a static file, an MVC action, or the error page."
+          },
+          {
+            "id": "flow:FLOW-024",
+            "kind": "flow",
+            "name": "Show a page of the product catalog",
+            "detail": "The product list shows one page of catalog items with working Previous and Next links."
+          },
+          {
+            "id": "screen:SCRN-020",
+            "kind": "screen",
+            "name": "Error page",
+            "detail": "Tells the user that an error occurred while processing the request."
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "detail": "Project files: eShopLegacy.Utilities.csproj; languages: csharp, xml; 3 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopPorted",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopPorted",
+            "detail": "Project files: eShopPorted.csproj; languages: javascript, css, csharp; 104 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "detail": "Project files: eShopLegacyMVC.csproj, packages.config; languages: javascript, css, csharp; 115 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 20 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, packages.config; languages: csharp, xml; 39 files"
+          },
+          {
+            "id": "module:eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "kind": "module",
+            "name": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "detail": "Project files: eShopLegacyWebForms.csproj, packages.config; languages: javascript, css, csharp; 143 files"
+          },
+          {
+            "id": "module:eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "kind": "module",
+            "name": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "detail": "Project files: eShopModernizedMVC.csproj, packages.config; languages: javascript, css, csharp; 126 files"
+          },
+          {
+            "id": "module:eShopModernizedNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopModernizedNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 22 files"
+          },
+          {
+            "id": "module:eShopModernizedNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopModernizedNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, eShopWinForms.fx.csproj; languages: csharp, xml, json; 21 files"
+          },
+          {
+            "id": "module:eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "kind": "module",
+            "name": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "detail": "Project files: eShopModernizedWebForms.csproj, packages.config; languages: javascript, css, csharp; 151 files"
+          },
+          {
+            "id": "deployment:source",
+            "kind": "deployment",
+            "name": "Deployment material",
+            "detail": "Kubernetes, Kubernetes-DockerForWindows, ServiceFabric, VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml, VM/eShopModernizedMVC/docker-compose.nobuild.yml, VM/eShopModernizedMVC/docker-compose.override.nosql.yml, VM/eShopModernizedMVC/docker-compose.override.yml, VM/eShopModernizedWebForms/doc"
+          }
+        ],
+        "phases": [
+          {
+            "number": 1,
+            "name": "Catalog core",
+            "goal": "The catalog browse, create, edit, view and delete screens run on the new system against the new database, and the legacy catalog is switched to the new one for those screens."
+          },
+          {
+            "number": 2,
+            "name": "Stock, discounts and pictures",
+            "goal": "Stock, discount banner and picture upload and serving move to the new system."
+          },
+          {
+            "number": 3,
+            "name": "Sign-in and remaining screens",
+            "goal": "Sign-in, the remaining WebForms screens and the legacy switch-off are completed."
+          }
+        ],
+        "requirements": [
+          {
+            "title": "Browse a paged product catalog"
+          },
+          {
+            "title": "Show the item picture URL"
+          },
+          {
+            "title": "Show a catalog item"
+          },
+          {
+            "title": "Create a catalog item"
+          },
+          {
+            "title": "Validate catalog item fields"
+          },
+          {
+            "title": "Edit a catalog item"
+          },
+          {
+            "title": "Picture file name is read-only on edit"
+          },
+          {
+            "title": "Delete a catalog item after confirmation"
+          },
+          {
+            "title": "Require sign-in for catalog changes"
+          },
+          {
+            "title": "Look up brands and types"
+          },
+          {
+            "title": "Store the catalog data"
+          },
+          {
+            "title": "Seed the first-run catalog data"
+          },
+          {
+            "title": "Seed from CSV files when customization is on"
+          },
+          {
+            "title": "Reject invalid seed rows"
+          },
+          {
+            "title": "Generate catalog item ids with a hi-lo sequence"
+          },
+          {
+            "title": "Track stock per item and date"
+          },
+          {
+            "title": "Show the discount for today"
+          },
+          {
+            "title": "Use the first matching discount"
+          },
+          {
+            "title": "Accept only JPEG, PNG and GIF uploads"
+          },
+          {
+            "title": "Store a temporary image and update it on save"
+          },
+          {
+            "title": "Serve catalog pictures with an extension-based type"
+          },
+          {
+            "title": "Authenticate users with OpenID Connect"
+          },
+          {
+            "title": "Switch features with configuration flags"
+          },
+          {
+            "title": "Record a request log"
+          },
+          {
+            "title": "Show a generic error page"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-001",
+            "title": "Write the database migrations in the chosen stack"
+          },
+          {
+            "id": "T-002",
+            "title": "Create the catalog item model and mapping"
+          },
+          {
+            "id": "T-003",
+            "title": "Implement the catalog service paging and lookup"
+          },
+          {
+            "id": "T-004",
+            "title": "Implement the hi-lo id generator"
+          },
+          {
+            "id": "T-005",
+            "title": "Seed the first-run catalog data"
+          },
+          {
+            "id": "T-006",
+            "title": "Build the catalog browse and create screens"
+          },
+          {
+            "id": "T-007",
+            "title": "Build the catalog edit, view and delete screens"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-030541-plan-planner-gap",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "items": [
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Seed catalog data on first creation",
+            "detail": "When the catalog database is created, the sequences and sample types, brands and items are loaded."
+          },
+          {
+            "id": "screen:SCRN-013",
+            "kind": "screen",
+            "name": "Contact",
+            "detail": "Shows the company address, phone number and support and marketing e-mail links."
+          }
+        ],
+        "phases": [
+          {
+            "number": 1,
+            "name": "Catalog browse and detail",
+            "goal": "The catalog list and detail pages run on the new system beside the legacy site."
+          },
+          {
+            "number": 2,
+            "name": "Catalog maintenance",
+            "goal": "Create, edit and delete of catalog items run on the new system."
+          },
+          {
+            "number": 3,
+            "name": "Pictures, shipments and WinForms-era features",
+            "goal": "Pictures, stock shipments and the discount features are moved."
+          },
+          {
+            "number": 4,
+            "name": "WebForms retirement",
+            "goal": "The last legacy part is moved and the legacy system is switched off."
+          }
+        ],
+        "requirements": [
+          {
+            "title": "Browse the catalog page by page"
+          },
+          {
+            "title": "View catalog item details"
+          },
+          {
+            "title": "Create a catalog item"
+          },
+          {
+            "title": "Edit a catalog item"
+          },
+          {
+            "title": "Delete a catalog item"
+          },
+          {
+            "title": "Anti-forgery protection on writes"
+          },
+          {
+            "title": "Catalog item validation"
+          },
+          {
+            "title": "Stock fields are maintained per item"
+          },
+          {
+            "title": "Brand and type are required on each item"
+          },
+          {
+            "title": "Brand and type drop-down lists"
+          },
+          {
+            "title": "Picture shown for each item"
+          },
+          {
+            "title": "Serve catalog item pictures"
+          },
+          {
+            "title": "Picture upload accepts only JPEG, PNG and GIF"
+          },
+          {
+            "title": "Read-only picture name on edit"
+          },
+          {
+            "title": "Brands API lists brands"
+          },
+          {
+            "title": "Sign-in required for catalog writes"
+          },
+          {
+            "title": "Sign-in through Azure Active Directory"
+          },
+          {
+            "title": "Session and footer information"
+          },
+          {
+            "title": "Request logging with activity id"
+          },
+          {
+            "title": "Initial catalog seed on database creation"
+          },
+          {
+            "title": "Catalog seed import from CSV files"
+          },
+          {
+            "title": "Catalog item ids from a hi-lo sequence"
+          },
+          {
+            "title": "Shipment records set the stock of a date"
+          },
+          {
+            "title": "Discount price for the day"
+          },
+          {
+            "title": "Brand and type filter with All"
+          },
+          {
+            "title": "Stock availability check"
+          },
+          {
+            "title": "Delete for a missing item redirects silently"
+          },
+          {
+            "title": "Shared layout"
+          },
+          {
+            "title": "Error page"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-001",
+            "title": "Write the database migrations in the chosen stack"
+          },
+          {
+            "id": "T-002",
+            "title": "Catalog list and detail pages"
+          },
+          {
+            "id": "T-003",
+            "title": "Catalog item create, edit and delete"
+          },
+          {
+            "id": "T-004",
+            "title": "Brand and type lists and item rules"
+          },
+          {
+            "id": "T-005",
+            "title": "Picture serving and upload checks"
+          },
+          {
+            "id": "T-006",
+            "title": "Shipment and stock by date"
+          },
+          {
+            "id": "T-007",
+            "title": "Discount price and banner"
+          },
+          {
+            "id": "T-008",
+            "title": "Sign-in and session footer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152045-plan-planner-gap",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "items": [
+          {
+            "id": "feature:F-005",
+            "kind": "feature",
+            "name": "Browse the catalog by default route",
+            "detail": "Open the site on the catalog list when no route is given."
+          }
+        ],
+        "phases": [
+          {
+            "number": 1,
+            "name": "Catalogue core",
+            "goal": "The new system holds the catalogue brands, types and items, with the list, details, create, edit and delete rules, while the legacy system keeps running."
+          },
+          {
+            "number": 2,
+            "name": "Catalogue pages and pictures",
+            "goal": "The catalogue pages, brands API and picture endpoint run on the new system."
+          },
+          {
+            "number": 3,
+            "name": "WebForms and switch-off",
+            "goal": "The WebForms app is moved last and the legacy system is switched off."
+          }
+        ],
+        "requirements": [
+          {
+            "title": "Paged catalogue list"
+          },
+          {
+            "title": "Item details"
+          },
+          {
+            "title": "Create catalogue item"
+          },
+          {
+            "title": "Edit catalogue item"
+          },
+          {
+            "title": "Delete catalogue item"
+          },
+          {
+            "title": "Brands list"
+          },
+          {
+            "title": "Brand delete stays a no-op"
+          },
+          {
+            "title": "Picture URI from item id"
+          },
+          {
+            "title": "Serve item pictures"
+          },
+          {
+            "title": "Seed catalogue data"
+          },
+          {
+            "title": "Catalogue data through EF Core"
+          },
+          {
+            "title": "Development and production error pages"
+          },
+          {
+            "title": "Brand or type delete does not remove items"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-001",
+            "title": "Write the database migrations in the chosen stack"
+          },
+          {
+            "id": "T-002",
+            "title": "Catalogue schema and seed data"
+          },
+          {
+            "id": "T-003",
+            "title": "Validate catalogue item create and edit"
+          },
+          {
+            "id": "T-004",
+            "title": "Guard catalogue item delete"
+          },
+          {
+            "id": "T-005",
+            "title": "Validate paging values"
+          },
+          {
+            "id": "T-006",
+            "title": "Serve pictures from a fixed folder"
+          },
+          {
+            "id": "T-007",
+            "title": "Brands API list and no-op delete"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-203736-plan-planner-gap",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "items": [
+          {
+            "id": "feature:F-006",
+            "kind": "feature",
+            "name": "Browse the catalog with brand and type filters",
+            "detail": "Lists catalog items filtered by brand and type, with today's discount applied to the shown price."
+          },
+          {
+            "id": "feature:F-007",
+            "kind": "feature",
+            "name": "Check and record stock for an item on a date",
+            "detail": "Shows the stock recorded for an item on a date, and records a shipment that overwrites the quantity for that item and day."
+          },
+          {
+            "id": "feature:F-010",
+            "kind": "feature",
+            "name": "Switch between mobile and desktop view",
+            "detail": "Shows a link that returns the visitor to the same page in the alternate view."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Browser request to the default MVC route",
+            "detail": "The request is served as a static file, or dispatched to an MVC controller action, or to the error page on failure."
+          },
+          {
+            "id": "flow:FLOW-004",
+            "kind": "flow",
+            "name": "Add a catalog item",
+            "detail": "The form is posted with the entered values; the handler that saves the item is outside this area."
+          },
+          {
+            "id": "flow:FLOW-005",
+            "kind": "flow",
+            "name": "Application start-up and container wiring",
+            "detail": "MVC, Web API, areas, filters, routes and bundles are registered, and the catalog database initializer is set when mock data is off."
+          },
+          {
+            "id": "flow:FLOW-008",
+            "kind": "flow",
+            "name": "Open the home page product list",
+            "detail": "The product list and pager show one page of catalog items."
+          },
+          {
+            "id": "flow:FLOW-011",
+            "kind": "flow",
+            "name": "View item details",
+            "detail": "The item is shown as read-only labels, with links to edit it or go back to the list."
+          },
+          {
+            "id": "flow:FLOW-015",
+            "kind": "flow",
+            "name": "Create a catalogue item with a picture",
+            "detail": "The item is saved and the user is returned to the catalogue list, or the form is shown again with its errors."
+          },
+          {
+            "id": "screen:SCRN-002",
+            "kind": "screen",
+            "name": "Catalog table",
+            "detail": "Shows the catalog items as rows with a thumbnail, the item values and Edit, Details and Delete links."
+          },
+          {
+            "id": "screen:SCRN-007",
+            "kind": "screen",
+            "name": "Error",
+            "detail": "Tells the user that a request failed."
+          },
+          {
+            "id": "screen:SCRN-013",
+            "kind": "screen",
+            "name": "Catalog home",
+            "detail": "Lists the catalog products as the home page of the site, with row links and paging."
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+            "detail": "Project files: eShopLegacy.Utilities.csproj; languages: csharp, xml; 3 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/eShopPorted",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/eShopPorted",
+            "detail": "Project files: eShopPorted.csproj; languages: javascript, css, csharp; 104 files"
+          },
+          {
+            "id": "module:eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "kind": "module",
+            "name": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "detail": "Project files: eShopLegacyMVC.csproj, packages.config; languages: javascript, css, csharp; 115 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 20 files"
+          },
+          {
+            "id": "module:eShopLegacyNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopLegacyNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, packages.config; languages: csharp, xml; 39 files"
+          },
+          {
+            "id": "module:eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "kind": "module",
+            "name": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "detail": "Project files: eShopLegacyWebForms.csproj, packages.config; languages: javascript, css, csharp; 143 files"
+          },
+          {
+            "id": "module:eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "kind": "module",
+            "name": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "detail": "Project files: eShopModernizedMVC.csproj, packages.config; languages: javascript, css, csharp; 126 files"
+          },
+          {
+            "id": "module:eShopModernizedNTier/src/eShopWCFService",
+            "kind": "module",
+            "name": "eShopModernizedNTier/src/eShopWCFService",
+            "detail": "Project files: eShopWCFService.csproj, packages.config; languages: csharp, xml, aspnet; 22 files"
+          },
+          {
+            "id": "module:eShopModernizedNTier/src/eShopWinForms",
+            "kind": "module",
+            "name": "eShopModernizedNTier/src/eShopWinForms",
+            "detail": "Project files: eShopWinForms.csproj, eShopWinForms.fx.csproj; languages: csharp, xml, json; 21 files"
+          },
+          {
+            "id": "module:eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "kind": "module",
+            "name": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "detail": "Project files: eShopModernizedWebForms.csproj, packages.config; languages: javascript, css, csharp; 151 files"
+          },
+          {
+            "id": "deployment:source",
+            "kind": "deployment",
+            "name": "Deployment material",
+            "detail": "Kubernetes, Kubernetes-DockerForWindows, ServiceFabric, VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml, VM/eShopModernizedMVC/docker-compose.nobuild.yml, VM/eShopModernizedMVC/docker-compose.override.nosql.yml, VM/eShopModernizedMVC/docker-compose.override.yml, VM/eShopModernizedWebForms/doc"
+          }
+        ],
+        "phases": [
+          {
+            "number": 1,
+            "name": "Catalog read path",
+            "goal": "The catalog list and details move to the new system while the legacy system keeps running."
+          },
+          {
+            "number": 2,
+            "name": "Catalog write path",
+            "goal": "Create, edit and delete move to the new system with sign-in required."
+          },
+          {
+            "number": 3,
+            "name": "Pictures and seeding",
+            "goal": "Picture serving and first-time seeding move to the new system."
+          }
+        ],
+        "requirements": [
+          {
+            "title": "Browse the catalog one page at a time"
+          },
+          {
+            "title": "Show item details"
+          },
+          {
+            "title": "Create a catalog item"
+          },
+          {
+            "title": "Edit a catalog item"
+          },
+          {
+            "title": "Delete a catalog item after confirmation"
+          },
+          {
+            "title": "Catalog item price and stock limits"
+          },
+          {
+            "title": "Item ids from a sequence in blocks"
+          },
+          {
+            "title": "Seed the catalog on first creation"
+          },
+          {
+            "title": "Default picture for new items"
+          },
+          {
+            "title": "Serve catalog item pictures"
+          },
+          {
+            "title": "Accepted picture formats"
+          },
+          {
+            "title": "Brands read-only API"
+          },
+          {
+            "title": "Sign-in for catalog changes"
+          },
+          {
+            "title": "Azure AD sign-in in production"
+          },
+          {
+            "title": "Stock per item and date"
+          },
+          {
+            "title": "Discount shown on the catalog"
+          },
+          {
+            "title": "Mock catalog for demo or offline use"
+          },
+          {
+            "title": "Update of a missing item keeps legacy behaviour"
+          },
+          {
+            "title": "Log requests and errors"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-001",
+            "title": "Write the database migrations in the chosen stack"
+          },
+          {
+            "id": "T-002",
+            "title": "Catalog list and details"
+          },
+          {
+            "id": "T-003",
+            "title": "Catalog create, edit and delete with sign-in"
+          },
+          {
+            "id": "T-004",
+            "title": "Id assignment with HiLo blocks"
+          },
+          {
+            "id": "T-005",
+            "title": "Seeding and pictures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261023-152751-plan-planner-gap",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "items": [
+          {
+            "id": "feature:F-001",
+            "kind": "feature",
+            "name": "Catalog index with paging",
+            "detail": "Lists catalog items page by page, with page size and page index taken from the query string."
+          },
+          {
+            "id": "feature:F-002",
+            "kind": "feature",
+            "name": "Catalog item details",
+            "detail": "Shows one catalog item with its picture and all its fields, by id."
+          },
+          {
+            "id": "feature:F-008",
+            "kind": "feature",
+            "name": "Brands Web API",
+            "detail": "Lists catalog brands as JSON and returns one brand by id."
+          },
+          {
+            "id": "feature:F-009",
+            "kind": "feature",
+            "name": "Brand list as binary download",
+            "detail": "Returns the catalog brand list as a serialized binary response."
+          },
+          {
+            "id": "flow:FLOW-001",
+            "kind": "flow",
+            "name": "Handling an incoming web request",
+            "detail": "The request is served by a static file or routed to an MVC controller action, and unhandled errors go to the error page in non-development environments."
+          }
+        ],
+        "phases": [
+          {
+            "number": 1,
+            "name": "Catalog data foundation",
+            "goal": "Define the catalog entities and the SQL Server catalog data access with the seeded reference data."
+          },
+          {
+            "number": 2,
+            "name": "Catalog back-office pages",
+            "goal": "Replace the legacy catalog list, details, create, edit, delete and picture pages on the new system."
+          },
+          {
+            "number": 3,
+            "name": "Legacy switch-off",
+            "goal": "Retire the legacy catalog apps after the last part is live."
+          }
+        ],
+        "requirements": [
+          {
+            "title": "Catalog listing with paging"
+          },
+          {
+            "title": "Catalog item details"
+          },
+          {
+            "title": "Create catalog item"
+          },
+          {
+            "title": "Edit catalog item"
+          },
+          {
+            "title": "Delete catalog item"
+          },
+          {
+            "title": "Catalog item validation"
+          },
+          {
+            "title": "Catalog item required fields"
+          },
+          {
+            "title": "Brand and type references"
+          },
+          {
+            "title": "Seeded catalog reference data"
+          },
+          {
+            "title": "Picture retrieval"
+          },
+          {
+            "title": "Brands API"
+          },
+          {
+            "title": "Data source selection"
+          },
+          {
+            "title": "Catalog database connection"
+          },
+          {
+            "title": "Request handling entry point"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "T-001",
+            "title": "Write the database migrations in the chosen stack"
+          },
+          {
+            "id": "T-002",
+            "title": "Catalog item rules and validation"
+          },
+          {
+            "id": "T-003",
+            "title": "Catalog data access and seed"
+          },
+          {
+            "id": "T-004",
+            "title": "Catalog pages with anti-forgery create, edit and delete"
+          },
+          {
+            "id": "T-005",
+            "title": "Picture route with extension-based MIME type"
+          },
+          {
+            "id": "T-006",
+            "title": "Data source switch by configuration"
+          }
+        ]
+      }
+    }
+  ]
+}

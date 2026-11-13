@@ -14,7 +14,7 @@ import { guardedOf, type LabParts } from './compose-lab.js';
 import type { LabArgs } from './lab-args.js';
 import { holdLifetimeProblem, sharedLedgerProblem } from './lab-ledger-path.js';
 
-// RF-1405, RF-1402, ADR-029: `npm run lab -- --judge-check <provider:model> [--yes]`. The judge scores
+// RF-1408, RF-1402, ADR-029: `npm run lab -- --judge-check <provider:model> [--yes]`. The judge scores
 // the sampled calibration claims and the hand-scored samples; every call goes through the lab's
 // ledger gate like any other. Without `--yes` it only says how many calls it would make.
 
@@ -55,7 +55,7 @@ function startProblem(parts: LabParts, args: CheckArgs): string | undefined {
   );
 }
 
-// RF-1405
+// RF-1408
 export async function runJudgeCheck(
   parts: LabParts,
   args: CheckArgs,

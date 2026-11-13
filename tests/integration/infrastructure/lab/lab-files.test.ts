@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { overviewTarget } from '../../../../src/application/lab/targets/overview-target.js';
@@ -49,6 +49,37 @@ describe('the committed lab files', () => {
   it('RF-1401 refuses a name that is not a case set of lab/cases', async () => {
     expect((await loadLabCaseSet(labFolder, '../config')).ok).toBe(false);
     expect((await loadLabCaseSet(labFolder, 'no-such-set')).ok).toBe(false);
+  });
+});
+
+describe('the local case sets of the lab', () => {
+  const set = (version: string): string =>
+    JSON.stringify({
+      schemaVersion: 1,
+      version,
+      prompt: 'summariser/overview',
+      description: 'local',
+      cases: [{ id: 'a-1', input: {} }],
+    });
+
+  it('RF-1405 reads a set of lab/local-cases when lab/cases has none of that name', async () => {
+    await mkdir(join(temp.path, 'local-cases'), { recursive: true });
+    await writeFile(join(temp.path, 'local-cases', 'mine.json'), set('local-1'));
+
+    const loaded = await loadLabCaseSet(temp.path, 'mine');
+
+    expect(loaded.ok ? loaded.value.set.version : loaded.error).toBe('local-1');
+  });
+
+  it('RF-1405 prefers the committed set when both folders hold the name', async () => {
+    await mkdir(join(temp.path, 'local-cases'), { recursive: true });
+    await mkdir(join(temp.path, 'cases'), { recursive: true });
+    await writeFile(join(temp.path, 'local-cases', 'both.json'), set('local-1'));
+    await writeFile(join(temp.path, 'cases', 'both.json'), set('committed-1'));
+
+    const loaded = await loadLabCaseSet(temp.path, 'both');
+
+    expect(loaded.ok ? loaded.value.set.version : loaded.error).toBe('committed-1');
   });
 });
 

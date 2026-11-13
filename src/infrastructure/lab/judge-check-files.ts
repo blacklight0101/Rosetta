@@ -13,7 +13,7 @@ import { loadCalibrationSet } from '../eval/calibration-set-file.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { loadRubrics } from './rubric-files.js';
 
-// RF-1405: the files of the judge check: the calibration claims of `eval/calibration/` with the
+// RF-1408: the files of the judge check: the calibration claims of `eval/calibration/` with the
 // source files they cite, the hand-scored samples of `eval/judge-check/hand-scored.json`, the
 // rubrics, and `lab-out/<id>/judge-check.json` (git-ignored, masked) for the report.
 
@@ -78,7 +78,7 @@ async function handScoredOf(
   return ok(handScoredItems(samples.value));
 }
 
-// RF-1405
+// RF-1408
 export async function loadCheckItems(folders: CheckFolders): Promise<Result<LoadedCheck, string>> {
   const rubrics = await loadRubrics(folders.labFolder, RUBRIC_FAMILIES);
   if (!rubrics.ok) return rubrics;
@@ -89,7 +89,7 @@ export async function loadCheckItems(folders: CheckFolders): Promise<Result<Load
   return ok({ items: [...calibration.value, ...hand.value], rubrics: rubrics.value });
 }
 
-// RF-1405
+// RF-1408
 export async function writeJudgeCheck(
   options: { outputDir: string; id: string; masker: TextMasker },
   report: CheckReport,

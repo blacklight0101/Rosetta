@@ -1,6 +1,6 @@
 import type { Judgement } from './judge-results.js';
 
-// RF-1404, RF-1403: the judge's scores of a run, as means. Cases the judge did not score count in
+// RF-1407, RF-1403: the judge's scores of a run, as means. Cases the judge did not score count in
 // `unscored`, never as a score.
 
 export interface JudgeSummary {
@@ -18,7 +18,7 @@ export interface JudgeSummary {
 const mean = (values: readonly number[]): number | null =>
   values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length;
 
-// RF-1404
+// RF-1407
 export function judgeSummaryOf(
   cases: readonly { readonly judge?: Judgement | undefined }[],
 ): JudgeSummary | null {

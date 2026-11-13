@@ -1,4 +1,4 @@
-// RF-1404, RF-1405: the judge's reply as the fake model writes it.
+// RF-1407, RF-1408: the judge's reply as the fake model writes it.
 
 /** A reply that gives every listed criterion the score of `scores` (or `fallback`). */
 export function judgeReply(

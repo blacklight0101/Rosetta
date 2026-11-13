@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// RF-1404, RF-1403: what a judged lab run adds to `results.json`: the judge's scores of each case
+// RF-1407, RF-1403: what a judged lab run adds to `results.json`: the judge's scores of each case
 // and the judge, its prompt and its rubric, each named by SHA-256 (RNF-015).
 
 const count = z.number().int().min(0);

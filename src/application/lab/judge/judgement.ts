@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { err, ok, type Result } from '../../../domain/errors/result.js';
 import type { Rubric } from './rubric.js';
 
-// RF-1404: the judge's reply, read against the rubric, and the overall score the lab computes. The
+// RF-1407: the judge's reply, read against the rubric, and the overall score the lab computes. The
 // reply is one JSON object `{ "scores": [{ "criterion", "score", "reason" }] }` with every
 // criterion of the rubric once and no other; the lab, not the judge, adds the scores up.
 
@@ -34,7 +34,7 @@ function jsonOf(text: string): unknown {
   }
 }
 
-// RF-1404
+// RF-1407
 export function parseJudgeReply(text: string, rubric: Rubric): Result<JudgedCriterion[], string> {
   const parsed = replySchema.safeParse(jsonOf(text));
   if (!parsed.success) return err('The reply is not the scores object with whole scores 1 to 5.');
@@ -49,7 +49,7 @@ export function parseJudgeReply(text: string, rubric: Rubric): Result<JudgedCrit
   return ok(criteria);
 }
 
-// RF-1404
+// RF-1407
 export function overallOf(
   criteria: readonly JudgedCriterion[],
   rubric: Rubric,

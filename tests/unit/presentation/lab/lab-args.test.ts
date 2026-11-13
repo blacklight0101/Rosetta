@@ -52,7 +52,7 @@ describe('the lab options', () => {
 });
 
 describe('the lab judge options', () => {
-  it('RF-1404 reads --judge as a provider:model and leaves it out when absent', () => {
+  it('RF-1407 reads --judge as a provider:model and leaves it out when absent', () => {
     const judged = parseLabArgs([...base, '--judge', 'anthropic:claude-opus-5-5']);
     const plain = parseLabArgs(base);
 
@@ -64,7 +64,7 @@ describe('the lab judge options', () => {
     expect(parseLabArgs([...base, '--judge', 'nocolon']).ok).toBe(false);
   });
 
-  it('RF-1405 reads --judge-check with a model and consent, and no other option', () => {
+  it('RF-1408 reads --judge-check with a model and consent, and no other option', () => {
     expect(parseLabArgs(['--judge-check', 'fake:model-b', '--yes'])).toEqual({
       ok: true,
       value: { kind: 'judge-check', model: { provider: 'fake', model: 'model-b' }, yes: true },

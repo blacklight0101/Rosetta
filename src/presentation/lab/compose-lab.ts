@@ -70,11 +70,11 @@ export interface LabRequest {
   readonly model: { readonly provider: string; readonly model: string };
   readonly loaded: LoadedLabSet;
   readonly repetitions: number;
-  /** RF-1404: builds the judge that scores each answer; it runs before any call is sent. */
+  /** RF-1407: builds the judge that scores each answer; it runs before any call is sent. */
   readonly judge?: JudgeMaker;
 }
 
-/** RF-1404: what a judge is built over: the guarded provider factory and the invocation's ledger. */
+/** RF-1407: what a judge is built over: the guarded provider factory and the invocation's ledger. */
 export type JudgeMaker = (context: {
   readonly guarded: Guarded;
   readonly ledger: SpendLedger;

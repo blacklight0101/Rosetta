@@ -8,7 +8,7 @@ import { runLab, verifierArgs, writtenResults } from '../../../support/lab-run-h
 import { runLabCompare } from '../../../../src/presentation/lab/lab-command.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
-// RF-1404, RF-1402, RF-1403: `npm run lab -- ... --judge` over the fake provider. The target model is
+// RF-1407, RF-1402, RF-1403: `npm run lab -- ... --judge` over the fake provider. The target model is
 // model-a, the judge model-b; both sit behind the real guarded provider factory and the ledger gate.
 
 const temp = useTempRoot('rosetta-lab-judge-');
@@ -26,7 +26,7 @@ const times = (count: number, text: string): string[] => Array.from({ length: co
 const good = judgeReply(VERIFIER_IDS, { grounding: 5, 'verdict-correct': 3 });
 
 describe('a judged lab run', () => {
-  it('RF-1404 scores every answered case against the family rubric and records the judge', async () => {
+  it('RF-1407 scores every answered case against the family rubric and records the judge', async () => {
     const router = new ModelRouter({ 'model-a': targetScript, 'model-b': times(4, good) });
 
     const { code } = await runLab(labParts({ outputDir: out(), router }), judged);
@@ -43,7 +43,7 @@ describe('a judged lab run', () => {
     expect(results?.cases[0]?.judge).toMatchObject({ state: 'scored', calls: 1 });
   });
 
-  it('RF-1404 records the judge, its prompt and its rubric with their hashes', async () => {
+  it('RF-1407 records the judge, its prompt and its rubric with their hashes', async () => {
     const router = new ModelRouter({ 'model-a': targetScript, 'model-b': times(4, good) });
 
     await runLab(labParts({ outputDir: out(), router }), judged);
@@ -61,7 +61,7 @@ describe('a judged lab run', () => {
 });
 
 describe('the messages of a judged lab run', () => {
-  it('RF-1404 sends the case, the answer and the label only as data blocks, to the judge model', async () => {
+  it('RF-1407 sends the case, the answer and the label only as data blocks, to the judge model', async () => {
     const router = new ModelRouter({ 'model-a': targetScript, 'model-b': times(4, good) });
 
     await runLab(labParts({ outputDir: out(), router }), judged);
@@ -96,7 +96,7 @@ describe('the ledger of a judged lab run', () => {
 });
 
 describe('a judged lab run that goes wrong', () => {
-  it('RF-1404 records an unreadable reply as no score and goes on', async () => {
+  it('RF-1407 records an unreadable reply as no score and goes on', async () => {
     const router = new ModelRouter({
       'model-a': targetScript,
       'model-b': ['Looks fine to me.', good, good, good],
@@ -110,7 +110,7 @@ describe('a judged lab run that goes wrong', () => {
     expect(results?.cases[1]?.judge?.state).toBe('scored');
   });
 
-  it('RF-1404 stops the invocation as Refused when a guard refuses a judge call', async () => {
+  it('RF-1407 stops the invocation as Refused when a guard refuses a judge call', async () => {
     const router = new ModelRouter(
       { 'model-a': targetScript, 'model-b': times(4, good) },
       { 'model-b': 2 },
@@ -127,7 +127,7 @@ describe('a judged lab run that goes wrong', () => {
 });
 
 describe('a judged lab run without a usable judge', () => {
-  it('RF-1404 stops the invocation at the first judge call that fails and records its code', async () => {
+  it('RF-1407 stops the invocation at the first judge call that fails and records its code', async () => {
     const router = new ModelRouter({ 'model-a': targetScript });
 
     const { code } = await runLab(labParts({ outputDir: out(), router }), judged);
@@ -141,7 +141,7 @@ describe('a judged lab run without a usable judge', () => {
     expect(results?.refusal).toContain('judge call failed');
   });
 
-  it('RF-1404 sends nothing when the judge model has no price', async () => {
+  it('RF-1407 sends nothing when the judge model has no price', async () => {
     const router = new ModelRouter({ 'model-a': targetScript });
     const args = { ...verifierArgs, judge: { provider: 'fake', model: 'model-z' } };
 
@@ -152,7 +152,7 @@ describe('a judged lab run without a usable judge', () => {
     expect(lines.join('\n')).toContain('model-z');
   });
 
-  it('RF-1404 adds no call and no judge field without --judge', async () => {
+  it('RF-1407 adds no call and no judge field without --judge', async () => {
     const router = new ModelRouter({ 'model-a': targetScript });
 
     await runLab(labParts({ outputDir: out(), router }), verifierArgs);
@@ -165,7 +165,7 @@ describe('a judged lab run without a usable judge', () => {
 });
 
 describe('the report of a judged lab run', () => {
-  it('RF-1404 prints the judge means in the summary', async () => {
+  it('RF-1407 prints the judge means in the summary', async () => {
     const router = new ModelRouter({ 'model-a': targetScript, 'model-b': times(4, good) });
 
     const { lines } = await runLab(labParts({ outputDir: out(), router }), judged);

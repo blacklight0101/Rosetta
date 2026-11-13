@@ -3,7 +3,7 @@ import { overallOf, parseJudgeReply } from '../../../../../src/application/lab/j
 import type { Rubric } from '../../../../../src/application/lab/judge/rubric.js';
 import { judgeReply } from '../../../../support/judge-harness.js';
 
-// RF-1404: the judge's reply must score every criterion of the rubric; the lab computes the overall.
+// RF-1407: the judge's reply must score every criterion of the rubric; the lab computes the overall.
 
 const rubric: Rubric = {
   ...{ family: 'shared', sha256: '0'.repeat(64), text: 'x' },
@@ -16,7 +16,7 @@ const rubric: Rubric = {
 const ids = rubric.criteria.map((each) => each.id);
 
 describe('the judge reply', () => {
-  it('RF-1404 reads a score and a reason for every criterion, also inside a code fence', () => {
+  it('RF-1407 reads a score and a reason for every criterion, also inside a code fence', () => {
     const reply = `\`\`\`json\n${judgeReply(ids, { coverage: 2 })}\n\`\`\``;
 
     const parsed = parseJudgeReply(reply, rubric);
@@ -28,7 +28,7 @@ describe('the judge reply', () => {
     ]);
   });
 
-  it('RF-1404 refuses text that is no JSON, a missing or extra criterion and a score out of range', () => {
+  it('RF-1407 refuses text that is no JSON, a missing or extra criterion and a score out of range', () => {
     const missing = judgeReply(ids.slice(0, 2));
     const extra = judgeReply([...ids, 'style']);
     const high = judgeReply(ids, { coverage: 6 });
@@ -39,7 +39,7 @@ describe('the judge reply', () => {
     }
   });
 
-  it('RF-1404 computes the overall as the mean to one decimal and a veto criterion at 1 makes it 1', () => {
+  it('RF-1407 computes the overall as the mean to one decimal and a veto criterion at 1 makes it 1', () => {
     const scored = (secret: number) => {
       const reply = judgeReply(ids, { coverage: 3, 'secret-detection': secret });
       const parsed = parseJudgeReply(reply, rubric);

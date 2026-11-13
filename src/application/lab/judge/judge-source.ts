@@ -1,4 +1,4 @@
-// RF-1404: the inputs of a case as the text the judge reads in the `lab_source` block. Strings with
+// RF-1407: the inputs of a case as the text the judge reads in the `lab_source` block. Strings with
 // line breaks are written as they are (code stays code), everything else as indented key lines.
 
 const MAX_SOURCE_CHARS = 14_000;
@@ -28,7 +28,7 @@ function lines(value: unknown, indent: string): string[] {
   return [`${indent}${JSON.stringify(value)}`];
 }
 
-// RF-1404
+// RF-1407
 export function sourceText(input: unknown): string {
   const text = lines(input, '').join('\n');
   return text.length <= MAX_SOURCE_CHARS ? text : `${text.slice(0, MAX_SOURCE_CHARS)}${CUT}`;

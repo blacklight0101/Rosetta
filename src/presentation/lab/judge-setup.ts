@@ -4,10 +4,10 @@ import { loadJudgePrompt, loadRubrics } from '../../infrastructure/lab/rubric-fi
 import type { JudgeSetup } from './compose-judge.js';
 import type { LabArgs } from './lab-args.js';
 
-// RF-1404: the judge prompt and the rubric of the target's family, read before anything is sent, so
+// RF-1407: the judge prompt and the rubric of the target's family, read before anything is sent, so
 // a run with `--judge` and no rubric stops at the start. Without `--judge` there is no setup.
 
-// RF-1404
+// RF-1407
 export async function judgeSetupOf(
   args: Extract<LabArgs, { kind: 'run' }>,
   target: LabTarget,

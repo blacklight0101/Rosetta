@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "2026-11-13.1",
-  "description": "Eighteen answers scored by hand against the rubrics of lab/rubrics/, three per prompt family (good, faulty, poor), for the judge check of P10-03 (RF-1405). The sources are short excerpts of the public eShopLegacyWebForms sample (MIT licence, commit 63bc9ec) or material invented for this repository; the cards of the planner and summariser samples were written for this file from those lines. The answers were written for this file and the scores were given by the builder; the owner reviews them.",
+  "description": "Eighteen answers scored by hand against the rubrics of lab/rubrics/, three per prompt family (good, faulty, poor), for the judge check of P10-03 (RF-1408). The sources are short excerpts of the public eShopLegacyWebForms sample (MIT licence, commit 63bc9ec) or material invented for this repository; the cards of the planner and summariser samples were written for this file from those lines. The answers were written for this file and the scores were given by the builder; the owner reviews them.",
   "samples": [
     {
       "id": "verifier-find-item",

@@ -15,14 +15,14 @@ export type LabArgs =
       readonly cases: string;
       readonly repetitions: number;
       readonly yes: boolean;
-      /** RF-1404: the model that scores each answer against the family rubric. */
+      /** RF-1407: the model that scores each answer against the family rubric. */
       readonly judge?: { readonly provider: string; readonly model: string };
     }
   | {
       readonly kind: 'judge-check';
       readonly model: { readonly provider: string; readonly model: string };
       readonly yes: boolean;
-      /** RF-1405: score only the first n items of each kind and family (a smoke run). */
+      /** RF-1408: score only the first n items of each kind and family (a smoke run). */
       readonly limit?: number;
     }
   | { readonly kind: 'compare'; readonly a: string; readonly b: string }
@@ -123,7 +123,7 @@ function runOf(draft: Draft): Result<LabArgs, string> {
   });
 }
 
-// RF-1405
+// RF-1408
 /** `--limit n` of the judge check: the count, undefined when absent, null when it is not a count. */
 function limitOf(rest: readonly string[]): { limit: number | undefined | null; others: string[] } {
   const at = rest.indexOf('--limit');

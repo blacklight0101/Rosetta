@@ -7,7 +7,7 @@ import type { JudgeInfo, Judgement } from './judge-results.js';
 import { overallOf, parseJudgeReply } from './judgement.js';
 import type { Rubric } from './rubric.js';
 
-// RF-1404, RF-1402, ADR-029: one judge call per answer. The call goes through the provider the
+// RF-1407, RF-1402, ADR-029: one judge call per answer. The call goes through the provider the
 // composition root built for the judge model (the ledger gate over the guarded provider), so it is
 // held, settled and capped like every lab call. The judge never raises: a call that fails or a
 // reply that cannot be read is a state of the judgement, and a refusal stops the invocation.
@@ -79,7 +79,7 @@ export class AnswerJudge implements CaseJudge {
     };
   }
 
-  // RF-1404
+  // RF-1407
   async score(judged: JudgedCase): Promise<Judgement> {
     const rubric = this.options.rubrics.get(judged.family);
     if (rubric === undefined) return NOTHING;

@@ -15,7 +15,7 @@ import { judgeReply } from '../../../support/judge-harness.js';
 import { labParts } from '../../../support/lab-harness.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
-// RF-1405, RF-1402: `npm run lab -- --judge-check` over the fake provider. The judge is model-b.
+// RF-1408, RF-1402: `npm run lab -- --judge-check` over the fake provider. The judge is model-b.
 
 const temp = useTempRoot('rosetta-judge-check-');
 const out = (): string => join(temp.path, 'lab-out');
@@ -49,7 +49,7 @@ async function loaded() {
 }
 
 describe('the judge check', () => {
-  it('RF-1405 sends nothing without --yes and says how many calls it would make', async () => {
+  it('RF-1408 sends nothing without --yes and says how many calls it would make', async () => {
     const router = new ModelRouter({});
     const lines: string[] = [];
 
@@ -67,7 +67,7 @@ describe('the judge check', () => {
 });
 
 describe('the judge check with a judge that agrees', () => {
-  it('RF-1405 scores every item once through the ledger and reports full agreement for a judge that agrees', async () => {
+  it('RF-1408 scores every item once through the ledger and reports full agreement for a judge that agrees', async () => {
     const { items, rubrics } = await loaded();
     const router = new ModelRouter({ 'model-b': items.map((item) => perfect(item, rubrics)) });
     const lines: string[] = [];
@@ -103,7 +103,7 @@ describe('the judge check with a judge that agrees', () => {
 });
 
 describe('the judge check inputs and disagreement', () => {
-  it('RF-1405 with a limit scores the first n items of each kind and family only', async () => {
+  it('RF-1408 with a limit scores the first n items of each kind and family only', async () => {
     const { items, rubrics } = await loaded();
     const kept = limitItems(items, 1);
     const router = new ModelRouter({ 'model-b': kept.map((item) => perfect(item, rubrics)) });
@@ -119,7 +119,7 @@ describe('the judge check inputs and disagreement', () => {
     expect(router.requests).toHaveLength(7);
   });
 
-  it('RF-1405 withholds the hand label from the judge on the calibration claims', async () => {
+  it('RF-1408 withholds the hand label from the judge on the calibration claims', async () => {
     const { items, rubrics } = await loaded();
     const router = new ModelRouter({ 'model-b': items.map((item) => perfect(item, rubrics)) });
 
@@ -129,7 +129,7 @@ describe('the judge check inputs and disagreement', () => {
     expect(first).toContain('no hand label');
   });
 
-  it('RF-1405 reports disagreement when the judge scores a wrong verdict high', async () => {
+  it('RF-1408 reports disagreement when the judge scores a wrong verdict high', async () => {
     const { items, rubrics } = await loaded();
     const replies = items.map((item) =>
       item.kind === 'calibration'

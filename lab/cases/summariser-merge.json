@@ -1,0 +1,1219 @@
+{
+  "schemaVersion": 1,
+  "version": "summariser-merge-1",
+  "prompt": "summariser/merge",
+  "description": "Inputs of summariser/merge captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-054942-understand",
+        "20261109-063857-understand",
+        "20261101-235310-understand",
+        "20261102-185338-understand",
+        "20261029-142029-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-054942-understand-summariser-scrn",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "SCRN",
+        "cards": [
+          {
+            "id": "SCRN-001",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "title": "Home page (Catalog Manager product list)",
+            "summary": "The default page lists catalog products in a table with Edit, Details and Delete links per row, a Create New link, and Previous and Next pager links.",
+            "claims": [
+              "The page uses the Site.Master layout, places its content in the MainContent region, and has the title Home Page.",
+              "A Create New link points to the CreateProductRoute.",
+              "A list view of CatalogItem rows shows the picture, name, description, brand, type, price, picture file name, stock, restock threshold and max stock. It shows 'No data was returned.' when empty.",
+              "Each row has Edit, Details and Delete links built from EditProductRoute, ProductDetailsRoute and DeleteProductRoute with the item id."
+            ]
+          },
+          {
+            "id": "SCRN-002",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Create catalog item page",
+            "summary": "Form for adding a new catalog product with name, description, brand, type, price, stock levels and an optional image.",
+            "claims": [
+              "The page is served at /Catalog/Create.aspx, uses the site master and its content shows a Create heading and a form.",
+              "The page shows the product image placeholder and an Upload image control backed by a hidden TempImageName field; the default image URL comes from the image service.",
+              "The upload control is hidden when the configuration does not use Azure storage.",
+              "Name is required through a required-field validator with the message 'The Name field is required.'"
+            ]
+          },
+          {
+            "id": "SCRN-003",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Edit catalog item page",
+            "summary": "Form for changing an existing catalog product; the picture file name is shown read-only.",
+            "claims": [
+              "The page is served at /Catalog/Edit.aspx and shows the picture, the current values and a Save button.",
+              "The picture file name is read-only and marked 'Not allowed for edition'.",
+              "Name is required; Price is a currency between 0 and 1,000,000; Stock, Restock and Max stock are integers between 0 and 10,000,000.",
+              "The Cancel link points to the site root and the Save button raises Save_Click."
+            ]
+          },
+          {
+            "id": "SCRN-004",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Delete catalog item confirmation page",
+            "summary": "Asks for confirmation and shows the product before it is removed.",
+            "claims": [
+              "The page is served at /Catalog/Delete.aspx and shows the question 'Are you sure you want to delete this?' with the product picture, name, description, brand, type, price, picture name, stock, restock and max stock.",
+              "The Delete button raises Delete_Click and the Cancel link points to the site root.",
+              "[ Delete ] starts Delete_Click.",
+              "Action [ Cancel ] starts the handler Cancel link to the site root (no server handler)."
+            ]
+          },
+          {
+            "id": "SCRN-005",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Catalog item details page",
+            "summary": "Read-only view of one catalog product with a link to edit it.",
+            "claims": [
+              "The page is served at /Catalog/Details.aspx and shows the picture, name, description, brand, type, price, picture name, stock, restock and max stock of the product.",
+              "The page links back to the site root and to the edit page through the route named EditProductRoute.",
+              "Action [ Back to list ] starts the handler Link to the site root (no server handler).",
+              "Action [ Edit ] starts the handler Link to the EditProductRoute route (no server handler)."
+            ]
+          },
+          {
+            "id": "SCRN-006",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Catalog item details",
+            "summary": "A read-only view of one catalog item with links to edit it or go back to the list.",
+            "claims": [
+              "The page loads the item by route id and shows its picture, name, description, brand, type, price, picture name, stock, restock and max stock as read-only labels.",
+              "The Edit link points to the route named EditProductRoute with the item id. The Back to list link points to the root.",
+              "The screen leads to EditProductRoute.",
+              "Back to list links to ~."
+            ]
+          },
+          {
+            "id": "SCRN-007",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Create catalog item",
+            "summary": "A form to add a new catalog item with name, description, brand, type, price and stock fields.",
+            "claims": [
+              "The page shows a Create heading and form fields for Name, Description, Brand, Type, Price, Stock, Restock and Max stock. The picture name is shown as a note that uploads are not allowed in this version.",
+              "Brand and Type are dropdowns filled by the GetBrands and GetTypes methods, which read the catalog service.",
+              "The Create button calls Create_Click, and the Cancel link points to the root.",
+              "Field Name (text, required) validation: The Name field is required."
+            ]
+          },
+          {
+            "id": "SCRN-008",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Edit catalog item",
+            "summary": "A form that loads an existing item into editable fields and saves the changes; the picture name is read-only.",
+            "claims": [
+              "On the first load (not a postback) the item is found by route id, and its brand and type dropdowns are filled and set to the item's current values.",
+              "The page shows the item picture and the fields Name, Description, Brand, Type, Price, Picture name, Stock, Restock and Max stock, each bound to the item. The picture name box is read-only and marked 'Not allowed for edition'.",
+              "The Save button calls Save_Click, which updates the item through the catalog service and redirects to the root.",
+              "Field Name (text, required) validation: The Name field is required."
+            ]
+          },
+          {
+            "id": "SCRN-009",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Delete catalog item",
+            "summary": "A confirmation page that shows an item's details and deletes it when the user confirms.",
+            "claims": [
+              "The page asks 'Are you sure you want to delete this?' and shows the picture, name, description, brand, type, price, picture name, stock, restock and max stock of the item as read-only labels.",
+              "The Delete button calls Delete_Click, which removes the item through the catalog service and redirects to the root. The Cancel link points to the root.",
+              "[ Delete ] starts Delete_Click.",
+              "Action [ Cancel ] starts the handler none (plain link to ~)."
+            ]
+          },
+          {
+            "id": "SCRN-010",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+            "title": "Catalog list",
+            "summary": "Lists catalog items one page at a time, with links to create, edit, view and delete each item.",
+            "claims": [
+              "The page shows a Create New link, the catalog table and a pager that reads 'Showing N of T products - Page P - TotalPages'.",
+              "The table is rendered by the CatalogTable partial. It shows one row per item with a thumbnail, Name, Description, Brand, Type, Price, PictureFileName, AvailableStock, RestockThreshold and MaxStockThreshold.",
+              "Each row has Edit, Details and Delete links that carry the item Id.",
+              "The Previous and Next links both call the Index action with pageSize and pageIndex values derived from the current page."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-091",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Content#7",
+            "title": "Storefront visual styling of header, footer, tables, buttons and pager",
+            "summary": "The two stylesheets set the visual look of the shop pages: a hero banner, a dark header and footer, teal section titles, product tables, green and red buttons, and a numbered pager that adapts to screen width.",
+            "claims": [
+              "The hero banner uses main_banner.png as a cover background with a height of 12.5vw, and its height becomes 20vw at widths up to 1024px.",
+              "The header title is white Montserrat text sized at 4vw, and it becomes 4rem at widths of 1800px and above.",
+              "The footer has a black background, a top border, a width of 100% and a brand logo sized 230px by 50px.",
+              "Section titles (.esh-body-title) use a teal background, white text and 3rem font size."
+            ]
+          },
+          {
+            "id": "FEAT-092",
+            "area": "ACI",
+            "title": "Deploy the eShop web applications as Azure container groups",
+            "summary": "An Azure Resource Manager template deploys one Windows container group per application image (MVC, WCF, WebForms), each exposing port 80 on a public IP.",
+            "claims": [
+              "The template creates a Microsoft.ContainerInstance/containerGroups resource named from the groupname parameter, located in the resource group's location, with Windows as the OS type.",
+              "The single container takes its image from the appimage parameter and is named mainapp.",
+              "The container group is requested with 1 CPU and 1.5 GB of memory, and exposes container port 80.",
+              "The container group has a public IP address with TCP port 80 opened."
+            ]
+          },
+          {
+            "id": "FEAT-093",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Page routes for the product catalog and home page",
+            "summary": "Six URL routes map friendly addresses to the Web Forms pages for the home page and the catalog create, edit, details and delete screens.",
+            "claims": [
+              "The route with an empty name and the URL 'Default' maps to ~/Default.aspx, which is the home page.",
+              "The route 'Default/index/{index}/size/{size}' (ProductsByPageRoute) maps to ~/Default.aspx, so the home page can take a page index and a page size from the URL.",
+              "'Catalog/Create' maps to ~/Catalog/Create.aspx (CreateProductRoute).",
+              "'Catalog/Edit/{id}' maps to ~/Catalog/Edit.aspx (EditProductRoute), and 'Catalog/Details/{id}' maps to ~/Catalog/Details.aspx (ProductDetailsRoute), each taking a product id from the URL."
+            ]
+          },
+          {
+            "id": "FEAT-094",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Shared script and style bundles for the pages",
+            "summary": "Startup code groups the Web Forms, Microsoft Ajax, Modernizr and respond scripts, plus the main stylesheets, into named bundles that pages load.",
+            "claims": [
+              "The bundle '~/bundles/WebFormsJs' combines eight Web Forms scripts, including WebForms.js, WebUIValidation.js, GridView.js and TreeView.js.",
+              "The bundle '~/bundles/MsAjaxJs' combines four Microsoft Ajax scripts, and the code states that their order matters because they depend on each other.",
+              "The bundle '~/bundles/modernizr' includes every file matching ~/Scripts/modernizr-*.",
+              "The style bundle '~/Content/css' combines bootstrap.css, custom.css, base.css and site.css, in that order."
+            ]
+          },
+          {
+            "id": "FEAT-095",
+            "area": "Setup",
+            "title": "Provision the workshop Azure environment",
+            "summary": "A set of PowerShell scripts creates an App Service plan, a web app, a SQL logical server and an empty SQL database in Azure, named from a user alias.",
+            "claims": [
+              "The environment script stops with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+              "Names are derived from the alias: the plan is alias-webappplan, the web app is alias-webapp, the SQL server is alias-workshop-server, and the database is eShop. The location is fixed to eastus.",
+              "The setup script creates the App Service plan, then the web app on that plan, then enables a managed identity on the web app, then the SQL server, the firewall rule and the database, and prints 'Setup complete'.",
+              "The verify script checks that the plan, web app, SQL server and database exist and prints a created or not-created message for each."
+            ]
+          },
+          {
+            "id": "FEAT-096",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Default MVC route to the Catalog home page",
+            "summary": "A request with no controller or action is sent to the Catalog controller's Index action, and the URL pattern {controller}/{action}/{id} maps other requests.",
+            "claims": [
+              "The default route pattern is {controller}/{action}/{id}, with id optional.",
+              "When no controller or action is given, the route defaults to controller Catalog and action Index."
+            ]
+          },
+          {
+            "id": "FEAT-097",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Web API routes under api/{controller}/{id}",
+            "summary": "Web API requests under the api path are routed to controllers by name, with an optional id.",
+            "claims": [
+              "The DefaultApi route template is api/{controller}/{id}, with id optional.",
+              "Web API attribute routing is enabled through MapHttpAttributeRoutes."
+            ]
+          },
+          {
+            "id": "FEAT-098",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Static script and style bundles for the storefront pages",
+            "summary": "Client scripts and the main stylesheet are grouped into named bundles that pages reference.",
+            "claims": [
+              "Script bundles are defined for jQuery, jQuery validation, Modernizr and Bootstrap (with respond.js).",
+              "The style bundle ~/Content/css combines bootstrap.css, custom.css, base.css and site.css in that order."
+            ]
+          },
+          {
+            "id": "FEAT-099",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Modules",
+            "title": "Shared catalog database context and HiLo id generator registration",
+            "summary": "The module registers the catalog database context and its initializer per lifetime scope, and the catalog item HiLo id generator as a single instance, with no flag involved.",
+            "claims": [
+              "CatalogDBContext and CatalogDBInitializer are registered without an interface, each instance per lifetime scope.",
+              "CatalogItemHiLoGenerator is registered as a single instance shared across the application."
+            ]
+          },
+          {
+            "id": "FEAT-100",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Modules",
+            "title": "Dependency wiring of the catalog and image services by configuration flags",
+            "summary": "The application module chooses which catalog, image and SQL connection implementations the application uses, based on three boolean flags passed to its constructor.",
+            "claims": [
+              "When useMockData is true, ICatalogService is registered as CatalogServiceMock as a single instance; otherwise it is registered as CatalogService per lifetime scope.",
+              "When useAzureStorage is true, IImageService is registered as ImageAzureStorage; otherwise it is registered as ImageMockStorage, both per lifetime scope.",
+              "When useManagedIdentity is true, ISqlConnectionFactory is registered as ManagedIdentitySqlConnectionFactory; otherwise it is registered as AppSettingsSqlConnectionFactory, both as single instances.",
+              "The three flags are stored from the constructor parameters and are read only in Load."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-076",
+            "area": "VM",
+            "title": "Docker Compose run of the eShop MVC storefront with SQL Server",
+            "summary": "Compose files start the MVC web app on host port 5115 (container port 80) with a SQL Server container on host port 5433 (container port 1433). The web app waits for the database container, and the override can run it on mock data. The WebForms site on port 5114 is also described in the VM card.",
+            "claims": [
+              "The MVC service is published on host port 5115 and mapped to container port 80.",
+              "The WebForms service is published on host port 5114 and mapped to container port 80.",
+              "The MVC service depends on the sql.data container. The WebForms service depends on the sqlwf.data container.",
+              "The SQL containers are published on host ports 5433 (sql.data) and 5435 (sqlwf.data), mapped to container port 1433."
+            ]
+          },
+          {
+            "id": "FEAT-082",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+            "title": "Find, list types and brands, and maintain catalog items",
+            "summary": "The catalog service finds one item by id, lists catalog types and brands, and creates, updates and removes items through the database context.",
+            "claims": [
+              "FindCatalogItem returns the first item with the given Id, including its brand and type, or null when none matches.",
+              "GetCatalogTypes and GetCatalogBrands return the CatalogTypes and CatalogBrands sets of the database context.",
+              "CreateCatalogItem assigns a new Id from the hi-lo index generator, adds the item and saves changes.",
+              "UpdateCatalogItem marks the given entity as Modified and saves changes; RemoveCatalogItem removes the entity and saves changes. Neither checks that the item exists first."
+            ]
+          },
+          {
+            "id": "FEAT-083",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+            "title": "Catalog service contract",
+            "summary": "ICatalogService defines the operations the application uses for catalog items, types and brands; the database and mock implementations both implement it.",
+            "claims": [
+              "ICatalogService declares FindCatalogItem, GetCatalogBrands, GetCatalogItemsPaginated, GetCatalogTypes, CreateCatalogItem, UpdateCatalogItem and RemoveCatalogItem, and extends IDisposable."
+            ]
+          },
+          {
+            "id": "FEAT-086",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Services",
+            "title": "In-memory catalog service for testing",
+            "summary": "CatalogServiceMock implements the same catalog operations over an in-memory list seeded from PreconfiguredData, with no database.",
+            "claims": [
+              "The constructor loads the catalog items from PreconfiguredData.GetPreconfiguredCatalogItems into a list.",
+              "GetCatalogItemsPaginated attaches brand and type to every item by matching the foreign-key ids against the preconfigured brands and types, then pages the list by Id with the same skip and take arithmetic as the database version.",
+              "CreateCatalogItem assigns the new item an Id one above the current maximum and appends it to the list; changes are not persisted beyond the object's lifetime.",
+              "UpdateCatalogItem replaces the stored item with the same Id when one exists and does nothing otherwise; RemoveCatalogItem removes the given object from the list."
+            ]
+          },
+          {
+            "id": "FEAT-087",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Content#1",
+            "title": "Storefront page styling",
+            "summary": "Shared stylesheets give the storefront its look: the Montserrat font, a full-width hero banner, a header, a black footer, a teal body title, tables and links with green hover, uppercase buttons (green primary, red secondary), and a pager with hidden and navigable item states.",
+            "claims": [
+              "The hero banner .esh-app-hero shows main_banner.png as a cover background at 12.5vw height, which becomes 20vw at widths up to 1024px.",
+              "The header .esh-header-title uses Montserrat at 4vw, weight 600, in white, with a lighter span inside it.",
+              "The footer .esh-app-footer has a black background, a light top border and 2.5rem padding, and its brand logo is 230px by 50px.",
+              "The page title .esh-body-title has a teal (#00A69C) background, white 3rem text and left padding."
+            ]
+          },
+          {
+            "id": "FEAT-091",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Content#7",
+            "title": "Storefront visual styling of header, footer, tables, buttons and pager",
+            "summary": "The two stylesheets set the visual look of the shop pages: a hero banner, a dark header and footer, teal section titles, product tables, green and red buttons, and a numbered pager that adapts to screen width.",
+            "claims": [
+              "The hero banner uses main_banner.png as a cover background with a height of 12.5vw, and its height becomes 20vw at widths up to 1024px.",
+              "The header title is white Montserrat text sized at 4vw, and it becomes 4rem at widths of 1800px and above.",
+              "The footer has a black background, a top border, a width of 100% and a brand logo sized 230px by 50px.",
+              "Section titles (.esh-body-title) use a teal background, white text and 3rem font size."
+            ]
+          },
+          {
+            "id": "FEAT-092",
+            "area": "ACI",
+            "title": "Deploy the eShop web applications as Azure container groups",
+            "summary": "An Azure Resource Manager template deploys one Windows container group per application image (MVC, WCF, WebForms), each exposing port 80 on a public IP.",
+            "claims": [
+              "The template creates a Microsoft.ContainerInstance/containerGroups resource named from the groupname parameter, located in the resource group's location, with Windows as the OS type.",
+              "The single container takes its image from the appimage parameter and is named mainapp.",
+              "The container group is requested with 1 CPU and 1.5 GB of memory, and exposes container port 80.",
+              "The container group has a public IP address with TCP port 80 opened."
+            ]
+          },
+          {
+            "id": "FEAT-093",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Page routes for the product catalog and home page",
+            "summary": "Six URL routes map friendly addresses to the Web Forms pages for the home page and the catalog create, edit, details and delete screens.",
+            "claims": [
+              "The route with an empty name and the URL 'Default' maps to ~/Default.aspx, which is the home page.",
+              "The route 'Default/index/{index}/size/{size}' (ProductsByPageRoute) maps to ~/Default.aspx, so the home page can take a page index and a page size from the URL.",
+              "'Catalog/Create' maps to ~/Catalog/Create.aspx (CreateProductRoute).",
+              "'Catalog/Edit/{id}' maps to ~/Catalog/Edit.aspx (EditProductRoute), and 'Catalog/Details/{id}' maps to ~/Catalog/Details.aspx (ProductDetailsRoute), each taking a product id from the URL."
+            ]
+          },
+          {
+            "id": "FEAT-094",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Shared script and style bundles for the pages",
+            "summary": "Startup code groups the Web Forms, Microsoft Ajax, Modernizr and respond scripts, plus the main stylesheets, into named bundles that pages load.",
+            "claims": [
+              "The bundle '~/bundles/WebFormsJs' combines eight Web Forms scripts, including WebForms.js, WebUIValidation.js, GridView.js and TreeView.js.",
+              "The bundle '~/bundles/MsAjaxJs' combines four Microsoft Ajax scripts, and the code states that their order matters because they depend on each other.",
+              "The bundle '~/bundles/modernizr' includes every file matching ~/Scripts/modernizr-*.",
+              "The style bundle '~/Content/css' combines bootstrap.css, custom.css, base.css and site.css, in that order."
+            ]
+          },
+          {
+            "id": "FEAT-095",
+            "area": "Setup",
+            "title": "Provision the workshop Azure environment",
+            "summary": "A set of PowerShell scripts creates an App Service plan, a web app, a SQL logical server and an empty SQL database in Azure, named from a user alias.",
+            "claims": [
+              "The environment script stops with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+              "Names are derived from the alias: the plan is alias-webappplan, the web app is alias-webapp, the SQL server is alias-workshop-server, and the database is eShop. The location is fixed to eastus.",
+              "The setup script creates the App Service plan, then the web app on that plan, then enables a managed identity on the web app, then the SQL server, the firewall rule and the database, and prints 'Setup complete'.",
+              "The verify script checks that the plan, web app, SQL server and database exist and prints a created or not-created message for each."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-br-3",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-100",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Session state is not set in the active configuration",
+            "summary": "The only sessionState element in this Web.config is commented out. The active system.web section therefore sets no session store, and the framework default applies. The owner has named the Redis provider as the production choice; that choice is not written in this file.",
+            "claims": [
+              "The Redis session state provider (mode Custom, RedisSessionStateProvider with a host and access key) is written inside an XML comment, so it is not active.",
+              "The system.web section holds only customErrors, compilation, httpRuntime, httpModules and globalization elements, and no active sessionState element, so this file sets no session store."
+            ]
+          },
+          {
+            "id": "BR-101",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Session module is registered for the integrated pipeline",
+            "summary": "The IIS system.webServer section removes the default Session module and adds the async session state module, active only in integrated mode.",
+            "claims": [
+              "The Session module is removed and re-added as SessionStateModuleAsync with preCondition integratedMode."
+            ]
+          },
+          {
+            "id": "BR-102",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Log4net root logger sends all messages to Application Insights",
+            "summary": "The log4net root logger is set to level ALL and its only appender is the Application Insights appender, which writes the bare message text.",
+            "claims": [
+              "The root logger level is ALL and its only appender reference is aiAppender.",
+              "The aiAppender uses the Application Insights log4net appender with the layout pattern %message%newline."
+            ]
+          },
+          {
+            "id": "BR-103",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Catalog item creation reads the form and saves only when the page is valid",
+            "summary": "Create_Click builds a catalog item from the form, attaches a temporary image when one was uploaded, and saves it only when the page validation passes.",
+            "claims": [
+              "Create_Click does nothing unless the page model state is valid.",
+              "The new item takes its name and description from the text boxes, its brand and type from the selected dropdown values parsed as integers, and its price as a decimal and its stock, restock and max stock as integers parsed from the text boxes.",
+              "The parse calls have no error handling in the handler, so a value that does not parse as a number is not caught here.",
+              "When a temporary image name is present, only its file name part is stored as the picture file name."
+            ]
+          },
+          {
+            "id": "BR-104",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "Catalog item required fields and key",
+            "summary": "A catalog item needs a name of at most 50 characters and a price, and the picture file name defaults to a dummy image.",
+            "claims": [
+              "Name is required and limited to 50 characters, and Price and PictureFileName are required in the mapping.",
+              "The picture file name defaults to dummy.png when a new item is created."
+            ]
+          },
+          {
+            "id": "BR-105",
+            "area": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s",
+            "title": "Feature flags set by the container deployment",
+            "summary": "The Deployment sets the application's feature switches through environment variables: mock data on, customization data, Azure storage and Azure Active Directory off.",
+            "claims": [
+              "UseMockData is set to True, UseCustomizationData, UseAzureStorage and UseAzureActiveDirectory are set to False.",
+              "StorageConnectionString, AppInsightsInstrumentationKey, AzureActiveDirectoryClientId, AzureActiveDirectoryTenant and PostLogoutRedirectUri are set to empty strings."
+            ]
+          },
+          {
+            "id": "BR-106",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "title": "Redis session state provider is referenced by the WebForms project",
+            "summary": "The owner states that the Redis session provider is the production session store, and the project references the Redis session state provider and StackExchange.Redis packages.",
+            "claims": [
+              "The project file references Microsoft.Web.RedisSessionStateProvider, so the Redis session provider is part of this project's build.",
+              "The packages file pins Microsoft.Web.RedisSessionStateProvider 4.0.1 and StackExchange.Redis 2.0.601, the client library the provider uses to connect to Redis.",
+              "The StackExchange.Redis reference is also present in the project file.",
+              "The WebForms project references Microsoft.Web.RedisSessionStateProvider version 4.0.1.0 from a packages folder assembly."
+            ]
+          },
+          {
+            "id": "BR-107",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Redis session state provider is referenced by the project",
+            "summary": "Owner fact OQ-005 says the Redis session provider should be used in production. The project file references the Redis session state provider and its Redis client library, so the code can use Redis for session state. The active session mode is set in configuration files I have not read.",
+            "claims": [
+              "The project references Microsoft.Web.RedisSessionStateProvider version 4.0.1.0 from the packages folder.",
+              "The project references StackExchange.Redis version 2.0.0.0, the client library that the Redis session provider uses.",
+              "The project also references the ASP.NET SessionState module, which is the in-process session store used by default.",
+              "The project references the StackExchange.Redis assembly, version 2.0.0.0, loaded from a packages folder path."
+            ]
+          },
+          {
+            "id": "BR-108",
+            "area": "eShopModernizedNTier",
+            "title": "Brand and type data sources are generic object bindings for the WinForms client",
+            "summary": "The brand and type lookups are declared as generic object data sources for the client's combo boxes.",
+            "claims": [
+              "The CatalogBrand data source is a generic object data source typed to eShopServiceLibrary.CatalogBrand.",
+              "The CatalogType data source is a generic object data source typed to eShopServiceLibrary.CatalogType.",
+              "The CatalogItem data source binds its AvailableStock property to a ComboBox control.",
+              "The CatalogType datasource file states that Visual Studio generated it as a generic object data source configuration and that editing it may make it unrecognisable."
+            ]
+          },
+          {
+            "id": "BR-109",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "title": "Legacy project targets .NET Framework 4.7.2 and builds as a library",
+            "summary": "This is a build fact about the project, not a user-facing rule; recorded here only as context for the other cards in this area.",
+            "claims": ["The project targets .NET Framework v4.7.2 and has OutputType Library."]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-summariser-scrn",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "SCRN",
+        "cards": [
+          {
+            "id": "SCRN-001",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+            "title": "Catalog list",
+            "summary": "A table of catalog items with thumbnail, brand, type, price, stock figures and Edit, Details and Delete links per row.",
+            "claims": [
+              "The table has one column header for each of Name, Description, brand, type, Price, PictureFileName, AvailableStock, RestockThreshold and MaxStockThreshold, with names taken from the model.",
+              "Each row shows a thumbnail image from the item's picture URI, and the item's name, description, brand, type, price, picture file name and the three stock figures.",
+              "Each row has Edit, Details and Delete links that pass the item id to the actions of the same name.",
+              "Action Create New starts the handler Create."
+            ]
+          },
+          {
+            "id": "SCRN-002",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+            "title": "Create catalog item",
+            "summary": "A form to add a catalog item; image upload is not available in this version.",
+            "claims": [
+              "The form posts back to the same action with an anti-forgery token and has inputs for Name, Description, Price, AvailableStock, RestockThreshold and MaxStockThreshold, each with a validation message.",
+              "Brand and type are chosen from dropdown lists named CatalogBrandId and CatalogTypeId.",
+              "The picture file name has no input; the page states that uploading images is not allowed for this version, and the text box is commented out.",
+              "The Cancel link returns to the Index action and the Create button submits the form."
+            ]
+          },
+          {
+            "id": "SCRN-003",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+            "title": "Edit catalog item",
+            "summary": "A form to change a catalog item; the picture file name is shown read-only.",
+            "claims": [
+              "The form shows the item picture and posts with an anti-forgery token; the item id is sent as a hidden field.",
+              "Inputs cover Name, Description, Price, AvailableStock, RestockThreshold and MaxStockThreshold, and brand and type are dropdown lists.",
+              "The picture file name input is rendered read-only with the title 'Not allowed for edition'.",
+              "The Cancel link returns to the Index action and the Save button submits the form."
+            ]
+          },
+          {
+            "id": "SCRN-004",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+            "title": "Catalog item details",
+            "summary": "Read-only view of one catalog item with links to edit it or go back to the list.",
+            "claims": [
+              "The page shows the picture and the name, description, brand, type, price, picture file name and the three stock figures of the item.",
+              "The Edit link passes the item id to the Edit action, and Back to List goes to the Index action.",
+              "Action Edit starts the handler Edit.",
+              "Action Back to List starts the handler Index."
+            ]
+          },
+          {
+            "id": "SCRN-005",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+            "title": "Delete catalog item confirmation",
+            "summary": "Asks for confirmation, shows the item, and posts a delete when confirmed.",
+            "claims": [
+              "The page asks 'Are you sure you want to delete this?' and shows the picture and the item's name, description, brand, type, price, picture file name and the three stock figures.",
+              "A form with an anti-forgery token holds a Delete submit button and a Cancel link to the Index action.",
+              "Action [ Delete ] starts the handler Delete (form post).",
+              "Action [ Cancel ] starts the handler Index."
+            ]
+          },
+          {
+            "id": "SCRN-006",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+            "title": "Catalog list",
+            "summary": "Shows the catalog items of one page with previous and next paging links.",
+            "claims": [
+              "The page shows the Create New link and includes the CatalogTable partial with the page's items.",
+              "Previous and Next links call Index with pageSize and pageIndex; the link is hidden at the first and last page, and the text shows the total item count and the page number.",
+              "Action Create New starts the handler Create.",
+              "Actions Previous and Next start the handler Index."
+            ]
+          },
+          {
+            "id": "SCRN-007",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+            "title": "Create catalog item",
+            "summary": "A form to add a catalog item with name, description, brand, type, price and stock levels; no picture upload.",
+            "claims": [
+              "The form has inputs for Name, Description, Price, AvailableStock, RestockThreshold and MaxStockThreshold, and drop-downs for CatalogBrandId and CatalogTypeId; each has a validation message slot.",
+              "The picture field is not an input: the page says uploading images is not allowed in this version, and the text box is commented out.",
+              "The Cancel link returns to Index and the Create button submits the form with an anti-forgery token.",
+              "The page loads the jQuery validation bundle; the view itself contains no field-level rule beyond the model's validation."
+            ]
+          },
+          {
+            "id": "SCRN-008",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+            "title": "Edit catalog item",
+            "summary": "A form to change an existing catalog item; the picture is shown but cannot be edited.",
+            "claims": [
+              "The page shows the item picture and a hidden Id, then inputs for Name, Description, brand, type, Price, AvailableStock, RestockThreshold and MaxStockThreshold.",
+              "The PictureFileName field is rendered read-only with the title 'Not allowed for edition'.",
+              "The Cancel link returns to Index and the Save button submits the form.",
+              "Action [ Save ] starts the handler Edit (form post)."
+            ]
+          },
+          {
+            "id": "SCRN-009",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+            "title": "Catalog item details",
+            "summary": "A read-only view of one catalog item.",
+            "claims": [
+              "The page shows the picture and the item's name, description, brand, type, price, picture file name and the three stock values.",
+              "The links lead to Edit for this item or back to the list.",
+              "Action Edit starts the handler Edit.",
+              "Action Back to List starts the handler Index."
+            ]
+          },
+          {
+            "id": "SCRN-010",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+            "title": "Delete catalog item",
+            "summary": "A confirmation page that shows an item and deletes it on confirm.",
+            "claims": [
+              "The page asks 'Are you sure you want to delete this?' and shows the item's picture and fields.",
+              "A form with an anti-forgery token posts the delete; the [ Delete ] button submits it and [ Cancel ] returns to Index.",
+              "Action [ Delete ] starts the handler Delete (form post).",
+              "Action [ Cancel ] starts the handler Index."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-095",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#1",
+            "title": "Global site typography and body spacing",
+            "summary": "base.css sets the Montserrat web font at two weights, a 16px base font size, body padding and a content gutter used across the site's pages.",
+            "claims": [
+              "Montserrat is declared as a web font at weight 400 (regular) and weight 700 (bold), loaded from ../fonts files in several formats.",
+              "The html and body elements use a 16px font size and the Montserrat font with a sans-serif fallback.",
+              "The body has 10px top padding, 20px bottom padding, a light font weight of 300 and a z-index of 10.",
+              "The .body-content class adds 15px left and right padding to keep content away from the page edges."
+            ]
+          },
+          {
+            "id": "FEAT-096",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#7",
+            "title": "Storefront visual styling (header, footer, product tables, buttons, pager)",
+            "summary": "Two stylesheets set the look of the web forms storefront: site.css holds the application's own classes (hero banner, header, footer, body title, price, tables, links, buttons, loader and pager), and custom.css overrides a few Bootstrap defaults for description lists and tables. The files contain presentation only and no application logic.",
+            "claims": [
+              "The hero banner uses main_banner.png as a cover background at 12.5vw height, and drops to 20vw height at widths of 1024px or less.",
+              "The header and footer use a black footer band with a 230px by 50px brand image class, and a header title in white Montserrat text whose size is 4vw, or 4rem at widths of 1800px or more.",
+              "The price class .esh-price prefixes the value with a dollar sign through a CSS pseudo-element, so the dollar sign is display text and not part of the stored value.",
+              "Buttons share one base style with uppercase text, no border radius and a transition. The primary button is green (#83D01B), the secondary button is red (#E52638), and each darkens on hover."
+            ]
+          },
+          {
+            "id": "FEAT-097",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+            "title": "Database creation and seeding on first run",
+            "summary": "When the catalog database does not exist, the initializer creates it and seeds the sequences, types, brands, items and pictures.",
+            "claims": [
+              "CatalogDBInitializer derives from CreateDatabaseIfNotExists, so the database is created only when it is missing.",
+              "Seed runs the three sequence scripts, then adds types, brands, items and pictures.",
+              "With customization data on, pictures are cleared from the Pics folder and extracted from Setup/CatalogItems.zip; with it off, this step does nothing.",
+              "Without customization data, the seed uses 12 preconfigured catalog items, 5 brands (Azure, .NET, Visual Studio, SQL Server, Other) and 4 types (Mug, T-Shirt, Sheet, USB Memory Stick)."
+            ]
+          },
+          {
+            "id": "FEAT-098",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Modules",
+            "title": "Data access and catalog infrastructure registration",
+            "summary": "The module registers the database context, the database initializer and the hi-lo id generator used for catalog items.",
+            "claims": [
+              "CatalogDBContext and CatalogDBInitializer are each registered one instance per lifetime scope.",
+              "CatalogItemHiLoGenerator is registered as a single instance shared across the application."
+            ]
+          },
+          {
+            "id": "FEAT-099",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Scripts#16",
+            "title": "Upload a catalog item picture from the edit page",
+            "summary": "On a catalog item edit page, choosing a picture file uploads it in the background to the catalog picture web service, then shows the new picture and stores its temporary file name in the form.",
+            "claims": [
+              "When the file input #uploadEditorImage changes, the script reads the first selected file and does nothing if no file is selected.",
+              "The upload sends the item Id from #Id and the file under the field name HelpSectionImages as multipart form data.",
+              "The script posts the upload to /Catalog/PicUploader.asmx/UploadImage and expects a JSON response.",
+              "While the upload runs, the upload label button is disabled, the previous validation error text is cleared and the loader element .esh-loader is shown."
+            ]
+          },
+          {
+            "id": "FEAT-100",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Paginated catalog item listing",
+            "summary": "The catalog service returns a page of catalog items ordered by Id, with brand and type included, together with the total item count.",
+            "claims": [
+              "GetCatalogItemsPaginated counts all CatalogItems, orders them by Id, skips pageSize*pageIndex rows, takes pageSize rows and includes CatalogBrand and CatalogType.",
+              "The mock implementation pages an in-memory list the same way, filling the brand and type of each item from preconfigured data first."
+            ]
+          },
+          {
+            "id": "FEAT-101",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Catalog item lookup, create, update and remove",
+            "summary": "Catalog items can be found by Id, created, updated and removed through the catalog service, with brand and type lists available for selection.",
+            "claims": [
+              "FindCatalogItem returns the first item with the given Id, including its brand and type.",
+              "GetCatalogTypes and GetCatalogBrands return all rows of the CatalogTypes and CatalogBrands tables.",
+              "CreateCatalogItem assigns a new Id from the hi-lo generator, adds the item and saves the changes.",
+              "UpdateCatalogItem marks the entity as modified and saves; RemoveCatalogItem removes the entity and saves."
+            ]
+          },
+          {
+            "id": "FEAT-102",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Product picture storage in Azure Blob Storage",
+            "summary": "The Azure image service stores product pictures in the 'pics' blob container, uploads temporary images, moves a chosen temporary image to the item folder and builds public URLs.",
+            "claims": [
+              "The storage account is read from CatalogConfiguration.StorageConnectionString when the service is created.",
+              "UploadTempImage stores the file under '<catalogItemId>/temp/' when an Id is given, or under 'temp/<new GUID>/' otherwise, with the lower-cased file name and its content type.",
+              "UpdateImage deletes the existing blobs under '<Id>/', copies the temporary blob to '<Id>/<file name>' and deletes the temporary blob.",
+              "BuildUrlImage returns the default image URL when the item has no picture file name; otherwise it returns the blob URL 'pics/<Id>/<PictureFileName>'."
+            ]
+          },
+          {
+            "id": "FEAT-103",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Initialise catalog images in Azure Blob Storage",
+            "summary": "InitializeCatalogImages resets the 'pics' container with the public picture files from the web project.",
+            "claims": [
+              "The method creates the 'pics' container if needed, sets its public access to Blob, and deletes every existing blob in it.",
+              "It uploads files 1.png to 12.png from the Pics folder to '<i>/<i>.png' and default.png to 'temp/default.png'."
+            ]
+          },
+          {
+            "id": "FEAT-104",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Local mock picture storage",
+            "summary": "The mock image service serves pictures from the local /Pics/ folder and does no uploads or updates.",
+            "claims": [
+              "BuildUrlImage returns '/Pics/' plus the picture file name, or 'default.png' when the name is empty.",
+              "UploadTempImage returns the default image URL when no Id is given. With an Id, it returns '/Pics/<Id>.png' if that file exists under ~/Pics, and the default image URL otherwise.",
+              "UpdateImage and InitializeCatalogImages are empty methods."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-092",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/App_Start",
+            "title": "Sign-in with Azure Active Directory through OpenID Connect",
+            "summary": "Startup.Auth enables cookie authentication and an OpenID Connect sign-in against Azure AD.",
+            "claims": [
+              "Cookie authentication is set as the default sign-in type, and OpenID Connect is added with the client ID, the authority built from the tenant, and the post-logout redirect URI.",
+              "When authentication fails, the response is handled and the user is redirected to /Error with the exception message in the query string."
+            ]
+          },
+          {
+            "id": "FEAT-093",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/App_Start",
+            "title": "Script and style bundles for the pages",
+            "summary": "BundleConfig groups the WebForms, MS Ajax, Modernizr and CSS files into named bundles served to the pages.",
+            "claims": [
+              "Bundles ~/bundles/WebFormsJs, ~/bundles/MsAjaxJs and ~/bundles/modernizr hold script files, and ~/Content/css holds the bootstrap, custom, base and site stylesheets.",
+              "The respond script is registered as a ScriptResourceDefinition with a minified path and a debug path."
+            ]
+          },
+          {
+            "id": "FEAT-094",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Create a catalog item",
+            "summary": "A signed-in user fills in a form for a new catalog item, optionally uploads a picture, and saves it.",
+            "claims": [
+              "The Create page loads at /Catalog/Create.aspx inside the site master and offers Name, Description, Brand, Type, Price, Stock, Restock and Max stock inputs, with a picture area and a Create button.",
+              "Create_Click builds a CatalogItem from the form, saves it through CatalogService.CreateCatalogItem, and then redirects to the home page (~).",
+              "When a temporary image name is present, the file name is taken from the path and ImageService.UpdateImage is called before the redirect."
+            ]
+          },
+          {
+            "id": "FEAT-095",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Edit a catalog item",
+            "summary": "A user changes the details of an existing catalog item; the picture file name is read-only.",
+            "claims": [
+              "On first load the page reads the item id from the route, loads the item and fills the brand and type drop-downs with the item's current values.",
+              "Save_Click rebuilds the item with the route id and the form values, updates the picture when a new temporary image is present, saves through CatalogService.UpdateCatalogItem and redirects to the home page."
+            ]
+          },
+          {
+            "id": "FEAT-096",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Delete a catalog item",
+            "summary": "A user confirms the deletion of a catalog item after seeing its details.",
+            "claims": [
+              "Page_Load loads the item named by the route id and shows its details on a confirmation page.",
+              "Delete_Click calls CatalogService.RemoveCatalogItem on the loaded item and redirects to the home page."
+            ]
+          },
+          {
+            "id": "FEAT-097",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Upload a catalog picture",
+            "summary": "A web service accepts an image upload for a catalog item, checks its format and stores it as a temporary image.",
+            "claims": [
+              "UploadImage reads the posted file HelpSectionImages and the form field itemId, and returns HTTP 400 with 'image is not valid' when the file is not a valid image.",
+              "A valid image is passed to ImageService.UploadTempImage, and the response is JSON with the name (path and query of the returned URL) and the url.",
+              "IsValidImage accepts only JPEG, PNG and GIF images, and any exception while reading the stream marks the file invalid."
+            ]
+          },
+          {
+            "id": "FEAT-098",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#1",
+            "title": "Base page typography and body padding",
+            "summary": "base.css, the only application-owned stylesheet in this area, sets the Montserrat web font, the base font size and the body padding that every page inherits.",
+            "claims": [
+              "Montserrat is declared as a web font in regular weight 400 and bold weight 700, loaded from the ../fonts directory in several formats.",
+              "The html and body elements use a 16px font size and the Montserrat font with a sans-serif fallback.",
+              "The body has 10px top padding, 20px bottom padding, a font weight of 300 and a z-index of 10.",
+              "The .body-content class adds 15px left and right padding so content does not touch the page edges."
+            ]
+          },
+          {
+            "id": "FEAT-099",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#7",
+            "title": "Price figures are shown with a dollar sign",
+            "summary": "A CSS rule adds a dollar sign in front of any element marked with the esh-price class.",
+            "claims": [
+              "Elements with the esh-price class display a '$' before their content through a ::before pseudo-element."
+            ]
+          },
+          {
+            "id": "FEAT-100",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#7",
+            "title": "Product list table layout and link styling",
+            "summary": "Tables in the catalogue screens are centred, uppercase in their headers, and have hover-coloured links and prices.",
+            "claims": [
+              "The esh-table block is centred with a maximum width of 1440px and uses uppercase header cells at 1rem.",
+              "Table links (esh-table-link) and login links (esh-login-link) change to green #75b918 on hover, and table prices (esh-table-price) are bold.",
+              "Thumbnails are limited to 120px wide and product pictures to 370px wide.",
+              "Bootstrap tables have borderless cells with no wrapping, and body rows have a light grey bottom border."
+            ]
+          },
+          {
+            "id": "FEAT-101",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Content#7",
+            "title": "Action buttons: primary, secondary and upload",
+            "summary": "Action buttons come in green primary and red secondary styles, with a separate spacing rule for the upload button.",
+            "claims": [
+              "The esh-button base style is uppercase, centred and has no border or radius; it changes colour over 0.35s.",
+              "esh-button-primary is green (#83D01B) and darkens on hover; esh-button-secondary is red (#E52638) and darkens on hover.",
+              "Buttons placed next to each other inside esh-button-actions are separated by a 1rem left margin.",
+              "The esh-button-upload class adds a top margin of 1vw."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-summariser-ent",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "ENT",
+        "cards": [
+          {
+            "id": "ENT-001",
+            "area": "Setup",
+            "title": "eShop database on the workshop SQL server",
+            "summary": "The setup creates an empty database named eShop at the S0 service level. The scripts create no tables; the comment says the data is populated later when the web app is migrated.",
+            "claims": [
+              "The database name is eShop.",
+              "The database is created with the requested service objective S0 on the workshop SQL server.",
+              "The code states that the database is populated later, when the web app is migrated; no schema or data load is in this area."
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "CatalogBrand table",
+            "summary": "The brand lookup table of the catalog. Each catalog item points to one brand.",
+            "claims": [
+              "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key (PK_CatalogBrand).",
+              "Column CatalogBrand.Brand: string with max length 100, NOT NULL.",
+              "The same key and Brand length are repeated in the model snapshot.",
+              "The table is seeded with five brands: 1 Azure, 2 .NET, 3 Visual Studio, 4 SQL Server, 5 Other."
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "CatalogType table",
+            "summary": "The product type lookup table of the catalog (for example Mug, T-Shirt, Sheet).",
+            "claims": [
+              "Column CatalogType.Id: int, NOT NULL, identity, primary key (PK_CatalogType).",
+              "Column CatalogType.Type: string with max length 100, NOT NULL.",
+              "The table is seeded with four types: 1 Mug, 2 T-Shirt, 3 Sheet, 4 USB Memory Stick."
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "Catalog table (catalog items)",
+            "summary": "The product catalog. Each item has a name, price, picture file, brand, type and stock fields, and references a brand and a type.",
+            "claims": [
+              "Column Catalog.Id: int, NOT NULL, identity, primary key (PK_Catalog).",
+              "Column Catalog.Name: string with max length 50, NOT NULL.",
+              "Column Catalog.Description: string, NULL.",
+              "Column Catalog.Price: decimal, NOT NULL, with no precision or scale stated in the migration."
+            ]
+          },
+          {
+            "id": "ENT-005",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "Catalog table (CatalogItem)",
+            "summary": "The Catalog table holds one row per sellable item, with its type, brand, price, picture file name and stock figures. The EF Core mapping sets the table name, key, lengths and two foreign keys.",
+            "claims": [
+              "The CatalogItem entity maps to the table named Catalog.",
+              "Column Catalog.Id: int, NOT NULL, primary key.",
+              "Column Catalog.Name: string, NOT NULL, maximum length 50.",
+              "Column Catalog.Description: string, NULL, no length configured."
+            ]
+          },
+          {
+            "id": "ENT-006",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "CatalogBrand table",
+            "summary": "The CatalogBrand table lists the brands that catalog items refer to.",
+            "claims": [
+              "The CatalogBrand entity maps to the table named CatalogBrand.",
+              "Column CatalogBrand.Id: int, NOT NULL, primary key.",
+              "Column CatalogBrand.Brand: string, NOT NULL, maximum length 100.",
+              "The table is seeded with five brands (Azure, .NET, Visual Studio, SQL Server, Other)."
+            ]
+          },
+          {
+            "id": "ENT-007",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "CatalogType table",
+            "summary": "The CatalogType table lists the product types (Mug, T-Shirt, Sheet, USB Memory Stick) that catalog items refer to.",
+            "claims": [
+              "The CatalogType entity maps to the table named CatalogType.",
+              "Column CatalogType.Id: int, NOT NULL, primary key.",
+              "Column CatalogType.Type: string, NOT NULL, maximum length 100.",
+              "The table is seeded with four types, ids 1 to 4 (Mug, T-Shirt, Sheet, USB Memory Stick)."
+            ]
+          },
+          {
+            "id": "ENT-008",
+            "area": "eShopLegacyMVCSolution/eShopPorted/ViewModel",
+            "title": "Paginated items view model",
+            "summary": "A generic view model that carries one page of entities together with the paging figures derived from the page index, page size and total count.",
+            "claims": [
+              "ActualPage is a read-only integer set from the pageIndex constructor argument.",
+              "ItemsPerPage is a read-only integer set from the pageSize constructor argument.",
+              "TotalItems is a read-only long set from the count constructor argument.",
+              "TotalPages is an integer with a public setter, computed in the constructor as the total count divided by the page size as a decimal, rounded up with Math.Ceiling and cast to int."
+            ]
+          },
+          {
+            "id": "ENT-009",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+            "title": "Catalog items (table Catalog)",
+            "summary": "CatalogItem is mapped to the table Catalog. It holds the product name, price, picture file, brand and type links, and stock figures.",
+            "claims": [
+              "The CatalogItem entity maps to the table Catalog.",
+              "Column Catalog.Id: int, NOT NULL, primary key; the value is not generated by the database (DatabaseGeneratedOption.None) and is taken from the catalog_hilo sequence.",
+              "Column Catalog.Name: string, NOT NULL, maximum length 50.",
+              "Column Catalog.Description: string, NULL (no required rule in the model)."
+            ]
+          },
+          {
+            "id": "ENT-010",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+            "title": "Catalog brands (table CatalogBrand)",
+            "summary": "CatalogBrand is the table of product brands, referenced by catalog items.",
+            "claims": [
+              "The CatalogBrand entity maps to the table CatalogBrand with primary key Id.",
+              "Column CatalogBrand.Id: int, NOT NULL, primary key.",
+              "Column CatalogBrand.Brand: string, NOT NULL, maximum length 100."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-summariser-ent",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "ENT",
+        "cards": [
+          {
+            "id": "ENT-001",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "CatalogBrand table",
+            "summary": "A lookup table of product brands, with an identity key and a required brand name of at most 100 characters.",
+            "claims": [
+              "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
+              "Column CatalogBrand.Brand: nvarchar(100) as declared by maxLength 100, NOT NULL.",
+              "The model snapshot also declares Brand as required with a maximum length of 100."
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "CatalogType table",
+            "summary": "A lookup table of product types such as Mug, T-Shirt, Sheet and USB Memory Stick.",
+            "claims": [
+              "Column CatalogType.Id: int, NOT NULL, identity, primary key.",
+              "Column CatalogType.Type: nvarchar(100), NOT NULL."
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "Catalog table (products)",
+            "summary": "The product table. Each row has a name, description, price, picture file name, type and brand references, stock figures and a reorder flag.",
+            "claims": [
+              "Column Catalog.Id: int, NOT NULL, identity, primary key.",
+              "Column Catalog.Name: nvarchar(50), NOT NULL.",
+              "Column Catalog.Description: nvarchar(max), NULL.",
+              "Column Catalog.Price: decimal, NOT NULL; no precision or scale is declared in the migration."
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "CatalogItem entity (Catalog table)",
+            "summary": "A catalog product mapped to the Catalog table, with its price, picture, type, brand and stock fields.",
+            "claims": [
+              "Column Catalog.Id: int, NOT NULL, primary key (the entity's Id is the key set by HasKey).",
+              "Column Catalog.Name: string, NOT NULL, max length 50.",
+              "Column Catalog.Description: string, NULL (no configuration sets it as required).",
+              "Column Catalog.Price: decimal, NOT NULL; the configuration sets no precision, although a comment on the property says decimal(18,2)."
+            ]
+          },
+          {
+            "id": "ENT-005",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "CatalogBrand entity (CatalogBrand table)",
+            "summary": "A brand that catalog items refer to.",
+            "claims": [
+              "Column CatalogBrand.Id: int, NOT NULL, primary key.",
+              "Column CatalogBrand.Brand: string, NOT NULL, max length 100.",
+              "The seed rows are the five brands Azure, .NET, Visual Studio, SQL Server and Other, supplied by PreconfiguredData."
+            ]
+          },
+          {
+            "id": "ENT-006",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "CatalogType entity (CatalogType table)",
+            "summary": "A product type (Mug, T-Shirt, Sheet, USB Memory Stick) that catalog items refer to.",
+            "claims": [
+              "Column CatalogType.Id: int, NOT NULL, primary key.",
+              "Column CatalogType.Type: string, NOT NULL, max length 100.",
+              "The seed rows are Mug (1), T-Shirt (2), Sheet (3) and USB Memory Stick (4), written inline in the configuration."
+            ]
+          },
+          {
+            "id": "ENT-007",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Services",
+            "title": "Catalog item, catalog type and catalog brand",
+            "summary": "The service reads and writes catalog items and reads catalog types and brands through CatalogDBContext.",
+            "claims": [
+              "CatalogItem rows are read with their CatalogBrand and CatalogType navigations and written through the CatalogItems set.",
+              "CatalogType and CatalogBrand rows are read from the CatalogTypes and CatalogBrands sets, which the service only lists."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-summariser-br",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-001",
+            "area": "(root)",
+            "title": "Choice between mock data and the SQL Server database",
+            "summary": "The MVC and WebForms apps can run on mock data or on the real database, and the choice is made in configuration.",
+            "claims": [
+              "The MVC and WebForms apps can connect to the real database or use in-memory mock data when the database is unavailable, for testing or demos.",
+              "The mock-data switch is set through the UseMockData environment setting, which is False for both the MVC and WebForms containers.",
+              "Outside containers the same choice is made in the Web.config file."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+            "title": "Resource group is created only when it does not exist",
+            "summary": "The deployment scripts reuse an existing resource group and create a new one only when it is missing and a location is given.",
+            "claims": [
+              "deploy.ps1 looks up the resource group; if it is missing, it asks for a location when none was given and creates the group, otherwise it reuses the existing group.",
+              "deploy.sh checks the resource group with az group show and runs az group create only when that check fails.",
+              "DeploymentHelper.cs checks the resource group with CheckExistence and creates it with CreateOrUpdate only when it is absent."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+            "title": "Deployments run in Incremental mode",
+            "summary": "The C# and Ruby deployers submit the template in Incremental mode, so resources not in the template are left in place.",
+            "claims": [
+              "DeploymentHelper.cs sets the deployment mode to Incremental.",
+              "deployer.rb sets the deployment mode to Incremental and creates the deployment named 'azure-sample' in the resource group."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+            "title": "Secure cluster certificate and key vault inputs",
+            "summary": "The sample template requires a certificate thumbprint, key vault resource id and certificate URL to secure the cluster.",
+            "claims": [
+              "certificateThumbprint, sourceVaultValue (the key vault resource id) and certificateUrlValue (the vault secret URL) are required string inputs with no default in the sample template.",
+              "The certificate store is restricted to My and the protection level allows None, Sign or EncryptAndSign, defaulting to EncryptAndSign."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "area": "ServiceFabric/ServiceFabric-ARM-Templates-Scripts",
+            "title": "Plain-text admin passwords in the templates and parameter files",
+            "summary": "Admin passwords are written in plain text in several files of this area.",
+            "claims": [
+              "A plain-text password is written in Sample-ServiceFabric-ARM/azuredeploy.json:24.",
+              "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json:17-18.",
+              "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json:79-80."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "area": "ServiceFabric/eShopModernizedMVC-ServiceFabricApp",
+            "title": "Upgrade or create decision during deployment",
+            "summary": "The script upgrades an existing application only when the publish profile enables upgrades, unless the operator overrides this.",
+            "claims": [
+              "The run is an upgrade when the profile's UpgradeDeployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade; otherwise the application is created.",
+              "ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and Force set to true.",
+              "DeployOnly switches the action from RegisterAndUpgrade or RegisterAndCreate to Register, so the application is not created or upgraded.",
+              "For a new application, OverwriteBehavior defaults to Never, and the script validates the package unless SkipPackageValidation is set."
+            ]
+          },
+          {
+            "id": "BR-007",
+            "area": "ServiceFabric/eShopModernizedMVC-ServiceFabricApp",
+            "title": "Cloud upgrades roll back on failure and are not enabled",
+            "summary": "The Cloud publish profile sets a monitored upgrade with rollback on failure, but the upgrade block is disabled.",
+            "claims": [
+              "The Cloud profile sets UpgradeDeployment Mode to Monitored, Enabled to false, FailureAction to Rollback and Force to True.",
+              "Because Enabled is false, a Cloud deployment is a create action unless ForceUpgrade is passed."
+            ]
+          },
+          {
+            "id": "BR-008",
+            "area": "ServiceFabric/eShopModernizedWebForms-ServiceApp",
+            "title": "Deployment chooses between create and upgrade",
+            "summary": "The deployment script upgrades an existing application when the publish profile enables an upgrade and no veto is given. Otherwise it creates the application, and it can overwrite an existing one with the same name.",
+            "claims": [
+              "An upgrade is used when the profile's UpgradeDeployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade. Otherwise the script registers and creates the application.",
+              "ForceUpgrade replaces the profile's upgrade parameters with UnmonitoredAuto and Force set to true.",
+              "On a create, OverwriteBehavior defaults to Never; Always or SameAppTypeAndVersion replace an existing application of the same name.",
+              "DeployOnly registers the application type without creating or upgrading the application."
+            ]
+          },
+          {
+            "id": "BR-009",
+            "area": "Setup",
+            "title": "Required inputs and fixed naming for the environment",
+            "summary": "The environment script stops unless the user alias, server admin password and resource group name are set; other names are derived from the alias.",
+            "claims": [
+              "The script exits with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+              "The location is fixed to eastus.",
+              "Resource names are derived from the alias: <alias>-webappplan, <alias>-webapp and <alias>-workshop-server; the database is always named eShop."
+            ]
+          },
+          {
+            "id": "BR-010",
+            "area": "eShopLegacyMVCSolution/eShopPorted",
+            "title": "Mock data switch selects the data source",
+            "summary": "A single setting decides whether the catalog reads from SQL Server or from mock data.",
+            "claims": [
+              "The UseMockData setting is set to the string true in appsettings.json, so the application uses mock data by default.",
+              "When UseMockData is false, the CatalogDBContext is registered with SQL Server; when true, the context is not registered and the flag is passed to ApplicationModule."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import type { Judgement } from './judge-results.js';
 import { overallOf } from './judgement.js';
 import type { Rubric } from './rubric.js';
 
-// RF-1405, RF-1402: the judge check. Every item is scored once by the judge, one after another,
+// RF-1408, RF-1402: the judge check. Every item is scored once by the judge, one after another,
 // through the ledger gate; a refused call or a stopped ledger ends the check and the items left are
 // not scored. The report compares the judge with the hand labels (calibration claims) and with the
 // hand scores (samples): exact, within one point and mean absolute difference per criterion, and
@@ -57,7 +57,7 @@ export interface CheckReport {
 }
 
 /** Scores the items in order; stops at the first refusal or when the ledger stops the check. */
-// RF-1405
+// RF-1408
 export async function scoreItems(
   judge: CaseJudge,
   items: readonly CheckItem[],
@@ -130,7 +130,7 @@ function calibrationOf(results: readonly CheckResult[]): CheckReport['calibratio
   };
 }
 
-// RF-1405
+// RF-1408
 export function reportOf(
   checked: { results: readonly CheckResult[]; stopped: string | null },
   rubrics: ReadonlyMap<string, Rubric>,
