@@ -17,6 +17,12 @@ import { providerNames } from './provider-choices.js';
 // RF-431: when the estimate knows a role has no usable key at all, it says the key is missing, and
 // Start stays unavailable. RF-430: the journey total the user approves, and its worst case.
 
+interface ServerKeyNoteProps {
+  readonly estimate: RunEstimate;
+  /** P9-14: the first read the page showed, kept by the section across reloads of the estimate. */
+  readonly firstRead?: RunEstimate | undefined;
+}
+
 /** The providers whose roles run on the server's key in this estimate. */
 function serverKeyProviders(estimate: RunEstimate): string {
   return providerNames(
@@ -50,9 +56,13 @@ function KeyMissingNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
  * DEC-206, RST-2310, P9-11: why the figure moved, against the first read this page showed. The page
  * keeps that read, so a figure that moved twice names where it began; it is gone when it moves back.
  */
-function useFigureMoved(estimate: RunEstimate): string | undefined {
-  const first = useRef(estimate);
-  return figureMovedText(first.current, estimate);
+function useFigureMoved(
+  estimate: RunEstimate,
+  firstRead: RunEstimate | undefined,
+): string | undefined {
+  // The section that owns the read keeps the first one across a reload; this one only as a fallback.
+  const own = useRef(estimate);
+  return figureMovedText(firstRead ?? own.current, estimate);
 }
 
 // RF-430, RF-434, RF-435, EV-85: the one sentence about the caps of a journey step.
@@ -61,10 +71,11 @@ const CAP_SENTENCE =
 
 // RF-430, RF-434, P8-26: the journey as three short lines (likely, approved, what stops it), the
 // ceiling and the reason a figure moved under them, and the longer explanation collapsed.
-function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Element | null {
+function JourneyNote(props: ServerKeyNoteProps): JSX.Element | null {
+  const { estimate } = props;
   const { journey } = estimate;
   const lines = estimateLinesOf(estimate);
-  const moved = useFigureMoved(estimate);
+  const moved = useFigureMoved(estimate, props.firstRead);
   if (journey === undefined || lines === undefined) return null;
   const basis =
     journey.basis === 'history'
@@ -91,7 +102,7 @@ function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Elem
         </div>
       </dl>
       {moved === undefined ? null : (
-        <p class="rst-settings__note" data-testid="journey-moved">
+        <p class="rst-settings__note" role="status" data-testid="journey-moved">
           {moved}
         </p>
       )}
@@ -124,10 +135,11 @@ function ServerOnlyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
 }
 
 // RF-1104, RF-430, RF-431
-export function ServerKeyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Element {
+export function ServerKeyNote(props: ServerKeyNoteProps): JSX.Element {
+  const { estimate } = props;
   return (
     <>
-      <JourneyNote estimate={estimate} />
+      <JourneyNote {...props} />
       <KeyMissingNote estimate={estimate} />
       <ServerOnlyNote estimate={estimate} />
     </>

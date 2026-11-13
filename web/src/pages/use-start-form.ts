@@ -121,6 +121,7 @@ function warningsOf(input: {
     runCapMicros: capMicros,
     limits,
     runCapFromProject,
+    approvedLine: estimate.estimate.journey !== undefined,
   });
 }
 

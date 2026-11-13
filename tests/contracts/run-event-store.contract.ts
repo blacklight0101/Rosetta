@@ -196,6 +196,30 @@ function laterLifeEndTests(name: string, fresh: FreshEventStore): void {
   });
 }
 
+function queueCancelTests(name: string, fresh: FreshEventStore): void {
+  // A resume writes no event while the run waits, so the store cannot tell one cancel of a life
+  // from the cancel of the next queued life: both sequences are legitimate (P9-05, P9-14).
+  it(`RF-006 ${name} accepts a cancel of each queued life after a stop and two resumes`, async () => {
+    const { sink, history } = await fresh();
+    await sink.publish(scope, eventFor(scope, 1, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'UserStop' }));
+    await sink.publish(scope, eventFor(scope, 3, 'run.ended', { endReason: 'QueueCancel' }));
+
+    await sink.publish(scope, eventFor(scope, 4, 'run.ended', { endReason: 'QueueCancel' }));
+
+    expect(await history.read(scope, 0)).toHaveLength(4);
+  });
+
+  it(`RF-006 ${name} accepts a cancel while first queued, a resume and a second cancel`, async () => {
+    const { sink, history } = await fresh();
+    await sink.publish(scope, eventFor(scope, 1, 'run.ended', { endReason: 'QueueCancel' }));
+
+    await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endReason: 'QueueCancel' }));
+
+    expect(await history.read(scope, 0)).toHaveLength(2);
+  });
+}
+
 function isolationTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} keeps the events of two runs apart`, async () => {
     const { sink, history } = await fresh();
@@ -228,4 +252,5 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
   isolationTests(name, fresh);
   resumeTests(name, fresh);
   laterLifeEndTests(name, fresh);
+  queueCancelTests(name, fresh);
 }

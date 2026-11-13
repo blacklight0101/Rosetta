@@ -14,6 +14,14 @@ const bob = '00000000-0000-4000-9000-0000000000b2';
 const cyd = '00000000-0000-4000-9000-0000000000c3';
 
 describe('runsToStart', () => {
+  it('RF-432 P9-14 a run continued with its old queue time goes ahead of runs queued since, other users included', () => {
+    const later = sampleRun({ userId: bob, queuedAt: 2_000 });
+    const continued = sampleRun({ userId: amy, queuedAt: 1_000 });
+
+    expect(runsToStart([later, continued], [], 1)).toEqual([continued]);
+    expect(queuePositions([later, continued]).get(continued.id)).toBe(1);
+  });
+
   it('RF-1108 starts queued runs in queue order up to the limit', () => {
     const first = sampleRun({ userId: amy });
     const second = sampleRun({ userId: bob });

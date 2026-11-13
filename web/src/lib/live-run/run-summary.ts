@@ -49,6 +49,8 @@ export function overviewOf(state: RunState): Overview {
 /**
  * P9-04: a stopped reader (by a Stop or a cap) that a later task of the same area and role read again (a resume gives it
  * a new task id) is left out of the figures, so a Completed resumed run shows no stop it recovered from.
+ * P9-14: only a task of a later life of the run (after a `run.started`) is a re-read; a later task of
+ * the same life (a Deepen round) is another read, so the stop stays counted.
  */
 function readAgain(
   agents: readonly AgentPanelState[],
@@ -57,7 +59,11 @@ function readAgain(
 ): boolean {
   if (agent.state !== 'Stopped' && agent.state !== 'StoppedByCap') return false;
   return agents.some(
-    (later, index) => index > at && later.area === agent.area && later.role === agent.role,
+    (later, index) =>
+      index > at &&
+      later.life > agent.life &&
+      later.area === agent.area &&
+      later.role === agent.role,
   );
 }
 

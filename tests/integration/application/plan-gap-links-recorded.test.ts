@@ -9,7 +9,7 @@ import { ev95Calls, ev95Flows, ev95Input } from '../../support/eshop-gap-round-f
 // create, edit and delete journeys of the other legacy front ends; the gap call (gap.v4) said not
 // to repeat the work of a card that exists and gave no way to say which card already does it, so
 // its answer wrote 20 cards for the 29 other items of the block, none for the four, and left no
-// card out, so no repair was asked. With gap.v5 the answer links the four to T-004
+// card out, so no repair was asked. From gap.v5 on (gap.v6 now) the answer links the four to T-004
 // (tests/recordings/fake/planner-gap-eshop-ev95-links.json, the recorded answer plus that link)
 // and they are built. P8-96: the four flows the gap.v4 answer leaves open now get a second gap
 // round, so the recorded answer is replayed with a synthetic second answer that writes nothing

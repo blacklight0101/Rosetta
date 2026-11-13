@@ -133,13 +133,14 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expect(page).toHaveURL(/\/runs\//u);
 });
 
-test('RF-1001 a likely estimate above the run cap warns, names the cap and Start stays available', async ({
+test('RF-1001 a project run cap below the likely estimate is not named beside the approved amount and Start stays available', async ({
   page,
 }) => {
   await openStartPage(page);
   const projectId = projectIdOf(page);
-  // RF-436: the cap is the project settings'; the page warns against it. P9-12: a journey's start page
-  // has no link to the caps (the approved amount is its one limit), so the settings are opened here.
+  // RF-436: the cap is set in the project settings, opened here because a journey's start page has no
+  // link to them. P9-12, P9-14: the approved amount replaces the project run caps, so the page names
+  // no run cap in a warning, shows no link to the caps and keeps the approved amount as its one limit.
   await page.goto(`/projects/${projectId}/settings#caps`);
   const cap = page.getByLabel('Run cost cap (USD)', { exact: true });
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
@@ -155,9 +156,9 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
     await page.getByRole('link', { name: 'Start a run' }).click();
     await giveCloudConsent(page, consent);
 
-    const warning = page.getByTestId('cap-warning');
-    await expect(warning).toContainText('run cap');
-    await expect(warning).toContainText('<$0.0001');
+    await expect(page.getByTestId('journey-approved')).toBeVisible();
+    await expect(page.getByTestId('cap-warning').filter({ hasText: 'run cap' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Review the caps' })).toHaveCount(0);
     await expect(page.getByRole('button', startButton)).toBeEnabled();
     await transitionsDone(page);
     await expectNoSeriousViolations(page);

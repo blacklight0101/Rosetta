@@ -26,7 +26,9 @@ function refused(detail: string): RosettaError {
 /**
  * P9-05: a resume writes no event while the run waits, so the cancel of that wait is the only
  * `run.ended` that opens no life of its own; it is the end of the life the resume began. Any other
- * `run.ended` after a `run.ended` is a second end within one life.
+ * `run.ended` after a `run.ended` is a second end within one life. A resume writes no event while
+ * the run waits, so a second cancel cannot be told from the cancel of the next queued life and is
+ * accepted; the run row's single `runs.end` per life guards a duplicate (P9-14, Q5).
  */
 function endsQueuedLife(event: RunEvent): boolean {
   return isRunEnded(event) && event.data['endReason'] === QUEUE_CANCEL;

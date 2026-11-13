@@ -81,6 +81,7 @@ const handlers: Readonly<Record<string, Handler>> = {
 export function initialRunState(): RunState {
   return {
     lastSeq: 0,
+    starts: 0,
     startedAt: undefined,
     stage: undefined,
     source: undefined,

@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useRef } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { Button } from '../components/Button.js';
@@ -142,7 +143,12 @@ function CapFields(props: {
   );
 }
 
-function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): JSX.Element {
+function Body(
+  props: EstimateSectionProps & {
+    readonly onRetry: () => void;
+    readonly firstRead: RunEstimate | undefined;
+  },
+): JSX.Element {
   const { estimate, cap, warnings, onRetry } = props;
   if (props.scanOnly) {
     return (
@@ -173,14 +179,16 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
   return (
     <>
       <CapFields cap={cap} estimate={estimate.estimate} capsHref={props.capsHref} />
-      <ServerRunCapNote
-        serverKeys={cap.serverRunCap.serverKeys}
-        administrator={cap.serverRunCap.administrator}
-        typed={cap.capMicros}
-        where="start"
-      />
+      {estimate.estimate.journey === undefined ? (
+        <ServerRunCapNote
+          serverKeys={cap.serverRunCap.serverKeys}
+          administrator={cap.serverRunCap.administrator}
+          typed={cap.capMicros}
+          where="start"
+        />
+      ) : null}
       <Warnings warnings={warnings} capsHref={props.capsHref} />
-      <ServerKeyNote estimate={estimate.estimate} />
+      <ServerKeyNote estimate={estimate.estimate} firstRead={props.firstRead} />
       <EstimateTable estimate={estimate.estimate} />
     </>
   );
@@ -190,12 +198,15 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
 export function EstimateSection(
   props: EstimateSectionProps & { readonly onRetry: () => void },
 ): JSX.Element {
+  // P9-14: the first read of the page, kept while the estimate reloads (a change of areas).
+  const firstRead = useRef<RunEstimate | undefined>(undefined);
+  if (props.estimate.status === 'ready') firstRead.current ??= props.estimate.estimate;
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="estimate-heading">
       <h2 id="estimate-heading" class="rst-settings__heading">
         Estimate before running
       </h2>
-      <Body {...props} />
+      <Body {...props} firstRead={firstRead.current} />
     </section>
   );
 }

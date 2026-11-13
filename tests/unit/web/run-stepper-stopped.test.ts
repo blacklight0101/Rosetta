@@ -107,3 +107,16 @@ it('RF-1002 a reader cut short at a cap and read again by a resume shows no stop
 
   expect(overviewOf(stateAfter(...events))).toMatchObject({ done: 1, failed: 0, stopped: 0 });
 });
+
+it('RF-1002 P9-14 a later task of the same area in the same life is not a re-read of the stop', () => {
+  const events = [
+    started,
+    planned(2, 'a1', 'Orders'),
+    agentEnded(3, 'a1', 'Stopped'),
+    planned(4, 'a2', 'Orders'),
+    agentEnded(5, 'a2', 'Done', 1),
+    runEnded(6, 'Interrupted'),
+  ];
+
+  expect(overviewOf(stateAfter(...events))).toMatchObject({ done: 1, stopped: 1, total: 2 });
+});
