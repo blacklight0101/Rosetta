@@ -49,7 +49,9 @@ export function modelIsFree(table: PriceTable, provider: string, model: string):
   return (
     zero(price?.inputPerMillionMicros) &&
     zero(price?.outputPerMillionMicros) &&
-    zero(price?.cachedInputPerMillionMicros)
+    zero(price?.cachedInputPerMillionMicros) &&
+    (price?.cacheWriteInputPerMillionMicros === undefined ||
+      zero(price.cacheWriteInputPerMillionMicros))
   );
 }
 
