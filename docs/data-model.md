@@ -1007,6 +1007,26 @@ when the answers are the same as the stored ones, so `savedAt` moves only with a
 when `savedAt` is later than the start of the newest `Completed` run of stage `plan` of the project (the package
 was written from an earlier brief); a project with no such run is never out of date.
 
+### 3.21 Prompt lab files: `lab/` and `lab-out/` (added 2026-11-13, P10-01)
+
+Files of `npm run lab` (RF-1400..RF-1403, ADR-029), inside the Rosetta repository; none is in a user's project.
+
+- `lab/config.json` (committed): `{ schemaVersion: 1, totalCapMicros, stopMicros, invocationCapMicros }` in
+  micro-dollars, whole numbers, with `invocationCapMicros <= stopMicros <= totalCapMicros` (DEC-231: 50 000 000 and 40 000 000).
+- `lab/cases/<set>.json` (committed): `{ schemaVersion: 1, version, prompt, description, cases[] { id, expected?, split,
+input } }`. `prompt` is the prompt id (`verifier/claim`, `summariser/overview`); `id` is lower-case words joined by `-`
+  and unique; `split` is `tune` (default) or `held-back`; `expected` is the label the target's `detail` is compared with;
+  `input` is parsed by the prompt's target: the verifier's is `{ claim, citations[], files { path: text } }`, the
+  overview's `{ cards[] { id, type, area, title, summary, claims[] } }`.
+- `lab-out/ledger.jsonl`, or the file named by `ROSETTA_LAB_LEDGER` (git-ignored, append-only, each line led by a line break): lines `{ v: 1, t: "hold", id,
+invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, t: "release", id, at }` (`at` in epoch
+  milliseconds). A hold older than thirty minutes that was never settled or released stops counting.
+- `lab-out/<yyyyMMdd-HHmmss-lab>/results.json` (git-ignored, masked): `{ schemaVersion: 1, id, at, rosettaVersion,
+prompt { id, name, version, sha256 }, model { provider, model, modelVersion }, caseSet { version, sha256 },
+repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,
+detail, answer, usable, validFirstTry, repaired, refused, rstCode, agreed, calls, inputTokens, outputTokens,
+latencyMs, costMicros } }`. The schemas are in `src/application/lab/`.
+
 ## 4. Tables (PostgreSQL)
 
 Added 2026-10-11 (DEC-65, ADR-016). PostgreSQL 17. Every table is created by a numbered migration (section 7). Ids
