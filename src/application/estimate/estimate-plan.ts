@@ -30,7 +30,8 @@ import { estimateRole, type RolePricing } from './role-estimate.js';
 // when they hold a `FLOW` card the target flows (RF-625, whose components block is sized at the
 // plan answer's limits, flows-estimate.ts), when the brief names a front end and a `FEAT` or
 // `FLOW` card is verified the API contract (RF-624) and, when a `SCRN` card is verified, the
-// user-interface material (RF-626). Each prompt is measured, not guessed: the planner's
+// user-interface material (RF-626) and, with a data model, the check of it against the decision
+// records (RF-623, P9-15). Each prompt is measured, not guessed: the planner's
 // system prompt and the message the run would send (the supported cards and the owner's brief and
 // answers in data blocks), at the budget guard's four characters per token. Its output is a share of
 // the planner's `maxOutputTokens`; the high figure is all of it, which is the guard's worst case, so
