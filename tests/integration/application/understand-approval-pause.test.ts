@@ -107,3 +107,23 @@ describe('RF-432 a run that reaches its approved amount', UNDERSTAND_TIMEOUT, ()
     expect(await indexOf(h, stopped)).toEqual(await indexOf(today, capRun));
   });
 });
+
+describe('RF-432 a run stopped at the approved amount and resumed', UNDERSTAND_TIMEOUT, () => {
+  it('RF-432 P9-14 a run stopped here and resumed pauses again at the amount, with no end reason', async () => {
+    const h = await harnessWith(roomy);
+    const paused = await h.understand({ areas, approvedAmount });
+    const stopped = await h.stopPaused(paused);
+    expect(stopped.endReason).toBe('StoppedAtApproval');
+
+    const resumed = await h.resume(stopped);
+
+    expect(resumed.ok).toBe(true);
+    if (!resumed.ok) return;
+    expect(resumed.value).toMatchObject({
+      id: paused.id,
+      queueState: 'AwaitingApproval',
+      endState: null,
+      endReason: null,
+    });
+  });
+});

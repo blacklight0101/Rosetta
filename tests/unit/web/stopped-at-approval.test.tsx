@@ -123,3 +123,24 @@ it('RF-614 the source panel of a run stopped at the approved amount does not say
   expect(document.body.textContent).toContain('You stopped this run at the approved amount.');
   expect(document.body.textContent).not.toContain('stopped at a cap');
 });
+
+it('RF-432 P9-14 the strip step of a run stopped here keeps "Partly read" when areas stayed unread', () => {
+  const stoppedWith = (unreadAreas: number) =>
+    journeyOf(
+      facts({
+        source: source({
+          endState: 'CapReached',
+          endReason: 'StoppedAtApproval',
+          errorCode: null,
+          supportedClaims: 0,
+          unreadAreas,
+        }),
+      }),
+      projectId,
+    );
+  const detailOf = (unreadAreas: number) =>
+    stoppedWith(unreadAreas).steps.find((each) => each.key === 'understand')?.detail;
+
+  expect(detailOf(3)).toBe('Partly read');
+  expect(detailOf(0)).toBe('');
+});
