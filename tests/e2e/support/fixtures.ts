@@ -1,4 +1,4 @@
-import { expect, test as base } from '@playwright/test';
+import { expect, test as base, type Request } from '@playwright/test';
 import { acquireCapsLock, capsLockFolder, capsTag } from './caps-lock.js';
 import { clientAddressFor } from './client-address.js';
 import { isAllowedRequestUrl } from './request-policy.js';
@@ -23,10 +23,20 @@ export class NetworkGuard {
   }
 }
 
+/** The URL of the document that made the request; undefined when no frame did (a worker). */
+function documentUrlOf(request: Request): string | undefined {
+  try {
+    return new URL(request.frame().url()).pathname;
+  } catch {
+    return undefined;
+  }
+}
+
 export const test = base.extend<{
   network: NetworkGuard;
   clientAddress: string;
   capsTurn: boolean;
+  ollamaInstalled: boolean;
 }>({
   // RF-1106, P1-131: a test tagged @caps writes the server-wide caps, so it waits for its turn
   // (caps-lock.ts) and keeps it until it ends. The wait is added to the time the test may take.
@@ -54,6 +64,30 @@ export const test = base.extend<{
       const address = clientAddressFor(`${testInfo.project.name}:${testInfo.testId}`);
       await context.setExtraHTTPHeaders({ 'x-forwarded-for': address });
       await use(address);
+    },
+    { auto: true },
+  ],
+  // P9-09: the start page holds Analyse off while Ollama answers that it cannot be reached, and
+  // nothing listens on the machine's port 11434 in CI. A test sees Ollama answer with one model on
+  // every page except the settings and admin pages (which keep the real answer their specs rely
+  // on), unless it sets its own answer on the page (answerOllama, which wins over this route). The
+  // page is the document of the frame that asks, not the Referer: the app sends no Referer
+  // (Referrer-Policy: no-referrer). A request whose frame is unknown (a worker) gets the real answer.
+  ollamaInstalled: [
+    async ({ context }, use) => {
+      await context.route('**/api/models/ollama', (route) => {
+        const from = documentUrlOf(route.request());
+        if (from === undefined || from.includes('/settings') || from.includes('/admin')) {
+          return route.fallback();
+        }
+        return route.fulfill({
+          json: {
+            provider: 'ollama',
+            models: [{ model: 'gemma4:e4b', label: 'gemma4:e4b', priced: true }],
+          },
+        });
+      });
+      await use(true);
     },
     { auto: true },
   ],
