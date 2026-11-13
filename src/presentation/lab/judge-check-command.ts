@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { limitItems } from '../../application/lab/judge/judge-check-set.js';
 import { reportOf, scoreItems, type CheckReport } from '../../application/lab/judge/judge-check.js';
 import { FileSpendLedger } from '../../infrastructure/lab/file-spend-ledger.js';
 import {
@@ -67,7 +68,8 @@ export async function runJudgeCheck(
   if (!prompt.ok) return (print(prompt.error), 1);
   const problem = startProblem(parts, args);
   if (problem !== undefined) return (print(problem), 1);
-  const { items, rubrics } = loaded.value;
+  const { rubrics } = loaded.value;
+  const items = limitItems(loaded.value.items, args.limit);
   const { provider, model } = args.model;
   const { limits } = parts;
   print(

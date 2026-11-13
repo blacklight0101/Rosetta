@@ -32,7 +32,7 @@ export const LAB_USAGE = [
   'Usage: npm run lab -- --prompt <id> --version <vN|file> --model <provider:model> --cases <set>',
   '                      [--repetitions n] [--judge <provider:model>] [--yes]',
   '       npm run lab -- --compare <runA> <runB>',
-  '       npm run lab -- --judge-check <provider:model> [--yes]',
+  '       npm run lab -- --judge-check <provider:model> [--limit n] [--yes]',
   '  --prompt <id>            the prompt, such as verifier/claim or summariser/overview',
   '  --version <vN|file>      a version of the prompts folder (v5), or the path of a draft file',
   '  --model <provider:model> the model that answers, such as anthropic:claude-haiku-5-5',
@@ -124,14 +124,29 @@ function runOf(draft: Draft): Result<LabArgs, string> {
 }
 
 // RF-1405
+/** `--limit n` of the judge check: the count, undefined when absent, null when it is not a count. */
+function limitOf(rest: readonly string[]): { limit: number | undefined | null; others: string[] } {
+  const at = rest.indexOf('--limit');
+  const others = rest.filter((each, index) => each !== '--yes' && index !== at && index !== at + 1);
+  if (at < 0) return { limit: undefined, others };
+  const count = Number(rest[at + 1]);
+  return { limit: Number.isInteger(count) && count >= 1 ? count : null, others };
+}
+
 function judgeCheckOf(args: readonly string[]): Result<LabArgs, string> {
   const [value, ...rest] = args;
   const model = modelOf(value ?? '');
-  const yes = rest.length === 1 && rest[0] === '--yes';
-  if (!model.ok || (rest.length > 0 && !yes)) {
-    return err('--judge-check takes a provider:model and, to send the calls, --yes');
+  const { limit, others } = limitOf(rest);
+  if (!model.ok || others.length > 0 || limit === null) {
+    return err('--judge-check takes a provider:model, optionally --limit n, and --yes to send');
   }
-  return ok({ kind: 'judge-check', model: model.value, yes });
+  const yes = rest.includes('--yes');
+  return ok({
+    kind: 'judge-check',
+    model: model.value,
+    yes,
+    ...(limit === undefined ? {} : { limit }),
+  });
 }
 
 // RF-1400, RF-1403

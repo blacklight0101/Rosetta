@@ -119,7 +119,11 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
 How far to trust the judge is measured by `npm run lab -- --judge-check <provider:model> --yes`: 12 of the hand-labelled
 calibration claims (shown with the label's verdict or its opposite, alternately, label withheld) and the 18 hand-scored
 samples of `eval/judge-check/hand-scored.json` (three per family, from public eShopModernizing code or invented material),
-30 judge calls. The report `lab-out/<id>/judge-check.json` and the printed lines give the agreement with the hand labels and,
+30 judge calls (`--limit 1` scores 7: one calibration claim and one sample per family). The report `lab-out/<id>/judge-check.json` and the printed lines give the agreement with the hand labels and,
 per family and criterion, exact, within one point and the mean difference from the hand scores. A judge score may rule a
 prompt version in or out only where this agreement is good enough for the owner (see
 [judge-sample.md](../evaluation/prompt-lab/judge-sample.md)).
+
+### Smoke run on a local model
+
+A local Ollama model is free and shows that the chain works (prompt rendering, the answer parser, the judge's JSON, `results.json`, `--compare`, the ledger lines at $0); it says nothing about the judge's quality. Set `ROSETTA_OLLAMA_URL=http://127.0.0.1:11434` (the lab reads no other source for the Ollama address) and `ROSETTA_LAB_LEDGER`, then use a model that supports chat and has a price (`gemma4:e4b`, priced at zero): `--model ollama:gemma4:e4b --judge ollama:gemma4:e4b`, or `--judge-check ollama:gemma4:e4b --limit 1 --yes`. A model whose `/api/show` capabilities lack `completion` (such as `tev1`, `decision` only) answers every chat with HTTP 400 and cannot be used.

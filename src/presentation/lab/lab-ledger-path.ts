@@ -54,7 +54,8 @@ export function holdLifetimeProblem(
       }
     | undefined,
 ): string | undefined {
-  if (settings === undefined) return undefined;
+  // A local Ollama call costs nothing, so a hold that ran out before it ended loses no money.
+  if (settings === undefined || settings.kind === 'ollama') return undefined;
   const longest = reservationLifetimeMs(settings);
   if (longest <= HOLD_TTL_MS) return undefined;
   const minutes = String(HOLD_TTL_MS / 60_000);
