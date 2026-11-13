@@ -8,6 +8,7 @@ import {
 } from '../../domain/planning/plan-coverage.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
+import { adrModelCheckLines } from './handoff-adr-model-checks-markdown.js';
 import { dataModelCheckLines, isDataModelCheck } from './handoff-data-model-checks-markdown.js';
 import { modelCheckLines } from './handoff-model-checks-markdown.js';
 import { keepOrFixOf } from './handoff-keep-or-fix.js';
@@ -253,6 +254,7 @@ export function checksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...probeOutcomeLines(handoff),
     ...copiedExampleLines(handoff, esc),
     ...dataModelCheckLines(handoff, esc),
+    ...adrModelCheckLines(handoff, esc),
     ...leftOutLines(handoff, esc),
     ...meaningLines(handoff, esc),
   ];

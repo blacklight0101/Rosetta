@@ -31,19 +31,19 @@ describe('EstimatePlan: the screens call', () => {
   it('RF-613 RF-626 counts the screens call when a verified SCRN card exists, with its own measured prompt', async () => {
     const { assumptions, planner } = await estimateOf();
 
-    expect(assumptions.calls).toBe(8);
+    expect(assumptions.calls).toBe(9);
     expect(assumptions.uxPromptTokens).toBeGreaterThan(
       Math.ceil((await readFile('prompts/planner/ux.v1.md', 'utf8')).length / 4),
     );
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(9 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-626 does not count it when no SCRN card has a supported claim, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf({ seed: { cards: planCards() } });
 
-    expect(assumptions).toMatchObject({ calls: 7, uxPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 8, uxPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 });
 
@@ -61,7 +61,8 @@ describe('EstimatePlan: the screens call and the guard', () => {
       assumptions.coveragePromptTokens -
       assumptions.gapPromptTokens -
       assumptions.gapRepairPromptTokens -
-      assumptions.gapPromptTokens;
+      assumptions.gapPromptTokens -
+      assumptions.adrModelPromptTokens;
     const sum = [
       plan,
       assumptions.prdPromptTokens,
@@ -71,6 +72,8 @@ describe('EstimatePlan: the screens call and the guard', () => {
       assumptions.gapPromptTokens,
       assumptions.gapRepairPromptTokens,
       assumptions.gapPromptTokens,
+      // P9-15: the check of the data model against the decision records.
+      assumptions.adrModelPromptTokens,
     ]
       .map(reservation)
       .reduce((total, each) => total + each, 0);
@@ -82,7 +85,7 @@ describe('EstimatePlan: the screens call and the guard', () => {
 
     const { assumptions } = await estimateOf({ seed: { ...withScreens, briefAnswers: frontEnd } });
 
-    expect(assumptions.calls).toBe(9);
+    expect(assumptions.calls).toBe(10);
     expect(assumptions.apiContractPromptTokens).toBeGreaterThan(0);
     expect(assumptions.uxPromptTokens).toBeGreaterThan(0);
   });

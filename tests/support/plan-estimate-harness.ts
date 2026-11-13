@@ -26,6 +26,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadAdrModelPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
@@ -104,6 +105,20 @@ function workbookDeps(runs: MemoryRunIndex, clock: FixedClock, masker: SecretMas
   };
 }
 
+/** The shipped planner prompt files the estimate measures. */
+const promptFiles = {
+  prompt: () => loadPlannerPrompt('prompts'),
+  prdPrompt: () => loadPrdPrompt('prompts'),
+  dataModelPrompt: () => loadDataModelPrompt('prompts'),
+  flowsPrompt: () => loadFlowsPrompt('prompts'),
+  apiContractPrompt: () => loadApiContractPrompt('prompts'),
+  uxPrompt: () => loadUxPrompt('prompts'),
+  coveragePrompt: () => loadCoveragePrompt('prompts'),
+  gapPrompt: () => loadGapPrompt('prompts'),
+  gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+  adrModelPrompt: () => loadAdrModelPrompt('prompts'),
+};
+
 export async function createPlanEstimateHarness(
   options: PlanEstimateOptions = {},
 ): Promise<PlanEstimateHarness> {
@@ -138,15 +153,7 @@ export async function createPlanEstimateHarness(
       priceTable: options.priceTable ?? estimatePrices,
       models: options.models ?? NO_LISTED_MODELS,
       catalogue: () => Promise.resolve(shippedCatalogue),
-      prompt: () => loadPlannerPrompt('prompts'),
-      prdPrompt: () => loadPrdPrompt('prompts'),
-      dataModelPrompt: () => loadDataModelPrompt('prompts'),
-      flowsPrompt: () => loadFlowsPrompt('prompts'),
-      apiContractPrompt: () => loadApiContractPrompt('prompts'),
-      uxPrompt: () => loadUxPrompt('prompts'),
-      coveragePrompt: () => loadCoveragePrompt('prompts'),
-      gapPrompt: () => loadGapPrompt('prompts'),
-      gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+      ...promptFiles,
       workbookGuidance: (inputs) => workbookGuidanceFor(workbookDeps(runs, clock, masker), inputs),
     }),
     seed: (seed) => seedPlanSource({ files, briefs, runs }, project, seed),

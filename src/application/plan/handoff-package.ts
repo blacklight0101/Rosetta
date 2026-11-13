@@ -1,4 +1,5 @@
 import type { SuggestedOption } from '../ports/answers-file.js';
+import type { AdrModelCheck } from '../../domain/planning/adr-model-check.js';
 import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { MeaningCheck } from '../../domain/planning/claim-meaning.js';
 import type { CopiedExample } from '../../domain/planning/copied-example.js';
@@ -136,4 +137,6 @@ export interface HandoffPackage {
   readonly modules?: SourceModules | undefined;
   /** P8-06: why each module or the deployment material has no task card, for checks.md. */
   readonly moduleReasons?: readonly ModuleReason[] | undefined;
+  /** P9-15, RF-623: the check of the data model against the decision records; absent when not asked. */
+  readonly adrModelCheck?: AdrModelCheck | undefined;
 }

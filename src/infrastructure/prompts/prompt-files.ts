@@ -166,6 +166,12 @@ export function loadGapRepairPrompt(promptsFolder: string): Promise<PromptFile> 
   return loadPromptFile(promptsFolder, 'planner/gap-repair.v4.md');
 }
 
+/** P9-15, RF-623: the planner's prompt for the check of the data model against the decision records. */
+// RNF-004
+export function loadAdrModelPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/adr-model.v1.md');
+}
+
 /**
  * P5-34, RF-608: the wording of the plan risk for a file that holds a masked secret, with the path
  * and the lines as placeholders. The domain fills it; no model is asked.
