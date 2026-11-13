@@ -1,0 +1,3238 @@
+[
+ {
+  "text": "sqlcmd -S . -U sa -P \\\"FakeSecret1\\\" -Q x",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\\\"-P\\\", \\\"FakeSecret1\\\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"test\": \"[ \\\"CMD\\\", \\\"sqlcmd\\\", \\\"-P\\\", \\\"FakeSecret1\\\", \\\"-Q\\\", \\\"x\\\" ]\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\\\"CMD\\\",\\\"sqlcmd\\\",\\\"-P\\\",\\\"FakeSecret1\\\"]",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P \\\\\\\"FakeSecret1\\\\\\\" -Q x",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"FakeSecret1\\\\\\\"]",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P \\\\\\\\\\\\\\\"FakeSecret1\\\\\\\\\\\\\\\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P Fake,Secret1 -Q x",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P Fa,ke]x -Q y",
+  "secrets": [
+   "Fa,ke]x",
+   "ke]x"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P \"it's x\" -Q y",
+  "secrets": [
+   "it's",
+   "s x"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P 'say \"x\"' -Q y",
+  "secrets": [
+   "say",
+   "\"x\""
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"CMD\", \"sqlcmd\", \"-P\", \"pw1\"]",
+  "secrets": [
+   "pw1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "['CMD', 'sqlcmd', '-P', 'pw1q']",
+  "secrets": [
+   "pw1q"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\",\"-P\",\"pw1n\"]",
+  "secrets": [
+   "pw1n"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[CMD, sqlcmd, -P, pw2]",
+  "secrets": [
+   "pw2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "test: [CMD, sqlcmd, -U, sa, -P, pw2end]",
+  "secrets": [
+   "pw2end"
+  ],
+  "keep": false
+ },
+ {
+  "text": "test: [CMD, sqlcmd, -P, pw two, -Q, x]",
+  "secrets": [
+   "pw",
+   "two"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -PFakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P\"FakeSecret1\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P\tFakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "osql -S . -U sa -P FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"x\": \"osql -U sa -P \\\"FakeSecret1\\\"\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"osql\", \"-P\", \"FakeSecret1\"]",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bcp db.t out f.dat -S . -U sa -P FakeSecret1 -c",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bcp db.t out f.dat -S . -U sa -P 'Fake Secret1' -c",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"x\": \"BCP.EXE t out f -P \\\"FakeSecret1\\\"\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "SQLCMD.EXE -S . -U sa -P FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "SqlCmd -S . -U sa -P FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\SQLCMD.EXE -S . -U sa -P FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\sqlcmd.exe\" -S . -U sa -P \"FakeSecret1\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"cmd\": \"C:\\\\Tools\\\\Binn\\\\sqlcmd.exe -S . -U sa -P \\\"FakeSecret1\\\"\"",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "/opt/mssql-tools18/bin/sqlcmd -S db -U sa -P FakeSecret1 -C",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Fake Secret1\" -Q x",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P \\\"Fake Secret1\\\" -Q x\"",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Fake\\\"Secret1\" -Q x",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P \\\"Fake\\\\\\\"Secret1\\\" -Q x\"",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \\\"FakeSecret1",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"FakeSecret1\\\\\" -Q x",
+  "secrets": [
+   "FakeSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\\Secret1 -Q x",
+  "secrets": [
+   "Fake",
+   "Secret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\"Secret1\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake'Secret1' -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P Fake\\\"Secret1\\\" -Q x\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Fake\"Secret1 -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \"-P\" \"FakeSecret1\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd /S . /U sa /P FakeSecret1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S localhost \\\n  -U sa -P FakeSecret1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P -FakeSecret1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P %FakeSecret1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P '$FakeSecret1'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"-P\", \\\"FakeSecret1\\\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P a1Secret && sqlcmd -P b2Secret",
+  "secrets": [
+   "a1Secret",
+   "b2Secret"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -P FarSecret9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Ab[c]d{e}",
+  "secrets": [
+   "Ab[c]d{e}",
+   "d{e}"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P [MASKED:x]Real1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P theSecret1",
+  "secrets": [
+   "theSecret1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"for\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\"Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake'Pw1Sec' -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Fake\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P Fake\\\"Pw1Sec\\\" -Q x\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"c\": \"sqlcmd -P Fake\\\"Pw1Sec\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"c\":\"sqlcmd -P Fake\\\"Pw1Sec\\\"\",\"d\":1}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P a\"Pw1\"'Sec2'b3X -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P 'Pw1 x'\"Sec2\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\"Pw1 Sec2\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\" Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\",Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\")Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\":Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake' Pw1Sec' -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Pw1\"Sec2\"Z9z\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -PFake\"Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $X'Pw1Sec' -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $X\"Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P %X%\"Pw1Sec\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ${X}Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"$X\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P $X\\\"Pw1Sec\\\" -Q x\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -S . -P Fake\\\"Pw1Sec\\\" -Q x\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -S . -P Fake\\\\\\\"Pw1Sec\\\\\\\" -Q x\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -S . -P Fake\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\" -Q x\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"\\\\\\\\\\\\\\\"sqlcmd -S . -P Fake\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" -Q x\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Fake\\\"Pw1Sec -Q x\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Fake\\\\\\\"Pw1Sec -Q x\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Fake\\\\\\\\\\\\\\\"Pw1Sec -Q x\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"\\\\\\\\\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Fake\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Pw1Sec -Q x\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Pw1 Sec\\\" -Q x\"",
+  "secrets": [
+   "Pw1",
+   "Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Pw1 Sec\\\\\\\" -Q x\\\"\"",
+  "secrets": [
+   "Pw1",
+   "Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1 Sec\\\\\\\\\\\\\\\" -Q x\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"\\\\\\\\\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Pw1 Sec\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" -Q x\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P Fake\\\"Pw1Sec\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P Fake\\\\\\\"Pw1Sec\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P Fake\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"\\\\\\\\\\\\\\\"sqlcmd -P Fake\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\\\"Pw1Sec\\\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\\\\\"Pw1Sec\\\\\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\\\\\\\"Pw1Sec\\\\\\\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\\\\\\\\\"Pw1Sec\\\\\\\\\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \\\"Fake\\\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \\\\\"Fake\\\\\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \\\\\\\"Fake\\\\\\\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \\\\\\\\\"Fake\\\\\\\\\"Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Pw1Sec\\\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\\\\\"sqlcmd\\\\\", \\\\\"-P\\\\\", \\\\\"Pw1Sec\\\\\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Pw1Sec\\\\\\\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\\\\\\\\\"sqlcmd\\\\\\\\\", \\\\\\\\\"-P\\\\\\\\\", \\\\\\\\\"Pw1Sec\\\\\\\\\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \\\n  -U sa -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \\\r\n  -U sa -P Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . ^\r\n  -U sa -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . `\r\n  -U sa -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \\   \n  -U sa -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -U sa -P \\\n  Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -U sa -P \\\n  \"Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd \\\n -S . \\\n -U sa \\\n -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "FROM mcr.microsoft.com/mssql/server\nRUN /opt/mssql-tools18/bin/sqlcmd -S localhost \\\n    -U sa \\\n    -P \"Pw1Sec\" \\\n    -i /init/setup.sql && \\\n    echo done",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "RUN sqlcmd -S db \\\n  -U sa -P Pw1Sec \\\n  -Q \"select 1\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "RUN sqlcmd -S db \\\n  -U sa -P Fake\"Pw1Sec\" \\\n  -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "RUN [\"/opt/mssql-tools/bin/sqlcmd\", \"-S\", \"db\", \\\n     \"-P\", \"Pw1Sec\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "steps:\n  - run: |\n      sqlcmd -S db \\\n        -U sa \\\n        -P Pw1Sec \\\n        -Q \"select 1\"\n",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "steps:\n  - shell: pwsh\n    run: |\n      sqlcmd -S db `\n        -U sa `\n        -P Pw1Sec\n",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "command: >\n  sqlcmd -S db\n  -U sa -P Pw1Sec\n",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-x \\\n-P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P '$Fake' -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P '$Fake1x'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P %Fake1 -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P -dash1 -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P \"-dash1\" -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $1abcd",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $abc$def9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P %Pw%Sec1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $(cat f)Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P -x1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"to\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P to\"Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P tothe1",
+  "secrets": [
+   "tothe1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P [MASKED:password]Real1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P [MASKED:password]\"Real1\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P [MASKED:password]'Real1'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P [MASKED:password]\\\"Real1\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"[MASKED:password]\"Real1",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Real1[MASKED:password]",
+  "secrets": [
+   "Real1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \"-P\" \"Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \"-P\" Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . '-P' 'Pw1Sec'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"-P\", \\\"Pw1Sec\\\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\\\"sqlcmd\\\", \\\"-P\\\", \"Pw1Sec\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd /S . /U sa /P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "osql /U sa /P \"Pw1 Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd /S . /PPw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd \"/P\" \"Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"/P\", \"Pw1Sec\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[CMD, sqlcmd, /P, Pw1Sec]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec -S x -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Aa1Sec\" -S x -P Bb2Sec",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec -S x -P \"Bb2Sec\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"-P\", \"Aa1Sec\", \"-P\", \"Bb2Sec\"]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"SELECT -Price FROM t\" -U sa -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"x -Pfoo\" -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"use -P to\" -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $PW -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S a -Q x && bcp t out f -U sa -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec -Q x; osql -U sa -P Bb2Sec",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"exec sqlcmd\" -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -d bcp -U sa -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -i C:\\bcp\\x.sql -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -i /osql/x.sql -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "C:\\Program Files\\Microsoft SQL Server\\110\\Tools\\Binn\\SQLCMD.EXE -S . -U sa -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"C:\\Program Files\\sqlcmd.exe\" -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "C:\\Tools\\bcp.EXE t out f /U sa /P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": ".\\sqlcmd -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "SqLcMd -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "OSQL -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "Bcp t in f -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "cmd /c sqlcmd -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x \\\n-y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -y -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1\\Sec2",
+  "secrets": [
+   "Pw1",
+   "Sec2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1Sec\\\n-Q x",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw^1Sec -Q x",
+  "secrets": [
+   "Pw",
+   "1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw`1Sec -Q x",
+  "secrets": [
+   "Pw",
+   "1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1Sec^ -Q x",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1;Sec2 -Q x",
+  "secrets": [
+   "Pw1"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1}\"Sec2\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P\t\"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pässwörd1",
+  "secrets": [
+   "Pässwörd1",
+   "ssw"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ;Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P &Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P |Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P <Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ]Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ,Pw1Sec",
+  "secrets": [
+   "Pw1Sec",
+   ",Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P )Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P #Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P <password>Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P {password}Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P xxxxPw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P '$SA_PASSWORD'x9Q",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P=Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Password=Pw1Sec;x\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "Server=.;User Id=sa;Password=Cs1Sec; sqlcmd -P Bb2Sec",
+  "secrets": [
+   "Cs1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"SELECT -Price FROM t\" -U sa -P \"Bb2Sec\"",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bcp \"SELECT a FROM t WHERE s = -Pending\" queryout f.dat -U sa -P \"Bb2Sec\"",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"-Q\", \"x -Py\", \"-P\", \"Bb2Sec\"]",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -Q \\\"x -Py\\\" -P \\\"Bb2Sec\\\"\"",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec -P \"Bb2Sec\"",
+  "secrets": [
+   "Aa1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P <password> -P \"Bb2Sec\"",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $PW -P \"Bb2Sec\"",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -o /P \"Bb2Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P 'Aa1Sec' /P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[CMD, sqlcmd, -P, Aa1Sec, -P, Bb2Sec]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"$(cat f)\"Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $(cat)Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ${X}\"Tail9\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $$X\"Tail9\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P api-key\"Tail9\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Password=Abc\"Tail9\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S \"Server=.;Password=Cs1Sec\" -P Bb2Sec",
+  "secrets": [
+   "Cs1Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Password=Abc;Tail9\"",
+  "secrets": [
+   "Tail9",
+   "Abc"
+  ],
+  "keep": false
+ },
+ {
+  "text": "password: \"Pw0Sec\" sqlcmd -P Bb2Sec",
+  "secrets": [
+   "Pw0Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"password\": \"Pw0Sec\", \"cmd\": \"sqlcmd -P \\\"Bb2Sec\\\"\"}",
+  "secrets": [
+   "Pw0Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"cmd\": \"sqlcmd -U sa -P \\\"Bb2Sec\\\"\", \"password\": \"Pw0Sec\"}",
+  "secrets": [
+   "Pw0Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd --password Pw0Sec -P Bb2Sec",
+  "secrets": [
+   "Pw0Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Bb2Sec # password=Pw0Sec",
+  "secrets": [
+   "Pw0Sec",
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"a; b\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q 'a | b' -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"a & b\" -P \"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . && sqlcmd -U sa -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"select * from mysql.user\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q mysql -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S mysql -U sa -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -d mariadb -U sa -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -i mysql.sql -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"exec bcp out\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -d osql -U sa -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"say \\\"a; b\\\" now\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"select 1 -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q 'select 1 -P \"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -o \"C:\\out\\\" -P \"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -i 'C:\\x\\' -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S '.\\SQLEXPRESS' -U sa -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "& sqlcmd -S . -o 'C:\\temp\\' -U sa -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -v X='a\\' -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q 'it''s' -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"it's\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -v a=\"b c\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\" -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\" -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1;Sec2",
+  "secrets": [
+   "Pw1",
+   "Sec2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1|Sec2",
+  "secrets": [
+   "Pw1",
+   "Sec2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1&Sec2",
+  "secrets": [
+   "Pw1",
+   "Sec2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Pw1;|&Sec2\"",
+  "secrets": [
+   "Pw1",
+   "Sec2"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec; -P Bb2Sec",
+  "secrets": [
+   "Aa1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P ${{ secrets.X -Q x",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P ${{Pw1Sec -Q x",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $(cat f -Q x",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P $(Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P %Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Pw1Sec\nline2 -P keep\nline3",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $(cat \\\n f)Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"${{ secrets.X }}\"Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $env:X\"Tail9\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $1Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P %~1Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"$@\"Tail9",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P $a.b.c",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P $(a)Tail9(b)",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P '${{ secrets.X }}'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P '$env:Pw1Sec'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P Pw1Sec\r\nnext -P keep",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P \"Pw1Sec\"\r\n",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S .\r-P Pw1Sec",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S . ^\r\n -U sa ^\r\n -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . \\\n | grep -P x",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -Q \"a \\\n b\" -P Pw1Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P Pw1Sec next",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c 'sqlcmd -S db -U sa -P Fake\" Pw1Sec\"'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "bash -c 'sqlcmd -S db -U sa -P Pw1Sec' && echo x",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c \"sqlcmd -S db -U sa -P Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c \"sqlcmd -P 'Pw1 Sec'\"",
+  "secrets": [
+   "Pw1",
+   "Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c \"sqlcmd -P Fake' Pw1Sec'\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sh -c \"sqlcmd -P Pw1Sec\" \"arg\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "& sqlcmd -S . -U sa -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "& \"C:\\Program Files\\SQL\\sqlcmd.exe\" -S . -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "& 'C:\\Tools\\SQLCMD.EXE' -S . -P \"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "& sqlcmd -P Fake\" Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "CMD [\"/bin/sh\", \"-c\", \"sqlcmd -S db -U sa -P Pw1Sec -Q x\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "CMD [\"/bin/sh\", \"-c\", \"sqlcmd -S db -P \\\"Pw1 Sec\\\" -Q x\"]",
+  "secrets": [
+   "Pw1",
+   "Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "RUN [\"/opt/mssql-tools18/bin/sqlcmd\", \"-S\", \"db\", \"-P\", \"Pw1Sec\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "command: [\"/opt/mssql-tools/bin/sqlcmd\", \"-S\", \"db\", \"-U\", \"sa\", \"-P\", \"Pw1Sec\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"Pw1Sec\" -Q \"SELECT 1\" || exit 1",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "test: [\"CMD-SHELL\", \"/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Pw1Sec -Q 'SELECT 1'\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "test:\n  - CMD\n  - /opt/mssql-tools/bin/sqlcmd\n  - -S\n  - localhost\n  - -P\n  - Pw1Sec\n",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "command: [sqlcmd, -S, db, -P, Pw1Sec]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "args: [\"sqlcmd\", \"-S\", \"db\", \"-P\", \"$(SA_PASSWORD)\"]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "{\"cmd\":\"sqlcmd -P Pw1Sec\",\"x\":\"-P keep\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"cmd\":\"sqlcmd -P \\\"Pw1Sec\\\" -Q \\\"a;b\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Pw1 Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1",
+   "Sec",
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "`sqlcmd -S . -P Pw1Sec`",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "```bash\nsqlcmd -S . -P Pw1Sec\n```",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "echo \"x\"sqlcmd -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"c\": \"sqlcmd -P Fake\\\" Pw1Sec\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "x = 'sqlcmd -P Fake\" Pw1Sec\"'",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "var c = @\"sqlcmd -S . -P Pw1Sec\";",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "var c = $\"sqlcmd -S . -P {pw}\";",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "cmd = f\"sqlcmd -S . -P {pw} -Q x\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "subprocess.run([\"sqlcmd\", \"-S\", \".\", \"-P\", \"Pw1Sec\"])",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "subprocess.run([\"sqlcmd\", \"-S\", \".\", \"-P\", pw])",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "exec(`sqlcmd -S . -P ${pw}`)",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "exec(\"sqlcmd -S . -P \" + pw)",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "exec(\"sqlcmd -S . -P \" + \"Pw1Sec\")",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Aa1Sec \\\n -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -P Aa1Sec -P Bb2Sec",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" ; sqlcmd -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\" ; osql -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x -x ; bcp t out f -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -Q \"x\" ; echo \"bcp\" -P keep ; bcp -P Bb2Sec",
+  "secrets": [
+   "Bb2Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "mysql -h db -P 3306 -u root",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "mysql -P 3306",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "Run sqlcmd with -P to give the password.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "In sqlcmd, -P is the password flag.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P $SA_PASSWORD",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P \"$SA_PASSWORD\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -S db -U sa -P \\\"$SA_PASSWORD\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P ${X}",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P \"${X}\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -S db -U sa -P \\\"${X}\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[ \\\"CMD\\\", \\\"sqlcmd\\\", \\\"-P\\\", \\\"$SA_PASSWORD\\\" ]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[CMD, sqlcmd, -P, $SA_PASSWORD]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[\"CMD\", \"sqlcmd\", \"-P\", \"${X}\"]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P [MASKED:password]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P \"[MASKED:password]\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P '[MASKED:password]'",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"[MASKED:password]\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\\\\\"[MASKED:password]\\\\\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[\"sqlcmd\", \"-P\", \"[MASKED:password]\"]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[\\\"sqlcmd\\\", \\\"-P\\\", \\\"[MASKED:password]\\\"]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "[CMD, sqlcmd, -P, [MASKED:password]]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P[MASKED:password]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "In sqlcmd use -P as the flag.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P $$SA_PASSWORD",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P ${SA_PASSWORD}",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P $(cat /run/secrets/sa)",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P %SA_PASSWORD%",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P %FAKE%",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P \"$Fake\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P $Fake",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -U sa -P '$SA_PASSWORD'",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"$SA_PASSWORD\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\\\\\"${SA_PASSWORD}\\\\\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"%SA_PW%\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"$(cat f)\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"$pw\\\"\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P <password>",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P {password}",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P \"<password>\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P '{password}'",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"c\": \"sqlcmd -U sa -P \\\"<password>\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -U sa -P [MASKED:password] -Q x",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P \"[MASKED:password]\" -Q x",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P [MASKED:connection-string]",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -i /Path/x.sql",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -i /Path/x.sql -E",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -i C:\\P\\x.sql -E",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -o /P/out.txt -E",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -o /P /out.txt -E",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -Q \"SELECT -Price FROM t\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S db -E -Q \"select 1\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S db -E -Q -P",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -U sa -P -Q",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -p",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -p 1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -Q \"x\" | mysql -h h -P 3306",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E -Q x\nmysql -P 3306",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E \\\nmysql -P 3306",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "mysqlcmdx -P xValue1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "mysqlcmd -P xValue1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmdx -P xValue1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "my-sqlcmd -P xValue1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd.sh -P xValue1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "The sqlcmd docs say: -P is the password, /P too.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S localhost \\\n  -E -Q \"select 1\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "Use sqlcmd -S . -E; see C:\\Path\\x and /Program Files",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S . -E -v P=1 -i /P x.sql",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -S mysql -E",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -Q \"x\" ; mysql -P 3306",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E -Q \"x\" && mysql -P 3306",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E -Q \"x\" & mysql -P 3306",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E mariadb -P 3306",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E -Q \"x\"\r\nmysql -P 3306",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "\"sqlcmd -E\" \"-P\" \"3306\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -i /P/x.sql",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -i /P x.sql",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -o /P out.txt",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -E -Q \"SELECT -Price, -Pending FROM t\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -E -Q \"a \\\" -Price\" -Pq",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "The sqlcmd flag -P is the password, and /P also.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "In sqlcmd -P is the password too.",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P $env:SA_PASSWORD",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P ${{ secrets.SA_PASSWORD }}",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P \"$1\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P %~1",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P $(cat /run/secrets/sa)",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P \"$(cat /run/secrets/sa)\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P $((1+2))",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P [MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P \"[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\"",
+  "secrets": [],
+  "keep": true
+ },
+ {
+  "text": "sqlcmd -P \"Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P \"Pw1Sec\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P \"Pw1Sec\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Pw1Sec\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P \\\"Pw1Sec\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P \\\"Pw1Sec\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Pw1 Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P \"Pw1 Sec\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P \"Pw1 Sec\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Pw1 Sec\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P \\\"Pw1 Sec\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P \\\"Pw1 Sec\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P \\\\\\\"Pw1 Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P \\\\\\\"Pw1 Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1 Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1 Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1 Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Pw1Sec",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P Pw1Sec}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P Pw1Sec, 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P Pw1Sec\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P Pw1Sec\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P Pw1Sec\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P Pw1Sec\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P Pw1Sec\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"Pw1Sec\" -Q x",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P \"Pw1Sec\" -Q x}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P \"Pw1Sec\" -Q x, 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"Pw1Sec\\\" -Q x\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P \\\"Pw1Sec\\\" -Q x\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P \\\"Pw1Sec\\\" -Q x\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\" -Q x\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\" -Q x\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\" -Q x\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\" -Q x\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\" -Q x\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\" -Q x\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P 'Pw1Sec'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P 'Pw1Sec'}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P 'Pw1Sec', 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P 'Pw1Sec'\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P 'Pw1Sec'\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P 'Pw1Sec'\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P 'Pw1Sec'\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P 'Pw1Sec'\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P 'Pw1Sec'\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P 'Pw1Sec'\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P 'Pw1Sec'\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P 'Pw1Sec'\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P Fake\"Pw1Sec\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P Fake\"Pw1Sec\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P Fake\"Pw1Sec\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P Fake\\\"Pw1Sec\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P Fake\\\"Pw1Sec\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P Fake\\\\\\\"Pw1Sec\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P Fake\\\\\\\"Pw1Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P Fake\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P Fake\\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd\", \"-P\", \"Pw1Sec\"]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": [\"sqlcmd\", \"-P\", \"Pw1Sec\"]}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[[\"sqlcmd\", \"-P\", \"Pw1Sec\"], 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Pw1Sec\\\"]\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Pw1Sec\\\"]\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"[\\\"sqlcmd\\\", \\\"-P\\\", \\\"Pw1Sec\\\"]\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Pw1Sec\\\\\\\"]\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Pw1Sec\\\\\\\"]\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"[\\\\\\\"sqlcmd\\\\\\\", \\\\\\\"-P\\\\\\\", \\\\\\\"Pw1Sec\\\\\\\"]\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"[\\\\\\\\\\\\\\\"sqlcmd\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"-P\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"]\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"[\\\\\\\\\\\\\\\"sqlcmd\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"-P\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"]\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"[\\\\\\\\\\\\\\\"sqlcmd\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"-P\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"]\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -S . -P \"Pw1Sec\"; echo",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -S . -P \"Pw1Sec\"; echo}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -S . -P \"Pw1Sec\"; echo, 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -S . -P \\\"Pw1Sec\\\"; echo\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -S . -P \\\"Pw1Sec\\\"; echo\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -S . -P \\\"Pw1Sec\\\"; echo\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -S . -P \\\\\\\"Pw1Sec\\\\\\\"; echo\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -S . -P \\\\\\\"Pw1Sec\\\\\\\"; echo\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -S . -P \\\\\\\"Pw1Sec\\\\\\\"; echo\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -S . -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"; echo\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -S . -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"; echo\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -S . -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"; echo\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "sqlcmd -P \"$SA_PASSWORD\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": sqlcmd -P \"$SA_PASSWORD\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[sqlcmd -P \"$SA_PASSWORD\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"sqlcmd -P \\\"$SA_PASSWORD\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"sqlcmd -P \\\"$SA_PASSWORD\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"sqlcmd -P \\\"$SA_PASSWORD\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"sqlcmd -P \\\\\\\"$SA_PASSWORD\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"sqlcmd -P \\\\\\\"$SA_PASSWORD\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"sqlcmd -P \\\\\\\"$SA_PASSWORD\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"$SA_PASSWORD\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"$SA_PASSWORD\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"sqlcmd -P \\\\\\\\\\\\\\\"$SA_PASSWORD\\\\\\\\\\\\\\\"\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c \"sqlcmd -P Pw1Sec\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": bash -c \"sqlcmd -P Pw1Sec\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[bash -c \"sqlcmd -P Pw1Sec\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"bash -c \\\"sqlcmd -P Pw1Sec\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"bash -c \\\"sqlcmd -P Pw1Sec\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"bash -c \\\"sqlcmd -P Pw1Sec\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"bash -c \\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"bash -c \\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"bash -c \\\\\\\"sqlcmd -P Pw1Sec\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"bash -c \\\\\\\\\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"bash -c \\\\\\\\\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"bash -c \\\\\\\\\\\\\\\"sqlcmd -P Pw1Sec\\\\\\\\\\\\\\\"\\\\\\\"\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "bash -c 'sqlcmd -P \"Pw1Sec\"'",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": bash -c 'sqlcmd -P \"Pw1Sec\"'}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[bash -c 'sqlcmd -P \"Pw1Sec\"', 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"bash -c 'sqlcmd -P \\\"Pw1Sec\\\"'\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"bash -c 'sqlcmd -P \\\"Pw1Sec\\\"'\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"bash -c 'sqlcmd -P \\\"Pw1Sec\\\"'\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"bash -c 'sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"'\\\"\"",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"bash -c 'sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"'\\\"\"}",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"bash -c 'sqlcmd -P \\\\\\\"Pw1Sec\\\\\\\"'\\\"\", 1]",
+  "secrets": [
+   "Pw1Sec"
+  ],
+  "keep": false
+ },
+ {
+  "text": "\"\\\"\\\\\\\"bash -c 'sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"'\\\\\\\"\\\"\"",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "{\"a\": \"\\\"\\\\\\\"bash -c 'sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"'\\\\\\\"\\\"\"}",
+  "secrets": [],
+  "keep": false
+ },
+ {
+  "text": "[\"\\\"\\\\\\\"bash -c 'sqlcmd -P \\\\\\\\\\\\\\\"Pw1Sec\\\\\\\\\\\\\\\"'\\\\\\\"\\\"\", 1]",
+  "secrets": [],
+  "keep": false
+ }
+]

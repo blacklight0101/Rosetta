@@ -119,3 +119,43 @@ describe('a left-alone token joined to more of the word', () => {
     expect(result.endsWith(' -Q x')).toBe(true);
   });
 });
+
+describe('the arguments the command skips', () => {
+  it.each([
+    [String.raw`sqlcmd -o "C:\out\" -P "${a}"`, String.raw`sqlcmd -o "C:\out\" -P "${mask}"`],
+    [String.raw`sqlcmd -i 'C:\x\' -P '${a}'`, String.raw`sqlcmd -i 'C:\x\' -P '${mask}'`],
+    [
+      String.raw`& sqlcmd -S . -o 'C:\temp\' -U sa -P '${a}'`,
+      String.raw`& sqlcmd -S . -o 'C:\temp\' -U sa -P '${mask}'`,
+    ],
+    [String.raw`sqlcmd -v X='a\' -P '${a}'`, String.raw`sqlcmd -v X='a\' -P '${mask}'`],
+    [`sqlcmd -S mysql -U sa -P ${a}`, `sqlcmd -S mysql -U sa -P ${mask}`],
+    [`sqlcmd -S mysql,1433 -U sa -P ${a}`, `sqlcmd -S mysql,1433 -U sa -P ${mask}`],
+    [`sqlcmd -U mysql -P ${a}`, `sqlcmd -U mysql -P ${mask}`],
+    [`sqlcmd -Q mysql -P ${a}`, `sqlcmd -Q mysql -P ${mask}`],
+    [`sqlcmd -S . -d mariadb -U sa -P ${a}`, `sqlcmd -S . -d mariadb -U sa -P ${mask}`],
+    [`sqlcmd -P ,${a}`, `sqlcmd -P ${mask}`],
+  ])('masks the password after %j', (text, expected) => {
+    expect(maskedTwice(text)).toBe(expected);
+  });
+
+  it.each(['sqlcmd -P ${{ secrets.X -Q x', 'sqlcmd -P $(cat f -Q x'])(
+    'leaves the reference that does not close in %j alone',
+    (text) => {
+      expect(masker.mask(text).text).toBe(text);
+    },
+  );
+});
+
+describe('a value masked between quotes, masked again', () => {
+  it.each([
+    `{"a": sqlcmd -P "${a}"}`,
+    `[sqlcmd -P "${a}", 1]`,
+    `{"a": sqlcmd -P '${a}'}`,
+    JSON.stringify(JSON.stringify(`sqlcmd -P "${a}"`)),
+    JSON.stringify(`bash -c 'sqlcmd -P "${a}"'`),
+    `{"a": ${JSON.stringify(JSON.stringify(`sqlcmd -P "${a} x"`))}}`,
+  ])('stays the same in %j', (text) => {
+    expect(maskedTwice(text)).not.toContain(a);
+  });
+});
