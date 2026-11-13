@@ -80,15 +80,43 @@ function continues(cut: string, joinedText: string): boolean {
   return read?.drafts[0]?.claims[0]?.text.startsWith(claimStartOf(cut)) === true;
 }
 
-/** A joined answer the run could read: usable only when it finished the cut card (`Restarted`). */
-function continuation(cut: string, response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
+/** The files the case read that no claim of the joined answer cites: cards that were still to come. */
+function uncitedPaths(input: ReaderCase, joinedText: string): string[] {
+  const cited = new Set(
+    parseCardsLenient(joinedText).drafts.flatMap((draft) =>
+      draft.claims.flatMap((claim) => claim.citations.map((citation) => citation.path)),
+    ),
+  );
+  return [...new Set((input.reads ?? []).map((read) => read.path))].filter(
+    (path) => !cited.has(path),
+  );
+}
+
+/**
+ * A joined answer the run could read: usable only when it finished the cut card (`Restarted`) and,
+ * read whole, still cites every file the case read (`Uncovered`): a run keeps only what the
+ * continuation writes, so a continuation that stops after the cut card loses the cards to come.
+ */
+function continuation(
+  input: ReaderCase,
+  response: LlmResponse,
+  prompts: ReaderPrompts,
+): TargetOutcome {
+  const cut = cutOf(input);
   const joinedResponse = joined(cut, response);
   const outcome = cardsOutcome(joinedResponse, prompts);
   const finished = continues(cut, joinedResponse.text);
-  if (outcome.usable) return finished ? outcome : { usable: false, detail: 'Restarted' };
+  if (outcome.usable && finished) {
+    const lost = uncitedPaths(input, joinedResponse.text).length > 0;
+    return lost ? { usable: false, detail: 'Uncovered' } : outcome;
+  }
+  if (outcome.usable) return { usable: false, detail: 'Restarted' };
   // Cut again at the output limit after finishing the card: a run asks again and keeps these cards.
   return finished && outcome.detail === 'Unusable' ? { usable: true, detail: 'Partial' } : outcome;
 }
+
+/** The turns of the case in a continue replay: the message says two are left. */
+const CONTINUE_TURNS = 3;
 
 type Part = 'flows' | 'screens' | 'continue';
 
@@ -107,7 +135,9 @@ function messagesOf(part: Part, input: ReaderCase, prompts: ReaderPrompts, env: 
     role: 'user',
     content: readerTaskMessage(prompts, areaBlock(input, tag())),
   };
-  const replay = replayOfReads(onLastTurn(input), prompts, tag);
+  // A continuation is a turn of its own (Q-55), so the answer it follows was not the last one.
+  const turned = part === 'continue' ? { ...input, turns: CONTINUE_TURNS } : onLastTurn(input);
+  const replay = replayOfReads(turned, prompts, tag);
   if (part !== 'continue') return [task, ...replay];
   const more: LlmMessage = { role: 'user', content: prompts.continue.text.trimEnd() };
   return [task, ...replay, { role: 'assistant' as const, content: cutOf(input) }, more];
@@ -131,7 +161,7 @@ function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): Prep
         tools: part === 'continue' ? readerToolDefinitions : [],
       });
       if (!asked.ok) return asked.error;
-      if (part === 'continue') return continuation(cutOf(input), asked.value, prompts);
+      if (part === 'continue') return continuation(input, asked.value, prompts);
       return cardsOutcome(asked.value, prompts);
     },
   };
