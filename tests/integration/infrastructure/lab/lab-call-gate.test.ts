@@ -89,6 +89,30 @@ describe('a call that failed after it was sent', () => {
   });
 });
 
+describe('a ledger that cannot write a hold', () => {
+  it('RF-1402 sends nothing and stops the invocation', async () => {
+    let sent = 0;
+    const { gate } = setup(
+      () => {
+        sent += 1;
+        return Promise.resolve(answer);
+      },
+      (ledger) => ({
+        hold: () => Promise.reject(new Error('disk full')),
+        settle: (ticket, micros) => ledger.settle(ticket, micros),
+        release: (ticket) => ledger.release(ticket),
+        totals: () => ledger.totals(),
+      }),
+    );
+
+    await expect(gate.complete(contractRequest())).rejects.toThrow();
+    await expect(gate.complete(contractRequest())).rejects.toThrow();
+
+    expect(sent).toBe(0);
+    expect(gate.stopped()).toContain('ledger');
+  });
+});
+
 describe('a ledger that cannot release a hold', () => {
   it('RF-1402 keeps the original error and stops the invocation', async () => {
     const { gate } = setup(

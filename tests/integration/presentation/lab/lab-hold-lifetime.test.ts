@@ -26,6 +26,20 @@ describe('the hold lifetime and the provider settings', () => {
     expect(router.requests).toHaveLength(0);
   });
 
+  it('RF-1402 counts the waits between attempts: 300 s with 5 retries is refused', async () => {
+    const router = new ModelRouter({ 'model-a': [verdict('Supported')] });
+    const base = labParts({ outputDir: join(temp.path, 'edge'), router });
+    const fake = base.settings.providers['fake'];
+    if (fake === undefined) throw new Error('no fake provider in the settings');
+    const edge = { ...fake, timeoutSeconds: 300, maxRetries: 5 };
+    const settings = { ...base.settings, providers: { ...base.settings.providers, fake: edge } };
+
+    const { code } = await runLab({ ...base, settings }, verifierArgs);
+
+    expect(code).toBe(1);
+    expect(router.requests).toHaveLength(0);
+  });
+
   it('RF-1402 starts with the settings of the template', async () => {
     const router = new ModelRouter({
       'model-a': Array.from({ length: 4 }, () => verdict('Supported')),
