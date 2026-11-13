@@ -142,7 +142,7 @@ describe('ADR-028, the on-time start of the production deploy (DEC-207)', () => 
 
     expect(row).toContain('Proposed');
     expect(row).toContain('2026-11-04');
-    expect(index).toMatch(/\*\*Totals\*\*: 28 in total/u);
+    expect(index).toMatch(/\*\*Totals\*\*: 29 in total/u);
     expect(index).toMatch(/ADR-028 \(Proposed\)/u);
   });
 });
