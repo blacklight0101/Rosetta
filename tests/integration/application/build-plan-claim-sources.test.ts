@@ -230,6 +230,7 @@ describe('BuildPlan: which answers the repair round is for (EV-83)', () => {
     // written with it and the run ends RST-1806 instead of completing.
     expect(plain((await h.handoffOf(run))['requirements.md'])).toContain('Place an order');
     expect(plain((await h.handoffOf(run))['checks.md'])).toContain('Requirements built by no card');
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
   });
 
   it('P8-02 RF-607 one card left without a requirement while others keep theirs gets no round', async () => {

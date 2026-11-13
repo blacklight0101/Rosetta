@@ -11,7 +11,7 @@ import { seededUxPlan } from '../../support/ux-plan-harness.js';
 // P8-06, RF-601, RF-607, RF-627, RNF-004, EV-32: a plan run over a scan with three modules (an
 // orders web app, a WebForms admin app, a WinForms desk client) and deployment material (a k8s
 // folder and a Dockerfile). The recorded cards of the demo plan build every item of the documents
-// and no module, so the gap call (gap.v5) asks for the modules and the deployment by id; what it
+// and no module, so the gap call (gap.v6) asks for the modules and the deployment by id; what it
 // leaves without a card is named in checks.md with the reason and never fails the run, under SDD
 // and not. Names are synthetic.
 
