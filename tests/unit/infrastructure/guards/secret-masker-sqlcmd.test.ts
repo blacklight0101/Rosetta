@@ -38,6 +38,7 @@ describe('the password of a SQL Server command line', () => {
     'mysql -h db -P 3306 -u root',
     'Run sqlcmd with -P to give the password.',
     `sqlcmd -U sa -P ${mask}`,
+    `test: [ "CMD", "sqlcmd", "-P", "${mask} (a note on the masked value)", "-Q", "select 1" ]`,
   ])('leaves %j alone', (text) => {
     expect(masker.mask(text).text).toBe(text);
   });

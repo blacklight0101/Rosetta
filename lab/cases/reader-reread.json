@@ -62,7 +62,7 @@
     {
       "id": "eshop-20261102-195943-understand-reader-104",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
         "files": [
@@ -162,7 +162,7 @@
     {
       "id": "eshop-20261029-164343-understand-reader-116",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
         "files": [

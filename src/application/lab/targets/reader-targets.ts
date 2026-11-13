@@ -31,8 +31,9 @@ import { askOnce, problemsOf } from './single-call.js';
 //   reader/read-first the refusal of an answer before any read, the turn after a fixed premature answer
 //   cards/card-format the shape of the final answer, the turn after a replay of the reads of the case
 // `detail` of a first turn is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; of the card format
-// `Valid`, `Partial`, `Unusable` or `ReadsMore`. A first turn has no answer parser of its own, so its
-// first-try validity only says the call was answered; `detail` is the measure.
+// `Valid`, `Partial`, `Unusable` or `ReadsMore`. A first turn has no answer parser of its own and its
+// answer may be tool calls, which the text of the answer does not show, so its first-try validity is
+// not applicable (null, RF-1403); `detail` and `usable` are the measure.
 
 type Part = 'system' | 'task' | 'readFirst' | 'cardFormat';
 
@@ -125,7 +126,7 @@ function targetOf(id: string, part: Part, current: ReaderPrompts): LabTarget {
       return ok(preparedOf(part, parsed.data, current));
     },
     readsAnswer: (text) => {
-      if (part !== 'cardFormat') return true;
+      if (part !== 'cardFormat') return null;
       const parsed = parseCardsLenient(text);
       return parsed.drafts.length > 0 && parsed.problems.length === 0;
     },

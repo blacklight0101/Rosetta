@@ -61,7 +61,7 @@ describe('the lab over captured case sets', () => {
     );
     const [results] = await writtenResults(out());
 
-    expect(results?.cases).toHaveLength(10);
+    expect(results?.cases).toHaveLength(8);
     expect(results?.cases.every((each) => each.detail === 'Answered' && each.calls === 1)).toBe(
       true,
     );

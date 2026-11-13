@@ -51,6 +51,18 @@ const flagRule = (kind: ExtraRule['kind'], names: string): ExtraRule => ({
   ),
 });
 
+// The SQL Server command-line tools take the password after `-P` (case-sensitive: `-p` prints
+// statistics), as a shell word, attached (`-Ppw`) or as the next item of an exec array
+// (`"-P", "pw"`, a docker-compose healthcheck). The `-P` is on the line of the tool, within 512
+// characters, and starts a word; a variable (`$SA_PASSWORD`, `%PW%`, `$(PW)`), a flag and a word of
+// prose are not values. A quoted value keeps its quotes and runs to the next quote.
+const sqlTool = String.raw`(?<![\w.-])(?:${caseless('sqlcmd')}|${caseless('osql')}|${caseless('bcp')})(?:\.${caseless('exe')})?(?![\w.-])`;
+const sqlPasswordFlag = String.raw`[^\r\n]{0,512}?(?<=[\s"',[])-P(?:[ \t]+|["'][ \t]*,[ \t]*)?["']?`;
+const sqlProse = String.raw`(?:to|as|the|and|or|is|with|for|flag|option|switch)(?![^\s"',\]])`;
+// A quoted value starts with no blank or comma, so the closing quote of `"-P",` is never read as the
+// opening quote of a value `, `.
+const sqlPassword = String.raw`(?:(?<=["'])[^"'\s,][^"'\r\n]*|(?<!["'])[^\s"',\]]+)`;
+
 const authorization = String.raw`\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?`;
 // The literal `://` comes first, so the scan jumps from one to the next; the scheme is checked behind it.
 const urlScheme = String.raw`://(?<=\b[A-Za-z][A-Za-z0-9+.-]{0,31}://)`;
@@ -93,6 +105,14 @@ export const extraRules: readonly ExtraRule[] = [
     pattern: new RegExp(
       String.raw`(?<keep>\bcurl(?:\.exe)?(?:${tokenBlank}+(?:--?[A-Za-z][\w-]*|"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s\-"'\\^\x60][^\s"']*)){0,16}?${tokenBlank}+(?:--user|-[A-Za-z]*u)(?:${tokenBlank}+|=)["']?[^\s:"']{1,64}:)${notMasked}(?!["']?[$<{])[^\s"']+`,
       'gi',
+    ),
+  },
+  {
+    // `sqlcmd -U sa -P <password>` and its siblings `osql` and `bcp` (see sqlPasswordFlag).
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep>${sqlTool}${sqlPasswordFlag})${notMasked}(?![$%\-]|${placeholderValue}|${sqlProse})${sqlPassword}`,
+      'g',
     ),
   },
   {

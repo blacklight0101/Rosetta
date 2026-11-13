@@ -9,6 +9,7 @@ import { loadPriceTable } from '../../infrastructure/budget/price-file.js';
 import { readAppVersion } from '../../infrastructure/config/app-version.js';
 import { loadProjectTemplate } from '../../infrastructure/files/project-template.js';
 import { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
+import { explainedMasker } from '../../infrastructure/prompts/masked-value-prompt.js';
 import {
   loadLabCaseSet,
   type LoadedLabSet,
@@ -202,7 +203,10 @@ export async function runLabCommand(
   env: Environment,
   print: Print,
 ): Promise<number> {
-  if (argv[0] === '--capture') return runLabCapture(argv.slice(1), folder('lab/'), print);
+  if (argv[0] === '--capture') {
+    const masker = explainedMasker(folder('prompts/'));
+    return runLabCapture(argv.slice(1), folder('lab/'), print, masker);
+  }
   const args = parseLabArgs(argv);
   if (!args.ok) return (print(`${args.error}\n${LAB_USAGE}`), 1);
   if (args.value.kind === 'help') return (print(LAB_USAGE), 0);

@@ -493,7 +493,7 @@
     {
       "id": "eshop-20261102-203736-plan-planner-ux",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "screenCards": [
           {
@@ -902,7 +902,7 @@
     {
       "id": "eshop-20261102-030541-plan-planner-ux",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "screenCards": [
           {

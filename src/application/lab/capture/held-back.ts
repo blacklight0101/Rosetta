@@ -1,33 +1,47 @@
-// RF-1405, DEC-231: which cases of a set are held back from tuning. The rule is fixed here and reads
-// no input: the first `ceil(n / 3)` cases in the order of the SHA-256 of `<prompt id>:<case id>`. The
-// split therefore exists the moment the ids exist, before any prompt version is tried, and the same
-// ids always give the same split. The tests recompute it for every committed set.
+// RF-1405, DEC-231, ADR-029 (amendment P10 lab fixes): which cases of a set are held back from
+// tuning. The side of a case is decided by its input alone: the SHA-256 of the canonical JSON of the
+// input (keys sorted at every level, no case id, no prompt id). The distinct inputs of a set are
+// ordered by that hash and the first `ceil(m / 3)` of the `m` distinct inputs are held back, so a
+// twin (the same input under another case id) always falls on the side of the first, and the sets
+// of other prompts over the same inputs agree. A repair case takes the side of the case it was built
+// on. The rule still reads no answer and no version of a prompt, so the split exists before any
+// version is tried. The tests recompute it for every committed set.
 
 /** SHA-256 of a text as hexadecimal; the infrastructure supplies it. */
 export type Sha256 = (text: string) => string;
 
+type Split = 'tune' | 'held-back';
+
+/** Code-unit order, the same on every machine (no locale). */
+function byCodeUnits(a: string, b: string): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+/** The JSON of a value with the keys of every object sorted, so equal inputs have one text. */
 // RF-1405
-export function heldBackIds(
-  promptId: string,
-  ids: readonly string[],
-  sha256: Sha256,
-): ReadonlySet<string> {
-  const rank = (id: string): string => sha256(`${promptId}:${id}`);
-  const ordered = [...ids].sort((a, b) => rank(a).localeCompare(rank(b)));
-  return new Set(ordered.slice(0, Math.ceil(ids.length / 3)));
-}
-
-/** Not built yet (red). */
 export function canonicalJson(value: unknown): string {
-  return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, item]) => item !== undefined)
+      .sort(([a], [b]) => byCodeUnits(a, b));
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;
+  }
+  return value === undefined ? 'null' : JSON.stringify(value);
 }
 
-/** Not built yet (red). */
+/** The key of an input: the SHA-256 of its canonical JSON. */
+// RF-1405
 export function inputKey(input: unknown, sha256: Sha256): string {
   return sha256(canonicalJson(input));
 }
 
-/** Not built yet (red). */
-export function splitsOf(inputs: readonly unknown[], sha256: Sha256): ('tune' | 'held-back')[] {
-  return inputs.map((input) => (inputKey(input, sha256) === '' ? 'held-back' : 'tune'));
+/** The side of each input, in the order given: a third of the distinct inputs, rounded up, held back. */
+// RF-1405
+export function splitsOf(inputs: readonly unknown[], sha256: Sha256): Split[] {
+  const keys = inputs.map((input) => inputKey(input, sha256));
+  const distinct = [...new Set(keys)].sort();
+  const held = new Set(distinct.slice(0, Math.ceil(distinct.length / 3)));
+  return keys.map((key) => (held.has(key) ? 'held-back' : 'tune'));
 }

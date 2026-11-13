@@ -94,7 +94,7 @@
               "    ports:",
               "      - \"5433:1433\"",
               "    healthcheck:",
-              "      test: [ \"CMD\", \"sqlcmd\", \"-U\", \"sa\", \"-P\", \"Pass@word\", \"-Q\", \"select 1\" ]",
+              "      test: [ \"CMD\", \"sqlcmd\", \"-U\", \"sa\", \"-P\", \"[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\", \"-Q\", \"select 1\" ]",
               "      interval: 1s",
               "      retries: 20",
               "",
@@ -130,7 +130,7 @@
     {
       "id": "eshop-20261109-054942-understand-reader-005-repair",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
         "files": [
@@ -427,7 +427,7 @@
     {
       "id": "eshop-20261101-235310-understand-reader-036-repair",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyNTier/src",
         "files": [
@@ -824,7 +824,7 @@
     {
       "id": "eshop-20261029-142029-understand-reader-036-repair",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/eShopPorted/Properties",
         "files": [

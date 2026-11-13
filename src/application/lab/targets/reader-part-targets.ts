@@ -171,7 +171,8 @@ function targetOf(spec: Spec, current: ReaderPrompts): LabTarget {
       return lacks === undefined ? ok(preparedOf(spec, parsed.data, current)) : err(lacks);
     },
     readsAnswer: (text) => {
-      if (!spec.cards) return true;
+      // RF-1403: a first turn has no answer parser and may answer with tool calls: not applicable.
+      if (!spec.cards) return null;
       const parsed = parseCardsLenient(text);
       return parsed.drafts.length > 0 && parsed.problems.length === 0;
     },

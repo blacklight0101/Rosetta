@@ -23,7 +23,7 @@
     {
       "id": "eshop-20261109-063857-understand-reader-191",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
         "files": [
@@ -40,7 +40,7 @@
     {
       "id": "eshop-20261109-063857-understand-reader-104",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
         "files": [
@@ -123,7 +123,7 @@
     {
       "id": "eshop-20261102-012533-understand-reader-104",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
         "files": [
@@ -145,7 +145,7 @@
     {
       "id": "eshop-20261029-164343-understand-reader-102",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
         "files": [
@@ -177,7 +177,7 @@
     {
       "id": "eshop-20261029-164343-understand-reader-197",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
         "files": [
@@ -221,7 +221,7 @@
     {
       "id": "eshop-20261029-150101-understand-reader-068",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
         "files": [

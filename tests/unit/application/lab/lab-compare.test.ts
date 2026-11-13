@@ -121,7 +121,8 @@ describe('the lab summary', () => {
 
     expect(summariseLab(none)).toMatchObject({ firstTryRate: null, invalidRate: 1 });
     expect(summariseLab(mixed).firstTryRate).toBe(0.5);
-    expect(parseLabResults(JSON.parse(JSON.stringify(none))).ok).toBe(true);
+    const written = { ...none, prompt: { ...none.prompt, sha256: '0'.repeat(64) } };
+    expect(parseLabResults(JSON.parse(JSON.stringify(written))).ok).toBe(true);
   });
 });
 

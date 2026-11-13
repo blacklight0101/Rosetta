@@ -4,6 +4,7 @@ import { buildCaseSet } from '../../application/lab/capture/build-case-set.js';
 import type { CaptureRequest } from '../../application/lab/capture/build-case-set.js';
 import { labSourceFields } from '../../application/lab/lab-case-set.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { SecretMasker, type TextMasker } from '../../infrastructure/guards/secret-masker.js';
 import {
   readJsonFile,
   readRunFolder,
@@ -84,7 +85,10 @@ function argsOf(argv: readonly string[]): Result<CaptureArgs, string> {
   return ok({ prompt, name, sources, runs, maxPerRun });
 }
 
-async function requestOf(args: CaptureArgs): Promise<Result<CaptureRequest, string>> {
+async function requestOf(
+  args: CaptureArgs,
+  masker: TextMasker,
+): Promise<Result<CaptureRequest, string>> {
   const known = sourceFile.safeParse(await readJsonFile(args.sources));
   if (!known.success) return err(`${args.sources} is not a valid sources file.`);
   const runs: CaptureRequest['runs'][number][] = [];
@@ -102,22 +106,42 @@ async function requestOf(args: CaptureArgs): Promise<Result<CaptureRequest, stri
     description,
     maxPerRun: args.maxPerRun,
     sha256: sha256Hex,
-    mask: (text) => text,
+    mask: (text) => masker.mask(text).text,
     runs,
   });
 }
 
+/** The capture's lines after the set is written: the cases left out and why. */
+function leftOutLines(built: {
+  leftOut: readonly string[];
+  repeated: readonly string[];
+}): string[] {
+  return [
+    ...(built.leftOut.length > 0
+      ? [`Left out for personal data: ${built.leftOut.join('; ')}`]
+      : []),
+    ...(built.repeated.length > 0
+      ? [`Left out as the same input as an earlier case: ${built.repeated.join('; ')}`]
+      : []),
+  ];
+}
+
+/**
+ * `masker` is the run's secret masker; the composition root gives it the note of the masked-value
+ * prompt file, as the egress guard writes it.
+ */
 // RF-1404
 export async function runLabCapture(
   argv: readonly string[],
   labFolder: string,
   print: (line: string) => void,
+  masker: TextMasker = new SecretMasker(),
 ): Promise<number> {
   const local = argv.includes('--local');
   const args = argsOf(argv.filter((each) => each !== '--local'));
   if (!args.ok) return (print(`${args.error}\n${CAPTURE_USAGE}`), 1);
   try {
-    const request = await requestOf(args.value);
+    const request = await requestOf(args.value, masker);
     if (!request.ok) return (print(request.error), 1);
     const built = buildCaseSet(request.value);
     if (!built.ok) return (print(built.error), 1);
@@ -130,9 +154,7 @@ export async function runLabCapture(
     print(
       `Wrote ${file}: ${String(built.value.set.cases.length)} cases, ${String(held)} held back.`,
     );
-    if (built.value.leftOut.length > 0) {
-      print(`Left out for personal data: ${built.value.leftOut.join('; ')}`);
-    }
+    for (const line of leftOutLines(built.value)) print(line);
     return 0;
   } catch (error) {
     print(`The capture failed: ${error instanceof Error ? error.message : String(error)}`);
