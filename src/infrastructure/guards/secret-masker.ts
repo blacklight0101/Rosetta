@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
+import type { ScanRule, SecretSpan } from './scan-rule.js';
 import { escapedQuoteRules } from './secret-escaped-quote-rules.js';
 import { extraRules } from './secret-extra-rules.js';
 import {
@@ -32,10 +33,13 @@ export interface TextMasker {
  * One detection pattern. It must carry the `g` flag. The optional named group `keep` is a prefix of
  * the match that stays visible (for example `Password=`); the rest of the match is the secret.
  */
-export interface MaskRule {
+interface MaskRule {
   readonly kind: SecretKind;
   readonly pattern: RegExp;
 }
+
+/** A pattern rule, or a rule that finds its secrets by a scan (scan-rule.ts). */
+export type AnyMaskRule = MaskRule | ScanRule<SecretKind>;
 
 // RF-141: anchored on a keyword or a delimiter (no open-ended prefix) so no pattern rescans the
 // input from every position. A prefix is bounded; a secret value runs to a delimiter its own class
@@ -207,7 +211,7 @@ const baseRules: readonly MaskRule[] = [
 ];
 
 // The escaped-quote rules come first: the rules below would take the backslash for the value (P3-128).
-const defaultRules: readonly MaskRule[] = [...escapedQuoteRules, ...baseRules, ...extraRules];
+const defaultRules: readonly AnyMaskRule[] = [...escapedQuoteRules, ...baseRules, ...extraRules];
 
 /** Every kind, in name order. */
 export const SECRET_KINDS: readonly SecretKind[] = [
@@ -235,36 +239,44 @@ export type ReplacementOf = (kind: SecretKind) => string;
 /** RF-141: the bare marker, the replacement unless the masker is given the text of a prompt file. */
 const bareMarker: ReplacementOf = (kind) => `[MASKED:${kind}]`;
 
+function spansOf(text: string, rule: AnyMaskRule): readonly SecretSpan[] {
+  if ('scan' in rule) return rule.scan(text);
+  return Array.from(text.matchAll(rule.pattern), (match): SecretSpan => {
+    const keep = match.groups?.['keep'] ?? '';
+    return [match.index + keep.length, match.index + match[0].length];
+  });
+}
+
 function applyRule(
   text: string,
-  rule: MaskRule,
+  rule: AnyMaskRule,
   replacement: ReplacementOf,
 ): { readonly text: string; readonly count: number } {
   let masked = '';
   let position = 0;
-  let count = 0;
-  for (const match of text.matchAll(rule.pattern)) {
-    const keep = match.groups?.['keep'] ?? '';
-    const secret = match[0].slice(keep.length);
-    masked += text.slice(position, match.index) + keep;
-    masked += `${replacement(rule.kind)}${lineBreaksOf(secret)}`;
-    position = match.index + match[0].length;
-    count += 1;
+  const spans = spansOf(text, rule);
+  for (const [start, end] of spans) {
+    masked += text.slice(position, start);
+    masked += `${replacement(rule.kind)}${lineBreaksOf(text.slice(start, end))}`;
+    position = end;
   }
-  return { text: masked + text.slice(position), count };
+  return { text: masked + text.slice(position), count: spans.length };
 }
 
 // RF-141, RNF-003: replaces secrets with [MASKED:<kind>] and keeps every line where it was, so
 // citations stay valid. Any internal failure is thrown as RST-2101 and callers fail closed (DEC-57).
 export class SecretMasker implements TextMasker {
-  private readonly rules: readonly MaskRule[];
+  private readonly rules: readonly AnyMaskRule[];
   private readonly replacement: ReplacementOf;
 
   /**
    * P5-34: `replacement` is the text a masked value gets; the egress masker gets the note of the
    * prompt file (it tells the model a plain-text value is written there), the rest the bare marker.
    */
-  constructor(rules: readonly MaskRule[] = defaultRules, replacement: ReplacementOf = bareMarker) {
+  constructor(
+    rules: readonly AnyMaskRule[] = defaultRules,
+    replacement: ReplacementOf = bareMarker,
+  ) {
     this.rules = rules;
     this.replacement = replacement;
   }

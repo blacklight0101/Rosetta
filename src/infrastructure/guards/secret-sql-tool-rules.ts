@@ -1,101 +1,127 @@
-import { lineEnd, notContinuation, tokenBlank } from './secret-option-pieces.js';
-import { caseless, placeholderValue } from './secret-value-pieces.js';
+import type { ScanRule, SecretSpan } from './scan-rule.js';
+import { toolSource, valuePattern } from './secret-sql-tool-pieces.js';
 
 // RF-141 (P10 lab fixes, P10 masker gaps): the SQL Server command-line tools (`sqlcmd`, `osql`,
 // `bcp`) take the password after `-P` (case-sensitive: `-p` prints statistics), or after `/P` on
-// Windows (all three accept it). The rule names no key, so it is anchored on the tool name and finds
-// the flag within 512 characters of the tool's line or of a line it continues (a trailing `\`, `^`
-// or backtick), lazily. The scan stops at the next tool name, which is read by its own anchor, so
-// each character is read by one anchor at most and the scan stays linear. One rule, three shapes:
-//  - a quoted value (`-P "pw"`, `-P'pw'`, `-P \"pw\"` inside a JSON string, `"-P" "pw"`, the exec
-//    array item `"-P", "pw"` and `"-P", \"pw\"`): it runs to the closing quote of the same kind and
-//    escape, so the other quote (`"it's"`) and an escaped quote (`"a\"b"`) belong to it, and the
-//    closing quote must end the shell word; with no closing quote it runs to the end of the line;
-//  - a shell word (`-P pw`, `-Ppw`, `-P Fake"pw"`, `-P "Fake"pw`, `-P Fake\"pw\"`): the whole word,
-//    bare and quoted parts joined, is the value and is masked with its quotes. A quoted part after
-//    the first one never starts with a blank or a closing mark (`", "`, `"}`), which end a JSON or
-//    shell string around the command rather than join the word;
-//  - an exec array of plain items (YAML `[CMD, sqlcmd, -P, pw]`): a comma or a bracket ends it.
-// The escape is one to four backslashes before the quote, as in secret-escaped-quote-rules.ts
-// (P3-128). A value that starts with `$`, `%` or `-` is a password too; only an exact variable
-// (`$VAR`, `$$VAR`, `${VAR}`, `$(cmd)`, `%VAR%`, outside single quotes), a one-letter flag (`-Q`), a
-// placeholder, a bare word of prose and a masked value (`[MASKED:password]`, alone in its word) are
-// left alone, so masking twice changes nothing.
+// Windows (all three accept it). The rule names no key, so it scans: from each tool name it reads
+// the command token by token, for at most 512 characters, over the lines it continues (a trailing
+// `\`, `^` or backtick), and every `-P` or `/P` it meets is read, not only the first. A quoted
+// argument of another option (`-Q "SELECT -Price"`) is skipped whole, so a `-P` or a tool name
+// inside it is not one. The command ends at a line end, an operator (`|`, `;`, `&`), `mysql` (whose
+// `-P` is a port), another tool name, which starts a command of its own, or the end of a string
+// around the command. The value is a quoted value, the whole shell word or an exec array item
+// (secret-sql-tool-pieces.ts). The scan is linear: the next tool name is looked for after the place
+// the last command was read to, a step reads at least one character, a quoted argument that does
+// not close is not tried again with the same quote in the command, and a value ends on its line.
 
-interface SqlToolRule {
-  readonly kind: 'password';
-  readonly pattern: RegExp;
+type Quote = string | null;
+
+const LIMIT = 512;
+const tools = new RegExp(toolSource, 'g');
+const values = new Map<string, RegExp>();
+const lineBreak = /[\r\n\u2028\u2029]/u;
+const ends = new RegExp(
+  String.raw`[;|&]|(?<![^\s,[(])(?:${toolSource}|(?:mysql(?:admin|dump)?|mariadb)(?![\w.-]))`,
+  'y',
+);
+const opener = /(?<![^\s,[(=])\\{0,4}["']/y;
+const plainString = /(?<q>["'])(?:(?!\k<q>)[^\\\r\n]|\\[^\r\n])*\k<q>/y;
+const escapedString = /(?<e>\\{1,4})(?<q>["'])(?:[^\\\r\n]|\\+(?![\\"']))*(?<!\\)\k<e>\k<q>/y;
+const step =
+  /(?:[ \t,[]|[\\^\x60][ \t]*(?:\r\n|[\n\r\u2028\u2029]))+|[^\s,[;|&"'\\^\x60]+|[^\r\n\u2028\u2029]/y;
+
+function valueOf(quote: Quote): RegExp {
+  const key = quote ?? '';
+  const known = values.get(key);
+  if (known) return known;
+  const made = valuePattern(quote);
+  values.set(key, made);
+  return made;
 }
 
-const tool = String.raw`(?<![\w.-])(?:${caseless('sqlcmd')}|${caseless('osql')}|${caseless('bcp')})(?:\.${caseless('exe')})?(?![\w.-])`;
-const sep = tokenBlank;
-// One character of the tool's line, or a continuation (the mark, blanks and the line end) as one
-// step; the three alternatives start differently, so a run is read one way only.
-const lineChar = String.raw`(?:(?!${tool})(?:[^\r\n\\^\x60]|[\\^\x60](?![ \t]*${lineEnd})|[\\^\x60][ \t]*${lineEnd}))`;
-const onLine = String.raw`${tool}${lineChar}{0,512}?`;
-
-// The flag: quoted (`"-P"`, `\"-P\"`, an exec array item) or a shell word (`-P`, `/P` and a blank).
-const quotedFlag = String.raw`(?<=[\s,[])(?<fe>\\{0,4})(?<fq>["'])[-/]P(?<!\\)\k<fe>\k<fq>`;
-const shellFlag = String.raw`(?<=\s)(?:-P${sep}*|/P${sep}+)`;
-const flagThenQuote = String.raw`(?:${quotedFlag}${sep}*(?:,${sep}*)?|${shellFlag})(?<qe>\\{0,4})(?<qq>["'])`;
-const flagThenItem = String.raw`(?<=[\s,[])[-/]P${sep}*,${sep}*`;
-const flagThenWord = String.raw`(?:${quotedFlag}${sep}+|${shellFlag})`;
-
-const marker = String.raw`\[MASKED:[a-z-]+\]`;
-const name = '[A-Za-z_][A-Za-z0-9_]{0,63}';
-const variable = String.raw`(?:\$\$?(?:${name}|\{${name}\})|\$\([^()\r\n]{0,256}\)|%${name}%)`;
-const prose = '(?:to|as|the|and|or|is|with|for|flag|option|switch)';
-const wordEnd = String.raw`(?=[\s,;|&)\]}<>"'\\\x60]|$)`;
-
-// A quoted value: the closing quote must end the shell word (an escaped one may close a string
-// around the command), or the value runs to the end of the line when it has none.
-const close = String.raw`(?<!\\)\k<qe>\k<qq>`;
-const afterClose = String.raw`(?:[\s,;|&)\]}<>\x60]|$|(?<=\\["'])\\{0,3}["'])`;
-const quotedValue = [
-  String.raw`(?<=["'])(?!${marker}(?:[\s"'\\]|$))(?!${placeholderValue})(?!(?<=")${variable}${close})`,
-  String.raw`(?:(?!${close})[^\r\n])+(?=${close}${afterClose}|${lineEnd}|$)`,
-].join('');
-
-const leftAlone = [
-  String.raw`(?:\\{0,4}["'])?${marker}${wordEnd}`,
-  String.raw`(?:\\{0,4}")?${variable}(?:\\{0,4}")?${wordEnd}`,
-  String.raw`(?:\\{0,4}["'])?${placeholderValue}`,
-  `${prose}${wordEnd}`,
-  String.raw`-[A-Za-z?]${wordEnd}`,
-].join('|');
-
-// An exec array item without quotes: a comma or a bracket ends it.
-const itemValue = String.raw`(?=[^\s"',\]\\])(?<=,${sep}*)(?!${leftAlone})[^\s"',\]\\](?:[^"',\]\r\n\\]*[^\s"',\]\\])?`;
+function stickyAt(pattern: RegExp, text: string, at: number): RegExpExecArray | null {
+  pattern.lastIndex = at;
+  return pattern.exec(text);
+}
 
 /**
- * The parts of a shell word; `guard` follows an opening quote. Each part starts with a quote, a
- * backslash or another character, and only a quote part that has no closing quote runs to the end of
- * the line, so a word is read one way only. An escaped-quote part ends at the next escaped quote,
- * whatever its escape, so a part that does not close there reads no further and the scan stays
- * linear.
+ * The quote that opened a string around the command: the quote before the tool's path (`"c":
+ * "sqlcmd`, `bash -c 'sqlcmd`), with its escape; null on a shell line or when a quote follows the
+ * tool (an exec array item `"sqlcmd"`, a quoted path `"C:\...\sqlcmd.exe"`).
  */
-const partsOf = (n: string, guard: string): string =>
-  [
-    String.raw`"${guard}(?:[^"\\\r\n]|\\[^\r\n])*"`,
-    String.raw`'${guard}[^'\r\n]*'`,
-    String.raw`(?<pe${n}>\\{1,4})(?<pq${n}>["'])${guard}(?:[^\\\r\n]|\\+(?![\\"']))*(?<!\\)\k<pe${n}>\k<pq${n}>`,
-    String.raw`\\{1,4}["']${guard}`,
-    String.raw`\\(?!\\{0,3}["'])`,
-    String.raw`[^\s"'\\]+`,
-    String.raw`["']${guard}[^\r\n]*`,
-  ].join('|');
-const joined = String.raw`(?![\s,;:|&)\]}>]|$)`;
-const wordValue = [
-  String.raw`(?![\s,\]])${notContinuation}(?<=(?:[-/]P|["'][-/]P\\{0,4}["'])${sep}*)(?!${leftAlone})`,
-  String.raw`(?:${partsOf('1', '')})(?:${partsOf('2', joined)})*`,
-].join('');
+function quoteAround(text: string, start: number, end: number): Quote {
+  if (/^\\{0,4}["']/u.test(text.slice(end, end + 5))) return null;
+  let at = start;
+  while (at > 0 && start - at < LIMIT && !/[\s"']/u.test(text.charAt(at - 1))) at -= 1;
+  const quote = text.charAt(at - 1);
+  if (quote !== '"' && quote !== "'") return null;
+  let escapes = 0;
+  while (escapes < 4 && text.charAt(at - 2 - escapes) === '\\') escapes += 1;
+  return `${'\\'.repeat(escapes)}${quote}`;
+}
 
-export const sqlToolRules: readonly SqlToolRule[] = [
-  {
-    kind: 'password',
-    pattern: new RegExp(
-      String.raw`(?<keep>${onLine}(?:${flagThenQuote}|${flagThenItem}|${flagThenWord}))(?:${quotedValue}|${itemValue}|${wordValue})`,
-      'g',
-    ),
-  },
+/** Whether the command ends here. */
+function endsAt(text: string, at: number, quote: Quote): boolean {
+  if (at >= text.length || lineBreak.test(text.charAt(at)) || stickyAt(ends, text, at)) return true;
+  return quote !== null && text.startsWith(quote, at) && text.charAt(at - 1) !== '\\';
+}
+
+/** The end of a quoted argument that starts here, or -1; a quote that did not close is not retried. */
+function quotedEnd(text: string, at: number, failed: Set<string>): number {
+  const open = stickyAt(opener, text, at)?.[0];
+  if (open === undefined || failed.has(open)) return -1;
+  const string = stickyAt(open.length > 1 ? escapedString : plainString, text, at);
+  if (string) return at + string[0].length;
+  failed.add(open);
+  return -1;
+}
+
+/** The next place to read after a token that holds no flag. */
+function skipped(text: string, at: number, failed: Set<string>): number {
+  const quoted = quotedEnd(text, at, failed);
+  if (quoted > at) return quoted;
+  const token = stickyAt(step, text, at);
+  return token ? at + token[0].length : at + 1;
+}
+
+/** A flag and its value here: the secret and the place after its closing quote. */
+function valueAt(
+  text: string,
+  at: number,
+  quote: Quote,
+): { span: SecretSpan; next: number } | null {
+  if (!/[-/"'\\]/u.test(text.charAt(at))) return null;
+  const match = stickyAt(valueOf(quote), text, at);
+  if (!match) return null;
+  const end = at + match[0].length;
+  const span: SecretSpan = [at + (match.groups?.['keep'] ?? '').length, end];
+  return { span, next: end + (match.groups?.['close'] ?? '').length };
+}
+
+/** Reads one command from the end of its tool name, adds its secrets, returns where it stopped. */
+function readCommand(text: string, from: number, quote: Quote, spans: SecretSpan[]): number {
+  const failed = new Set<string>();
+  let at = from;
+  while (at - from <= LIMIT && !endsAt(text, at, quote)) {
+    const value = valueAt(text, at, quote);
+    if (value) spans.push(value.span);
+    at = value ? value.next : skipped(text, at, failed);
+  }
+  return at;
+}
+
+/** RF-141: the passwords of the SQL Server tools' command lines in the text. */
+function sqlToolSecrets(text: string): SecretSpan[] {
+  const spans: SecretSpan[] = [];
+  tools.lastIndex = 0;
+  for (let found = tools.exec(text); found; found = tools.exec(text)) {
+    const toolEnd = found.index + found[0].length;
+    const reached = readCommand(text, toolEnd, quoteAround(text, found.index, toolEnd), spans);
+    tools.lastIndex = Math.max(toolEnd, reached);
+  }
+  return spans;
+}
+
+export const sqlToolRules: readonly ScanRule<'password'>[] = [
+  { kind: 'password', scan: sqlToolSecrets },
 ];

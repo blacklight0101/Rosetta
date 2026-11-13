@@ -7,6 +7,7 @@ import {
   tokenScheme,
   tokenValue,
 } from './secret-option-pieces.js';
+import type { ScanRule } from './scan-rule.js';
 import { settingRules } from './secret-setting-rules.js';
 import { sqlToolRules } from './secret-sql-tool-rules.js';
 import { caseless, notMasked, placeholderValue } from './secret-value-pieces.js';
@@ -16,10 +17,8 @@ import { caseless, notMasked, placeholderValue } from './secret-value-pieces.js'
 // keyword or a delimiter, a value runs to a delimiter its own class excludes, and the repeats are
 // bounded, so a rule never rescans the input from every position.
 
-interface ExtraRule {
-  readonly kind: 'api-key' | 'bearer-token' | 'connection-string' | 'password';
-  readonly pattern: RegExp;
-}
+type ExtraKind = 'api-key' | 'bearer-token' | 'connection-string' | 'password';
+type ExtraRule = { readonly kind: ExtraKind; readonly pattern: RegExp } | ScanRule<ExtraKind>;
 
 // A value of 8 or more characters that is not code: no brackets, `$` or `>`, not a number, not a path or a URL, and
 // at least one digit or symbol (a letters-only word such as `introduction` is prose). Placeholders and
