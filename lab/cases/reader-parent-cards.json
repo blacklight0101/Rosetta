@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 1,
+  "version": "reader-parent-cards-1",
+  "prompt": "reader/parent-cards",
+  "description": "Inputs of reader/parent-cards captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-063857-understand",
+        "20261102-195943-understand",
+        "20261102-012533-understand",
+        "20261029-164343-understand",
+        "20261029-150101-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-063857-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FLOW-012\",\n      \"type\": \"FLOW\",\n      \"title\": \"Application start\"\n    },\n    {\n      \"id\": \"BR-022\",\n      \"type\": \"BR\",\n      \"title\": \"Mock data switch\"\n    },\n    {\n      \"id\": \"ENT-009\",\n      \"type\": \"ENT\",\n      \"title\": \"Catalog database connection\"\n    },\n    {\n      \"id\": \"FEAT-018\",\n      \"type\": \"FEAT\",\n      \"title\": \"Session start tracking\"\n    },\n    {\n      \"id\": \"BR-023\",\n      \"type\": \"BR\",\n      \"title\": \"Per-request logging context and rolling log file\"\n    },\n    {\n      \"id\": \"INT-009\",\n      \"type\": \"INT\",\n      \"title\": \"Application Insights telemetry\"\n    },\n    {\n      \"id\": \"BR-024\",\n      \"type\": \"BR\",\n      \"title\": \"Plain-text secrets in configuration\"\n    },\n    {\n      \"id\": \"OQ-008\",\n      \"type\": \"OQ\",\n      \"title\": \"Who runs the application with mock data enabled?\"\n    },\n    {\n      \"id\": \"FLOW-026\",\n      \"type\": \"FLOW\",\n      \"title\": \"Application start container and data setup\"\n    },\n    {\n      \"id\": \"BR-109\",\n      \"type\": \"BR\",\n      \"title\": \"Legacy project targets .NET Framework 4.7.2 and builds as a library\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FLOW-012\",\n      \"type\": \"FLOW\",\n      \"title\": \"Application start\"\n    },\n    {\n      \"id\": \"BR-022\",\n      \"type\": \"BR\",\n      \"title\": \"Mock data switch\"\n    },\n    {\n      \"id\": \"ENT-009\",\n      \"type\": \"ENT\",\n      \"title\": \"Catalog database connection\"\n    },\n    {\n      \"id\": \"FEAT-018\",\n      \"type\": \"FEAT\",\n      \"title\": \"Session start tracking\"\n    },\n    {\n      \"id\": \"BR-023\",\n      \"type\": \"BR\",\n      \"title\": \"Per-request logging context and rolling log file\"\n    },\n    {\n      \"id\": \"INT-009\",\n      \"type\": \"INT\",\n      \"title\": \"Application Insights telemetry\"\n    },\n    {\n      \"id\": \"BR-024\",\n      \"type\": \"BR\",\n      \"title\": \"Plain-text secrets in configuration\"\n    },\n    {\n      \"id\": \"OQ-008\",\n      \"type\": \"OQ\",\n      \"title\": \"Who runs the application with mock data enabled?\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+        "files": [
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/eShopModernizedMVC.csproj",
+            "language": "xml",
+            "lines": 741
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/packages.config",
+            "language": "xml",
+            "lines": 149
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FLOW-013\",\n      \"type\": \"FLOW\",\n      \"title\": \"Application start-up of the MVC site\"\n    },\n    {\n      \"id\": \"FLOW-014\",\n      \"type\": \"FLOW\",\n      \"title\": \"Unhandled error handling\"\n    },\n    {\n      \"id\": \"BR-050\",\n      \"type\": \"BR\",\n      \"title\": \"Mock data is the default catalog source\"\n    },\n    {\n      \"id\": \"BR-051\",\n      \"type\": \"BR\",\n      \"title\": \"Unhandled errors are logged and custom errors are off\"\n    },\n    {\n      \"id\": \"INT-016\",\n      \"type\": \"INT\",\n      \"title\": \"Application Insights telemetry and logging\"\n    },\n    {\n      \"id\": \"INT-017\",\n      \"type\": \"INT\",\n      \"title\": \"Azure storage, Key Vault and Azure Active Directory settings\"\n    },\n    {\n      \"id\": \"INT-018\",\n      \"type\": \"INT\",\n      \"title\": \"Catalog database connection\"\n    },\n    {\n      \"id\": \"OQ-034\",\n      \"type\": \"OQ\",\n      \"title\": \"Which deployment uses mock data and which uses Azure storage?\"\n    },\n    {\n      \"id\": \"OQ-035\",\n      \"type\": \"OQ\",\n      \"title\": \"Is the Azure Active Directory sign-in still used?\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopLegacy.Utilities/eShopLegacy.Utilities.csproj",
+            "language": "xml",
+            "lines": 48
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"OQ-006\",\n      \"type\": \"OQ\",\n      \"title\": \"Which callers pass data into the binary deserializer, and where does that data come from?\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-191",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"SCRN-012\",\n      \"type\": \"SCRN\",\n      \"title\": \"Product catalogue home page\"\n    },\n    {\n      \"id\": \"FLOW-003\",\n      \"type\": \"FLOW\",\n      \"title\": \"Show a page of the product catalogue\"\n    },\n    {\n      \"id\": \"SCRN-013\",\n      \"type\": \"SCRN\",\n      \"title\": \"Contact page\"\n    },\n    {\n      \"id\": \"SCRN-014\",\n      \"type\": \"SCRN\",\n      \"title\": \"About page\"\n    },\n    {\n      \"id\": \"FEAT-046\",\n      \"type\": \"FEAT\",\n      \"title\": \"Session information shown in the master page\"\n    },\n    {\n      \"id\": \"FEAT-047\",\n      \"type\": \"FEAT\",\n      \"title\": \"Switch between desktop and mobile view\"\n    },\n    {\n      \"id\": \"BR-035\",\n      \"type\": \"BR\",\n      \"title\": \"Mock data switch selects the data source\"\n    },\n    {\n      \"id\": \"BR-036\",\n      \"type\": \"BR\",\n      \"title\": \"Request logging with activity and request info\"\n    },\n    {\n      \"id\": \"BR-037\",\n      \"type\": \"BR\",\n      \"title\": \"Bundled stylesheets\"\n    },\n    {\n      \"id\": \"BR-038\",\n      \"type\": \"BR\",\n      \"title\": \"Release and debug configuration transforms\"\n    },\n    {\n      \"id\": \"INT-015\",\n      \"type\": \"INT\",\n      \"title\": \"Catalogue database connection (CatalogDb on LocalDB)\"\n    },\n    {\n      \"id\": \"OQ-027\",\n      \"type\": \"OQ\",\n      \"title\": \"Why is mock data turned on in the shipped configuration?\"\n    },\n    {\n      \"id\": \"SCRN-037\",\n      \"type\": \"SCRN\",\n      \"title\": \"Product catalogue home page\"\n    },\n    {\n      \"id\": \"FEAT-122\",\n      \"type\": \"FEAT\",\n      \"title\": \"Mobile master page with a view-switch footer\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/FilesController.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 166
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FEAT-006\",\n      \"type\": \"FEAT\",\n      \"title\": \"Browse the paginated catalog\"\n    },\n    {\n      \"id\": \"FEAT-007\",\n      \"type\": \"FEAT\",\n      \"title\": \"View catalog item details\"\n    },\n    {\n      \"id\": \"FEAT-008\",\n      \"type\": \"FEAT\",\n      \"title\": \"Create a catalog item\"\n    },\n    {\n      \"id\": \"FEAT-009\",\n      \"type\": \"FEAT\",\n      \"title\": \"Edit a catalog item\"\n    },\n    {\n      \"id\": \"FLOW-001\",\n      \"type\": \"FLOW\",\n      \"title\": \"Delete a catalog item\"\n    },\n    {\n      \"id\": \"BR-003\",\n      \"type\": \"BR\",\n      \"title\": \"Catalog item picture address\"\n    },\n    {\n      \"id\": \"FEAT-010\",\n      \"type\": \"FEAT\",\n      \"title\": \"Serve catalog item pictures\"\n    },\n    {\n      \"id\": \"BR-004\",\n      \"type\": \"BR\",\n      \"title\": \"Picture mime types by file extension\"\n    },\n    {\n      \"id\": \"FEAT-011\",\n      \"type\": \"FEAT\",\n      \"title\": \"Brands API list\"\n    },\n    {\n      \"id\": \"BR-005\",\n      \"type\": \"BR\",\n      \"title\": \"Brand delete through the API is a demo that deletes nothing\"\n    },\n    {\n      \"id\": \"FEAT-012\",\n      \"type\": \"FEAT\",\n      \"title\": \"Binary export of brands\"\n    },\n    {\n      \"id\": \"OQ-007\",\n      \"type\": \"OQ\",\n      \"title\": \"Why does the brand delete endpoint not delete?\"\n    },\n    {\n      \"id\": \"OQ-008\",\n      \"type\": \"OQ\",\n      \"title\": \"Where are picture files stored?\"\n    },\n    {\n      \"id\": \"OQ-009\",\n      \"type\": \"OQ\",\n      \"title\": \"Which consumer reads the binary brand export?\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FLOW-005\",\n      \"type\": \"FLOW\",\n      \"title\": \"Open the catalog window and load the initial data\"\n    },\n    {\n      \"id\": \"FLOW-006\",\n      \"type\": \"FLOW\",\n      \"title\": \"Filter the catalog by brand or type\"\n    },\n    {\n      \"id\": \"FLOW-007\",\n      \"type\": \"FLOW\",\n      \"title\": \"Record a stock shipment for an item on a date\"\n    },\n    {\n      \"id\": \"FLOW-008\",\n      \"type\": \"FLOW\",\n      \"title\": \"Check the available stock of an item on a date\"\n    },\n    {\n      \"id\": \"FEAT-053\",\n      \"type\": \"FEAT\",\n      \"title\": \"Browse the catalog with thumbnails and discounted prices\"\n    },\n    {\n      \"id\": \"FEAT-054\",\n      \"type\": \"FEAT\",\n      \"title\": \"Manage shipments and stock availability by date\"\n    },\n    {\n      \"id\": \"FEAT-055\",\n      \"type\": \"FEAT\",\n      \"title\": \"Catalog service with seeded demo data and a mock implementation\"\n    },\n    {\n      \"id\": \"BR-034\",\n      \"type\": \"BR\",\n      \"title\": \"Daily discount reduces the displayed price of all items\"\n    },\n    {\n      \"id\": \"BR-035\",\n      \"type\": \"BR\",\n      \"title\": \"Stock lookup returns zero when no stock is recorded\"\n    },\n    {\n      \"id\": \"BR-036\",\n      \"type\": \"BR\",\n      \"title\": \"Item and stock ids are assigned as the highest existing id plus one\"\n    },\n    {\n      \"id\": \"FEAT-056\",\n      \"type\": \"FEAT\",\n      \"title\": \"Catalog service exposed over WCF with catalog, stock and discount operations\"\n    },\n    {\n      \"id\": \"ENT-013\",\n      \"type\": \"ENT\",\n      \"title\": \"Catalog data in the eShopDatabase\"\n    },\n    {\n      \"id\": \"INT-027\",\n      \"type\": \"INT\",\n      \"title\": \"WCF catalog service consumed by the WinForms client\"\n    },\n    {\n      \"id\": \"INT-028\",\n      \"type\": \"INT\",\n      \"title\": \"SQL Server LocalDB catalog database\"\n    },\n    {\n      \"id\": \"OQ-032\",\n      \"type\": \"OQ\",\n      \"title\": \"Is the catalog service meant to be reachable without authentication?\"\n    },\n    {\n      \"id\": \"OQ-033\",\n      \"type\": \"OQ\",\n      \"title\": \"Is the discount meant to change the stored price or only the display?\"\n    },\n    {\n      \"id\": \"BR-090\",\n      \"type\": \"BR\",\n      \"title\": \"Recording a shipment for an existing item and date overwrites the stock quantity\"\n    },\n    {\n      \"id\": \"OQ-062\",\n      \"type\": \"OQ\",\n      \"title\": \"Are the UWP-era helpers in the WinForms project used anywhere?\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "VM",
+        "files": [
+          {
+            "path": "VM/DockerCerts-Generation/CreateDockerCerts.ps1",
+            "language": "powershell",
+            "lines": 101
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.nobuild.nosql.yml",
+            "language": "yaml",
+            "lines": 5
+          },
+          {
+            "path": "VM/eShopModernizedMVC/docker-compose.override.nosql.yml",
+            "language": "yaml",
+            "lines": 22
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FEAT-006\",\n      \"type\": \"FEAT\",\n      \"title\": \"Generate a Docker TLS certificate set on a Windows host\"\n    },\n    {\n      \"id\": \"INT-022\",\n      \"type\": \"INT\",\n      \"title\": \"eShop MVC container settings for Azure storage, Application Insights and Azure AD\"\n    },\n    {\n      \"id\": \"FEAT-007\",\n      \"type\": \"FEAT\",\n      \"title\": \"Run the eShop MVC site and its SQL Server database in containers\"\n    },\n    {\n      \"id\": \"FEAT-008\",\n      \"type\": \"FEAT\",\n      \"title\": \"Run the eShop MVC site without SQL Server\"\n    },\n    {\n      \"id\": \"FEAT-009\",\n      \"type\": \"FEAT\",\n      \"title\": \"Run prebuilt eShop MVC images with SQL Server\"\n    },\n    {\n      \"id\": \"FEAT-010\",\n      \"type\": \"FEAT\",\n      \"title\": \"Run the eShop WebForms site and its SQL Server database in containers\"\n    },\n    {\n      \"id\": \"FEAT-011\",\n      \"type\": \"FEAT\",\n      \"title\": \"Run prebuilt eShop WebForms image with SQL Server\"\n    },\n    {\n      \"id\": \"BR-005\",\n      \"type\": \"BR\",\n      \"title\": \"Containers join the external nat network\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-093",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/.kube/schema/v1.6.6#1",
+        "files": [
+          {
+            "path": "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/.kube/schema/v1.6.6/schema096766578",
+            "language": "unknown",
+            "lines": 9977
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"INT-033\",\n      \"type\": \"INT\",\n      \"title\": \"Kubernetes API schema for the extensions/v1beta1 group\"\n    }\n  ]\n}"
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-049",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/appsettings.json",
+            "language": "json",
+            "lines": 13
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/eShopPorted.csproj",
+            "language": "xml",
+            "lines": 33
+          }
+        ],
+        "turns": 12,
+        "parentCards": "{\n  \"cards\": [\n    {\n      \"id\": \"FLOW-001\",\n      \"type\": \"FLOW\",\n      \"title\": \"Host start-up and request pipeline\"\n    },\n    {\n      \"id\": \"BR-010\",\n      \"type\": \"BR\",\n      \"title\": \"Mock data switch selects the data source\"\n    },\n    {\n      \"id\": \"BR-011\",\n      \"type\": \"BR\",\n      \"title\": \"Development and production error handling differ\"\n    },\n    {\n      \"id\": \"INT-027\",\n      \"type\": \"INT\",\n      \"title\": \"SQL Server catalog database connection\"\n    },\n    {\n      \"id\": \"FEAT-015\",\n      \"type\": \"FEAT\",\n      \"title\": \"Catalog browsing by default route\"\n    },\n    {\n      \"id\": \"OQ-017\",\n      \"type\": \"OQ\",\n      \"title\": \"Why does the ported project still target net461 with ASP.NET Core 2.2 packages?\"\n    }\n  ]\n}"
+      }
+    }
+  ]
+}

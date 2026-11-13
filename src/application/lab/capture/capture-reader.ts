@@ -1,5 +1,6 @@
 import { readDataBlocks, type ReadDataBlock } from './data-blocks.js';
 import type { TranscriptTask } from './capture-types.js';
+import { capturePartInput, readerPartIds } from './capture-reader-parts.js';
 
 // RF-1404, RF-1406: the inputs of the reader's prompts from the task of a reader agent: the list of
 // the area's files (the first user message) and, for the card format, the first small excerpts the
@@ -11,6 +12,7 @@ export const readerPromptIds: readonly string[] = [
   'reader/area',
   'reader/read-first',
   'cards/card-format',
+  ...readerPartIds,
 ];
 
 /** Small on purpose: the committed excerpts of public code stay short. */
@@ -84,6 +86,9 @@ export function captureReaderInput(
   if (area === undefined) return undefined;
   const workbook = area.files.some((file) => file.path.endsWith('/workbook.md'));
   const base = { ...area, ...(workbook ? { workbook } : {}), turns: context.maxTurns };
+  if (readerPartIds.includes(promptId)) {
+    return capturePartInput(promptId, task, { base, workbook, reads: readsOf(task) });
+  }
   if (promptId !== 'cards/card-format') return base;
   const reads = readsOf(task);
   return reads.length === 0 ? undefined : { ...base, reads };

@@ -13,7 +13,7 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   --cases verifier-claim-sample --repetitions 3 --yes
 ```
 
-- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (8 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, the reader's task, area and read-first prompts, and the card format).
+- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (23 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap and its nine plan documents, the reader's prompts, and the card format).
 - `--version v5` is the file `prompts/verifier/claim.v5.md`; any other value is the path of a draft file, so a new
   wording is tried before it is added to `prompts/` (its name, version `file` and SHA-256 go to the results).
 - `--model provider:model` is any model the provider factory serves; the server key comes from the environment
@@ -117,6 +117,8 @@ the turn after a fixed premature answer and the refusal under test; `cards/card-
 (`Valid`, `Partial`, `Unusable`, `ReadsMore`). A first turn has no answer parser, so its "valid on the first try" only says
 the call was answered; read `detail`. The later turns of a loop are not measured (ADR-029).
 
+**The other reader prompts (P10-05).** `reader/answers`, `reader/reread` and `reader/parent-cards` are the parts a re-run or a Deepen task adds to the first user message; a case holds the text of the data block the run rendered (the owner's answers, the first four rejected claims, the first thirty parent cards) and only the part under test is added, so a result is the effect of that file alone; the kinds are those of a first turn. `reader/read-more` is the turn after the refusal of an answer given after reading little: the replay of the reads, a fixed answer, and the refusal built from the numbers and unread files the run wrote (`readMore`, `turns` is the turns left plus one); the kinds are those of a first turn, and `ReadsFiles` is what the prompt asks for. `reader/turns-left` is the message after the reads, put to the model with one turn left, and the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`); a late final answer is what it asks for. `reader/workbook` is the guidance added to the system prompt of an area that holds a rendered workbook, measured like the turns-left message; no eShopModernizing run has a workbook, so it has a local set only (`reader-workbook-workbooks`, rebuilt with `--local` from the Asset Manager and Invoice Generator runs); `lab/cases/` holds no `reader-workbook` set. The other five also have local sets `reader-<name>-workbooks` from the same runs. The committed sets (2026-11-13, 10 cases each, 4 held back) come from the eShopModernizing runs `p6/p7/p8/p8w3-haiku-eshop-understand`, `p6-haiku-eshop-v2-understand` and the matching `-deepen` runs; the parts of the first message occur only in Deepen runs, the refusal only in runs where a reader answered early.
+
 ## 5. Wire another prompt id
 
 1. Write `src/application/lab/targets/<name>-target.ts`: a `LabTarget` with the prompt id (`<folder>/<stem>`, the files
@@ -165,15 +167,15 @@ targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalo
 | `planner/prd`               | wired   | planner-prd (+ local set)                          |
 | `planner/ux`                | wired   | planner-ux (+ local set)                           |
 | `planner/workbook`          | wired   | local only: planner-workbook-workbooks             |
-| `reader/answers`            | not yet |                                                    |
+| `reader/answers`            | wired   | reader-answers (first turn, with answers)          |
 | `reader/area`               | wired   | reader-area (first turn)                           |
-| `reader/parent-cards`       | not yet |                                                    |
+| `reader/parent-cards`       | wired   | reader-parent-cards (first turn, parent cards)     |
 | `reader/read-first`         | wired   | reader-read-first (after a fixed premature answer) |
-| `reader/read-more`          | not yet |                                                    |
-| `reader/reread`             | not yet |                                                    |
+| `reader/read-more`          | wired   | reader-read-more (after the refusal)               |
+| `reader/reread`             | wired   | reader-reread (first turn, rejected claims)        |
 | `reader/task`               | wired   | reader-task (first turn)                           |
-| `reader/turns-left`         | not yet |                                                    |
-| `reader/workbook`           | not yet |                                                    |
+| `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)     |
+| `reader/workbook`           | wired   | reader-workbook-workbooks (local only)             |
 | `shared/masked-value`       | not yet |                                                    |
 | `shared/secret-risk`        | not yet |                                                    |
 | `shared/text-tool-protocol` | not yet |                                                    |
