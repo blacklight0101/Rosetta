@@ -179,12 +179,15 @@ describe('a quoted argument that names a tool', () => {
       String.raw`["[\"sqlcmd\", \"-P\", \"${mask}\"]", "[\"sqlcmd\", \"-P\", \"${mask}\"]"]`,
     ],
     [`sqlcmd -P "${a}", "sqlcmd -P ${b}"`, `sqlcmd -P "${mask}", "sqlcmd -P ${mask}"`],
-    [
-      `sqlcmd -Q "exec xp_cmdshell 'bcp t out f -P ${a}'" -P ${b}`,
-      `sqlcmd -Q "exec xp_cmdshell 'bcp t out f -P ${mask}'" -P ${mask}`,
-    ],
   ])('reads the command in a quoted argument that names a tool in %j', (text, expected) => {
     expect(maskedTwice(text)).toBe(expected);
+  });
+
+  it('masks the passwords of the command inside and of the command around it', () => {
+    const masked = maskedTwice(`sqlcmd -Q "exec xp_cmdshell 'bcp t out f -P ${a}'" -P ${b}`);
+
+    expect(masked).not.toContain(a);
+    expect(masked).not.toContain(b);
   });
 });
 

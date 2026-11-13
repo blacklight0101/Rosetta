@@ -58,16 +58,21 @@ describe('the regression corpus of the SQL Server tool rule', () => {
   });
 });
 
-describe('the time of a flood of tool names after a delimiter', () => {
-  it.each([',bcp', ',sqlcmd', ';sqlcmd', '|sqlcmd', '[sqlcmd'])(
-    'stays linear on 1 MB of %j',
-    (unit) => {
-      const text = unit.repeat(Math.ceil(1_000_000 / unit.length));
-      const started = performance.now();
+describe('the time of a flood of tool names after a delimiter or in quoted arguments', () => {
+  it.each([
+    ',bcp',
+    ',sqlcmd',
+    ';sqlcmd',
+    '|sqlcmd',
+    '[sqlcmd',
+    'sqlcmd -Q "bcp" ',
+    '"[CMD, sqlcmd, ',
+  ])('stays linear on 1 MB of %j', (unit) => {
+    const text = unit.repeat(Math.ceil(1_000_000 / unit.length));
+    const started = performance.now();
 
-      new SecretMasker().mask(text);
+    new SecretMasker().mask(text);
 
-      expect(performance.now() - started).toBeLessThan(2000);
-    },
-  );
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
 });
