@@ -19,8 +19,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P6 Agent build method        | 33      | 5         | 28         | 0         | 0                  | 12      | 21      | 0      | 14         | 0         |
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
 | P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
-| P9 Evaluation fixes, round 3 | 17      | 4         | 11         | 2         | 0                  | 15      | 2       | 0      | 4          | 0         |
-| **Total**                    | **650** | **127**   | **472**    | **51**    | **0**              | **345** | **278** | **27** | **322**    | **24**    |
+| P9 Evaluation fixes, round 3 | 19      | 4         | 13         | 2         | 0                  | 17      | 2       | 0      | 6          | 0         |
+| P10 Prompt lab               | 12      | 0         | 10         | 2         | 0                  | 3       | 7       | 2      | 0          | 0         |
+| **Total**                    | **664** | **127**   | **484**    | **53**    | **0**              | **350** | **285** | **29** | **324**    | **24**    |
 
 ## Conventions for every card
 
@@ -9828,8 +9829,8 @@ Phase 9 comes from the evaluation of 2026-11-09 (P8-46..P8-49 run on Haiku only,
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: none
-- **Gate**: owner (Phase 9 follow-ups held)
-- **Status**: Todo
+- **Gate**: owner (Phase 9 follow-ups started by the owner 2026-11-13, DEC-230)
+- **Status**: Done (#1376)
 - **Evidence** (2026-11-13, the verifiers of P9-01..P9-13): MINOR findings that blocked no merge, read from the verdicts and not re-checked since; a line number may have moved.
   - Journey and budget: a Continue whose room shrank after the pause answers 202 without saying the run got less than the N offered (`continue-run.ts`, about 128-132); a run continued with its old queue time goes ahead of runs queued since, other users' included (`queue-rules.ts`, about 11-14), which RF-432 should state; the journey raise and the run row are two statements with undo, not one PostgreSQL transaction (P9-01 owner question 3); Plan setup does not follow the server's `journey.usedUp` for an uncapped local run (P9-02); the strip total counts the journey's runs while the Cost page project total also has scans and the plan-options calls, so the RF-1020 wording "the figure the Cost page gives" is too strong, and `budget.spentMicros` is not described in `docs/architecture.md` (GetJourney row) (P9-08).
   - Start page: the server run cap note and the run cap warnings still name the project cap beside the approved amount (`EstimateSection.tsx`, about 105 and 170-176), the no-journey branch of the meter has no test (P9-12); the moved-figure note has no `role="status"` and the first read resets when areas change (`ServerKeyNote.tsx`, P9-11); `rolesDown` checks all four roles while understand calls a subset (`MODEL_ROLES_OF`, P9-09); the comment at `tests/e2e/start-run-limits.spec.ts:42` and `tests/e2e/start-run.spec.ts:141` no longer match the page.
@@ -9846,8 +9847,8 @@ Phase 9 comes from the evaluation of 2026-11-09 (P8-46..P8-49 run on Haiku only,
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: none
-- **Gate**: owner (Phase 9 follow-ups held)
-- **Status**: Todo
+- **Gate**: owner (Phase 9 follow-ups started by the owner 2026-11-13, DEC-230)
+- **Status**: Done (#1375)
 - **Evidence** (2026-11-09, EV-108; split from P9-06 as its owner question 1): the eShop plan completed without the three hi-lo tables BR-006 names while its ADR-001 decides "Hi-lo ids generated in the application". P9-06 made every requirement reach a card; a table that a decided ADR needs is a model judgement (decision text against the data model) and was left out.
 - **Reads**: `src/application/plan/` (gap rounds, plan links, the coverage check), the plan's ADR and data model outputs, RF-623, RF-627, ADR-018.
 - **Do**: add the Given to RF-623 first; red tests with recorded responses first. After the gap rounds, check each decided ADR of the plan against its data model and name, in `checks.md`, a structure the ADR needs that the data model lacks; decide with the owner whether it fails the plan or is reported (default: reported, not failed).
@@ -9860,8 +9861,8 @@ Phase 9 comes from the evaluation of 2026-11-09 (P8-46..P8-49 run on Haiku only,
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: none
-- **Gate**: owner (Phase 9 follow-ups held)
-- **Status**: Todo
+- **Gate**: owner (Phase 9 follow-ups started by the owner 2026-11-13, DEC-230)
+- **Status**: Done (#1374)
 - **Evidence** (2026-11-13, P9-01 verifier): Resume sets the run's `queued_at` to now (`pg-run-index.ts`, about 62, REOPEN), so resuming a run of an earlier journey moves its spend into the newer journey without raising it, which can bring back RST-2311. P9-01 fixed the same for Continue (`keepsQueuedAt`).
 - **Reads**: `pg-run-index.ts`, the memory run index, `resume-run.ts`, `journey-raise.ts` (`keepsQueuedAt`), domain `isJourneyStep`, RF-432, RF-435.
 - **Do**: add the Given to RF-435 first; red tests first. A resumed run stays a step of the journey it was queued under (keep its queue time across journeys, or record its journey), with the queue order rule stated in RF-1108.
@@ -9874,11 +9875,213 @@ Phase 9 comes from the evaluation of 2026-11-09 (P8-46..P8-49 run on Haiku only,
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: none
-- **Gate**: owner (Phase 9 follow-ups held)
-- **Status**: Todo
+- **Gate**: owner (Phase 9 follow-ups started by the owner 2026-11-13, DEC-230)
+- **Status**: Done (#1373)
 - **Evidence** (2026-11-09, release #1351): the non-required "stress changed tests" job reruns every changed test of the whole release on a `develop` -> `main` pull request; it was cancelled at its 20-minute limit with PostgreSQL "too many clients", while every card had passed its own stress run.
 - **Reads**: `.github/workflows/ci.yml` (the stress job), `docs/runbooks/ci-throughput.md`, `docs/environments-and-delivery.md`, DEC-227.
 - **Do**: the stress job does not run on a pull request whose base is `main` (or runs a bounded subset), with a comment saying why; the runbook says so.
 - **Delivers**: the workflow change and the runbook line.
 - **Done when**: a release pull request shows the stress job skipped; CI green.
 - **Refs**: DEC-227, DEC-175; release #1351; GitHub issue #1370
+
+### P9-18 - Follow-up: Resume takes the project lock, and the data model check's stops have tests
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 follow-ups held)
+- **Status**: Todo
+- **Evidence** (2026-11-13, the verifiers of P9-16 and P9-15): Resume reads the project's journey and then reopens the run without the project lock (`resume-run.ts`, about 89-91), so an Analyse that records a new journey between the two makes the resumed run a step of the new journey (a window of milliseconds; Continue takes `withProjectLock`, `continue-run.ts` about 73). The test wiring in `tests/support/web-run-services.ts` (about 277) and `tests/support/understand-run-starters.ts` (about 87) does not pass `journeys`, and no unit test covers journeys wired with no record. For P9-15, no test shows an approved-amount refusal or an owner Stop during the `planner-adr-model` call (the first keeps the package and pauses, the second writes no package), and `keptPlannerIds` works the ids out from two counts instead of taking them from `decideOnce`.
+- **Reads**: `resume-run.ts`, `continue-run.ts`, the test support files named, `plan-adr-model.ts`, `brief-restated.ts`, `build-plan-adr-model-caps.test.ts`, RF-435, RF-623.
+- **Do**: red tests first. Resume takes the project lock around the journey read and the reopen, as Continue does; the test wiring passes `journeys`; a unit test for journeys wired with no record. Tests for the approved-amount refusal (package written, run paused) and an owner Stop (no package, run Interrupted) during the data model check; `decideOnce` returns the kept planner ids and `keptPlannerIds` uses them.
+- **Delivers**: the lock, the tests, the id change.
+- **Done when**: the race cannot happen in a test that interleaves Resume and Analyse; the two stop paths are tested; CI green.
+- **Refs**: RF-435, RF-623; P9-15, P9-16; GitHub issue #1377
+
+### P9-19 - Follow-up: the first-call warnings beside the approved amount
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: owner (Phase 9 follow-ups held)
+- **Status**: Todo
+- **Evidence** (2026-11-13, the verifier of P9-14): beside a journey the Start page now drops the run-cap warnings, including the two first-call warnings (run cost, run tokens), instead of comparing them with the approved amount; a first call whose reservation is above a small approvable figure gives no warning and the run pauses at its first call. Also: Continue's 202 fields `granted` and `lessThanOffered` are documented only in RF-432 and the route comment (`docs/architecture.md` has no Continue row), and `granted` can overstate what one run got when it is at its ceiling; the RST-1806 test asserts a log entry rather than the run's end code.
+- **Reads**: `EstimateSection.tsx`, the estimate's first-call figures, `continue-run.ts` and its route, `docs/architecture.md`, `build-plan-claim-sources.test.ts`, RF-432, RF-434, RF-1106.
+- **Do**: the RF-434 Given first; red tests first. Beside a journey, warn when the first call's reservation is above the approvable figure (one line, worded against the approved amount); add the Continue row to `docs/architecture.md`; make `granted` what the run itself got; assert the run's end code RST-1806.
+- **Delivers**: the warning, its tests, the architecture row, the test change.
+- **Done when**: a small approvable figure below the first call's reservation shows the warning before Start; CI green.
+- **Refs**: RF-432, RF-434, RF-1106; P9-12, P9-14; GitHub issue #1378
+
+## Phase 10 - The prompt lab: test, reflect and iterate on every model call (opened by the owner on 2026-11-13, DEC-231)
+
+The owner opened Phase 10 on 2026-11-13, after Phase 9: test each prompt Rosetta sends to a model, reflect on what goes wrong, and iterate until the quality, efficiency and effectiveness of each prompt is measurably better (DEC-231). The owner's terms: a budget of $50 for the whole phase, judge calls included, with a stop for the owner at $40; Claude Haiku 5.5 is tuned deeply, Claude Sonnet 5.5 less and Claude Opus 5.5 least (a shared prompt is tuned on Haiku and checked on the other two; it is not split per model unless a card shows it must be); Claude Opus 5.5 judges answers against a written rubric and the owner reviews a sample of the judge's scores; the end-to-end check runs on a new stack `rosetta-p10` once Docker is up (the stacks `rosetta-app-*`, `rosetta-db-*`, `rosetta-eval-*`, `rosetta-latest-*` and `rosetta-wave3-*` are never touched). The key reaches the lab only through `--env-file` from `.env`; no agent reads it. Inputs are taken only from the three public evaluation repositories (Asset Manager, Invoice Generator, eShopModernizing) and the existing recordings; nothing from an employer enters the repository. Lab results go to the git-ignored `lab-out/`; each card's report of figures (no answer text beyond short quotes) goes to `docs/evaluation/prompt-lab/`.
+
+A prompt version is kept only when it beats the current version on the held-back cases of its set without a regression on any check (DEC-231): first-try valid answers, repairs, refusals and errors (RST codes), the judge's rubric score, input and output tokens, latency and cost per call. Each kept version lands as a new prompt file with its loader, tests, recordings, `docs/architecture.md` and the manifest (the gap.v6 pattern), through a verifier and green CI like any card. Budget slices per card are upper limits; what a card does not spend returns to the reserve. Two builders and two verifiers at a time (DEC-229); two cards never edit the same prompt or file in one wave, and the lab's spend ledger is shared, so a builder that reaches its slice stops and reports.
+
+### P10-01 - Prompt lab: run one prompt on its cases with a spend ledger
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence** (2026-11-13, owner): the prompts are only measured end to end (`npm run eval` scores understand on the eShop golden set; `--calibration` scores the verifier), so a prompt cannot be tried, compared and kept on its own.
+- **Reads**: `scripts/eval.mjs`, `src/application/eval/*`, `src/presentation/eval/*`, `eval/config.json`, the provider adapters and `guarded-provider.ts`, the prompt loaders and manifest, ADR-008, RNF-006, RNF-012, RNF-015.
+- **Do**: add the Givens first (a new RNF or RF section "Prompt lab"); red tests first. `npm run lab -- --prompt <id> --version <vN|file> --model <provider:model> --cases <set> [--repetitions n]` sends the prompt's real messages, built by the same code the run uses, through the real adapter and the budget guard, and writes per-case results to `lab-out/`. A shared spend ledger file (`lab-out/ledger.jsonl`, append-only, safe for two processes) holds the phase total; the lab refuses a call that would pass the phase cap or a per-invocation cap and stops at the owner's stop line (`lab/config.json`: total $50, stop $40, DEC-231). Deterministic metrics per case: valid on first try, repaired, refused, RST code, input and output tokens, latency, cost. A `--compare a b` report gives the two versions side by side on the same cases. The tests use the fake provider only.
+- **Delivers**: the lab command, its config, the ledger, unit and integration tests (fake provider), a runbook `docs/runbooks/prompt-lab.md`.
+- **Done when**: a fake-provider lab run and compare produce the metrics and the ledger refuses past the caps; CI green; no real call is made by any test.
+- **Refs**: DEC-231, ADR-008, RNF-006, RNF-012, RNF-015; GitHub issue #1379
+
+### P10-02 - Lab case sets from the three public repositories
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P10-01
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence** (2026-11-13): the lab needs, for each prompt, real inputs it can replay; today only the eShop golden set and the recordings exist.
+- **Reads**: `tests/recordings/`, `eval/golden/`, the run call log (`jsonl-provider-call-log.ts`, `file-run-call-reader.ts`), P10-01.
+- **Do**: a capture mode that turns a run's call log (or a recording) into lab cases per prompt id, with the inputs only; build the sets from runs of Asset Manager, Invoice Generator and eShopModernizing (public, their licences cited), marking which cases are held back (at least a third, chosen before any tuning). Each set says its source commit and licence. No answer text from a model is stored as truth; expected facts, where a check needs them, are written by hand from the code (DEC-57).
+- **Delivers**: the capture mode, case sets for every live prompt id (`lab/cases/`), tests, the set format in the runbook.
+- **Done when**: every live prompt id has a case set with held-back cases; CI green.
+- **Refs**: DEC-57, DEC-231; P10-01; GitHub issue #1380
+
+### P10-03 - The judge: rubrics per prompt family and a check of the judge
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P10-01
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence** (2026-11-13, owner): quality beyond the deterministic checks needs a judge; the owner chose Claude Opus 5.5 with an owner review of a sample.
+- **Reads**: `eval/calibration/`, `run-calibration.ts`, the prompt families (reader, verifier, summariser, planner, cards, shared), RF-305, P10-01.
+- **Do**: a written rubric per family (`lab/rubrics/`: what a good answer does, scored 1-5 per criterion, with grounding in the given source as a criterion everywhere), the lab's `--judge provider:model` option, judge calls counted in the same ledger, and a judge check: the judge scores the hand-labelled calibration claims and a small hand-scored sample per family, and its agreement is reported. A sample of judge scores per family is written for the owner's review (`docs/evaluation/prompt-lab/judge-sample.md`).
+- **Delivers**: the rubrics, the judge option, the judge check report, tests with the fake provider.
+- **Done when**: every family has a rubric, the judge check is reported, and the owner sample is written; CI green. Budget slice: $3.
+- **Refs**: RF-305, DEC-231; P10-01; GitHub issue #1381
+
+### P10-04 - Baseline of every prompt on Haiku, Sonnet and Opus
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P10-02, P10-03
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence** (2026-11-13): tuning needs a measured starting point, and the budget split needs the figures.
+- **Reads**: P10-01..P10-03, the manifest of current prompt versions.
+- **Do**: run every live prompt's current version on its tuning cases on Haiku (all cases), Sonnet (half) and Opus (a quarter), with the judge; report per prompt and model the metrics of DEC-231 and the worst cases with a short reason. Rank the prompts by cost share times failure and propose the order and budget slices of P10-05..P10-10 (adjusting the defaults below within the $50).
+- **Delivers**: `docs/evaluation/prompt-lab/baseline.md`, the ranked list.
+- **Done when**: the baseline is written and the ledger shows its spend. Budget slice: $6.
+- **Refs**: DEC-231; P10-01..P10-03; GitHub issue #1382
+
+### P10-05 - Tune the reader prompts
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the reader calls are most of an understand run's calls and spend (to be confirmed by P10-04).
+- **Reads**: `prompts/reader/*` (task, area, read-first, read-more, reread, answers, turns-left, parent-cards, workbook), `prompts/shared/text-tool-protocol*`, the reader use cases, P10-04's figures.
+- **Do**: iterate in rounds on Haiku (try, score, read the failing cases, change one thing, score again), then check the kept version on Sonnet and Opus; keep a version only under the rule of DEC-231; record each round (what changed, why, the figures) in `docs/evaluation/prompt-lab/reader.md`. Land each kept prompt as a new version with its tests and recordings.
+- **Delivers**: new reader prompt versions, the round log, tests and recordings.
+- **Done when**: every reader prompt has been through at least three Haiku rounds and each kept version beats its baseline on the held-back cases; CI green. Budget slice: $9.
+- **Refs**: DEC-231; P10-04; GitHub issue #1383
+
+### P10-06 - Tune the verifier and summariser prompts
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the verifier decides which claims stand (RF-305 calibration exists), the summariser writes the overview the owner reads first.
+- **Reads**: `prompts/verifier/*` (claim, retry), `prompts/summariser/*` (merge, overview), `eval/calibration/`, P10-04.
+- **Do**: as P10-05; for the verifier the calibration agreement must not drop. Round log in `docs/evaluation/prompt-lab/verifier-summariser.md`.
+- **Delivers**: new prompt versions, the round log, tests and recordings.
+- **Done when**: as P10-05; CI green. Budget slice: $5.
+- **Refs**: RF-305, DEC-231; P10-04; GitHub issue #1384
+
+### P10-07 - Tune the plan gap and repair prompts
+
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the gap rounds decide whether every requirement gets a card (RST-1806, P9-06) and the repairs cost extra calls.
+- **Reads**: `prompts/planner/gap*`, `gap-repair*`, `plan-repair*`, `prompts/cards/repair*`, P9-06, P10-04.
+- **Do**: as P10-05, with the repair rate as a first-class metric. Round log in `docs/evaluation/prompt-lab/plan-gap.md`.
+- **Delivers**: new prompt versions, the round log, tests and recordings.
+- **Done when**: as P10-05; CI green. Budget slice: $5.
+- **Refs**: RF-623, DEC-231; P9-06, P10-04; GitHub issue #1385
+
+### P10-08 - Tune the plan document prompts
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: L
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the hand-off package is built from these calls.
+- **Reads**: `prompts/planner/*` other than gap and repair (prd, ux, data-model, api-contract, flows, coverage, adr-model, options, package, continue, workbook), P10-04.
+- **Do**: as P10-05. Round log in `docs/evaluation/prompt-lab/plan-docs.md`.
+- **Delivers**: new prompt versions, the round log, tests and recordings.
+- **Done when**: as P10-05; CI green. Budget slice: $6.
+- **Refs**: DEC-231; P10-04; GitHub issue #1386
+
+### P10-09 - Tune the card prompts
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the task cards are what a builder agent reads.
+- **Reads**: `prompts/cards/*` (card-format, screens, flows, continue), P9-13, P10-04.
+- **Do**: as P10-05. Round log in `docs/evaluation/prompt-lab/cards.md`.
+- **Delivers**: new prompt versions, the round log, tests and recordings.
+- **Done when**: as P10-05; CI green. Budget slice: $4.
+- **Refs**: DEC-231; P9-13, P10-04; GitHub issue #1387
+
+### P10-10 - Tune the shared prompts
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P10-04
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the secret and masked-value prompts guard what leaves the server.
+- **Reads**: `prompts/shared/*` (secret-risk, masked-value, text-tool-protocol, the last only if P10-05 did not change it), P10-04.
+- **Do**: as P10-05; a missed secret is a regression no score can buy back. Round log in `docs/evaluation/prompt-lab/shared.md`.
+- **Delivers**: new prompt versions, the round log, tests and recordings.
+- **Done when**: as P10-05; CI green. Budget slice: $1.
+- **Refs**: DEC-231; P10-04; GitHub issue #1388
+
+### P10-11 - End-to-end check on the rosetta-p10 stack
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P10-05, P10-06, P10-07, P10-08, P10-09, P10-10
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231; the stack needs Docker up)
+- **Status**: Todo
+- **Evidence**: prompts tuned one by one must also work together in a run.
+- **Reads**: the evaluation of 2026-11-09 (method and figures), `docs/runbooks/` for the evaluation stack, P10-04..P10-10.
+- **Do**: bring up a new stack `rosetta-p10` from `develop` (never touching the stacks named above), run Asset Manager, Invoice Generator and eShopModernizing end to end on Haiku, and compare with the evaluation of 2026-11-09: spend, calls, repairs, failures, coverage, and the judge's score of the hand-off package. File any defect as a follow-up card.
+- **Delivers**: `docs/evaluation/prompt-lab/end-to-end.md`.
+- **Done when**: the three runs are reported against 2026-11-09. Budget slice: $6.
+- **Refs**: DEC-231; evaluation of 2026-11-09; P10-05..P10-10; GitHub issue #1389
+
+### P10-12 - Phase 10 report and the owner's review
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P10-11
+- **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
+- **Status**: Todo
+- **Evidence**: the owner reviews the judge sample and decides what is released.
+- **Reads**: `docs/evaluation/prompt-lab/*`, the ledger.
+- **Do**: one page per prompt family (before and after per model, what changed, the spend), the total spend against $50, the judge sample for the owner, and the owner questions left.
+- **Delivers**: `docs/evaluation/prompt-lab/README.md`, the handoff entry.
+- **Done when**: the report is merged.
+- **Refs**: DEC-231; P10-01..P10-11; GitHub issue #1390

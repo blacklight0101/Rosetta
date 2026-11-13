@@ -55,7 +55,7 @@ const total = (row: MatrixRow): number => row.counts.reduce((sum, count) => sum 
 
 /** The ids of the cards the task list defines (`### P3-12 - Title`). */
 function taskCardIds(tasks: string): ReadonlySet<string> {
-  return new Set([...tasks.matchAll(/^### (P\d-\d+) - /gmu)].map((match) => match[1] ?? ''));
+  return new Set([...tasks.matchAll(/^### (P\d+-\d+) - /gmu)].map((match) => match[1] ?? ''));
 }
 
 /** The letters of the cards the matrix proposes (`**Proposed card A - ...**`). */
@@ -65,8 +65,10 @@ function proposedLetters(matrix: string): ReadonlySet<string> {
 
 /** The card names a State cell mentions: `card P3-30`, `cards P1-50 (...) and P3-22`, `card A`. */
 function namedCards(state: string): readonly string[] {
-  const phrases = [...state.matchAll(/\bcards? ((?:P\d-\d+|[A-Z]\b)(?:[^;.]*?(?:P\d-\d+))*)/gu)];
-  return phrases.flatMap((phrase) => [...(phrase[1] ?? '').matchAll(/P\d-\d+|\b[A-Z]\b/gu)]).flat();
+  const phrases = [...state.matchAll(/\bcards? ((?:P\d+-\d+|[A-Z]\b)(?:[^;.]*?(?:P\d+-\d+))*)/gu)];
+  return phrases
+    .flatMap((phrase) => [...(phrase[1] ?? '').matchAll(/P\d+-\d+|\b[A-Z]\b/gu)])
+    .flat();
 }
 
 function cardProblems(row: MatrixRow, known: ReadonlySet<string>, letters: ReadonlySet<string>) {
