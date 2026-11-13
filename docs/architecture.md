@@ -577,7 +577,7 @@ sequenceDiagram
   it is dropped like any bad citation), and the problem of a dropped citation quotes what the model wrote and the
   expected form; problems earn up to two repairs, the second with only the problems that remain, and an answer
   cut off by the output limit (the provider reports `length`, or the JSON never closes; `cut-answer.ts`, P5-03) earns one
-  continuation (`prompts/cards/continue.v1.md`) instead of a new start, and a second cut goes to the repairs;
+  continuation (`prompts/cards/continue.v2.md`; v2 tells the model to go on at the next character and stop after the card it was writing, P10-09) instead of a new start, and a second cut goes to the repairs;
   every follow-up is a turn like any other, under the same turn limit, context share and stop checks, and a stop
   keeps the cards read so far; RF-206: a final answer given before any file of the area was read is not accepted,
   the agent is sent `prompts/reader/read-first.v1.md` with its unread files as a data block and keeps its turns to read
@@ -617,7 +617,7 @@ sequenceDiagram
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v12.md` followed by
   `prompts/cards/card-format.v6.md` (from v3 the parser refuses an `OQ` card without at least three suggested answers, RF-645; v4 says "at least three", P7-17; v6 says an either-or question gets answers that name a side, never Yes or No, and the parser drops such a Yes/No answer when at least three answers and the recommended one stay, P9-13;
   an earlier format is read without the requirement); `loadReaderPrompts` reads the eight files it uses (the two
-  above, the task, the turns-left notice, `prompts/cards/repair.v5.md`, `prompts/cards/continue.v1.md`,
+  above, the task, the turns-left notice, `prompts/cards/repair.v5.md`, `prompts/cards/continue.v2.md`,
   `prompts/reader/read-first.v1.md` and `prompts/reader/read-more.v2.md`), refuses a template without its placeholders
   or a file that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run
   records them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt
