@@ -61,7 +61,7 @@ describe('the file spend ledger', () => {
 });
 
 describe('the file spend ledger over time', () => {
-  it('RF-1402 stops counting a hold that was never settled before thirty minutes and then stops counting', async () => {
+  it('RF-1402 keeps counting an unsettled hold for thirty minutes and then stops', async () => {
     const clock = new FixedClock(start);
     const limits = { ...labLimits, stopMicros: 1_500, invocationCapMicros: 1_500 };
     await ledger('inv-a', limits, clock).hold(1_000);

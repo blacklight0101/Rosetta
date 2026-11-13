@@ -56,7 +56,7 @@ describe('a call that failed after it was sent', () => {
     expect(gate.end().failures).toEqual([ERROR_CODES.providerCallFailed]);
   });
 
-  it('RF-1402 settles at the cost the budget guard priced when it knows one', async () => {
+  it('RF-1402 settles at the larger of the cost the guard knows and the held worst case', async () => {
     const { gate, ledger } = setup((tap) => {
       tap.lastCostMicros = 123;
       return Promise.reject(new RosettaError(ERROR_CODES.providerCallFailed));
@@ -64,7 +64,18 @@ describe('a call that failed after it was sent', () => {
 
     await expect(gate.complete(contractRequest())).rejects.toThrow();
 
-    expect(await ledger.totals()).toEqual({ spentMicros: 123, heldMicros: 0 });
+    expect(await ledger.totals()).toEqual({ spentMicros: WORST, heldMicros: 0 });
+  });
+
+  it('RF-1402 books a known cost above the held worst case as it is', async () => {
+    const { gate, ledger } = setup((tap) => {
+      tap.lastCostMicros = WORST + 700;
+      return Promise.reject(new RosettaError(ERROR_CODES.providerCallFailed));
+    });
+
+    await expect(gate.complete(contractRequest())).rejects.toThrow();
+
+    expect(await ledger.totals()).toEqual({ spentMicros: WORST + 700, heldMicros: 0 });
   });
 
   it('RF-1402 releases the hold of a call a guard refused before it was sent', async () => {
@@ -75,6 +86,25 @@ describe('a call that failed after it was sent', () => {
     await expect(gate.complete(contractRequest())).rejects.toThrow();
 
     expect(await ledger.totals()).toEqual({ spentMicros: 0, heldMicros: 0 });
+  });
+});
+
+describe('a ledger that cannot release a hold', () => {
+  it('RF-1402 keeps the original error and stops the invocation', async () => {
+    const { gate } = setup(
+      () => Promise.reject(new RosettaError(ERROR_CODES.budgetCapReached, 'guard refused')),
+      (ledger) => ({
+        hold: (micros) => ledger.hold(micros),
+        settle: (ticket, micros) => ledger.settle(ticket, micros),
+        totals: () => ledger.totals(),
+        release: () => Promise.reject(new Error('disk full')),
+      }),
+    );
+
+    await expect(gate.complete(contractRequest())).rejects.toThrow('guard refused');
+
+    expect(gate.stopped()).toContain('ledger');
+    expect(gate.stopped()).toContain('guard refused');
   });
 });
 
