@@ -149,10 +149,10 @@ describe('the last turn of the card surface targets', () => {
     },
   );
 
-  it('RF-1406 keeps the tools on a continuation, as a run does, with one turn left', async () => {
+  it('RF-1406 keeps the tools on a continuation and says two turns left, which a run can reach', async () => {
     const { request } = await run('cards/continue', { text: rest });
 
-    expect(request?.messages[3]?.content).toContain('Turns left: 1.');
+    expect(request?.messages[3]?.content).toContain('Turns left: 2.');
     expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
   });
 });
@@ -199,6 +199,31 @@ describe('a continuation that starts again', () => {
   it('RF-1406 is not valid on the first try either, and the rest of the cut is', () => {
     expect(targets.get('cards/continue')?.readsAnswer(again)).toBe(false);
     expect(targets.get('cards/continue')?.readsAnswer(rest)).toBe(true);
+  });
+});
+
+describe('the coverage of a continuation', () => {
+  const two = {
+    ...input,
+    files: [...input.files, { path: 'shop/Pay.cs', language: 'csharp', lines: 30 }],
+    reads: [...input.reads, { path: 'shop/Pay.cs', startLine: 1, lines: ['class Pay {', '}'] }],
+  };
+  const payCard = JSON.stringify({
+    ...card,
+    title: 'Pay',
+    claims: [{ text: 'Pay exists.', citations: ['shop/Pay.cs:1-2'] }],
+  });
+  const goesOn = `${rest.slice(0, -2)}, ${payCard}]}`;
+
+  it('RF-1406 is Uncovered, not usable, when the card is finished and a file read has no card', async () => {
+    const { outcome } = await run('cards/continue', { text: rest }, two);
+
+    expect(outcome).toEqual({ usable: false, detail: 'Uncovered' });
+  });
+
+  it('RF-1406 is Valid when every file read is cited, and for a case that read one file', async () => {
+    expect((await run('cards/continue', { text: goesOn }, two)).outcome.detail).toBe('Valid');
+    expect((await run('cards/continue', { text: rest })).outcome.detail).toBe('Valid');
   });
 });
 
