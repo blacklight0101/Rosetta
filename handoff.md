@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 is built and merged into `develop` and not released; its follow-ups P9-14..P9-17 are held. The latest state is the first entry of the resume point below._
+_Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 and its follow-ups P9-14..P9-17 are built and merged into `develop` and not released; P9-18 and P9-19 are held; Phase 10, the prompt lab, is carded (DEC-231). The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-229.
+- `docs/decision-log.md` - decisions DEC-01..DEC-231.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -29,6 +29,8 @@ _Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-13, Phase 9 follow-ups built, Phase 10 carded).** On the owner's word (DEC-230) the held follow-ups were built with two builders and two verifiers and merged into `develop`, none released: P9-17 #1373 (the stress job skips release pull requests), P9-16 #1374 (Resume keeps a run in the journey it was queued under), P9-15 #1375 (the plan checks its data model against the planner's decision records and lists missing tables in checks.md; a cap refusal of that call keeps the package), P9-14 #1376 (the Phase 9 minor findings; a second QueueCancel in one life stays accepted). P9-15 and P9-14 each needed a second round. The owner questions of each card are in its pull request with the default built (P9-14 Q1-Q5, P9-15 Q1-Q4). New held follow-ups: P9-18 (Resume takes the project lock; stop-path tests of the data model check) and P9-19 (first-call warnings beside the approved amount). The owner opened Phase 10, the prompt lab (DEC-231): $50 in all with a stop at $40, Haiku tuned deeply, Sonnet less, Opus least, Opus as the judge with an owner sample, the end-to-end check on a new stack `rosetta-p10`. Twelve cards P10-01..P10-12 (issues #1379..#1390): the lab and its spend ledger, case sets from the three public repositories, the judge and rubrics, a baseline, five tuning cards by prompt family, the end-to-end check and the report.
 
 **Resume (2026-11-13, Phase 9 built).** The owner cleared Phase 9 on 2026-11-12 with two builders and two verifiers at a time (DEC-229). All thirteen cards are merged into `develop` and none is released: P9-07 #1354, P9-05 #1355, P9-01 #1356, P9-04 #1357, P9-06 #1358, P9-02 #1359, P9-11 #1360, P9-08 #1361, P9-13 #1362, P9-03 #1363, P9-09 #1364, P9-10 #1365, P9-12 #1366. Seven needed a second round (P9-01, P9-02, P9-04, P9-09, P9-10, P9-13; P9-03 an out-of-date test). Notable changes: Continue raises the journey and offers only the room it has (EV-100); "Stop here" ends with its own reason `StoppedAtApproval` (migration 0026); a stopped reader reads Stopped, not failed; a plan fails RST-1806 when a requirement has no card (prompt gap.v6); the card format prompt is card-format.v6; the e2e suite stubs the Ollama model list outside settings and admin pages. The owner questions each card raised are in its pull request with the default built. Held follow-ups: P9-14 (Phase 9 minors), P9-15 (data model against decided ADRs), P9-16 (Resume keeps a run in its journey), P9-17 (stress job skips release pull requests).
 
