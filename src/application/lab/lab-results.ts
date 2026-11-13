@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
+import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. All figures are deterministic: no judge is involved.
@@ -86,6 +87,8 @@ export interface LabSummary {
   readonly meanOutputTokens: number | null;
   readonly meanLatencyMs: number | null;
   readonly costMicros: number;
+  /** RF-1404: the judge's means; null for a run without a judge. */
+  readonly judge: JudgeSummary | null;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -132,6 +135,7 @@ export function summariseLab(results: LabResults): LabSummary {
       calls,
     ),
     costMicros: sum(cases, (each) => each.costMicros),
+    judge: judgeSummaryOf(cases),
   };
 }
 
