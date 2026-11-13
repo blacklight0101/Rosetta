@@ -31,10 +31,11 @@ const card = {
   claims: [{ text: 'An order has a total.', citations: ['shop/Orders.cs:10-11'] }],
 };
 const validCards = JSON.stringify({ cards: [card] });
+/** Cut inside a claim about the first read of the case: the model has the lines to finish it. */
 const CUT =
-  '{"cards": [{"type": "BR", "title": "Late fee after 30 days", "area": "billing", "summary": "An invoice unpaid after 30 days gets a late fee.", "confidence": "High", "claims": [{"text": "The late fee is added when the invoice is more than 30 days old.", "citations": ["src/Billing/Invoices.cs:40-52"]}, {"text": "The fee is a flat 5 percent of the open amount and is';
+  '{"cards": [{"type": "FEAT", "title": "Reads Orders.cs", "area": "shop", "summary": "The code in shop/Orders.cs is read here.", "confidence": "High", "claims": [{"text": "The file shop/Orders.cs holds the code at lines 10-11, which is';
 /** What a model would send to finish the cut answer: the rest of the claim and the cards. */
-const rest = ' added once.", "citations": ["src/Billing/Invoices.cs:40-52"]}]}]}';
+const rest = ' the Orders class.", "citations": ["shop/Orders.cs:10-11"]}]}]}';
 
 let prompts: ReaderPrompts;
 let targets: Map<string, LabTarget>;
@@ -153,6 +154,23 @@ describe('the last turn of the card surface targets', () => {
 
     expect(request?.messages[3]?.content).toContain('Turns left: 1.');
     expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
+  });
+});
+
+describe('the cut of a continuation', () => {
+  it('RF-1406 is made from the first read of each case and ends inside a claim', async () => {
+    const other = {
+      ...{ area: 'bank "main"', files: [{ path: 'bank/Pay.cs', language: 'csharp', lines: 9 }] },
+      reads: [{ path: 'bank/Pay.cs', startLine: 3, lines: ['class Pay {', '  int x;', '}'] }],
+    };
+    const { request } = await run('cards/continue', { text: rest }, other);
+
+    const cut = String(request?.messages.at(-2)?.content);
+    expect(cut).toContain('bank/Pay.cs');
+    expect(cut).toContain('lines 3-5');
+    expect(cut).toContain('"area": "bank \\"main\\""');
+    expect(cut).not.toContain('Orders.cs');
+    expect(cut.endsWith('which is')).toBe(true);
   });
 });
 
