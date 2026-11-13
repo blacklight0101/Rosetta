@@ -107,9 +107,9 @@ function parseDependsOn(value: string): string[] {
 }
 
 export function parseCards(markdown: string): Card[] {
-  const blocks = markdown.split(/^(?=### P\d-\d+ - )/m).filter((b) => /^### P\d-\d+ - /.test(b));
+  const blocks = markdown.split(/^(?=### P\d+-\d+ - )/m).filter((b) => /^### P\d+-\d+ - /.test(b));
   return blocks.map((block) => {
-    const heading = /^### (P\d-\d+) - (.+)$/m.exec(block);
+    const heading = /^### (P\d+-\d+) - (.+)$/m.exec(block);
     return {
       id: group(heading, 'card id'),
       title: heading?.[2] ?? '',
@@ -148,7 +148,7 @@ export function parseTaskTotals(markdown: string): Map<string, CardCounts> {
       .split('|')
       .slice(1, -1)
       .map((cell) => cell.replaceAll('*', '').trim());
-    const key = cells[0]?.match(/^(P\d|Total)\b/)?.[1];
+    const key = cells[0]?.match(/^(P\d+|Total)\b/)?.[1];
     if (key !== undefined && cells.length === COLUMN_COUNT + 1) {
       totals.set(key, toCounts(cells.slice(1).map(Number)));
     }
