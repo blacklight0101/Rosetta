@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { queuePositions, runsToStart } from '../../../../src/domain/runs/queue-rules.js';
+import {
+  holdingRunOf,
+  queuePositions,
+  runsToStart,
+} from '../../../../src/domain/runs/queue-rules.js';
 import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
 
 // RF-1108: more running runs than the limit queue; one user has at most one running run; a run
@@ -100,5 +104,34 @@ describe('runsToStart and the free scan', () => {
     const scan = sampleRun({ userId: amy, stage: 'scan' });
 
     expect(runsToStart([scan], [running], 1)).toEqual([]);
+  });
+});
+
+describe('holdingRunOf', () => {
+  it('RF-1108 EP-106 names the running paid run of the same user that holds a queued paid run', () => {
+    const running = runningRun({ userId: amy, stage: 'understand' });
+    const waiting = sampleRun({ userId: amy, stage: 'plan' });
+
+    expect(holdingRunOf([waiting], [running], waiting.id)).toBe(running);
+  });
+
+  it('RF-1108 EV-106 names nothing for another user running run', () => {
+    const running = runningRun({ userId: bob, stage: 'understand' });
+    const waiting = sampleRun({ userId: amy, stage: 'plan' });
+
+    expect(holdingRunOf([waiting], [running], waiting.id)).toBeUndefined();
+  });
+
+  it('RF-1108 EV-106 names nothing for a queued scan behind the user paid run', () => {
+    const running = runningRun({ userId: amy, stage: 'understand' });
+    const scan = sampleRun({ userId: amy, stage: 'scan' });
+
+    expect(holdingRunOf([scan], [running], scan.id)).toBeUndefined();
+  });
+
+  it('RF-1108 EV-106 names nothing for a run that is not queued', () => {
+    const running = runningRun({ userId: amy, stage: 'understand' });
+
+    expect(holdingRunOf([], [running], running.id)).toBeUndefined();
   });
 });

@@ -42,3 +42,14 @@ export function runsToStart(
 export function queuePositions(queued: readonly Run[]): ReadonlyMap<string, number> {
   return new Map([...queued].sort(inQueueOrder).map((run, index) => [run.id, index + 1]));
 }
+
+/** The running paid run of the same user that holds a queued paid run back; none for a scan. */
+// RF-1108, EV-106
+export function holdingRunOf(
+  queued: readonly Run[],
+  running: readonly Run[],
+  runId: string,
+): Run | undefined {
+  const waiting = queued.find((run) => run.id === runId);
+  return running.find((run) => run.id === runId && waiting !== undefined);
+}
