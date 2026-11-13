@@ -1009,7 +1009,7 @@ was written from an earlier brief); a project with no such run is never out of d
 
 ### 3.21 Prompt lab and judge files: `lab/`, `eval/judge-check/` and `lab-out/` (added 2026-11-13, P10-01; extended by P10-02 and P10-03)
 
-Files of `npm run lab` (RF-1400..RF-1408, ADR-029), inside the Rosetta repository; none is in a user's project.
+Files of `npm run lab` (RF-1400..RF-1409, ADR-029), inside the Rosetta repository; none is in a user's project.
 
 - `lab/config.json` (committed): `{ schemaVersion: 1, totalCapMicros, stopMicros, invocationCapMicros }` in
   micro-dollars, whole numbers, with `invocationCapMicros <= stopMicros <= totalCapMicros` (DEC-231: 50 000 000 and 40 000 000).
@@ -1029,11 +1029,11 @@ invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, 
   milliseconds). A hold older than thirty minutes that was never settled or released stops counting.
 - `lab-out/<yyyyMMdd-HHmmss-lab>/results.json` (git-ignored, masked): `{ schemaVersion: 1, id, at, rosettaVersion,
 prompt { id, name, version, sha256 }, model { provider, model, modelVersion }, caseSet { version, sha256 },
-repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,
+selection? { split: "tune" | "held-back" | "all", sample: n | null }, repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,
 detail, answer, usable, validFirstTry, repaired, refused, rstCode, agreed, calls, inputTokens, outputTokens,
 latencyMs, costMicros, judge? { state, criteria[] { id, score, reason }, overall, vetoed, rstCode, calls, inputTokens,
 outputTokens, costMicros } }, judge? { provider, model, modelVersion, prompt { name, version, sha256 }, rubric { family,
-sha256 } } }` (`judge` only in a run made with `--judge`, RF-1407; `validFirstTry` is `null` for a target with no parser of a first answer, RF-1403). The schemas are in `src/application/lab/`.
+sha256 } } }` (`selection` records `--split` and `--sample`, RF-1409, a file without it is every case; `judge` only in a run made with `--judge`, RF-1407; `validFirstTry` is `null` for a target with no parser of a first answer, RF-1403). The schemas are in `src/application/lab/`.
 - `lab-out/<id>/judge-check.json` (git-ignored, masked, RF-1408): `{ calibration { items, scored, agreed, cases[] }, families {
 family: { samples, scored, overallAgreed, criteria { id: { n, exact, within1, meanAbsDiff } } } }, calls, costMicros, stopped,
 items[] }`.

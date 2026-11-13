@@ -1,4 +1,5 @@
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { LabSplit } from '../../application/lab/lab-selection.js';
 
 // RF-1400, RF-1403: the options of `npm run lab -- [options]`. A run needs the prompt id, its
 // version (`v5` or the path of a draft file), the model (`provider:model`) and the case set; the
@@ -17,6 +18,9 @@ export type LabArgs =
       readonly yes: boolean;
       /** RF-1407: the model that scores each answer against the family rubric. */
       readonly judge?: { readonly provider: string; readonly model: string };
+      /** RF-1409: run only the cases of one side, and only a sample of them. */
+      readonly split?: LabSplit;
+      readonly sample?: number;
     }
   | {
       readonly kind: 'judge-check';
@@ -31,6 +35,7 @@ export type LabArgs =
 export const LAB_USAGE = [
   'Usage: npm run lab -- --prompt <id> --version <vN|file> --model <provider:model> --cases <set>',
   '                      [--repetitions n] [--judge <provider:model>] [--yes]',
+  '                      [--split tune|held-back] [--sample n]',
   '       npm run lab -- --compare <runA> <runB>',
   '       npm run lab -- --judge-check <provider:model> [--limit n] [--yes]',
   '  --prompt <id>            the prompt, such as verifier/claim or summariser/overview',
@@ -38,6 +43,8 @@ export const LAB_USAGE = [
   '  --model <provider:model> the model that answers, such as anthropic:claude-haiku-5-5',
   '  --cases <set>            a case set of lab/cases/ (without .json)',
   '  --repetitions <n>        runs of every case, 1 to 20 (default 1)',
+  '  --split <side>           send only the cases of one side of the set: tune or held-back',
+  '  --sample <n>             send only the first n cases by id (after --split); a run is compared only with one of the same selection',
   '  --judge <provider:model> score each answer against the rubric of its family (more calls)',
   '  --judge-check <p:m>      check that judge on the calibration claims and the hand-scored samples',
   '  --yes                    send the calls; without it the plan and the caps are only shown',
@@ -53,6 +60,8 @@ const VALUE_FLAGS = [
   '--cases',
   '--repetitions',
   '--judge',
+  '--split',
+  '--sample',
 ] as const;
 
 interface ModelRef {
@@ -96,8 +105,42 @@ function repetitionsOf(value: string | undefined): Result<number, string> {
   return ok(count);
 }
 
+function splitOf(value: string | undefined): Result<LabSplit | undefined, string> {
+  if (value === undefined || value === 'tune' || value === 'held-back') return ok(value);
+  return err(`${value} is not tune or held-back`);
+}
+
+function sampleOf(value: string | undefined): Result<number | undefined, string> {
+  if (value === undefined) return ok(undefined);
+  const count = Number(value);
+  if (!/^\d{1,3}$/u.test(value) || count < 1 || count > 500)
+    return err(`${value} is not a count from 1 to 500`);
+  return ok(count);
+}
+
 function judgeOf(value: string | undefined): Result<ModelRef | undefined, string> {
   return value === undefined ? ok(undefined) : modelOf(value);
+}
+
+interface RunOptions {
+  judge?: ModelRef;
+  split?: LabSplit;
+  sample?: number;
+}
+
+/** The optional --judge, --split (RF-1409) and --sample (RF-1409) of a run, each left out when absent. */
+function optionsOf(draft: Draft): Result<RunOptions, string> {
+  const judge = judgeOf(draft.values.get('--judge'));
+  if (!judge.ok) return judge;
+  const split = splitOf(draft.values.get('--split'));
+  if (!split.ok) return split;
+  const sample = sampleOf(draft.values.get('--sample'));
+  if (!sample.ok) return sample;
+  return ok({
+    ...(judge.value === undefined ? {} : { judge: judge.value }),
+    ...(split.value === undefined ? {} : { split: split.value }),
+    ...(sample.value === undefined ? {} : { sample: sample.value }),
+  });
 }
 
 function runOf(draft: Draft): Result<LabArgs, string> {
@@ -109,8 +152,8 @@ function runOf(draft: Draft): Result<LabArgs, string> {
   if (!model.ok) return model;
   const repetitions = repetitionsOf(draft.values.get('--repetitions'));
   if (!repetitions.ok) return repetitions;
-  const judge = judgeOf(draft.values.get('--judge'));
-  if (!judge.ok) return judge;
+  const options = optionsOf(draft);
+  if (!options.ok) return options;
   return ok({
     kind: 'run',
     prompt: draft.values.get('--prompt') ?? '',
@@ -119,7 +162,7 @@ function runOf(draft: Draft): Result<LabArgs, string> {
     cases: draft.values.get('--cases') ?? '',
     repetitions: repetitions.value,
     yes: draft.yes,
-    ...(judge.value === undefined ? {} : { judge: judge.value }),
+    ...options.value,
   });
 }
 

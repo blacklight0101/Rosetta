@@ -156,3 +156,44 @@ describe('the lab comparison', () => {
     expect(compared.ok ? '' : compared.error).toContain('case set');
   });
 });
+
+describe('the lab comparison of case selections', () => {
+  const selected = (selection: { split: 'tune' | 'held-back' | 'all'; sample: number | null }) => ({
+    ...run('v5', [caseResult('c1')]),
+    selection,
+  });
+
+  it('RF-1409 refuses two runs over different case selections and names both', () => {
+    const compared = compareLab(
+      selected({ split: 'tune', sample: 2 }),
+      selected({ split: 'tune', sample: null }),
+    );
+
+    expect(compared.ok).toBe(false);
+    const error = compared.ok ? '' : compared.error;
+    expect(error).toContain('split tune, sample 2');
+    expect(error).toContain('split tune');
+    expect(error).toContain('selection');
+  });
+
+  it('RF-1409 compares two runs over the same selection and a run with no recorded selection as every case', () => {
+    const same = { split: 'tune', sample: 2 } as const;
+    const all = { split: 'all', sample: null } as const;
+
+    expect(compareLab(selected(same), selected(same)).ok).toBe(true);
+    expect(compareLab(run('v5', [caseResult('c1')]), selected(all)).ok).toBe(true);
+    expect(compareLab(run('v5', [caseResult('c1')]), selected(same)).ok).toBe(false);
+  });
+
+  it('RF-1409 keeps the selection a results file records', () => {
+    const one = selected({ split: 'held-back', sample: 3 });
+    const hashed = { ...one, prompt: { ...one.prompt, sha256: '0'.repeat(64) } };
+    const written = JSON.parse(JSON.stringify(hashed)) as Record<string, unknown>;
+
+    const parsed = parseLabResults(written);
+
+    expect(parsed.ok && parsed.value.selection).toEqual({ split: 'held-back', sample: 3 });
+    const later = { ...written, selection: { split: 'later', sample: null } };
+    expect(parseLabResults(later).ok).toBe(false);
+  });
+});

@@ -20,6 +20,9 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). Nobody reads `.env` but the process that runs the lab. A model without a
   price in `prices/default-prices.yaml` is refused with RST-1601.
 - `--cases` is a file of `lab/cases/` without `.json`; its `prompt` must be the one on the command line.
+- `--split tune|held-back` sends only the cases of that side of the set (RF-1409); a baseline or a tuning round uses `--split tune`, a decision on a version uses `--split held-back`. Without it both sides are sent.
+- `--sample <n>` sends only n cases (1 to 500): the cases of the side asked are sorted by case id in plain code-unit order and the first n are taken, whatever the order of the set. The rule is fixed, so the same command always sends the same cases, a quarter sample is inside a half sample, and an n above the cases left sends them all. The plan says how many cases that is and what the selection is.
+- A selection with no case (`--split held-back` on a set that has none, such as the four planner sets of P10-02) sends nothing, with or without `--yes`. The results record the selection as `selection { split, sample }`.
 - Without `--yes` the command shows the prompt, the model, the number of calls and the caps, and sends nothing.
 
 The command prints the rates of first-try validity, repairs and unusable answers, the refusals and RST codes, the
@@ -57,7 +60,7 @@ npm run lab -- --compare 20261113-101500-lab 20261113-102200-lab
 ```
 
 Both ids are folders of `lab-out/`. The report gives the totals of each version and each case side by side. It refuses
-two runs of different case sets (compared by the SHA-256 of the file) and makes no call. A version is kept only when it
+two runs of different case sets (compared by the SHA-256 of the file) and two runs over different case selections (`--split` and `--sample`, RF-1409; a run that records none counts as every case), and makes no call. Run the versions on the same `--split` and `--sample` to compare them. A version is kept only when it
 beats the current one on the held-back cases without a regression on any check (DEC-231).
 
 ## 4. Add a case set

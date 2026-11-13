@@ -26,6 +26,7 @@ import { MemoryServerSettings } from '../../infrastructure/db/memory-server-sett
 import type { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
 import { FileSpendLedger } from '../../infrastructure/lab/file-spend-ledger.js';
 import { LabCallGate, type CostTap } from '../../infrastructure/lab/lab-call-gate.js';
+import type { LabSelection } from '../../application/lab/lab-selection.js';
 import { FileLabOutput, type LoadedLabSet } from '../../infrastructure/lab/lab-files.js';
 import type { ServerKeys } from '../../infrastructure/providers/provider-access.js';
 import { unrecordedSinks } from '../../infrastructure/providers/unrecorded-sinks.js';
@@ -70,6 +71,8 @@ export interface LabRequest {
   readonly model: { readonly provider: string; readonly model: string };
   readonly loaded: LoadedLabSet;
   readonly repetitions: number;
+  /** RF-1409: the selection loaded already holds, for the results. */
+  readonly selection?: LabSelection;
   /** RF-1407: builds the judge that scores each answer; it runs before any call is sent. */
   readonly judge?: JudgeMaker;
 }
@@ -192,7 +195,7 @@ export async function runLab(
       ...temperature,
     },
   });
-  const { target, prompt, model, loaded, repetitions } = request;
+  const { target, prompt, model, loaded, repetitions, selection } = request;
   return lab.execute({
     target,
     prompt,
@@ -200,5 +203,6 @@ export async function runLab(
     caseSet: loaded.set,
     setSha256: loaded.sha256,
     repetitions,
+    ...(selection === undefined ? {} : { selection }),
   });
 }
