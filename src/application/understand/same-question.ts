@@ -22,6 +22,43 @@ const stopWords = new Set(
    their they them than then so such not no any all`.split(/\s+/u),
 );
 
+/** P9-13: words that say the opposite of each other; a question that swaps one for the other is another question. */
+const oppositePairs: readonly (readonly [string, string])[] = [
+  ['above', 'below'],
+  ['over', 'under'],
+  ['before', 'after'],
+  ['more', 'less'],
+  ['min', 'max'],
+  ['minimum', 'maximum'],
+  ['higher', 'lower'],
+  ['upper', 'lower'],
+  ['first', 'last'],
+  ['import', 'export'],
+  ['increase', 'decrease'],
+  ['add', 'remove'],
+  ['create', 'delete'],
+  ['enable', 'disable'],
+  ['allow', 'deny'],
+  ['include', 'exclude'],
+  ['open', 'close'],
+  ['start', 'stop'],
+  ['credit', 'debit'],
+  ['inbound', 'outbound'],
+  ['always', 'never'],
+];
+
+/** P9-13: whether the words that only one of two questions has include a number or an opposite pair. */
+function differsInMeaning(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+  const onlyLeft = [...left].filter((word) => !right.has(word));
+  const onlyRight = [...right].filter((word) => !left.has(word));
+  if ([...onlyLeft, ...onlyRight].some((word) => /\d/u.test(word))) return true;
+  return oppositePairs.some(
+    ([a, b]) =>
+      (onlyLeft.includes(a) && onlyRight.includes(b)) ||
+      (onlyLeft.includes(b) && onlyRight.includes(a)),
+  );
+}
+
 /** "Who uses these pages?" and "who uses these pages" are the same question; '' when no words. */
 function questionWords(question: string): string {
   return question
@@ -52,7 +89,7 @@ function askOf(words: string): string {
 /**
  * Whether the subject words of two questions overlap enough to be one question: all the words of one
  * are in the other (`MIN_SHARED_WORDS`, `MIN_OVERLAP`), or each adds a word of its own but they share
- * `MIN_NEAR_SHARED` words and `NEAR_OVERLAP` of both together, and not just one word for another (P9-13, 0.75 of the 0.77 pair of EV-89).
+ * `MIN_NEAR_SHARED` words and `NEAR_OVERLAP` of both together, and not just one word for another, a number or an opposite pair (P9-13, 0.75 of the 0.77 pair of EV-89).
  */
 function overlaps(first: string, second: string): boolean {
   const left = contentOf(first);
@@ -64,7 +101,8 @@ function overlaps(first: string, second: string): boolean {
   }
   // one word swapped for another may be the decisive one (export and import), however long the question
   const swapOnly = union - shared <= 2;
-  return !swapOnly && shared >= MIN_NEAR_SHARED && shared >= NEAR_OVERLAP * union;
+  if (swapOnly || differsInMeaning(left, right)) return false;
+  return shared >= MIN_NEAR_SHARED && shared >= NEAR_OVERLAP * union;
 }
 
 /**

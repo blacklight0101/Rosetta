@@ -51,16 +51,37 @@ export function spacedWords(text: string): string {
 const closedQuestionStart =
   /^(?:is|are|was|were|do|does|did|can|could|should|will|would|must|may|has|have)\b/iu;
 
+/** "or both", "or neither" and "or not" are not a second side; "and/or" joins nothing. */
+const notASide = /\bor\s+(?:both|neither|not|either)\b|\band\/or\b/iu;
+
+/** "by A or by B": the same preposition opens both sides, so the question asks which one. */
+const sameSidePreposition =
+  /\b(by|for|in|on|at|to|from|with|of|under|via|through)\b[^?]*?\bor\s+\1\b/iu;
+
 /**
- * P9-13, EV-89: true when a verb-opened question offers two sides joined with "or" ("Is it run by this
- * team or by another system?"), so "Yes" and "No" do not answer it. "and/or" and "or not" are not sides.
+ * P9-13, EV-89: true when a verb-opened question clearly offers two sides ("Is it run by this team or
+ * by another system?"), so "Yes" and "No" do not answer it. Conservative: only the same preposition
+ * on both sides counts. "or" between two verbs or single words ("cancel or return", "Spain or
+ * Portugal"), "or both", "or not" and "and/or" are never sides.
  */
 export function isEitherOrQuestion(question: string): boolean {
   const text = question.trim();
-  if (isOpenQuestion(text) || !closedQuestionStart.test(text)) return false;
-  return /\bor\b/iu.test(text.replace(/\band\/or\b/giu, ' ').replace(/\bor not\b/giu, ' '));
+  if (isOpenQuestion(text) || !closedQuestionStart.test(text) || notASide.test(text)) return false;
+  return sameSidePreposition.test(text);
 }
 
-/** What the agent is told when an either-or question has a Yes or No answer. */
-export const eitherOrAnswerRefusal =
-  'This question offers two sides, so no suggested answer may start with "Yes" or "No". Name one of the two sides in each answer, the third one too, or a qualified mix of both, for example "Another system, with this team only as the shared catalog".';
+/**
+ * P9-13: the answers of an either-or question without its "Yes" and "No" answers, so a heuristic
+ * never costs the card. The list is returned as written when the question is not an either-or
+ * question, when the recommended answer is one of those dropped (it would need a new one), or when
+ * fewer than `MIN_SUGGESTED_ANSWERS` would stay.
+ */
+export function withoutYesNoOfEitherOr<T extends { answer: string; recommended: boolean }>(
+  question: string | undefined,
+  answers: readonly T[],
+): readonly T[] {
+  if (question === undefined || !isEitherOrQuestion(question)) return answers;
+  const kept = answers.filter((each) => !startsWithYesOrNo(each.answer));
+  const recommendedStays = kept.some((each) => each.recommended);
+  return recommendedStays && kept.length >= MIN_SUGGESTED_ANSWERS ? kept : answers;
+}

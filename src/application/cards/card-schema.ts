@@ -10,12 +10,11 @@ import {
 import { cardLimits } from './card-limits.js';
 import {
   MIN_SUGGESTED_ANSWERS,
-  eitherOrAnswerRefusal,
-  isEitherOrQuestion,
   isOpenQuestion,
   sameKindAnswerRefusal,
   spacedWords,
   startsWithYesOrNo,
+  withoutYesNoOfEitherOr,
 } from '../../domain/cards/suggested-answer.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
@@ -100,7 +99,9 @@ function draftOf(value: ParsedCard): CardDraft {
         claims: plainClaims(claims),
         question,
         whyItMatters,
-        ...(suggestedAnswers === undefined ? {} : { suggestedAnswers }),
+        ...(suggestedAnswers === undefined
+          ? {}
+          : { suggestedAnswers: withoutYesNoOfEitherOr(question, suggestedAnswers) }),
       };
     case 'FLOW':
       return { ...rest, claims, flow };
@@ -138,9 +139,9 @@ function suggestedAnswerProblems(
   } else if (answers[0]?.recommended !== true) {
     problems.push('The recommended suggested answer must be listed first.');
   }
-  if (question !== undefined && answers.some((each) => startsWithYesOrNo(each.answer))) {
-    if (isOpenQuestion(question)) problems.push(sameKindAnswerRefusal);
-    else if (isEitherOrQuestion(question)) problems.push(eitherOrAnswerRefusal);
+  if (question !== undefined && isOpenQuestion(question)) {
+    if (answers.some((each) => startsWithYesOrNo(each.answer)))
+      problems.push(sameKindAnswerRefusal);
   }
   return problems;
 }
