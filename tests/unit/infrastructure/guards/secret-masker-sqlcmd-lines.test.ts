@@ -1,0 +1,121 @@
+import { describe, expect, it } from 'vitest';
+import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import {
+  loadMaskedValuePrompt,
+  maskedValueReplacement,
+} from '../../../../src/infrastructure/prompts/masked-value-prompt.js';
+import { fakeValue } from '../../../support/fake-value.js';
+
+// RF-141, RNF-003 (P10 masker gaps 2): every `-P` and `/P` of a SQL Server tool's line is read, not
+// only the first; a `-P` inside another option's quoted argument (`-Q "SELECT -Price"`) is not a
+// flag; a `$` or `%` reference is a variable unless single quotes make it a literal; a reference, a
+// masked value, a placeholder or a word of prose is left alone only when it is the whole shell word.
+// FAKE values only.
+
+const masker = new SecretMasker();
+const a = `Aa${fakeValue(8)}`;
+const b = `Bb${fakeValue(7)}`;
+const mask = '[MASKED:password]';
+const bs = '\\';
+
+function maskedTwice(text: string): string {
+  const once = masker.mask(text).text;
+  expect(masker.mask(once).text).toBe(once);
+  return once;
+}
+
+describe('every password flag of the line', () => {
+  it.each([
+    [
+      `sqlcmd -Q "SELECT -Price FROM t" -U sa -P "${b}"`,
+      `sqlcmd -Q "SELECT -Price FROM t" -U sa -P "${mask}"`,
+    ],
+    [
+      `bcp "SELECT a FROM t WHERE s = -Pending" queryout f.dat -U sa -P "${b}"`,
+      `bcp "SELECT a FROM t WHERE s = -Pending" queryout f.dat -U sa -P "${mask}"`,
+    ],
+    [`["sqlcmd", "-Q", "x -Py", "-P", "${b}"]`, `["sqlcmd", "-Q", "x -Py", "-P", "${mask}"]`],
+    [
+      String.raw`"c": "sqlcmd -Q \"x -Py\" -P \"${b}\""`,
+      String.raw`"c": "sqlcmd -Q \"x -Py\" -P \"${mask}\""`,
+    ],
+    [`sqlcmd -P "${a}" -S x -P ${b}`, `sqlcmd -P "${mask}" -S x -P ${mask}`],
+    [`sqlcmd -P ${a} -P "${b}"`, `sqlcmd -P ${mask} -P "${mask}"`],
+    [`sqlcmd -P '${a}' /P ${b}`, `sqlcmd -P '${mask}' /P ${mask}`],
+    [`sqlcmd -P ${a} -P ${b}`, `sqlcmd -P ${mask} -P ${mask}`],
+    [`[CMD, sqlcmd, -P, ${a}, -P, ${b}]`, `[CMD, sqlcmd, -P, ${mask}, -P, ${mask}]`],
+    [`sqlcmd -P $PW -P "${b}"`, `sqlcmd -P $PW -P "${mask}"`],
+    [`sqlcmd -P <password> -P "${b}"`, `sqlcmd -P <password> -P "${mask}"`],
+  ])('masks every password in %j', (text, expected) => {
+    expect(maskedTwice(text)).toBe(expected);
+  });
+
+  it.each([
+    'sqlcmd -S db -Q "SELECT -Price FROM t"',
+    'sqlcmd -S db -Q "use -P to"',
+    'sqlcmd -E -Q "x" | mysql -h h -P 3306',
+    `sqlcmd -E ${bs}\nmysql -P 3306`,
+    'The sqlcmd docs say: -P is the password, /P too.',
+    'sqlcmd -S db -o /P /out.txt -E',
+    'sqlcmd -S . -E -v P=1 -i /P x.sql',
+  ])('leaves %j alone', (text) => {
+    expect(masker.mask(text).text).toBe(text);
+  });
+});
+
+describe('a variable reference after -P', () => {
+  it.each([
+    'sqlcmd -U sa -P $env:SA_PASSWORD',
+    'sqlcmd -U sa -P "$Env:MSSQL_SA_PASSWORD"',
+    'sqlcmd -U sa -P ${{ secrets.SA_PASSWORD }}',
+    'sqlcmd -U sa -P ${{ secrets.SA_PASSWORD }} -Q x',
+    'sqlcmd -U sa -P "$1"',
+    'sqlcmd -U sa -P $1',
+    'sqlcmd -U sa -P "$@"',
+    'sqlcmd -U sa -P %~1',
+    'sqlcmd -U sa -P $cfg.Password',
+    'sqlcmd -U sa -P $(cat /run/secrets/sa) -Q x',
+  ])('leaves %j alone', (text) => {
+    expect(masker.mask(text).text).toBe(text);
+  });
+
+  it.each([
+    [`sqlcmd -U sa -P '$${a}'`, `-P '${mask}'`],
+    [`sqlcmd -U sa -P %${a}`, `-P ${mask}`],
+  ])('masks the literal %j', (text, end) => {
+    expect(maskedTwice(text).endsWith(end)).toBe(true);
+  });
+});
+
+describe('a left-alone token joined to more of the word', () => {
+  it.each([
+    `sqlcmd -P $X"${a}" -Q x`,
+    `sqlcmd -P "$X"${a} -Q x`,
+    `sqlcmd -P %X%"${a}" -Q x`,
+    `sqlcmd -P \${X}"${a}" -Q x`,
+    `sqlcmd -P to"${a}" -Q x`,
+    `sqlcmd -P ${mask}"${a}" -Q x`,
+    `sqlcmd -P "${mask}"${a} -Q x`,
+    `sqlcmd -P '$SA_PASSWORD'${a} -Q x`,
+    `sqlcmd -P $(cat f)${a} -Q x`,
+    `sqlcmd -P Fake" ${a}" -Q x`,
+  ])('masks the whole word of %j', (text) => {
+    expect(maskedTwice(text)).toBe(`sqlcmd -P ${mask} -Q x`);
+  });
+
+  it('keeps a JSON line around the command readable', () => {
+    const text = `{"c": "sqlcmd -P ${a}", "d": "x"}`;
+
+    expect(maskedTwice(text)).toBe(`{"c": "sqlcmd -P ${mask}", "d": "x"}`);
+  });
+
+  it('reads the note of a masked value as a part of the word', async () => {
+    const file = await loadMaskedValuePrompt('prompts');
+    const explained = new SecretMasker(undefined, maskedValueReplacement(file));
+
+    const result = explained.mask(`sqlcmd -U sa -P pwd=Abc,${a} -Q x`).text;
+
+    expect(result).not.toContain(a);
+    expect(result.endsWith(' -Q x')).toBe(true);
+  });
+});
