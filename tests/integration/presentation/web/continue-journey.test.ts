@@ -91,6 +91,8 @@ describe('POST /api/runs/:runId/continue on a step of a journey', () => {
     expect(before.statusCode).toBe(409);
     expect(before.json()).toMatchObject({ code: ERROR_CODES.journeyAmountUsed });
     expect(continued.statusCode).toBe(202);
+    // P9-14: the room did not shrink, so the run got the whole N.
+    expect(continued.json()).toMatchObject({ granted: extra, lessThanOffered: false });
     expect(after.statusCode).toBe(202);
     const plan = await test.runs.runs.find(deepen.userId, after.json<{ id: string }>().id);
     if (plan === undefined) throw new Error('The plan run was not recorded');

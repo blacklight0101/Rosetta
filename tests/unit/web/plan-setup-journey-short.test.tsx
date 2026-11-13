@@ -76,3 +76,26 @@ describe('plan setup with a journey that is short', () => {
     expect(screen.queryByTestId('plan-journey-short')).toBeNull();
   });
 });
+
+// P9-14: a local planner has no approved cap in the caps list (it costs nothing and is uncapped),
+// but the server's own `usedUp` still decides: the plan cannot start.
+const localUsedUp = {
+  ...planEstimate,
+  runLine: 'journey',
+  journey: { approved: { tokens: '5000000', costMicros: '0' }, usedUp: true },
+  caps: [],
+  withinCaps: { low: true, likely: true, high: true },
+};
+
+describe('plan setup with an uncapped local run and a journey that is used up', () => {
+  it('RF-435 P9-14 follows the server: nothing left, no Start, one action', async () => {
+    renderPlan({ ...answers, [`GET ${base}/plan-estimate`]: json(200, localUsedUp) });
+    await ready();
+
+    const notice = screen.getByTestId('plan-journey-short');
+    expect(notice.textContent).toContain('Nothing is left of the 5,000,000 tokens you approved');
+    expect(within(notice).getByRole('link', { name: /Analyse again/u })).toBeTruthy();
+    expect(startButton().disabled).toBe(true);
+    expect(screen.getByTestId('plan-start-reason').textContent).toContain('Analyse again');
+  });
+});

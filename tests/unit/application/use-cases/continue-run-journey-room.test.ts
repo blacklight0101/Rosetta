@@ -149,3 +149,28 @@ describe('RF-432 Continue on a run queued before the current journey', () => {
     expect((await set.journeys.find(userAmy.userId, set.project.id))?.approved).toEqual(approved);
   });
 });
+
+describe('RF-432 a Continue whose room shrank after the pause', () => {
+  it('RF-432 P9-14 says the run got less than the N that was offered', async () => {
+    const set = await journeyStepSet();
+    const paused = await pausedStep(set);
+    const room = 1_000;
+    await journeyAt(set, { tokens: MAX_RUN_TOKENS - room, costMicros: 0 });
+
+    const continued = await set.continueRun.execute({ actor: userAmy, runId: paused.id });
+
+    if (!continued.ok) throw new Error('The Continue was refused.');
+    expect(continued.value.granted).toEqual({ tokens: room, costMicros: 0 });
+    expect(continued.value.offered.tokens).toBeGreaterThan(room);
+  });
+
+  it('RF-432 P9-14 an untouched room grants the whole N that was offered', async () => {
+    const set = await journeyStepSet();
+    const paused = await pausedStep(set);
+
+    const continued = await set.continueRun.execute({ actor: userAmy, runId: paused.id, extra });
+
+    if (!continued.ok) throw new Error('The Continue was refused.');
+    expect(continued.value.granted).toEqual(continued.value.offered);
+  });
+});
