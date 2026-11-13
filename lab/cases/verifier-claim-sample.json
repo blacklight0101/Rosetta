@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "version": "verifier-claim-sample-1",
+  "prompt": "verifier/claim",
+  "description": "Four invented claims about one invented function, to show the format and to test the lab. Not a tuning set (P10-02 writes those).",
+  "cases": [
+    {
+      "id": "vc-01",
+      "expected": "Supported",
+      "input": {
+        "claim": "A gold-tier customer gets 20 percent off the order total.",
+        "citations": ["shop/discount.ts:2-4"],
+        "files": {
+          "shop/discount.ts": "export function discountFor(total: number, tier: string): number {\n  if (tier === 'gold') {\n    return total * 0.2;\n  }\n  if (total > 100) {\n    return total * 0.05;\n  }\n  return 0;\n}\n"
+        }
+      }
+    },
+    {
+      "id": "vc-02",
+      "expected": "Rejected",
+      "input": {
+        "claim": "A gold-tier customer gets 10 percent off the order total.",
+        "citations": ["shop/discount.ts:2-4"],
+        "files": {
+          "shop/discount.ts": "export function discountFor(total: number, tier: string): number {\n  if (tier === 'gold') {\n    return total * 0.2;\n  }\n  if (total > 100) {\n    return total * 0.05;\n  }\n  return 0;\n}\n"
+        }
+      }
+    },
+    {
+      "id": "vc-03",
+      "expected": "Supported",
+      "input": {
+        "claim": "An order above 100 from a customer who is not gold gets 5 percent off.",
+        "citations": ["shop/discount.ts:5-7"],
+        "files": {
+          "shop/discount.ts": "export function discountFor(total: number, tier: string): number {\n  if (tier === 'gold') {\n    return total * 0.2;\n  }\n  if (total > 100) {\n    return total * 0.05;\n  }\n  return 0;\n}\n"
+        }
+      }
+    },
+    {
+      "id": "vc-04",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "The discount is saved to the database.",
+        "citations": ["shop/discount.ts:1-9"],
+        "files": {
+          "shop/discount.ts": "export function discountFor(total: number, tier: string): number {\n  if (tier === 'gold') {\n    return total * 0.2;\n  }\n  if (total > 100) {\n    return total * 0.05;\n  }\n  return 0;\n}\n"
+        }
+      }
+    }
+  ]
+}

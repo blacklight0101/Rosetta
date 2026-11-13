@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "totalCapMicros": 50000000,
+  "stopMicros": 40000000,
+  "invocationCapMicros": 5000000
+}
