@@ -1007,7 +1007,7 @@ when the answers are the same as the stored ones, so `savedAt` moves only with a
 when `savedAt` is later than the start of the newest `Completed` run of stage `plan` of the project (the package
 was written from an earlier brief); a project with no such run is never out of date.
 
-### 3.21 Prompt lab files: `lab/` and `lab-out/` (added 2026-11-13, P10-01; extended by P10-02)
+### 3.21 Prompt lab and judge files: `lab/`, `eval/judge-check/` and `lab-out/` (added 2026-11-13, P10-01; extended by P10-02 and P10-03)
 
 Files of `npm run lab` (RF-1400..RF-1403, ADR-029), inside the Rosetta repository; none is in a user's project.
 
