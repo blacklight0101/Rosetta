@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import type { PriceTable } from '../../../../src/domain/budget/price-table.js';
 import {
   holdLifetimeProblem,
@@ -40,5 +40,11 @@ describe('the hold lifetime check', () => {
     expect(modelIsFree(table, 'ollama', 'free-model')).toBe(true);
     expect(modelIsFree(table, 'ollama', 'paid-model')).toBe(false);
     expect(modelIsFree(table, 'ollama', 'unlisted')).toBe(false);
+  });
+
+  it('RF-1402 does not call a model free when only its cache write price is above zero', () => {
+    const written = { ...price('written', 0n), cacheWriteInputPerMillionMicros: 5n };
+    const priced: PriceTable = { ...table, prices: [written] };
+    expect(modelIsFree(priced, 'ollama', 'written')).toBe(false);
   });
 });
