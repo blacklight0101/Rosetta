@@ -7,7 +7,7 @@ import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
 import { scanSubjectOf } from '../lib/live-run/scan-subject.js';
-import { capComparison } from '../lib/cap-comparison.js';
+import { capComparison, type RunCaps } from '../lib/cap-comparison.js';
 import { effectiveRunCapMicros } from '../lib/run-cap.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
@@ -47,10 +47,25 @@ export interface EstimateSectionProps {
 
 const hintId = 'cap-hint';
 
+/** RF-434, P9-12: the limit the meter compares with: a journey's approved amount, else the run caps. */
+function capsOf(estimate: RunEstimate, cap: CapField): RunCaps {
+  const { journey } = estimate;
+  if (journey !== undefined) {
+    return {
+      micros: BigInt(journey.approvable.costMicros),
+      tokens: journey.approvable.tokens,
+      approved: true,
+    };
+  }
+  return {
+    micros: effectiveRunCapMicros({ typed: cap.capMicros, ...cap.serverRunCap }),
+    tokens: cap.capTokens,
+  };
+}
+
 function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: CapField }): JSX.Element {
   const { estimate, cap } = props;
-  const micros = effectiveRunCapMicros({ typed: cap.capMicros, ...cap.serverRunCap });
-  const shown = capComparison(estimate, { micros, tokens: cap.capTokens });
+  const shown = capComparison(estimate, capsOf(estimate, cap));
   const mark = Math.min(100, shown.mark);
   return (
     <div class="rst-start__meter">
@@ -114,12 +129,15 @@ function CapFields(props: {
   readonly estimate: RunEstimate;
   readonly capsHref: string;
 }): JSX.Element {
+  // P9-12, RF-434: a journey's run is under its approved amount, which replaces the project caps.
   return (
     <div class="rst-start__cap">
       <CapMeter estimate={props.estimate} cap={props.cap} />
-      <p class="rst-settings__note">
-        <Link href={props.capsHref}>Change the caps in the project settings</Link>
-      </p>
+      {props.estimate.journey === undefined ? (
+        <p class="rst-settings__note">
+          <Link href={props.capsHref}>Change the caps in the project settings</Link>
+        </p>
+      ) : null}
     </div>
   );
 }
