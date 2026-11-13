@@ -467,11 +467,13 @@ jobs:
 
   # The test files a pull request adds or changes, five times each, in parallel and shuffled, with no
   # retry: one failed run fails this check, so a new test proves itself before it becomes required.
-  # Skipped when no test file changed.
+  # Skipped when no test file changed, and on a release pull request (base main): a release reruns every changed
+  # test of the whole release, which hit the 20-minute limit with PostgreSQL "too many clients" (release #1351,
+  # DEC-227); each card has already passed its own stress run. Nothing needs this job, so skipping it blocks nothing.
   stress:
     name: stress changed tests (not required)
     needs: test-picks
-    if: needs.test-picks.outputs.changed != '[]' && needs.test-picks.outputs.changed != ''
+    if: needs.test-picks.outputs.changed != '[]' && needs.test-picks.outputs.changed != '' && (github.event_name != 'pull_request' || github.base_ref != 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
