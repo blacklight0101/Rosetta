@@ -240,3 +240,8 @@ export function decideOnce(
     restated,
   };
 }
+
+/** P9-15, RF-623: the ids decideOnce gives the planner records it keeps (stub). */
+export function keptPlannerIds(planned: number, restated: number): string[] {
+  return planned < restated ? [planId('ADR', 1)] : [];
+}
