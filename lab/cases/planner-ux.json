@@ -15,7 +15,16 @@
         "20261102-203736-plan",
         "20261102-030541-plan",
         "20261029-152045-plan",
-        "20261023-152751-plan"
+        "20261023-152751-plan",
+        "20261029-175606-plan",
+        "20261029-180026-plan",
+        "20261029-141853-plan",
+        "20261102-025517-plan",
+        "20261102-025520-plan",
+        "20261102-202910-plan",
+        "20261102-023125-plan",
+        "20261023-020712-plan",
+        "20261023-021158-plan"
       ]
     }
   ],
@@ -1321,6 +1330,1473 @@
           }
         ],
         "frontEnd": "Razor Pages with Bootstrap 5",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261029-175606-plan-planner-ux",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "screenCards": [
+          {
+            "id": "SCRN-001",
+            "title": "Catalog list (MVC)",
+            "summary": "The MVC catalog index page lists products in a table with paging, a Create New button and per-row Edit, Details and Delete links. It is served at /Catalog/Index.",
+            "claims": [
+              {
+                "claimId": "SCRN-001.c1",
+                "text": "The page is the Catalog Index view and shows a Create New button, a product table and a pager.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:7-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:14-43"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "The table has columns for picture, name, description, brand, type, price, picture file name, available stock, restock threshold and maximum stock threshold.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:3-35",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c3",
+                "text": "Each row has Edit, Details and Delete links that pass the item id.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c5",
+                "text": "Action Edit starts the handler Edit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:7-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:14-43",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:3-35",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Index",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Edit",
+                  "handler": "Edit"
+                },
+                {
+                  "label": "Details",
+                  "handler": "Details"
+                },
+                {
+                  "label": "Delete",
+                  "handler": "Delete"
+                },
+                {
+                  "label": "Previous",
+                  "handler": "Index"
+                },
+                {
+                  "label": "Next",
+                  "handler": "Index"
+                }
+              ],
+              "leadsTo": [
+                "/Catalog/Create",
+                "/Catalog/Edit",
+                "/Catalog/Details",
+                "/Catalog/Delete",
+                "/Catalog/Index"
+              ]
+            }
+          },
+          {
+            "id": "SCRN-002",
+            "title": "Create catalog item (MVC)",
+            "summary": "The MVC form to add a catalog product with name, description, brand, type, price, stock and threshold fields, plus Create and Cancel actions. It is served at /Catalog/Create.",
+            "claims": [
+              {
+                "claimId": "SCRN-002.c1",
+                "text": "The form posts back to the current action with an anti-forgery token and a Create submit button; Cancel returns to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:10-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:90-93"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c2",
+                "text": "The fields are Name, Description, CatalogBrandId and CatalogTypeId (dropdowns), Price, AvailableStock, RestockThreshold and MaxStockThreshold. Each has a validation message.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:16-87"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c3",
+                "text": "The picture file name has no input: the page says uploading images is not allowed for this version, and the text box is commented out.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:56-63"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c4",
+                "text": "The page loads jQuery Validate from a CDN for client-side checks.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml:102-104"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "CatalogBrandId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "CatalogTypeId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                }
+              ],
+              "actions": [
+                {
+                  "label": "[ Cancel ]",
+                  "handler": "Index"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-003",
+            "title": "Edit catalog item (MVC)",
+            "summary": "The MVC form to change a catalog product, with the item id as a hidden field and a read-only picture file name, plus Save and Cancel actions. It is served at /Catalog/Edit.",
+            "claims": [
+              {
+                "claimId": "SCRN-003.c1",
+                "text": "The page shows the current product picture and a hidden Id field, then editable fields for name, description, brand, type, price and the three stock fields.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:15-18",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:20-90"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c2",
+                "text": "The picture file name input is read-only and titled Not allowed for edition.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:60-66"]
+              },
+              {
+                "claimId": "SCRN-003.c3",
+                "text": "The form has an anti-forgery token, a Save submit button and a Cancel link to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:10-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:92-97"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c4",
+                "text": "Action [ Cancel ] starts the handler Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:15-18",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:20-90",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:60-66",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:10-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:92-97"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Id",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "CatalogBrandId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "CatalogTypeId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "PictureFileName",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                }
+              ],
+              "actions": [
+                {
+                  "label": "[ Cancel ]",
+                  "handler": "Index"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-004",
+            "title": "Delete catalog item confirmation (MVC)",
+            "summary": "The MVC confirmation page that shows one catalog product and deletes it when the user confirms, with a Cancel link back to the list. It is served at /Catalog/Delete.",
+            "claims": [
+              {
+                "claimId": "SCRN-004.c1",
+                "text": "The page asks Are you sure you want to delete this and shows the product name, description, brand, type, price, picture file name and the three stock values.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:9-10",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:12-83"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c2",
+                "text": "A form with an anti-forgery token holds a Delete submit button and a Cancel link to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:88-95"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c3",
+                "text": "Action [ Cancel ] starts the handler Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:9-10",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:12-83",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:88-95"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c6",
+                "text": "The screen leads to /Catalog/Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:9-10",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:12-83",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:88-95"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "[ Cancel ]",
+                  "handler": "Index"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-005",
+            "title": "Catalog item details (MVC)",
+            "summary": "The read-only MVC view of one catalog product with links to edit it or return to the list. It is served at /Catalog/Details.",
+            "claims": [
+              {
+                "claimId": "SCRN-005.c1",
+                "text": "The page shows the product picture and the name, description, brand, type, price, picture file name and the three stock values as read-only fields.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:11-83"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c2",
+                "text": "Edit links to the Edit action with the item id; Back to List links to Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:87-90"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c3",
+                "text": "Action Edit starts the handler Edit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:11-83",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:87-90"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c4",
+                "text": "Action Back to List starts the handler Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:11-83",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml:87-90"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Edit",
+                  "handler": "Edit"
+                },
+                {
+                  "label": "Back to List",
+                  "handler": "Index"
+                },
+                {
+                  "label": "[ Back to List ]",
+                  "handler": "Index"
+                }
+              ],
+              "leadsTo": ["/Catalog/Edit", "/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-006",
+            "title": "Home page product list (Web Forms)",
+            "summary": "The Web Forms home page that lists catalog products in a paged table, with Create New, Edit, Details and Delete links and Previous and Next pager links.",
+            "claims": [
+              {
+                "claimId": "SCRN-006.c1",
+                "text": "The page fills the MainContent placeholder of Site.Master with the product list and pager.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:1-3"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c2",
+                "text": "A Create New link points to the CreateProductRoute route, and each row has Edit, Details and Delete links to the EditProductRoute, ProductDetailsRoute and DeleteProductRoute routes. The route definitions are not in this area.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-7",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:102-112"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c3",
+                "text": "The Previous and Next pager links are built from the ProductsByPageRoute route.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:48-57",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:123-132"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c5",
+                "text": "Action Edit starts the handler EditProductRoute link.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-7",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:102-112"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Default.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Create New",
+                  "handler": "CreateProductRoute link"
+                },
+                {
+                  "label": "Edit",
+                  "handler": "EditProductRoute link"
+                },
+                {
+                  "label": "Delete",
+                  "handler": "DeleteProductRoute link"
+                }
+              ],
+              "leadsTo": []
+            }
+          }
+        ],
+        "frontEnd": "Razor Pages",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261029-141853-plan-planner-ux",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "screenCards": [
+          {
+            "id": "SCRN-001",
+            "title": "Delete Catalog Item",
+            "summary": "Asks the user for confirmation before deleting a specific catalog item.",
+            "claims": [
+              {
+                "claimId": "SCRN-001.c1",
+                "text": "The page is titled \"Delete\".",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:4-5"]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "The page displays the item's picture via its URI.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:12-12"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c3",
+                "text": "The page displays the item's Name.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:19-19"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c4",
+                "text": "The page displays the item's Description.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Delete.cshtml:27-27"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Delete.cshtml",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "CatalogBrand.Brand",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "CatalogType.Type",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "PictureFileName",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": false
+                }
+              ],
+              "actions": [
+                {
+                  "label": "[ Cancel ]",
+                  "handler": "Index"
+                },
+                {
+                  "label": "[ Delete ]",
+                  "handler": "Delete"
+                },
+                {
+                  "label": "[ Delete ]",
+                  "handler": "Submit"
+                },
+                {
+                  "label": "Cancel",
+                  "handler": "Index"
+                },
+                {
+                  "label": "Delete",
+                  "handler": "DeleteButton_Click"
+                },
+                {
+                  "label": "Delete",
+                  "handler": "submit"
+                }
+              ],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-002",
+            "title": "Catalog Item Creation Form",
+            "summary": "Provides a form to create a new catalog item, requiring details like name, description, price, and stock levels, while noting image uploads are disabled.",
+            "claims": [
+              {
+                "claimId": "SCRN-002.c1",
+                "text": "The view is designed for creating a CatalogItem model.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml:1-1"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c2",
+                "text": "The form includes fields for Name, Description, Price, AvailableStock, RestockThreshold, and MaxStockThreshold, all with required validation checks.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml:17-79"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c3",
+                "text": "The form uses dropdowns to select CatalogBrandId and CatalogTypeId.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml:33-45"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c4",
+                "text": "The PictureFileName field is present in the model but image uploading is disabled in the view, showing a static notice instead of an upload control.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml:57-62"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Create",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "CatalogBrandId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "CatalogTypeId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                }
+              ],
+              "actions": [
+                {
+                  "label": "Cancel",
+                  "handler": "Index"
+                },
+                {
+                  "label": "Create",
+                  "handler": "Create"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-003",
+            "title": "About Page",
+            "summary": "A page providing general information about the application.",
+            "claims": [
+              {
+                "claimId": "SCRN-003.c1",
+                "text": "The About page exists and initializes logging on load.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-7",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c2",
+                "text": "The About page loads and logs the message 'Now loading... /About.aspx'.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c3",
+                "text": "The screen is at the route /About.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c4",
+                "text": "The About page exists as a web form.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-1"]
+              }
+            ],
+            "screen": {
+              "route": "/About.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-004",
+            "title": "Contact Page",
+            "summary": "A page allowing users to contact the application.",
+            "claims": [
+              {
+                "claimId": "SCRN-004.c1",
+                "text": "The Contact page exists and initializes logging on load.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx:1-17",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c2",
+                "text": "The Contact page loads and logs the message 'Now loading... /Contact.aspx'.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c3",
+                "text": "The screen is at the route /Contact.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-004.c4",
+                "text": "The page is titled 'Contact'.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx:4-4"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Contact.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-005",
+            "title": "Default Product Listing Page",
+            "summary": "Displays a paginated list of catalog items, allowing users to view details, edit, or delete products.",
+            "claims": [
+              {
+                "claimId": "SCRN-005.c1",
+                "text": "The page displays a list of catalog items in a table format using an ItemTemplate inside a ListView.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:21-115"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c2",
+                "text": "The page shows product name, description, brand, type, price, picture name, available stock, restock threshold, and max stock threshold for each item.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:25-100"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c3",
+                "text": "The page allows navigation to edit a product via an 'Edit' link leading to EditProductRoute.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:102-104"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c4",
+                "text": "The page allows navigation to view product details via a 'Details' link leading to ProductDetailsRoute.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:106-108"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Default.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Create New",
+                  "handler": "CreateProductRoute"
+                }
+              ],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-006",
+            "title": "Create a Catalog Item",
+            "summary": "Provides a form interface for creating new catalog items, allowing input of name, description, brand, type, price, stock, restock, and max stock.",
+            "claims": [
+              {
+                "claimId": "SCRN-006.c1",
+                "text": "The page is defined at eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:1-104"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c2",
+                "text": "The Name field is required and is a text input.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:12-14"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c3",
+                "text": "The Description field is a text input.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:21-22"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c4",
+                "text": "The Brand field is a dropdown populated by GetBrands() and expects a CatalogBrand object.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:28-34"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Create.aspx",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Brand",
+                  "inputKind": "dropdown",
+                  "required": false
+                },
+                {
+                  "name": "Type",
+                  "inputKind": "dropdown",
+                  "required": false
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Stock",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Restock",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "Maxstock",
+                  "inputKind": "text",
+                  "required": false
+                }
+              ],
+              "actions": [
+                {
+                  "label": "Cancel",
+                  "handler": "Link click"
+                },
+                {
+                  "label": "Create",
+                  "handler": "Create_Click"
+                }
+              ],
+              "leadsTo": []
+            }
+          }
+        ],
+        "frontEnd": "Razor Pages",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261102-025517-plan-planner-ux",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "screenCards": [
+          {
+            "id": "SCRN-001",
+            "title": "Catalog Index View",
+            "summary": "Displays a paginated list of catalog items with options to create new items and navigate pages.",
+            "claims": [
+              {
+                "claimId": "SCRN-001.c1",
+                "text": "The page title is set to 'Index'.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:4-5"]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "A link to 'Create New' exists to navigate to the Create view.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:8-10"]
+              },
+              {
+                "claimId": "SCRN-001.c3",
+                "text": "The catalog items are displayed using a partial view named 'CatalogTable'.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:12-12"]
+              },
+              {
+                "claimId": "SCRN-001.c4",
+                "text": "Pagination controls are present, showing the current page out of the total pages and item count.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:29-30"]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Create New",
+                  "handler": "Create"
+                }
+              ],
+              "leadsTo": ["/Catalog/Create"]
+            }
+          },
+          {
+            "id": "SCRN-002",
+            "title": "Catalog Edit View",
+            "summary": "Allows a user to edit an existing catalog item's details, such as name, description, stock levels, and pricing.",
+            "claims": [
+              {
+                "claimId": "SCRN-002.c1",
+                "text": "The form uses an AntiForgeryToken for security.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:12-12"]
+              },
+              {
+                "claimId": "SCRN-002.c2",
+                "text": "The view displays the current image URI associated with the item.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:15-15"]
+              },
+              {
+                "claimId": "SCRN-002.c3",
+                "text": "The Name field is an editable text input and requires validation.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:22-24"]
+              },
+              {
+                "claimId": "SCRN-002.c4",
+                "text": "The Description field is an editable text input and requires validation.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml:28-32"]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Edit",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": true
+                }
+              ],
+              "actions": [
+                {
+                  "label": "Cancel",
+                  "handler": "Index"
+                },
+                {
+                  "label": "Save",
+                  "handler": "Edit"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-003",
+            "title": "Default Product Listing Page",
+            "summary": "A dashboard page showing a paginated list of products available in the catalog, with navigation and actions for each product.",
+            "claims": [
+              {
+                "claimId": "SCRN-003.c2",
+                "text": "Create New links to <%$RouteUrl:RouteName=CreateProductRoute%>.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-9"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c6",
+                "text": "The page content is contained within the MainContent ContentPlaceHolder.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:3-3"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c7",
+                "text": "A link is provided to create a new product via the 'Create New' button, which links to the CreateProductRoute.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-8"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c8",
+                "text": "The page displays a list of catalog items using an asp:ListView, which expects items of type eShopLegacyWebForms.Models.CatalogItem.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:12-12"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "productList",
+                  "inputKind": "ListView",
+                  "required": false
+                },
+                {
+                  "name": "PaginationPrevious",
+                  "inputKind": "HyperLink",
+                  "required": false
+                },
+                {
+                  "name": "PaginationNext",
+                  "inputKind": "HyperLink",
+                  "required": false
+                }
+              ],
+              "actions": [
+                {
+                  "label": "Create New",
+                  "handler": "<%$RouteUrl:RouteName=CreateProductRoute%>"
+                },
+                {
+                  "label": "Create New",
+                  "handler": "Default_Page_Load"
+                }
+              ],
+              "leadsTo": ["<%$RouteUrl:RouteName=CreateProductRoute%>", "/CreateProductRoute"]
+            }
+          },
+          {
+            "id": "SCRN-004",
+            "title": "About Page",
+            "summary": "Displays general information about the eShop application.",
+            "claims": [
+              {
+                "claimId": "SCRN-004.c1",
+                "text": "The page exists at the route /About.aspx.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-7"]
+              },
+              {
+                "claimId": "SCRN-004.c2",
+                "text": "The About page is accessible via About.aspx.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-7"]
+              }
+            ],
+            "screen": {
+              "route": "/About.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-005",
+            "title": "Contact Page",
+            "summary": "Provides contact details for the application.",
+            "claims": [
+              {
+                "claimId": "SCRN-005.c1",
+                "text": "The page exists at the route /Contact.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx:1-17"
+                ]
+              },
+              {
+                "claimId": "SCRN-005.c2",
+                "text": "The Contact page is accessible via Contact.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx:1-17"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Contact.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-006",
+            "title": "Catalog Index View",
+            "summary": "Displays a comprehensive, sortable table listing all catalog items with links to edit, view details, or delete each item.",
+            "claims": [
+              {
+                "claimId": "SCRN-006.c1",
+                "text": "The view displays catalog items, including Name, Description, Catalog Brand, Catalog Type, Price, PictureFileName, Available Stock, Restock Threshold, and Max Stock Threshold.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:9-35"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c2",
+                "text": "Each catalog item row includes thumbnails and links to Edit, Details, and Delete the item.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:73-75"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c3",
+                "text": "Action Edit starts the handler Edit.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:9-35",
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:73-75"
+                ]
+              },
+              {
+                "claimId": "SCRN-006.c4",
+                "text": "Action Details starts the handler Details.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:9-35",
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:73-75"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Edit",
+                  "handler": "Edit"
+                },
+                {
+                  "label": "Details",
+                  "handler": "Details"
+                },
+                {
+                  "label": "Delete",
+                  "handler": "Delete"
+                }
+              ],
+              "leadsTo": ["Edit", "Details", "Delete"]
+            }
+          }
+        ],
+        "frontEnd": "Razor Pages",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261023-021158-plan-planner-ux",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "screenCards": [
+          {
+            "id": "SCRN-001",
+            "title": "Catalog Item List Screen",
+            "summary": "A screen for viewing and managing a list of catalog items. It displays a paginated table of catalog items, shows a heading 'Index', and contains links/buttons to create a new item, leading to item creation or viewing pages. The route is /Catalog/Index.",
+            "claims": [
+              {
+                "claimId": "SCRN-001.c1",
+                "text": "The screen displays a heading 'Index' and contains a link to create a new item.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:4-10"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "Action Create New starts the handler Create.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml:4-10"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c5",
+                "text": "The page shows a button labeled 'Create New' to initiate item creation.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:9-10"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c7",
+                "text": "The page displays pagination controls showing the current page, total items, and total pages.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml:29-31"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [
+                {
+                  "label": "Create New",
+                  "handler": "Create"
+                }
+              ],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-002",
+            "title": "Catalog Item Editor/Creation Form",
+            "summary": "A screen/form for editing or creating a catalog item. It displays/allows input for Name (text, required), Description (text, optional), CatalogBrandId (dropdown), CatalogTypeId (dropdown), Price (text, optional/required), AvailableStock (text, optional/required), RestockThreshold (text, optional), and MaxStockThreshold (text, optional). It includes functionality for image handling, and supports Cancel and Save/Create/Edit actions, leading to the Catalog Index screen.",
+            "claims": [
+              {
+                "claimId": "SCRN-002.c1",
+                "text": "The screen is titled 'Edit' and displays fields for Name, Description, Price, AvailableStock, and RestockThreshold.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:7-8",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:22-24",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:28-32",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:53-56",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:69-72",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:77-80"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c2",
+                "text": "Action Cancel starts the handler Index.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:7-8",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:22-24",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:28-32",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:53-56",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:69-72",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:77-80"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c3",
+                "text": "Action Save starts the handler Submit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:7-8",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:22-24",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:28-32",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:53-56",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:69-72",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:77-80"
+                ]
+              },
+              {
+                "claimId": "SCRN-002.c4",
+                "text": "The screen is at the route /Catalog/Edit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:7-8",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:22-24",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:28-32",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:53-56",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:69-72",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml:77-80"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "/Catalog/Edit",
+              "roles": [],
+              "fields": [
+                {
+                  "name": "Name",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "Description",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "CatalogBrandId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "CatalogTypeId",
+                  "inputKind": "dropdown",
+                  "required": true
+                },
+                {
+                  "name": "Price",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "AvailableStock",
+                  "inputKind": "text",
+                  "required": true
+                },
+                {
+                  "name": "RestockThreshold",
+                  "inputKind": "text",
+                  "required": false
+                },
+                {
+                  "name": "MaxStockThreshold",
+                  "inputKind": "text",
+                  "required": false
+                }
+              ],
+              "actions": [
+                {
+                  "label": "Cancel",
+                  "handler": "Index"
+                },
+                {
+                  "label": "Save",
+                  "handler": "Submit"
+                },
+                {
+                  "label": "Create",
+                  "handler": "Create"
+                },
+                {
+                  "label": "Edit",
+                  "handler": "Edit"
+                }
+              ],
+              "leadsTo": ["/Catalog/Index"]
+            }
+          },
+          {
+            "id": "SCRN-003",
+            "title": "Default Catalog Listing Screen",
+            "summary": "Displays a paginated list of products with options to manage them.",
+            "claims": [
+              {
+                "claimId": "SCRN-003.c1",
+                "text": "The screen displays a paginated list of catalog items.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:12-137"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-004",
+            "title": "About Page Screen",
+            "summary": "Provides general information about the application.",
+            "claims": [
+              {
+                "claimId": "SCRN-004.c1",
+                "text": "The page displays the title and a description stating 'Your application description page.'",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:4-6"]
+              },
+              {
+                "claimId": "SCRN-004.c2",
+                "text": "The screen is at the route /About.aspx.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:4-6"]
+              }
+            ],
+            "screen": {
+              "route": "/About.aspx",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-005",
+            "title": "Contact Information Screen",
+            "summary": "Provides physical and contact information for the organization.",
+            "claims": [
+              {
+                "claimId": "SCRN-005.c1",
+                "text": "The page displays a physical address, phone number, and separate contact emails for Support and Marketing.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx:6-16"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          },
+          {
+            "id": "SCRN-007",
+            "title": "Catalog Item Deletion Confirmation Screen",
+            "summary": "A screen that prompts the user for confirmation before deleting a catalog item, displaying its key attributes like Name, Description, Brand, and Type.",
+            "claims": [
+              {
+                "claimId": "SCRN-007.c1",
+                "text": "The table displays columns for Name, Description, Catalog Brand, Catalog Type, Price, PictureFileName, AvailableStock, RestockThreshold, and MaxStockThreshold.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:9-34"
+                ]
+              },
+              {
+                "claimId": "SCRN-007.c2",
+                "text": "Each item row displays the item's image via PictureUri.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:43-44"
+                ]
+              },
+              {
+                "claimId": "SCRN-007.c3",
+                "text": "For each item, there are links available to Edit, Details, and Delete the item.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml:73-75"
+                ]
+              },
+              {
+                "claimId": "SCRN-007.c10",
+                "text": "The screen asks the user for confirmation before deleting the item.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx:8-8"
+                ]
+              }
+            ],
+            "screen": {
+              "route": "",
+              "roles": [],
+              "fields": [],
+              "actions": [],
+              "leadsTo": []
+            }
+          }
+        ],
+        "frontEnd": "Razor Pages (for WebForms/MVC replacement)",
         "style": "layered"
       }
     }

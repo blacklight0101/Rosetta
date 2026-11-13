@@ -10022,7 +10022,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: L
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Todo
+- **Status**: In progress (2026-11-13: sets re-captured, empty data model fixed, three Haiku rounds per prompt run, no version kept; left: a deterministic completeness check, workbook, adr-model, options, continue; see `docs/evaluation/prompt-lab/plan-docs.md`)
 - **Evidence**: the hand-off package is built from these calls.
 - **Reads**: `prompts/planner/*` other than gap and repair (prd, ux, data-model, api-contract, flows, coverage, adr-model, options, package, continue, workbook), P10-04.
 - **Do**: as P10-05. Round log in `docs/evaluation/prompt-lab/plan-docs.md`.

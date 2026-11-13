@@ -8,7 +8,7 @@ import { legacyTablesOf } from '../../domain/planning/data-model-legacy-tables.j
 import { assembleDataModel } from '../../domain/planning/data-model-assembly.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
-import { checkedModel, withoutKeptLeftOut } from './data-model-checked.js';
+import { checkedModel, copiedWarnings, withoutKeptLeftOut } from './data-model-checked.js';
 import {
   withoutOutOfScopeTables,
   withoutStorelessCards,
@@ -56,6 +56,8 @@ export interface PlannedDataModel {
   readonly copied: readonly string[];
   /** RST-1805: the cause and the setting when a batch that fell back stayed cut off; empty for none. */
   readonly cutOffNote: string;
+  /** P10-08: the planner answered with no table and a reason for each dropped claim (the cards store no data). */
+  readonly reasoned?: boolean | undefined;
 }
 
 const emptyDraft = { tables: [], dropped: [] } as const;
@@ -159,6 +161,33 @@ function namedAfterCards(cards: readonly SourceCard[]): DraftTable[] {
   });
 }
 
+/** P10-08: an answer with no table and a reason for each dropped claim, none of its batches failed. */
+function isReasoned(all: Batched): boolean {
+  const tableParts = all.problems.some((problem) => problem.field.startsWith('table'));
+  const empty = all.draft.tables.length === 0 && all.draft.dropped.length > 0;
+  return all.answered && all.failed.length === 0 && empty && !tableParts;
+}
+
+/** P10-08: the planner's own reason for a card, from the claims it dropped; empty when it gave none. */
+function reasonFor(card: SourceCard | undefined, dropped: DataModelDraft['dropped']): string {
+  const own = dropped.find((each) => card !== undefined && each.claim.startsWith(`${card.id}.`));
+  return own === undefined ? '' : ` Its reason: ${own.reason.replace(/[.\s]+$/u, '')}.`;
+}
+
+/** P10-08: a table kept only because the model is never empty says the planner found no stored data. */
+function withPlannerReason(
+  tables: readonly DraftTable[],
+  cards: readonly SourceCard[],
+  dropped: DataModelDraft['dropped'],
+): DraftTable[] {
+  return tables.map((table) => {
+    const card = cards.find((each) => table.sources.includes(each.id));
+    const title = card?.title ?? table.name;
+    const purpose = `Named after the legacy entity ${title}; the planner found no stored data in the card, so confirm that the new system needs this table.${reasonFor(card, dropped)}`;
+    return { ...table, purpose };
+  });
+}
+
 // RF-623
 export async function planDataModel(
   call: PlannerCall,
@@ -185,6 +214,7 @@ export async function planDataModel(
   const parts: Batched[] = [];
   for (const batch of batches) parts.push(await askRetrying(call, input, batch, single));
   const all = joined(parts);
+  const reasoned = isReasoned(all);
   const cutOffNote = all.cut ? cutOffMessage(limit) : '';
   const copied = copiedTables(all.failed, all.draft.tables);
   const kept = withoutStorelessTables(all.draft.tables, ids);
@@ -193,23 +223,27 @@ export async function planDataModel(
   let assembled = assembleDataModel(draft, legacy, database);
   if (assembled.model.tables.length === 0) {
     const fromClaims = legacyTablesOf(entities);
-    assembled = assembleDataModel(
-      { ...draft, tables: fromClaims.length > 0 ? fromClaims : namedAfterCards(entities) },
-      legacy,
-      database,
-    );
+    const kept = fromClaims.length > 0 ? fromClaims : namedAfterCards(entities);
+    const tables = reasoned ? withPlannerReason(kept, entities, all.draft.dropped) : kept;
+    assembled = assembleDataModel({ ...draft, tables }, legacy, database);
   }
-  return checked(assembled, input, { all, cutOffNote, skipped: [...skipped, ...out.skipped] });
+  const rest = { all, cutOffNote, skipped: [...skipped, ...out.skipped], reasoned };
+  return checked(assembled, input, rest);
 }
 
 /** The model once the checks have run, with what they flag and the tables copied (P3-120, P5-38). */
 function checked(
   assembled: DataModelAssembly,
   input: DataModelInput,
-  rest: { all: Batched; cutOffNote: string; skipped: readonly DataModelProblem[] },
+  rest: {
+    all: Batched;
+    cutOffNote: string;
+    skipped: readonly DataModelProblem[];
+    reasoned: boolean;
+  },
 ): PlannedDataModel {
-  const { all, cutOffNote, skipped } = rest;
-  const model = checkedModel(assembled, input.cards, input.brief);
+  const { all, cutOffNote, skipped, reasoned } = rest;
+  const model = checkedModel(assembled, input.cards, input.brief, reasoned);
   const { assembly, readable, copied } = model;
   const flagged = [...skipped, ...model.flagged];
   return {
@@ -220,6 +254,7 @@ function checked(
     answered: all.answered,
     copied,
     cutOffNote,
+    reasoned,
   };
 }
 
@@ -252,11 +287,6 @@ export function dataModelWarnings(planned: PlannedDataModel): string[] {
       : [
           `The planner data model has ${String(flagged)} item(s) the checks list in checks.md: column types of another database, a changed legacy key type, a column that differs from its legacy type or nullability, or names a card says that the model lacks.`,
         ];
-  const copiedFrom =
-    planned.copied.length === 0
-      ? []
-      : [
-          `The planner answer for ${String(planned.copied.length)} table(s) failed after a retry; they are copied from the legacy claims and marked: ${planned.copied.join(', ')}.${planned.cutOffNote === '' ? '' : ` ${planned.cutOffNote}`}`,
-        ];
+  const copiedFrom = copiedWarnings(planned);
   return [...unusable, ...parts, ...refused, ...copiedFrom, ...checked];
 }

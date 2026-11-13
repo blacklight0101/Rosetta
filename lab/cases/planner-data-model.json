@@ -15,7 +15,16 @@
         "20261102-203736-plan",
         "20261102-030541-plan",
         "20261029-152045-plan",
-        "20261023-152751-plan"
+        "20261023-152751-plan",
+        "20261029-175606-plan",
+        "20261029-180026-plan",
+        "20261029-141853-plan",
+        "20261102-025517-plan",
+        "20261102-025520-plan",
+        "20261102-202910-plan",
+        "20261102-023125-plan",
+        "20261023-020712-plan",
+        "20261023-021158-plan"
       ]
     }
   ],
@@ -791,6 +800,885 @@
         "rules": [],
         "database": "SQL Server (as per legacy context)",
         "dataAccess": "Entity Framework Core",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261029-175606-plan-planner-data-model",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "Catalog item entity (Catalog table and CatalogItem class)",
+            "summary": "The Catalog table and the CatalogItem class hold one row per sellable product with an int identity-like Id (application-assigned via hi-lo generator), name, description, price, picture file name, brand and type foreign keys, and stock fields (AvailableStock, RestockThreshold, MaxStockThreshold, OnReorder). Services eager-load CatalogBrand and CatalogType navigation properties. PictureUri is not stored. Column nullability, length and precision details vary slightly by source.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "Column Catalog.Id: int, NOT NULL, identity (SQL Server IdentityColumn), primary key (PK_Catalog).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:40-41",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:55-55"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "Column Catalog.Name: nvarchar (string) max length 50, NOT NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:42-42"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "Column Catalog.Description: string, NULL.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:43-43"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "Column Catalog.Price: decimal, NOT NULL, no precision given in the migration.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:44-44"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-002",
+            "title": "CatalogBrand and CatalogType lookup tables"
+          },
+          {
+            "id": "ENT-008",
+            "title": "Hi-lo sequences for catalog keys"
+          },
+          {
+            "id": "ENT-010",
+            "title": "Catalog seed data files (CSV)"
+          },
+          {
+            "id": "ENT-013",
+            "title": "Catalog stock and discount tables (NTier)"
+          },
+          {
+            "id": "ENT-020",
+            "title": "PaginatedItemsViewModel<TEntity> paging result"
+          },
+          {
+            "id": "ENT-023",
+            "title": "Database context and related registrations"
+          },
+          {
+            "id": "ENT-027",
+            "title": "Catalog database connection"
+          },
+          {
+            "id": "ENT-028",
+            "title": "Catalog brand and catalog type lookup entities"
+          }
+        ],
+        "rules": [
+          {
+            "id": "BR-027",
+            "title": "Catalog item id generation by hi-lo generator",
+            "claims": [
+              {
+                "claimId": "BR-027.c1",
+                "text": "When the in-memory block is empty, the generator reads NEXT VALUE FOR catalog_hilo and keeps the next nine values locally."
+              },
+              {
+                "claimId": "BR-027.c4",
+                "text": "The hi-lo increment is the constant 10. When no ids remain in the block, the generator runs SELECT NEXT VALUE FOR catalog_hilo and keeps the value as the first id of the block, with nine ids left."
+              }
+            ]
+          },
+          {
+            "id": "BR-045",
+            "title": "Brand and type ids are assigned sequentially from the sequence value",
+            "claims": [
+              {
+                "claimId": "BR-045.c2",
+                "text": "Brand ids follow the same pattern, starting from the catalog_brand_hilo value and adding one per row."
+              },
+              {
+                "claimId": "BR-045.c4",
+                "text": "Type ids start from the value read by GetSequenceIdFromSelectedDBSequence for the sequence named catalog_type_hilo, and each following type gets the previous id plus one."
+              }
+            ]
+          },
+          {
+            "id": "BR-061",
+            "title": "Catalog item Id allocation",
+            "claims": [
+              {
+                "claimId": "BR-061.c1",
+                "text": "The generator fetches the next value of sequence catalog_hilo once every 10 ids and hands out the following nine ids from memory."
+              }
+            ]
+          },
+          {
+            "id": "BR-097",
+            "title": "Catalog starts from bundled seed data and hi-lo sequence scripts",
+            "claims": [
+              {
+                "claimId": "BR-097.c2",
+                "text": "The sequence scripts for catalog_brand_hilo, catalog_hilo and catalog_type_hilo are content files copied to the output directory."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-020",
+            "title": "Preloaded catalogue seed data",
+            "claims": [
+              {
+                "claimId": "FEAT-020.c5",
+                "text": "Seed executes the catalog_hilo, catalog_brand_hilo and catalog_type_hilo sequence scripts, then adds types, brands, items and pictures in that order."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-045",
+            "title": "Create, update and remove catalog items",
+            "claims": [
+              {
+                "claimId": "FEAT-045.c4",
+                "text": "CreateCatalogItem assigns the new item's Id from CatalogItemHiLoGenerator.GetNextSequenceValue, then adds the item to the context and saves changes. The generator is a hi-lo generator: it reads the database sequence catalog_hilo with NEXT VALUE and hands out Ids from a block whose size is HiLoIncrement, which is 10."
+              },
+              {
+                "claimId": "FEAT-045.c5",
+                "text": "The sequence catalog_hilo is created by a SQL script that the initializer runs at startup, so the generator has a database sequence to read."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-087",
+            "title": "Find, create, update and remove catalog items",
+            "claims": [
+              {
+                "claimId": "FEAT-087.c6",
+                "text": "The id comes from a hi-lo generator: GetNextSequenceValue reads the database sequence catalog_hilo, uses a HiLoIncrement of 10, and hands out the remaining low values from that block before reading the sequence again."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261029-141853-plan-planner-data-model",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "SQL Data Deployment Configuration",
+            "summary": "The SQL data deployment is configured using the 'microsoft/mssql-server-windows-developer' container image. It requires accepting the EULA and uses the SA username with credentials configured via environment variables. Health checks validate connectivity using 'sqlcmd' to the 'sa' user.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "The SQL container image used is microsoft/mssql-server-windows-developer.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-sql-container-deployment.yml:13-13"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "The SQL container is configured to accept the EULA.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-sql-container-deployment.yml:15-15"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The SQL container uses the SA username with a password set via environment variables.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-sql-container-deployment.yml:17-18"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "The SQL service accepts the EULA upon startup.",
+                "citations": ["eShopModernizedWebFormsSolution/docker-compose.override.yml:22-22"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "title": "Catalog Database Context Registration/Connection",
+            "summary": "Describes the connection setup for the Catalog Database, specifying the server 'sql-data' and database name, and the registration of CatalogDBContext and CatalogDBInitializer to be instantiated per lifetime scope.",
+            "claims": [
+              {
+                "claimId": "ENT-002.c1",
+                "text": "The Catalog Database uses the server 'sql-data' and the database name 'Microsoft.eShopOnContainers.Services.CatalogDb'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-CD-deployment.yml:25-25"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c2",
+                "text": "The connection string contains a plain-text password, which was masked by Rosetta.",
+                "citations": [
+                  "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-CD-deployment.yml:25-25"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c3",
+                "text": "CatalogDBContext is registered to be instantiated per lifetime scope.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:31-32"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c4",
+                "text": "CatalogDBInitializer is registered to be instantiated per lifetime scope.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:34-35"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "title": "Application Configuration Parameters",
+            "summary": "Describes application settings managed via parameter files or configuration flags, including instance counts for SQL containers, and configuration flags like UseMockData and storage connection details.",
+            "claims": [
+              {
+                "claimId": "ENT-003.c1",
+                "text": "The Cloud parameter set specifies that the SQL_Container_InstanceCount is 1.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Cloud.xml:4-4"
+                ]
+              },
+              {
+                "claimId": "ENT-003.c2",
+                "text": "Local deployments (1Node and 5Node) use parameter files that appear to hold no explicitly defined parameters.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.1Node.xml:4-4",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml:4-4"
+                ]
+              },
+              {
+                "claimId": "ENT-003.c3",
+                "text": "ApplicationModule is instantiated with a boolean flag indicating whether to use mock data.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:13-15"
+                ]
+              },
+              {
+                "claimId": "ENT-003.c4",
+                "text": "Configuration flags available include UseMockData, UseAzureStorage, UseAzureManagedIdentity, and UseCustomizationData, all read via the IsEnabled method.",
+                "citations": [
+                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/App_Start/CatalogConfiguration.cs:8-37"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "title": "CatalogBrand",
+            "summary": "Defines catalog brands, having an Id (primary key) and a Brand string property with a maximum length of 100.",
+            "claims": [
+              {
+                "claimId": "ENT-004.c1",
+                "text": "CatalogBrand has an Id, which is an integer primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-20",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:31-33"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c2",
+                "text": "CatalogBrand has a Brand of type string with a maximum length of 100 and is not nullable.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-17",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:28-29"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c3",
+                "text": "CatalogBrand is a model class defined in CatalogBrand.cs.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogBrand.cs:1-13"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c4",
+                "text": "It has an integer property Id.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogBrand.cs:10-10"
+                ]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-005",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-006",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-008",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-009",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-011",
+            "title": "PaginatedItemsViewModel"
+          },
+          {
+            "id": "ENT-015",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-016",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-017",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-018",
+            "title": "Catalog Item, Brand, and Type Data Sources"
+          },
+          {
+            "id": "ENT-024",
+            "title": "CatalogItemsStock Entity"
+          },
+          {
+            "id": "ENT-025",
+            "title": "DiscountItem Entity"
+          },
+          {
+            "id": "ENT-031",
+            "title": "CatalogItemHiLoGenerator registration"
+          },
+          {
+            "id": "ENT-041",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-047",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-054",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-065",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-068",
+            "title": "CatalogBrand Entity"
+          },
+          {
+            "id": "ENT-069",
+            "title": "CatalogType Entity"
+          },
+          {
+            "id": "ENT-077",
+            "title": "Database Context for Catalog"
+          },
+          {
+            "id": "ENT-078",
+            "title": "ActivityIdHelper"
+          },
+          {
+            "id": "ENT-079",
+            "title": "WebRequestInfo"
+          },
+          {
+            "id": "ENT-082",
+            "title": "CatalogItemHiLoGenerator Logic"
+          },
+          {
+            "id": "ENT-087",
+            "title": "Catalog Configuration Settings"
+          },
+          {
+            "id": "ENT-088",
+            "title": "Service Container and Port Mappings for eShop Modernized Services"
+          },
+          {
+            "id": "ENT-092",
+            "title": "CatalogBrandSequence"
+          },
+          {
+            "id": "ENT-093",
+            "title": "CatalogHiloSequence"
+          },
+          {
+            "id": "ENT-099",
+            "title": "CatalogDBContext Entity"
+          },
+          {
+            "id": "ENT-120",
+            "title": "EntityModel Configuration and Entities"
+          }
+        ],
+        "rules": [
+          {
+            "id": "BR-014",
+            "title": "Catalog Item Data Seeding and Structure",
+            "claims": [
+              {
+                "claimId": "BR-014.c12",
+                "text": "The CatalogItem sequence ID is generated using a custom generator, CatalogItemHiLoGenerator, which queries the database sequence 'catalog_hilo' and handles chunked retrieval (10 items per call)."
+              }
+            ]
+          },
+          {
+            "id": "BR-034",
+            "title": "Database Relationship Constraints",
+            "claims": [
+              {
+                "claimId": "BR-034.c5",
+                "text": "Sequences are defined in dbo.catalog_brand_hilo.Sequence.sql, dbo.catalog_hilo.Sequence.sql, and dbo.catalog_type_hilo.Sequence.sql."
+              }
+            ]
+          },
+          {
+            "id": "FEAT-127",
+            "title": "Catalog Item Sequence Generation",
+            "claims": [
+              {
+                "claimId": "FEAT-127.c2",
+                "text": "If the internal counter (remainningLoIds) is zero, a database query 'SELECT NEXT VALUE FOR catalog_hilo;' is executed to fetch a new sequence ID."
+              },
+              {
+                "claimId": "FEAT-127.c6",
+                "text": "If `remainningLoIds` is 0, a new sequence is fetched from the database using a stored procedure/function `catalog_hilo`, and `remainningLoIds` is set to `HiLoIncrement - 1`."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server",
+        "dataAccess": "Entity Framework Core",
+        "dataMigration": null
+      }
+    },
+    {
+      "id": "eshop-20261102-025517-plan-planner-data-model",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "Container Group Outputs",
+            "summary": "The deployment outputs the public IPv4 address assigned to the container group.",
+            "claims": [
+              {
+                "claimId": "ENT-001.c1",
+                "text": "The deployment produces an output named 'containerIPv4Address' of type 'string'.",
+                "citations": ["ACI/aci.json:68-70"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "title": "Database Names and Identifiers",
+            "summary": "The setup process defines specific names for the created resources.",
+            "claims": [
+              {
+                "claimId": "ENT-002.c1",
+                "text": "The SQL database name is fixed to \"eShop\".",
+                "citations": ["Setup/environment.ps1:21-21"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "title": "CatalogItem Entity",
+            "summary": "The CatalogItem entity contains details about a product.",
+            "claims": [
+              {
+                "claimId": "ENT-003.c1",
+                "text": "CatalogItem has properties: Id (int), Name (string), Description (string), Price (decimal), PictureFileName (string), CatalogTypeId (int), CatalogBrandId (int), AvailableStock (int), RestockThreshold (int), MaxStockThreshold (int), and OnReorder (bool).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:63-63"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "title": "CatalogBrand entity (Model Snapshot)",
+            "summary": "The CatalogBrand entity maintains a record of available brands in the system.",
+            "claims": [
+              {
+                "claimId": "ENT-004.c2",
+                "text": "Column CatalogBrand.Brand: string, NOT NULL, maximum length of 100",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:27-29"
+                ]
+              },
+              {
+                "claimId": "ENT-004.c4",
+                "text": "Column CatalogBrand.Brand: string, NOT NULL, max length of 100",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:28-29"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-005",
+            "title": "CatalogType entity (Model Snapshot)",
+            "summary": "The CatalogType entity defines product categories.",
+            "claims": [
+              {
+                "claimId": "ENT-005.c1",
+                "text": "Column CatalogType.Id: int, primary key",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:273-275"
+                ]
+              },
+              {
+                "claimId": "ENT-005.c2",
+                "text": "Column CatalogType.Type: string, NOT NULL, maximum length of 100",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:277-279"
+                ]
+              },
+              {
+                "claimId": "ENT-005.c3",
+                "text": "Column CatalogType.Id: int, NOT NULL, primary key",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:273-275"
+                ]
+              },
+              {
+                "claimId": "ENT-005.c4",
+                "text": "Column CatalogType.Type: string, NOT NULL, max length of 100",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:278-279",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:277-279"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-006",
+            "title": "CatalogItem entity (Model Snapshot)",
+            "summary": "The CatalogItem entity represents a specific item available in the catalog, tracking stock and pricing.",
+            "claims": [
+              {
+                "claimId": "ENT-006.c1",
+                "text": "Column CatalogItem.Id: int, primary key",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:65-67"
+                ]
+              },
+              {
+                "claimId": "ENT-006.c2",
+                "text": "Column CatalogItem.AvailableStock: int",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:69-69"
+                ]
+              },
+              {
+                "claimId": "ENT-006.c4",
+                "text": "Column CatalogItem.CatalogTypeId: int, foreign key to CatalogType.Id",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:73-73"
+                ]
+              },
+              {
+                "claimId": "ENT-006.c5",
+                "text": "Column CatalogItem.Description: string",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:75-75"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogBrand",
+            "summary": "Defines the catalog brand entity.",
+            "claims": [
+              {
+                "claimId": "ENT-007.c3",
+                "text": "Column CatalogBrand.Id: int",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs:10-10"]
+              },
+              {
+                "claimId": "ENT-007.c4",
+                "text": "Column CatalogBrand.Brand: string",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs:11-11"]
+              },
+              {
+                "claimId": "ENT-007.c6",
+                "text": "CatalogBrand has no explicit NOT NULL constraint on its properties.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs:10-10"]
+              },
+              {
+                "claimId": "ENT-007.c7",
+                "text": "Column CatalogBrand.Brand: string, NULL",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogBrand.cs:11-11"]
+              }
+            ]
+          },
+          {
+            "id": "ENT-008",
+            "title": "CatalogType",
+            "summary": "Defines the catalog type entity.",
+            "claims": [
+              {
+                "claimId": "ENT-008.c3",
+                "text": "Column CatalogType.Id: int",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs:5-5"]
+              },
+              {
+                "claimId": "ENT-008.c4",
+                "text": "Column CatalogType.Type: string",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs:6-6"]
+              },
+              {
+                "claimId": "ENT-008.c6",
+                "text": "CatalogType has no explicit NOT NULL or max length constraints on its properties.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs:5-5"]
+              },
+              {
+                "claimId": "ENT-008.c7",
+                "text": "Column CatalogType.Id: int, NOT NULL, primary key",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogType.cs:5-5"]
+              }
+            ]
+          }
+        ],
+        "otherEntities": [
+          {
+            "id": "ENT-009",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-010",
+            "title": "CatalogItem entity"
+          },
+          {
+            "id": "ENT-011",
+            "title": "CatalogType entity"
+          },
+          {
+            "id": "ENT-012",
+            "title": "CatalogBrand entity"
+          },
+          {
+            "id": "ENT-014",
+            "title": "Popper Positioning Data Structure"
+          },
+          {
+            "id": "ENT-015",
+            "title": "Catalog Item Entity"
+          },
+          {
+            "id": "ENT-016",
+            "title": "Catalog Brand Entity"
+          },
+          {
+            "id": "ENT-017",
+            "title": "Catalog Type Entity"
+          },
+          {
+            "id": "ENT-018",
+            "title": "CatalogBrand entity"
+          },
+          {
+            "id": "ENT-019",
+            "title": "CatalogType entity"
+          },
+          {
+            "id": "ENT-020",
+            "title": "CatalogItem entity"
+          },
+          {
+            "id": "ENT-021",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-022",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-023",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-024",
+            "title": "CatalogBrands"
+          },
+          {
+            "id": "ENT-025",
+            "title": "CatalogTypes"
+          },
+          {
+            "id": "ENT-026",
+            "title": "CatalogItems"
+          },
+          {
+            "id": "ENT-027",
+            "title": "eShopLegacyNTier Solution Structure"
+          },
+          {
+            "id": "ENT-028",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-029",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-030",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-031",
+            "title": "CatalogItemsStock"
+          },
+          {
+            "id": "ENT-032",
+            "title": "DiscountItem"
+          },
+          {
+            "id": "ENT-033",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-036",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-037",
+            "title": "CatalogType Entity"
+          },
+          {
+            "id": "ENT-038",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-039",
+            "title": "Catalog Items (DBEntity)"
+          },
+          {
+            "id": "ENT-041",
+            "title": "CatalogItem"
+          },
+          {
+            "id": "ENT-042",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-043",
+            "title": "CatalogBrand"
+          },
+          {
+            "id": "ENT-044",
+            "title": "CatalogType Entity"
+          },
+          {
+            "id": "ENT-045",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-048",
+            "title": "CatalogType"
+          },
+          {
+            "id": "ENT-053",
+            "title": "CatalogType Entity"
+          },
+          {
+            "id": "ENT-055",
+            "title": "Solution Structure Entities"
+          },
+          {
+            "id": "ENT-057",
+            "title": "CatalogType entity"
+          },
+          {
+            "id": "ENT-060",
+            "title": "Popper Library Configurations"
+          },
+          {
+            "id": "ENT-065",
+            "title": "CatalogItem Entity Reference"
+          },
+          {
+            "id": "ENT-066",
+            "title": "Catalog Types"
+          },
+          {
+            "id": "ENT-067",
+            "title": "Product Catalog Definition"
+          },
+          {
+            "id": "ENT-086",
+            "title": "Popper Data Structure"
+          },
+          {
+            "id": "ENT-094",
+            "title": "CatalogItemsStock Entity"
+          },
+          {
+            "id": "ENT-106",
+            "title": "Project Dependency on MSBuild Package"
+          },
+          {
+            "id": "ENT-109",
+            "title": "SQL Data Entity (Shared)"
+          },
+          {
+            "id": "ENT-110",
+            "title": "Project Dependencies and Framework Version"
+          },
+          {
+            "id": "ENT-127",
+            "title": "DiscountItem Entity"
+          },
+          {
+            "id": "ENT-139",
+            "title": "CatalogItem Entity"
+          },
+          {
+            "id": "ENT-151",
+            "title": "Catalog Filtering"
+          }
+        ],
+        "rules": [
+          {
+            "id": "FEAT-054",
+            "title": "Custom CSS Styling for Horizontal Description Lists and Tables",
+            "claims": [
+              {
+                "claimId": "FEAT-054.c4",
+                "text": "Table data cells (`td` in `tbody`) are vertically aligned in the middle and have a 1px solid light grey border at the bottom."
+              }
+            ]
+          }
+        ],
+        "database": "SQL Server 2022",
+        "dataAccess": "Entity Framework Core 8.0",
         "dataMigration": null
       }
     }

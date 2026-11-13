@@ -124,6 +124,22 @@ describe('parseDataModelAnswer: answers that are no answer', () => {
     expect(parseDataModelAnswer('No tables today.')).toBeUndefined();
   });
 
+  it('RF-623 an empty table list with a reason for every dropped claim is a valid answer', () => {
+    const dropped = [{ claim: 'ENT-001.c1', field: 'Connection', reason: 'It names a server.' }];
+
+    const parsed = parseDataModelAnswer(JSON.stringify({ tables: [], dropped }));
+
+    expect(parsed?.draft.tables).toEqual([]);
+    expect(parsed?.draft.dropped).toEqual(dropped);
+  });
+
+  it('RF-623 an empty table list whose dropped claims are all unreadable is no answer', () => {
+    const bad = JSON.stringify({ tables: [], dropped: [{ claim: 'ENT-001.c1' }] });
+
+    expect(parseDataModelAnswer(bad)).toBeUndefined();
+    expect(parseDataModelAnswer('{"tables": [], "dropped": []}')).toBeUndefined();
+  });
+
   it('RF-623 reads only the head of an answer longer than the card limit', () => {
     const padded = `${' '.repeat(cardLimits.maxOutputChars)}${JSON.stringify({ tables: [table] })}`;
 

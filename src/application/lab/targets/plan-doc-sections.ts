@@ -69,7 +69,9 @@ function dataModel(): LabTarget {
     },
     read: (answer) => {
       const read = parseDataModelAnswer(answer);
-      return labelled(read, read?.draft.tables.length ?? 0, ['Tables', 'NoTables'], false);
+      // RF-623: no table, no refused table and a reason for a dropped claim is a reasoned answer.
+      const reasoned = read?.problems.every((problem) => !problem.field.startsWith('table'));
+      return labelled(read, read?.draft.tables.length ?? 0, ['Tables', 'NoTables'], reasoned);
     },
   });
 }

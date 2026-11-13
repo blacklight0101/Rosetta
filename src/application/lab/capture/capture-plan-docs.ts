@@ -48,11 +48,29 @@ function jsonOf(block: ReadDataBlock | undefined, source: string): unknown {
   }
 }
 
+/**
+ * P10-08: the first cards of a plan run are all of one type (the rules), so a case of the PRD or the
+ * plan never saw a feature or an entity. Take the cards in turns over the types, in the order the
+ * types first appear, and keep the order the run sent them in.
+ */
+function spread<T extends { type: string }>(cards: readonly T[]): T[] {
+  const queues = new Map<string, number[]>();
+  cards.forEach((each, index) => queues.set(each.type, [...(queues.get(each.type) ?? []), index]));
+  const chosen: number[] = [];
+  while (chosen.length < Math.min(MAX_CARDS, cards.length)) {
+    for (const queue of queues.values()) {
+      const next = queue.shift();
+      if (next !== undefined && chosen.length < MAX_CARDS) chosen.push(next);
+    }
+  }
+  return chosen.sort((a, b) => a - b).flatMap((index) => cards[index] ?? []);
+}
+
 const planCase = (cards: unknown, owner: unknown): unknown => {
   const read = z.array(typed).safeParse(cards);
   const own = z.record(z.string(), z.unknown()).safeParse(owner);
   if (!read.success || !own.success || read.data.length === 0) return undefined;
-  return { cards: cut(read.data), owner: own.data };
+  return { cards: cut(spread(read.data)), owner: own.data };
 };
 
 const dataModelShape = z.object({
