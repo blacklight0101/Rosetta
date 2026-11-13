@@ -63,7 +63,7 @@ function Capped(props: PlanNextProps): JSX.Element {
         {`This run stopped at ${atApproval ? 'the approved amount, by your choice' : 'its cap'}. Left: ${leftText(props.left)}.`}
         {deepen ? ' Deepen reads the areas that are left.' : ''}
         {plan
-          ? ' You can set up the plan now: it uses only the Supported claims, and the package says where the run stopped.'
+          ? ` You can set up the plan now: it uses only the Supported claims, and the package says the run stopped at ${atApproval ? 'the approved amount' : 'a cap'}.`
           : ''}
       </p>
       {props.writeOverview}
