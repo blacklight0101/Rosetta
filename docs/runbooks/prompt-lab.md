@@ -136,7 +136,7 @@ tuning card, and read its `Warning:` lines.
 
 **The repairs (P10-07).** `planner/gap-repair`, `planner/plan-repair` and `cards/repair` are wired; the capture has no rule for them. A planner repair is the call it repairs sent again with the file under test and one line per problem after the data; it is logged under the same task, and the transcript of a task adds only the messages it does not hold yet, so the repair message is not saved, and its problem lines come from the refused answer, which no capture may read (DEC-57). The card repair follows an answer of the reader, which no case may hold. Their committed sets are therefore built by hand on the committed eShopModernizing sets of the call they repair: `planner-gap-repair` (5 cases) is each `planner-gap` input with problem lines in the run's own words (position, field, fixed reason), `planner-plan-repair` (4) each `planner-package` input with failing paths (list, position, field, and the reason of an item the check left out), and `cards-repair` (5) five `cards-card-format` inputs with an earlier answer written for the case from its reads, with a fault the card parser finds. A gap repair is sent under the run's gap prompt and a plan repair under the run's package prompt, which the lab does not vary; the answer is read like the gap (`Cards`, `NoCards`, `Unusable`) or the package (`Tasks`, `NoTasks`, `Unusable`). A card repair replays the reads, the earlier answer and the repair request the run builds from the problems the card parser finds in it, and is read like the card format; a draft without `{{problems}}` is `BadPrompt`. The lab makes the one repair call, not the second card repair, the workbook rule hints or the checks after a planner repair. The repair rate of a run is not a lab number: the lab measures how well a repair prompt fixes a fixed fault.
 
-**The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`). `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is fixed text (`{"cards": [{"type": "BR", "title": "`) and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. Committed sets `cards-continue` (8 cases, 3 held back), `cards-flows` (9, 1) and `cards-screens` (8, 1), captured as 10 each before the twins were dropped, come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. The tuning rounds wait for an API key.
+**The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`). **The measure (P10-09).** A reader replay is one turn, and a model that asks to read another file leaves no cards to score (the P10-04 baseline: Haiku 2 of 8 on `cards/flows`, Sonnet 4 of 4, Opus 2 of 2). So, as for `shared/masked-value`, `cards/card-format`, `cards/flows` and `cards/screens` test the final-answer turn: the replay ends with the turns-left message of one turn left, whatever `turns` the case holds, and the call carries no tools. A real run keeps its tools on the last turn (`src/application/agent/agent-loop.ts`, `send`, the tools of the task on every call), so a real model may still ask to read more there; the lab drops the tools on purpose, because it measures what the prompt writes and not the model's next move. `ReadsMore` is therefore not a count of these sets any more (it stays for a provider that answers with a tool call it was not offered, and for `cards/continue`, which keeps the tools as a run does). `cards/repair` is P10-07's and still sends the tools. `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is made from the case's first read: the start of a `FEAT` card about that file, with its path and lines, cut inside its first claim (`... "claims": [{"text": "The file <path> holds the code at lines <a>-<b>, which is`), never a model's, and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. An earlier fixed cut (`{"cards": [{"type": "BR", "title": "`) left the model nothing to continue; the unusable answers of the baseline (3 of 5 on Haiku) were a stray quote, a line break inside the string and a line of prose before a fence. On the cut made from the first read `continue.v1` still fails on Haiku (9 of 10 tune runs, 8 of 9 held-back), mostly by `Restarted`, so the prompt is at fault as well as the cut; the join (`joinFragment`) strips a fence only at the very start and was not changed. A joined answer whose first card is not the cut card finished is `Restarted` (not usable, not valid on the first try): the model started again, often after prose or inside a fence; a run's lenient parser could dig the new cards out, but a restart repeats the whole answer and meets the same output limit. A continuation that finishes the card and is cut again is `Partial` and usable, as a run asks again and keeps the finished cards. First-try validity reads the fragment against a stand-in cut of the same shape. Committed sets `cards-continue` (8 cases, 3 held back), `cards-flows` (9, 1) and `cards-screens` (8, 1), captured as 10 each before the twins were dropped, come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. Round log, figures and decisions: [cards.md](../evaluation/prompt-lab/cards.md).
 
 **The shared prompts (P10-10, part 1).** `shared/masked-value` and `shared/text-tool-protocol` are wired with `--prompt shared/<stem>`; both are fragments of a reader turn, so a case is a reader case and the capture has no rule for them (the cases are written by hand from invented code, committed as `shared-masked-value` and `shared-text-tool-protocol`, with no source and a label each, and split by the fixed rule on the input). `shared/masked-value` is the note a masked value is replaced with: a case holds reads whose lines name an invented secret as the token `{secret}` and the value itself in the case field `secret` (`FakeSecret1` and so on, never a real key shape), so no value stands in the file. The target puts the value in, masks the reads with the run's own masker using the file under test as its replacement (lines stay where they were), and sends the task and the replay of the reads. `detail` is `Leaked` when the value is still in the text sent (the masker missed it; no call is made) or is repeated in the answer, in its text or in the arguments of a tool call, and `BadPrompt` (no call) for a draft without `{{kind}}` or whose note does not start with `[MASKED:` (the run's masker contract; the lab's own egress masker would mask such a note again, so the model would not see the draft), else the card parser's `Valid`, `Partial`, `Unusable` or `ReadsMore`. A missed secret is a regression no score can buy back: a version with any `Leaked` case is never kept, whatever else it scores. `shared/text-tool-protocol` is the text a model without native tool calling gets after the system prompt, with the tools in it: the target appends the file under test as the Ollama adapter does, sends no native tools and sends the replay of the reads as `tool_call` and `tool_result` blocks, reads the answer with the run's text parser and then as a first turn (`ReadsFiles`, `BadToolCall`, `Answered`, `Empty`; first-try validity is not applicable) or, for a case with reads, as cards; a draft without the run's tools placeholder (`{{tools}}`, one or more) is `BadPrompt`. `shared/secret-risk` is **not** wired: it is the sentence the domain writes into the plan's risks for a file that holds a masked secret, filled with the path and the lines and sent to no model, so the lab has no call to run and no answer to read. Its wording is held by its own tests (`tests/unit/application/plan/`), and the `shared` rubric's `secret-detection` veto applies to the two wired prompts. A tuning round for the shared family therefore varies the two wired prompts only. Known limits: the lab sends the protocol in the system prompt itself with no native tools, so a role whose provider is configured with `toolMode: "text"` could add the protocol a second time (the run adds it only for such a provider; this is not handled); and `shared/masked-value` has no parser of a first answer, so its first-try validity is `n/a` and `detail` and "not usable" are the measure.
 
@@ -144,7 +144,7 @@ tuning card, and read its `Warning:` lines.
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
 first turn of `reader/task` and `reader/area` is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; `reader/read-first` is
 the turn after a fixed premature answer and the refusal under test; `cards/card-format` is the answer after the replay
-(`Valid`, `Partial`, `Unusable`, `ReadsMore`). A first turn has no answer parser of the run and may answer with tool
+(`Valid`, `Partial`, `Unusable`; the card format is tested on the last turn with no tools, P10-09). A first turn has no answer parser of the run and may answer with tool
 calls, so its "valid on the first try" is not applicable: `null` in `results.json`, `n/a` in the summary (RF-1403);
 read `detail` and "not usable". The later turns of a loop are not measured (ADR-029).
 
@@ -180,43 +180,43 @@ A prompt id is live when the newest version of its family in `prompts/` is the o
 to `wired`. `tests/integration/lab/runbook-prompt-list.test.ts` keeps this table equal to the live families and to the
 targets the lab has, so a row cannot be forgotten. `no call` marks a live prompt that no model is ever sent (`shared/secret-risk`), so the lab has nothing to run. Data files of `prompts/catalogue/` are not prompts.
 
-| Prompt id                   | State   | Case set                                           |
-| --------------------------- | ------- | -------------------------------------------------- |
-| `cards/card-format`         | wired   | cards-card-format (after a replay of two reads)    |
-| `cards/continue`            | wired   | cards-continue (after a fixed cut answer)          |
-| `cards/flows`               | wired   | cards-flows (areas marked for flows)               |
-| `cards/repair`              | wired   | cards-repair (an earlier answer written by hand)   |
-| `cards/screens`             | wired   | cards-screens (areas marked for screens)           |
-| `planner/adr-model`         | wired   | none yet (no saved run holds this call)            |
-| `planner/api-contract`      | wired   | planner-api-contract (+ local set)                 |
-| `planner/continue`          | not yet |                                                    |
-| `planner/coverage`          | wired   | planner-coverage (+ local set)                     |
-| `planner/data-model`        | wired   | planner-data-model (+ local set)                   |
-| `planner/flows`             | wired   | planner-flows (+ local set)                        |
-| `planner/gap`               | wired   | planner-gap                                        |
-| `planner/gap-repair`        | wired   | planner-gap-repair (problems written by hand)      |
-| `planner/options`           | not yet |                                                    |
-| `planner/package`           | wired   | planner-package (+ local set)                      |
-| `planner/plan-repair`       | wired   | planner-plan-repair (problems written by hand)     |
-| `planner/prd`               | wired   | planner-prd (+ local set)                          |
-| `planner/ux`                | wired   | planner-ux (+ local set)                           |
-| `planner/workbook`          | wired   | local only: planner-workbook-workbooks             |
-| `reader/answers`            | wired   | reader-answers (first turn, with answers)          |
-| `reader/area`               | wired   | reader-area (first turn)                           |
-| `reader/parent-cards`       | wired   | reader-parent-cards (first turn, parent cards)     |
-| `reader/read-first`         | wired   | reader-read-first (after a fixed premature answer) |
-| `reader/read-more`          | wired   | reader-read-more (after the refusal)               |
-| `reader/reread`             | wired   | reader-reread (first turn, rejected claims)        |
-| `reader/task`               | wired   | reader-task (first turn)                           |
-| `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)     |
-| `reader/workbook`           | wired   | reader-workbook-workbooks (local only)             |
-| `shared/masked-value`       | wired   | shared-masked-value (invented, by hand)            |
-| `shared/secret-risk`        | no call | none (the domain fills it, no model reads it)      |
-| `shared/text-tool-protocol` | wired   | shared-text-tool-protocol (invented, by hand)      |
-| `summariser/merge`          | wired   | summariser-merge                                   |
-| `summariser/overview`       | wired   | summariser-overview, overview-sample               |
-| `verifier/claim`            | wired   | verifier-claim-sample (invented)                   |
-| `verifier/retry`            | not yet |                                                    |
+| Prompt id                   | State   | Case set                                              |
+| --------------------------- | ------- | ----------------------------------------------------- |
+| `cards/card-format`         | wired   | cards-card-format (after a replay of two reads)       |
+| `cards/continue`            | wired   | cards-continue (after a cut made from the first read) |
+| `cards/flows`               | wired   | cards-flows (areas marked for flows)                  |
+| `cards/repair`              | wired   | cards-repair (an earlier answer written by hand)      |
+| `cards/screens`             | wired   | cards-screens (areas marked for screens)              |
+| `planner/adr-model`         | wired   | none yet (no saved run holds this call)               |
+| `planner/api-contract`      | wired   | planner-api-contract (+ local set)                    |
+| `planner/continue`          | not yet |                                                       |
+| `planner/coverage`          | wired   | planner-coverage (+ local set)                        |
+| `planner/data-model`        | wired   | planner-data-model (+ local set)                      |
+| `planner/flows`             | wired   | planner-flows (+ local set)                           |
+| `planner/gap`               | wired   | planner-gap                                           |
+| `planner/gap-repair`        | wired   | planner-gap-repair (problems written by hand)         |
+| `planner/options`           | not yet |                                                       |
+| `planner/package`           | wired   | planner-package (+ local set)                         |
+| `planner/plan-repair`       | wired   | planner-plan-repair (problems written by hand)        |
+| `planner/prd`               | wired   | planner-prd (+ local set)                             |
+| `planner/ux`                | wired   | planner-ux (+ local set)                              |
+| `planner/workbook`          | wired   | local only: planner-workbook-workbooks                |
+| `reader/answers`            | wired   | reader-answers (first turn, with answers)             |
+| `reader/area`               | wired   | reader-area (first turn)                              |
+| `reader/parent-cards`       | wired   | reader-parent-cards (first turn, parent cards)        |
+| `reader/read-first`         | wired   | reader-read-first (after a fixed premature answer)    |
+| `reader/read-more`          | wired   | reader-read-more (after the refusal)                  |
+| `reader/reread`             | wired   | reader-reread (first turn, rejected claims)           |
+| `reader/task`               | wired   | reader-task (first turn)                              |
+| `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)        |
+| `reader/workbook`           | wired   | reader-workbook-workbooks (local only)                |
+| `shared/masked-value`       | wired   | shared-masked-value (invented, by hand)               |
+| `shared/secret-risk`        | no call | none (the domain fills it, no model reads it)         |
+| `shared/text-tool-protocol` | wired   | shared-text-tool-protocol (invented, by hand)         |
+| `summariser/merge`          | wired   | summariser-merge                                      |
+| `summariser/overview`       | wired   | summariser-overview, overview-sample                  |
+| `verifier/claim`            | wired   | verifier-claim-sample (invented)                      |
+| `verifier/retry`            | not yet |                                                       |
 
 ## 8. The judge (`--judge`) and the judge check (`--judge-check`)
 
