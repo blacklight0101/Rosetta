@@ -1,12 +1,12 @@
 import type { JSX } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useRef } from 'preact/hooks';
 import type { RunEstimate } from '../api/estimate-schemas.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import {
-  basisMovedText,
   ceilingNoteText,
   estimateLinesOf,
+  figureMovedText,
   missingKeyProviders,
 } from '../lib/journey-approval.js';
 import { providerNames } from './provider-choices.js';
@@ -46,17 +46,13 @@ function KeyMissingNote({ estimate }: { readonly estimate: RunEstimate }): JSX.E
   );
 }
 
-/** DEC-206, RST-2310: why the figure moved, kept once the basis of the estimate changed. */
-function useBasisMoved(estimate: RunEstimate): string | undefined {
-  const before = useRef(estimate);
-  const [moved, setMoved] = useState<string | undefined>();
-  useEffect(() => {
-    if (before.current === estimate) return;
-    const text = basisMovedText(before.current, estimate);
-    if (text !== undefined) setMoved(text);
-    before.current = estimate;
-  }, [estimate]);
-  return moved;
+/**
+ * DEC-206, RST-2310, P9-11: why the figure moved, against the first read this page showed. The page
+ * keeps that read, so a figure that moved twice names where it began; it is gone when it moves back.
+ */
+function useFigureMoved(estimate: RunEstimate): string | undefined {
+  const first = useRef(estimate);
+  return figureMovedText(first.current, estimate);
 }
 
 // RF-430, RF-434, RF-435, EV-85: the one sentence about the caps of a journey step.
@@ -68,7 +64,7 @@ const CAP_SENTENCE =
 function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Element | null {
   const { journey } = estimate;
   const lines = estimateLinesOf(estimate);
-  const moved = useBasisMoved(estimate);
+  const moved = useFigureMoved(estimate);
   if (journey === undefined || lines === undefined) return null;
   const basis =
     journey.basis === 'history'
@@ -94,7 +90,11 @@ function JourneyNote({ estimate }: { readonly estimate: RunEstimate }): JSX.Elem
           <dd>{lines.stops}</dd>
         </div>
       </dl>
-      {moved === undefined ? null : <p class="rst-settings__note">{moved}</p>}
+      {moved === undefined ? null : (
+        <p class="rst-settings__note" data-testid="journey-moved">
+          {moved}
+        </p>
+      )}
       <details class="rst-p826-more">
         <summary>How these figures are worked out</summary>
         <p class="rst-settings__note">{`${ceilingNoteText(estimate) ?? ''} ${basis} ${CAP_SENTENCE}`}</p>

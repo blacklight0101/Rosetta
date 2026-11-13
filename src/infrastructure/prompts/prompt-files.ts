@@ -157,7 +157,7 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
 // RNF-004
 export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap.v5.md');
+  return loadPromptFile(promptsFolder, 'planner/gap.v6.md');
 }
 
 /** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */

@@ -114,15 +114,36 @@ function documentsOf({ documents: d }: Fixture): CoverageDocuments {
 
 const requirementId = (position: number): string => `REQ-${String(position).padStart(3, '0')}`;
 
-function contentOf({ plan }: Fixture): PlanContent {
-  const base = planOf(
-    plan.tasks.map(({ title, phase, requirements, acceptanceCriteria }, at) =>
-      planTask({
-        ...{ id: `T-00${String(at + 1)}`, title, phase, acceptanceCriteria },
-        requirements: requirements.map(requirementId),
-      }),
-    ),
+/**
+ * The requirement positions no card of the recorded plan lists, except those in `unlisted`
+ * (P9-06, EV-108). A last card that builds nothing lists the rest, so the older tests keep the
+ * documents' items as their only gaps and no card gains a feature through a requirement.
+ */
+function restOf(plan: Fixture['plan'], unlisted: readonly number[]): number[] {
+  const named = new Set(plan.tasks.flatMap((task) => task.requirements));
+  const all = plan.requirements.map((_, at) => at + 1);
+  return all.filter((position) => !named.has(position) && !unlisted.includes(position));
+}
+
+function contentOf({ plan }: Fixture, unlisted: readonly number[]): PlanContent {
+  const cards = plan.tasks.map(({ title, phase, requirements, acceptanceCriteria }, at) =>
+    planTask({
+      ...{ id: `T-00${String(at + 1)}`, title, phase, acceptanceCriteria },
+      requirements: requirements
+        .filter((position) => !unlisted.includes(position))
+        .map(requirementId),
+    }),
   );
+  const rest = restOf(plan, unlisted);
+  const remaining = planTask({
+    ...{
+      id: `T-00${String(cards.length + 1)}`,
+      title: 'Check the remaining requirements',
+      phase: 1,
+    },
+    requirements: rest.map(requirementId),
+  });
+  const base = planOf(rest.length === 0 ? cards : [...cards, remaining]);
   const requirements = plan.requirements.map(({ title, sources }, at) => ({
     ...{ id: requirementId(at + 1), title, statement: title, sources },
   }));
@@ -130,13 +151,13 @@ function contentOf({ plan }: Fixture): PlanContent {
   return { ...base, requirements, phases };
 }
 
-/** The plan and the documents of the coverage call of EV-95. */
-export async function ev95Input(): Promise<CoverageInput> {
+/** The plan and the documents of the coverage call of EV-95; `unlisted` requirements no card lists. */
+export async function ev95Input(unlisted: readonly number[] = []): Promise<CoverageInput> {
   const read = await fixture();
-  return { content: contentOf(read), documents: documentsOf(read) };
+  return { content: contentOf(read, unlisted), documents: documentsOf(read) };
 }
 
-const prompt = { name: 'planner/gap.v5.md', version: 'v5', sha256: 'b'.repeat(64), text: 'x' };
+const prompt = { name: 'planner/gap.v6.md', version: 'v6', sha256: 'b'.repeat(64), text: 'x' };
 const continuePrompt = { ...prompt, name: 'planner/continue.v1.md', version: 'v1', text: 'go' };
 
 function callOf(provider: FakeProvider, agentTaskId: string): PlannerCall {

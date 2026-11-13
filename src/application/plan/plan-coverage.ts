@@ -3,6 +3,8 @@ import {
   coverageItems,
   coverageOf,
   linkTasks,
+  requirementItems,
+  withBuiltRequirements,
   withMigrationCard,
   type CoverageDocuments,
   type CoverageReport,
@@ -46,7 +48,9 @@ export interface PlannedCoverage {
  */
 // RF-627
 export function checkedPlan(content: PlanContent, documents: CoverageDocuments): PlanContent {
-  return withRequirementFeatures(alignRequirements(content, documents), documents);
+  const aligned = withRequirementFeatures(alignRequirements(content, documents), documents);
+  // P9-06: a gap card or link that builds `requirement:REQ-n` lists the requirement.
+  return withBuiltRequirements(aligned);
 }
 
 // RF-627, RF-623
@@ -56,11 +60,13 @@ export async function planCoverage(
 ): Promise<PlannedCoverage> {
   // P8-06: the modules of the source and its deployment material are items as well.
   const items = [...coverageItems(input.documents), ...moduleItems(input.documents.modules)];
+  // P9-06, EV-108: the requirements of the plan are items of the report (not of the first call).
+  const all = [...items, ...requirementItems(input.content.requirements)];
   const { tasks } = input.content;
   if (items.length === 0 || tasks.length === 0) {
     return {
       content: input.content,
-      report: coverageOf(items, tasks),
+      report: coverageOf(all, tasks),
       asked: false,
       readable: true,
     };
@@ -70,7 +76,7 @@ export async function planCoverage(
   const linked = { ...input.content, tasks: linkTasks(tasks, draft, items) };
   const migrated = withMigrationCard(linked, input.documents.dataModel.tables);
   const content = checkedPlan(migrated, input.documents);
-  const report = coverageOf(items, content.tasks);
+  const report = coverageOf(all, content.tasks);
   return { content, report, asked: true, readable: draft !== undefined };
 }
 

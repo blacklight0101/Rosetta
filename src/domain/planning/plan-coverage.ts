@@ -23,6 +23,7 @@ const coverageKinds = [
   'operation',
   'flow',
   'screen',
+  'requirement',
   'module',
   'deployment',
 ] as const;
@@ -133,7 +134,10 @@ export function coverageOf(
   items: readonly CoverageItem[],
   tasks: readonly PlanTask[],
 ): CoverageReport {
-  const built = new Set(tasks.flatMap((task) => task.builds));
+  // P9-06: a requirement item is built by a card that lists the requirement.
+  const built = new Set(
+    tasks.flatMap((task) => [...task.builds, ...task.requirements.map(requirementItemId)]),
+  );
   const open = items.filter((each) => !built.has(each.id)).sort(byKindThenId);
   const uncovered = open.filter((each) => !sourceKinds.has(each.kind));
   return { items, uncovered, modules: open.filter((each) => sourceKinds.has(each.kind)) };
@@ -200,4 +204,53 @@ export function withMigrationCard(
     };
   });
   return { ...content, tasks: [first, ...moved] };
+}
+
+// RF-627, P9-06, EV-108: a requirement of the plan is an item like a feature or a table. It is built
+// when a task card lists it in `requirements`, so a plan never completes with a requirement that no
+// card builds. The planner may write `requirement:REQ-020` in the `builds` of a gap card or in a
+// link of the gap round; code then moves it to the card's requirements, so `builds` holds only the
+// items of the documents and the requirement is listed once.
+
+const REQUIREMENT_PREFIX = 'requirement:';
+
+type Requirement = PlanContent['requirements'][number];
+
+/** The id of the item for a requirement id (`requirement:REQ-020`). */
+export function requirementItemId(requirementId: string): string {
+  return `${REQUIREMENT_PREFIX}${requirementId}`;
+}
+
+/** One item per requirement of the plan, in the order of the plan. */
+// RF-627
+export function requirementItems(requirements: readonly Requirement[]): CoverageItem[] {
+  return requirements.map((each) => ({
+    ...{ id: requirementItemId(each.id), kind: 'requirement' as const },
+    name: each.title,
+    detail: each.statement,
+  }));
+}
+
+/** The source cards behind each requirement item (gap cards derive their requirements from them). */
+export function requirementSources(
+  requirements: readonly Requirement[],
+): Map<string, ReadonlySet<string>> {
+  return new Map(requirements.map((each) => [requirementItemId(each.id), new Set(each.sources)]));
+}
+
+/** The plan with every `requirement:` id of a card's `builds` moved to its `requirements`. */
+// RF-627
+export function withBuiltRequirements(content: PlanContent): PlanContent {
+  const known = new Set(requirementItems(content.requirements).map((each) => each.id));
+  const isRequirement = (id: string): boolean => id.startsWith(REQUIREMENT_PREFIX);
+  if (!content.tasks.some((task) => task.builds.some(isRequirement))) return content;
+  const tasks = content.tasks.map((task) => {
+    if (!task.builds.some(isRequirement)) return task;
+    const added = task.builds
+      .filter((id) => known.has(id))
+      .map((id) => id.slice(REQUIREMENT_PREFIX.length));
+    const requirements = [...new Set([...task.requirements, ...added])];
+    return { ...task, builds: task.builds.filter((id) => !isRequirement(id)), requirements };
+  });
+  return { ...content, tasks };
 }
