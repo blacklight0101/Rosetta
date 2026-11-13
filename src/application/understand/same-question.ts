@@ -1,7 +1,10 @@
 // RF-646, RF-243, Q-52, EV-57, P8-05: the one rule for "these two questions ask the same thing".
 // Every place that compares questions (the open questions of a run, the merge into an answered
 // question, the re-run, the project's answers file) uses `sameQuestion`. The thresholds and the
-// word lists below are the whole rule; change them here only.
+// word lists below are the whole rule; change them here only (the pairs of opposite words are the
+// domain's, `domain/cards/opposite-words.ts`, P9-14).
+
+import { hasOppositePair } from '../../domain/cards/opposite-words.js';
 
 /** At least this many subject words must be shared. */
 const MIN_SHARED_WORDS = 3;
@@ -22,41 +25,12 @@ const stopWords = new Set(
    their they them than then so such not no any all`.split(/\s+/u),
 );
 
-/** P9-13: words that say the opposite of each other; a question that swaps one for the other is another question. */
-const oppositePairs: readonly (readonly [string, string])[] = [
-  ['above', 'below'],
-  ['over', 'under'],
-  ['before', 'after'],
-  ['more', 'less'],
-  ['min', 'max'],
-  ['minimum', 'maximum'],
-  ['higher', 'lower'],
-  ['upper', 'lower'],
-  ['first', 'last'],
-  ['import', 'export'],
-  ['increase', 'decrease'],
-  ['add', 'remove'],
-  ['create', 'delete'],
-  ['enable', 'disable'],
-  ['allow', 'deny'],
-  ['include', 'exclude'],
-  ['open', 'close'],
-  ['start', 'stop'],
-  ['credit', 'debit'],
-  ['inbound', 'outbound'],
-  ['always', 'never'],
-];
-
 /** P9-13: whether the words that only one of two questions has include a number or an opposite pair. */
 function differsInMeaning(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
   const onlyLeft = [...left].filter((word) => !right.has(word));
   const onlyRight = [...right].filter((word) => !left.has(word));
   if ([...onlyLeft, ...onlyRight].some((word) => /\d/u.test(word))) return true;
-  return oppositePairs.some(
-    ([a, b]) =>
-      (onlyLeft.includes(a) && onlyRight.includes(b)) ||
-      (onlyLeft.includes(b) && onlyRight.includes(a)),
-  );
+  return hasOppositePair(onlyLeft, onlyRight);
 }
 
 /** "Who uses these pages?" and "who uses these pages" are the same question; '' when no words. */

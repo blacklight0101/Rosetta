@@ -1,7 +1,7 @@
 import type { GapProblem } from '../plan/gap-answer.js';
 import type { GapMessageInput } from '../plan/gap-message.js';
 import type { PlanContent, PlanTask } from '../../domain/planning/plan-content.js';
-import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
+import { requirementItems, type CoverageItem } from '../../domain/planning/plan-coverage.js';
 
 // RF-613, RF-627, ADR-007: the task cards and the items the coverage call will send do not exist
 // before the run. The estimate sizes the call for a typical package: 20 task cards with a 100
@@ -36,7 +36,9 @@ const REQUIREMENTS = 30;
  * RF-613, Q-45: the call for the items no task card builds, sized for the worst case of the typical
  * package: every one of its 60 items is left without a card, and the plan it joins has 5 phases
  * (a 60 character name, a 200 character goal), 30 requirements (a 100 character title) and the
- * 20 task cards of the coverage call. Whether items are left over is not known before the run.
+ * 20 task cards of the coverage call. P9-14, RF-627: a requirement no card lists is an item too
+ * (`requirement:<REQ id>`), so the 30 requirements (a 150 character statement as their detail) add
+ * 30 items to the block. Whether items are left over is not known before the run.
  */
 export function assumedGapInput(): GapMessageInput {
   const { tasks, items } = assumedCoverageInput();
@@ -52,7 +54,12 @@ export function assumedGapInput(): GapMessageInput {
     tasks,
     technical: { integrations: [], security: [], targets: [], environments: [] },
   };
-  return { items, content };
+  // P9-06: the worst case leaves every requirement unlisted; its item carries the statement as detail.
+  const unlisted = requirementItems(content.requirements).map((item) => ({
+    ...item,
+    detail: 'a'.repeat(150),
+  }));
+  return { items: [...items, ...unlisted], content };
 }
 
 /** The most task cards an answer to the gap call may hold (gap-answer.ts); the repair may list a problem for each. */
