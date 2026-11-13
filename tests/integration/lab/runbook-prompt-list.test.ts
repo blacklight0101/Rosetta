@@ -52,7 +52,7 @@ async function runbookRows(): Promise<Map<string, string>> {
   const text = await readFile(join(root, 'docs', 'runbooks', 'prompt-lab.md'), 'utf8');
   const section = text.slice(text.indexOf('## 7. Every live prompt id'));
   const rows = new Map<string, string>();
-  const row = /^\| `([a-z0-9/-]+)`\s*\| (wired|not yet)\s*\|/gmu;
+  const row = /^\| `([a-z0-9/-]+)`\s*\| (wired|not yet|no call)\s*\|/gmu;
   for (const match of section.matchAll(row)) {
     rows.set(match[1] ?? '', match[2] ?? '');
   }
@@ -76,5 +76,14 @@ describe('the runbook list of prompt ids', () => {
       .sort();
 
     expect(wired).toEqual(targets);
+  });
+
+  it('RF-1406 says in section 1 how many prompt ids are wired, and that secret-risk has no call', async () => {
+    const rows = await runbookRows();
+    const text = await readFile(join(root, 'docs', 'runbooks', 'prompt-lab.md'), 'utf8');
+    const wired = [...rows.values()].filter((state) => state === 'wired').length;
+
+    expect(text).toContain(`(${String(wired)} are wired:`);
+    expect(rows.get('shared/secret-risk')).toBe('no call');
   });
 });

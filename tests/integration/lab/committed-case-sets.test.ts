@@ -21,7 +21,17 @@ const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url
  * The two samples are invented by hand; every other set is built by the capture, or for a repair
  * prompt on a captured set, and is checked like one (repair-case-sets.test.ts).
  */
-const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
+const SAMPLES = new Set([
+  'overview-sample',
+  'verifier-claim-sample',
+  'shared-masked-value',
+  'shared-text-tool-protocol',
+]);
+/**
+ * The masked-value cases name an invented secret by the token `{secret}` next to a key word, which
+ * the masker hides by design: that set is checked in shared-case-sets.test.ts instead.
+ */
+const SECRET_TEMPLATES = new Set(['shared-masked-value']);
 /** The repair sets take the side of their base case (repair-case-sets.test.ts), not the rule. */
 const REPAIRS = new Set(['planner-gap-repair', 'planner-plan-repair', 'cards-repair']);
 const CAPTURED = [
@@ -110,6 +120,7 @@ function textsOf(value: unknown): string[] {
 }
 
 function secretProblems({ name, set }: Loaded): string[] {
+  if (SECRET_TEMPLATES.has(name)) return [];
   return set.cases.flatMap((each) =>
     textsOf(each.input)
       .filter((text) => masker.mask(text).text !== text)
