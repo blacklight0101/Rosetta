@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { capturablePromptIds } from '../../../../../src/application/lab/capture/capture-rules.js';
 import { repairTargets } from '../../../../../src/application/lab/targets/repair-targets.js';
 import { draftFile, environment } from '../../../../support/lab-target-env.js';
 
@@ -108,5 +109,13 @@ describe('the planner repair targets read and refuse', () => {
     expect(
       find('planner/gap-repair').parseInput({ ...inputs['planner/gap-repair'], problems: [at] }).ok,
     ).toBe(false);
+  });
+});
+
+describe('the capture of the repair prompts', () => {
+  it('RF-1406 has no rule for a repair prompt, whose message no saved task holds whole', () => {
+    const repairs = ['planner/gap-repair', 'planner/plan-repair', 'cards/repair'];
+
+    expect(repairs.filter((id) => capturablePromptIds.includes(id))).toEqual([]);
   });
 });

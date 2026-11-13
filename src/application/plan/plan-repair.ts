@@ -21,8 +21,8 @@ const problemLine = (problem: PlanProblem): string =>
   `${placeOf(problem)}: the field "${problem.field}".${problem.reason === undefined ? '' : ` ${problem.reason}`}`;
 
 /** The user message of the repair: the plan message, the repair prompt, then the problems. */
-// RF-202
-function planRepairMessage(
+// RF-202, RF-1406
+export function planRepairMessage(
   message: string,
   prompt: PromptFile,
   problems: readonly PlanProblem[],

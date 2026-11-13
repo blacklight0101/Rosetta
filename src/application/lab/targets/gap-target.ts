@@ -12,7 +12,8 @@ import { askOnce, problemsOf } from './single-call.js';
 // repair are not replayed. `detail` is `Cards` (the answer holds at least one card), `NoCards` (a
 // valid answer with none) or `Unusable`.
 
-const inputSchema = z.strictObject({
+/** RF-1406: the input of a gap case; the gap repair adds its problem lines to it. */
+export const gapInputSchema = z.strictObject({
   items: z
     .array(
       z.strictObject({
@@ -37,9 +38,10 @@ const inputSchema = z.strictObject({
   tasks: z.array(z.strictObject({ id: z.string().max(100), title: z.string().max(300) })).max(500),
 });
 
-type GapInput = z.infer<typeof inputSchema>;
+type GapInput = z.infer<typeof gapInputSchema>;
 
-function readOutcome(text: string, input: GapInput): TargetOutcome {
+/** The run's reading of a gap answer for the items of the case: `Cards`, `NoCards` or `Unusable`. */
+export function gapOutcome(text: string, input: Pick<GapInput, 'items'>): TargetOutcome {
   const only = input.items.length === 1 ? input.items[0]?.id : undefined;
   const answer = parseGapAnswer(text, only);
   if (answer === undefined) return { usable: false, detail: 'Unusable' };
@@ -55,13 +57,13 @@ function preparedOf(input: GapInput): PreparedCase {
         ...{ role: 'planner', task: 'planner-gap', system: prompt.text },
         messages: [{ role: 'user', content: message }],
       });
-      return asked.ok ? readOutcome(asked.value.text, input) : asked.error;
+      return asked.ok ? gapOutcome(asked.value.text, input) : asked.error;
     },
   };
 }
 
 function parseCase(data: unknown): Result<PreparedCase, string> {
-  const parsed = inputSchema.safeParse(data);
+  const parsed = gapInputSchema.safeParse(data);
   return parsed.success ? ok(preparedOf(parsed.data)) : err(problemsOf(parsed.error.issues));
 }
 

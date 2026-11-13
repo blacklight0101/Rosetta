@@ -1,0 +1,1617 @@
+{
+  "schemaVersion": 1,
+  "version": "planner-plan-repair-1",
+  "prompt": "planner/plan-repair",
+  "description": "The plan inputs of the committed set planner-package (eShopModernizing plan runs), each with the failing paths the run writes for a refused plan answer: the list, the position, the field and, for an item the check left out, the fixed reason of the run (plan-reading.ts, plan-assembly.ts). The lines are written by hand; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-071300-plan",
+        "20261102-203736-plan",
+        "20261102-030541-plan",
+        "20261029-152045-plan",
+        "20261023-152751-plan"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-071300-plan-planner-plan-repair",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "BR-001",
+            "title": "Daily discount applied to prices and shown as a banner",
+            "summary": "A discount whose inclusive date range covers today reduces the displayed price by its size, formatted to two decimals, and shows a banner with the rounded percentage and end date. Six seeded discounts from September to December 2017 range from 10% to 50%.",
+            "claims": [
+              {
+                "claimId": "BR-001.c1",
+                "text": "The service returns the first discount whose start and end dates (compared by day) include the requested day.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:28-31"]
+              },
+              {
+                "claimId": "BR-001.c2",
+                "text": "The displayed price is the price multiplied by (1 minus the discount size), formatted with two decimals.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:52-61",
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:78-84"
+                ]
+              },
+              {
+                "claimId": "BR-001.c3",
+                "text": "The banner reads '<percent>% sale endson <end date>!', with the percent rounded to a whole number.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:60-69"
+                ]
+              },
+              {
+                "claimId": "BR-001.c4",
+                "text": "The seeded discounts are six fixed date ranges in September, October, November and December 2017, with sizes from 10% to 50%.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs:41-52"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-002",
+            "title": "Stock record is one row per item and date",
+            "summary": "Saving stock for an item and date overwrites the existing quantity for that day, or inserts a new row with the next id when none exists. The live service reports zero stock for a day with no row, while the mock service's GetAvailableStock fails when no row matches.",
+            "claims": [
+              {
+                "claimId": "BR-002.c1",
+                "text": "If a stock record exists for the same item and date, its AvailableStock is replaced by the new value and saved.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:99-111"]
+              },
+              {
+                "claimId": "BR-002.c2",
+                "text": "Otherwise a new stock record is inserted with the next StockId (maximum plus one).",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:113-116"]
+              },
+              {
+                "claimId": "BR-002.c3",
+                "text": "The CatalogItemsStock record holds AvailableStock, CatalogItemId, Date and StockId fields.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd:3-10"
+                ]
+              },
+              {
+                "claimId": "BR-002.c4",
+                "text": "Stock is matched by item id and calendar date, ignoring the time part.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:92-92",
+                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:101-102"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-003",
+            "title": "Plain-text secrets in configuration files",
+            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "claims": [
+              {
+                "claimId": "BR-003.c1",
+                "text": "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/Web.config:5-5"]
+              },
+              {
+                "claimId": "BR-003.c2",
+                "text": "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:8-8"]
+              },
+              {
+                "claimId": "BR-003.c3",
+                "text": "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:43-43"]
+              },
+              {
+                "claimId": "BR-003.c4",
+                "text": "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:47-47"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-006",
+            "title": "Catalog item id generation with hi-lo sequences",
+            "summary": "A hi-lo generator reads the catalog_hilo sequence (and the brand and type sequences) in blocks of ten and serves the other nine ids from memory under a lock. The sequences start at 1 and increment by 10. The modernized service ignores the generator and assigns ids as the maximum existing id plus one, which throws on an empty table.",
+            "claims": [
+              {
+                "claimId": "BR-006.c1",
+                "text": "The hi-lo generator fetches a new block from the sequence catalog_hilo every ten ids and hands out the ids in between from memory.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemHiLoGenerator.cs:10-32"
+                ]
+              },
+              {
+                "claimId": "BR-006.c2",
+                "text": "The service's CreateCatalogItem and CreateAvailableStock assign the id as the maximum existing id plus one, not through the generator.",
+                "citations": [
+                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:65-69",
+                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:113-114"
+                ]
+              },
+              {
+                "claimId": "BR-006.c4",
+                "text": "When no IDs remain in the current block, the generator reads the next value of catalog_hilo and then serves nine further IDs from memory before it queries the sequence again.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:11-31"
+                ]
+              },
+              {
+                "claimId": "BR-006.c5",
+                "text": "The generator guards its state with a lock, so the IDs it hands out are issued one at a time within one process.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:14-18"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-007",
+            "title": "Azure Active Directory sign-in with OpenID Connect",
+            "summary": "Azure AD (OpenID Connect) sign-in is configured only when UseAzureActiveDirectory is true, otherwise a placeholder authentication middleware is added. The setting is false by default and the client id, tenant and instance are placeholders. Cookie authentication is the default sign-in type, the authority is built from the AAD instance and tenant, and a failed OpenID Connect authentication redirects to /Error with the exception message in the query string.",
+            "claims": [
+              {
+                "claimId": "BR-007.c3",
+                "text": "When CatalogConfiguration.UseAzureActiveDirectory is true the startup calls ConfigureAuth; otherwise it adds AuthenticationMiddleware to the OWIN pipeline.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Startup.cs:13-20"
+                ]
+              },
+              {
+                "claimId": "BR-007.c4",
+                "text": "Web.config sets UseAzureActiveDirectory to false, leaves the Azure Active Directory client ID and tenant as bracketed placeholder text, and sets the instance to a login URL template with a {0} placeholder for the tenant.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:29-32"
+                ]
+              },
+              {
+                "claimId": "BR-007.c5",
+                "text": "Startup.Configuration calls ConfigureAuth when CatalogConfiguration.UseAzureActiveDirectory is true.",
+                "citations": ["eShopModernizedMVCSolution/src/eShopModernizedMVC/Startup.cs:11-16"]
+              },
+              {
+                "claimId": "BR-007.c6",
+                "text": "Otherwise it adds AuthenticationMiddleware to the OWIN pipeline.",
+                "citations": ["eShopModernizedMVCSolution/src/eShopModernizedMVC/Startup.cs:17-20"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-008",
+            "title": "Application setting flags that select optional features",
+            "summary": "Boolean application settings enable optional features, including UseMockData, which chooses between mock data and the SQL catalog database. When UseMockData is true the database initializer or context is not set up. Each flag is parsed with bool.Parse, so a missing or non-boolean value fails when it is read. The checked-in configuration sets UseMockData to true in some projects and false in others, and the shipped appsettings.json holds it as a string.",
+            "claims": [
+              {
+                "claimId": "BR-008.c1",
+                "text": "The application module receives the mock data, Azure storage and managed identity flags.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:73-80"
+                ]
+              },
+              {
+                "claimId": "BR-008.c2",
+                "text": "The catalog database initializer is set only when UseMockData is false.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:82-88"
+                ]
+              },
+              {
+                "claimId": "BR-008.c3",
+                "text": "The Web.config sets UseMockData to true, UseAzureStorage to false and UseAzureManagedIdentity to false.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:24-28"
+                ]
+              },
+              {
+                "claimId": "BR-008.c4",
+                "text": "Web.config sets UseMockData to true, UseCustomizationData to false, and UseAzureStorage to false.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:24-28"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-009",
+            "title": "Request logging with activity id and rolling log file",
+            "summary": "Each request is traced with its URL and gets an activity id and request info (URL and user agent) in the log context. Log output goes to a rolling file logFiles\\myapp.log, rolled at 10MB with 5 backups, with the root logger accepting all levels.",
+            "claims": [
+              {
+                "claimId": "BR-009.c1",
+                "text": "At the beginning of each request the application traces the request URL and sets the activity id and request info log properties.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:57-68",
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:109-128"
+                ]
+              },
+              {
+                "claimId": "BR-009.c2",
+                "text": "An unhandled error is written to the trace as an error.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:51-55"
+                ]
+              },
+              {
+                "claimId": "BR-009.c3",
+                "text": "Logging is set to level ALL on the root logger, and the Azure append blob appender is commented out so no log is written there.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:2-5",
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:9-15"
+                ]
+              },
+              {
+                "claimId": "BR-009.c4",
+                "text": "The root logger accepts all levels and writes to the file appender.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml:2-5"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-010",
+            "title": "Application Insights telemetry setup",
+            "summary": "A custom telemetry initializer is added at startup, and the instrumentation key is replaced only when a key is configured. Request, dependency, performance and exception telemetry is collected, bot user agents are filtered, and adaptive sampling is capped at five items per second.",
+            "claims": [
+              {
+                "claimId": "BR-010.c1",
+                "text": "A custom telemetry initializer is added to the active telemetry configuration at startup.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:96-99"
+                ]
+              },
+              {
+                "claimId": "BR-010.c2",
+                "text": "The instrumentation key is set only when the configured key is not empty.",
+                "citations": [
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:100-105"
+                ]
+              },
+              {
+                "claimId": "BR-010.c3",
+                "text": "The synthetic user-agent initializer filters requests whose user agent matches search, spider, crawl, Bot, Monitor or AlwaysOn.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config:9-13"
+                ]
+              },
+              {
+                "claimId": "BR-010.c4",
+                "text": "Adaptive sampling is capped at five telemetry items per second for the default sink.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config:122-129"
+                ]
+              }
+            ],
+            "type": "BR"
+          }
+        ],
+        "owner": {
+          "planningBrief": {
+            "replacedByOwnAnswer": ["migration"],
+            "architectureStyle": {
+              "id": "layered",
+              "title": "Layered (N-tier)",
+              "rule": "Split the system into presentation, business and data layers where each layer calls only the one below it.",
+              "roles": ["presentation", "business", "data"]
+            },
+            "migration": {
+              "strategy": "strangler-fig",
+              "order": "The phases replace the legacy system one part at a time. The legacy system keeps running, each part goes live on the new system before the next phase starts, and the legacy system is switched off after the last part."
+            },
+            "applicationKind": "web",
+            "stack": [
+              {
+                "layer": "language-runtime",
+                "choice": ".NET 8 with C#"
+              },
+              {
+                "layer": "backend-framework",
+                "choice": "ASP.NET Core 8 MVC"
+              },
+              {
+                "layer": "front-end",
+                "choice": "Razor Pages"
+              },
+              {
+                "layer": "database",
+                "choice": "SQL Server 2022"
+              },
+              {
+                "layer": "data-access",
+                "choice": "Entity Framework Core 8"
+              },
+              {
+                "layer": "testing",
+                "choice": "xUnit with Moq"
+              },
+              {
+                "layer": "hosting",
+                "choice": "Docker Compose"
+              }
+            ],
+            "context": {
+              "teamSize": null,
+              "experience": null,
+              "deadline": null,
+              "keepIntegrations": [],
+              "dataMigration": null,
+              "deployment": "hosted"
+            },
+            "aiAssistedBuild": true,
+            "principles": [
+              {
+                "id": "adrs",
+                "title": "Architecture decision records (ADRs)",
+                "rule": "Record every decision that is costly to reverse as a short ADR with its context, options, choice and consequences."
+              },
+              {
+                "id": "ci-gates",
+                "title": "Pre-commit and CI quality gates",
+                "rule": "Run the same automatic checks, types, lint, format, architecture rules and tests, before every commit and on every pull request."
+              },
+              {
+                "id": "dry",
+                "title": "DRY",
+                "rule": "Keep each piece of knowledge, such as a rule, a format or a limit, in exactly one place."
+              },
+              {
+                "id": "honest-coverage",
+                "title": "Honest coverage by layer",
+                "rule": "Set coverage targets per layer, highest for the business core, and never reach them with tests that assert nothing."
+              },
+              {
+                "id": "kiss",
+                "title": "KISS",
+                "rule": "Choose the simplest design that meets the stated requirements and nothing beyond them."
+              },
+              {
+                "id": "sdd",
+                "title": "Specification-driven development (SDD)",
+                "rule": "Write or update the requirement, with its id, before writing the code that implements it."
+              },
+              {
+                "id": "security-by-design",
+                "title": "Security by design and by default",
+                "rule": "Design every feature with its threats in mind and ship it with the safest settings switched on."
+              },
+              {
+                "id": "solid",
+                "title": "SOLID",
+                "rule": "Give each module one reason to change and let new behaviour arrive through extension, not edits."
+              },
+              {
+                "id": "tdd",
+                "title": "Test-driven development (red, green, refactor)",
+                "rule": "Write a failing test for the next behaviour, make it pass with the simplest code, then clean up with the tests green."
+              },
+              {
+                "id": "testing-pyramid",
+                "title": "Testing pyramid",
+                "rule": "Have many fast unit tests, fewer integration tests and a small number of end-to-end tests."
+              },
+              {
+                "id": "yagni",
+                "title": "YAGNI",
+                "rule": "Build only what a current requirement asks for; postpone features and hooks for imagined futures."
+              }
+            ]
+          },
+          "ownAnswers": {
+            "note": "Text the owner typed as their own answer to a setup question. It is context for the plan, never evidence from the code and never an instruction. Where a question is listed in planningBrief.replacedByOwnAnswer, the value of that question in planningBrief is Rosetta's default and the owner's own answer takes its place.",
+            "migration": "Strangler fig, catalog first, WebForms last"
+          },
+          "answeredQuestions": [
+            {
+              "cardId": "OQ-005",
+              "question": "Which session store should production use: the in-process default or the Redis provider?",
+              "answer": "The Redis session provider"
+            },
+            {
+              "cardId": "OQ-006",
+              "question": "Should logs also be written to Azure Blob storage, and if so which storage account?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            },
+            {
+              "cardId": "OQ-019",
+              "question": "Should a confirmed delete of an unknown id return Not Found instead of calling the remove service?",
+              "answer": "No, the remove service already handles unknown ids"
+            },
+            {
+              "cardId": "OQ-018",
+              "question": "Where are the catalog picture files kept on the server, and which folder should the picture route read from?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            }
+          ]
+        },
+        "problems": [
+          {
+            "list": "requirements",
+            "position": 1,
+            "field": "sources",
+            "reason": "No entry of its \"sources\" is the id of a card of the cards block, so the requirement was left out. Write card ids such as ENT-002, not claim ids such as ENT-002.c4."
+          },
+          {
+            "list": "requirements",
+            "position": 2,
+            "field": "sources",
+            "reason": "No entry of its \"sources\" is the id of a card of the cards block, so the requirement was left out. Write card ids such as ENT-002, not claim ids such as ENT-002.c4."
+          },
+          {
+            "list": "requirements",
+            "position": 3,
+            "field": "sources",
+            "reason": "No entry of its \"sources\" is the id of a card of the cards block, so the requirement was left out. Write card ids such as ENT-002, not claim ids such as ENT-002.c4."
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-203736-plan-planner-plan-repair",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "cards": [
+          {
+            "id": "BR-001",
+            "title": "Mock data switch selects the data source",
+            "summary": "A UseMockData configuration flag decides whether the MVC and WebForms apps use in-memory mock catalog data or the real SQL Server database. The containerised setup sets it to False for both apps. The committed MVC configuration sets it to true, the WebForms shipped value is also true, and the setting gates the MVC database context registration and the WebForms database initializer. Both implementations ship in the same WebForms build.",
+            "claims": [
+              {
+                "claimId": "BR-001.c1",
+                "text": "The MVC and WebForms apps can use mock data instead of the database when the database is unavailable, for testing or demos.",
+                "citations": ["README.md:114-116"]
+              },
+              {
+                "claimId": "BR-001.c2",
+                "text": "The container override sets UseMockData to False for the MVC app and for the WebForms app, so both use the real database in the containerised setup.",
+                "citations": [
+                  "docker-compose.override.yml:7-7",
+                  "docker-compose.override.yml:22-22"
+                ]
+              },
+              {
+                "claimId": "BR-001.c3",
+                "text": "UseMockData is False for both the MVC and the WebForms service, and UseCustomizationData is False for both as well.",
+                "citations": [
+                  "docker-compose.override.yml:7-8",
+                  "docker-compose.override.yml:22-23"
+                ]
+              },
+              {
+                "claimId": "BR-001.c4",
+                "text": "The MVC and WebForms containers both set UseMockData to False, so they read catalog data from the SQL Server database rather than from mock data.",
+                "citations": [
+                  "docker-compose.override.yml:7-7",
+                  "docker-compose.override.yml:22-22"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-002",
+            "title": "The public redirect URI after logout depends on the host",
+            "summary": "After logout the site redirects to a URI built from an external host name, defaulting to 10.0.75.1.",
+            "claims": [
+              {
+                "claimId": "BR-002.c1",
+                "text": "The post-logout redirect URI is http on the host from ESHOP_EXTERNAL_DNS_NAME_OR_IP, falling back to 10.0.75.1, on port 5115 for MVC and 5114 for WebForms.",
+                "citations": [
+                  "VM/eShopModernizedMVC/docker-compose.override.yml:15-15",
+                  "VM/eShopModernizedWebForms/docker-compose.override.yml:15-15"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-004",
+            "title": "Catalog item picture URIs follow the item id",
+            "summary": "The picture URI shown for a catalog item is built from its id, not from its stored picture file name.",
+            "claims": [
+              {
+                "claimId": "BR-004.c2",
+                "text": "The index action passes the page of items to ChangeUriPlaceholder, which sets the picture URI of each item to /Pics/{Id}.png.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:26-28",
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:153-159",
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:163-163"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-005",
+            "title": "Catalog deletes cascade from brand and type",
+            "summary": "Removing a brand or a type also removes every catalog item that uses it.",
+            "claims": [
+              {
+                "claimId": "BR-005.c1",
+                "text": "Both foreign keys on Catalog are declared with ReferentialAction.Cascade, so a delete of a brand or a type removes the items that reference it.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:56-67"
+                ]
+              },
+              {
+                "claimId": "BR-005.c2",
+                "text": "The model snapshot records the same cascade delete behaviour for CatalogItem.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:308-319"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-006",
+            "title": "Catalog item price and stock validation",
+            "summary": "Catalog items must have a price that is a non-negative number with at most two decimals, within 0 to 1,000,000. AvailableStock, RestockThreshold and MaxStockThreshold must each be between 0 and 10,000,000. Name is required in the MVC model. The create and edit forms apply the same value ranges. The price is shown as a currency value.",
+            "claims": [
+              {
+                "claimId": "BR-006.c1",
+                "text": "Price must match the pattern of digits with at most two decimal places, and the error message says it must be a positive number with at most two decimals.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-22"]
+              },
+              {
+                "claimId": "BR-006.c2",
+                "text": "Price must be within the range 0 to 1000000.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:23-23"]
+              },
+              {
+                "claimId": "BR-006.c3",
+                "text": "Price is displayed as a currency type.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:24-24"]
+              },
+              {
+                "claimId": "BR-006.c4",
+                "text": "AvailableStock must be between 0 and 10000000, with the error message 'Stock must be between 0 and 10 million'.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:45-47"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-008",
+            "title": "New items default to the dummy picture",
+            "summary": "A new CatalogItem gets the picture file name dummy.png unless a value is set.",
+            "claims": [
+              {
+                "claimId": "BR-008.c1",
+                "text": "The constant default picture name is dummy.png.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:8-8"]
+              },
+              {
+                "claimId": "BR-008.c2",
+                "text": "The constructor sets PictureFileName to the default picture name.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:10-13"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-009",
+            "title": "Seed data for the catalog is supplied by the model layer",
+            "summary": "The mapping classes seed brands, types and twelve catalog items as initial rows, so a fresh database starts with a sample catalog.",
+            "claims": [
+              {
+                "claimId": "BR-009.c1",
+                "text": "CatalogItemConfig seeds its rows from PreconfiguredData.GetPreconfiguredCatalogItems.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogItemConfig.cs:35-37"
+                ]
+              },
+              {
+                "claimId": "BR-009.c2",
+                "text": "Twelve catalog items are defined, each with AvailableStock 100 and a picture named by its id, for example 1.png to 12.png.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Models/Infrastructure/PreconfiguredData.cs:14-25"
+                ]
+              },
+              {
+                "claimId": "BR-009.c3",
+                "text": "CatalogBrandConfig seeds its rows from PreconfiguredData.GetPreconfiguredCatalogBrands.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogBrandConfig.cs:22-24"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-010",
+            "title": "Catalog service selected by a mock-data flag",
+            "summary": "The Autofac module binds ICatalogService to CatalogServiceMock as a single shared instance when the mock-data flag is true, and to the real CatalogService with one instance per lifetime scope when it is false.",
+            "claims": [
+              {
+                "claimId": "BR-010.c1",
+                "text": "The module takes a boolean useMockData flag in its constructor and stores it in a field.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:10-15"
+                ]
+              },
+              {
+                "claimId": "BR-010.c2",
+                "text": "When the flag is true, ICatalogService is bound to CatalogServiceMock as a single instance shared for the whole container.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+                ]
+              },
+              {
+                "claimId": "BR-010.c3",
+                "text": "When the flag is false, ICatalogService is bound to CatalogService with one instance per lifetime scope.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:24-29"
+                ]
+              },
+              {
+                "claimId": "BR-010.c4",
+                "text": "When the module is built with useMockData true, ICatalogService is registered to CatalogServiceMock as a single instance, so one mock object is shared for the whole container.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+                ]
+              }
+            ],
+            "type": "BR"
+          }
+        ],
+        "owner": {
+          "planningBrief": {
+            "replacedByOwnAnswer": ["migration"],
+            "architectureStyle": {
+              "id": "layered",
+              "title": "Layered (N-tier)",
+              "rule": "Split the system into presentation, business and data layers where each layer calls only the one below it.",
+              "roles": ["presentation", "business", "data"]
+            },
+            "migration": {
+              "strategy": "strangler-fig",
+              "order": "The phases replace the legacy system one part at a time. The legacy system keeps running, each part goes live on the new system before the next phase starts, and the legacy system is switched off after the last part."
+            },
+            "applicationKind": "web",
+            "stack": [
+              {
+                "layer": "language-runtime",
+                "choice": ".NET 8 with C#"
+              },
+              {
+                "layer": "backend-framework",
+                "choice": "ASP.NET Core 8 MVC"
+              },
+              {
+                "layer": "front-end",
+                "choice": "Razor Pages"
+              },
+              {
+                "layer": "database",
+                "choice": "SQL Server 2022"
+              },
+              {
+                "layer": "data-access",
+                "choice": "Entity Framework Core 8"
+              },
+              {
+                "layer": "testing",
+                "choice": "xUnit with FluentAssertions"
+              },
+              {
+                "layer": "hosting",
+                "choice": "Docker Compose"
+              }
+            ],
+            "context": {
+              "teamSize": null,
+              "experience": null,
+              "deadline": null,
+              "keepIntegrations": [],
+              "dataMigration": null,
+              "deployment": "hosted"
+            },
+            "aiAssistedBuild": true,
+            "principles": [
+              {
+                "id": "adrs",
+                "title": "Architecture decision records (ADRs)",
+                "rule": "Record every decision that is costly to reverse as a short ADR with its context, options, choice and consequences."
+              },
+              {
+                "id": "ci-gates",
+                "title": "Pre-commit and CI quality gates",
+                "rule": "Run the same automatic checks, types, lint, format, architecture rules and tests, before every commit and on every pull request."
+              },
+              {
+                "id": "dry",
+                "title": "DRY",
+                "rule": "Keep each piece of knowledge, such as a rule, a format or a limit, in exactly one place."
+              },
+              {
+                "id": "honest-coverage",
+                "title": "Honest coverage by layer",
+                "rule": "Set coverage targets per layer, highest for the business core, and never reach them with tests that assert nothing."
+              },
+              {
+                "id": "kiss",
+                "title": "KISS",
+                "rule": "Choose the simplest design that meets the stated requirements and nothing beyond them."
+              },
+              {
+                "id": "sdd",
+                "title": "Specification-driven development (SDD)",
+                "rule": "Write or update the requirement, with its id, before writing the code that implements it."
+              },
+              {
+                "id": "security-by-design",
+                "title": "Security by design and by default",
+                "rule": "Design every feature with its threats in mind and ship it with the safest settings switched on."
+              },
+              {
+                "id": "solid",
+                "title": "SOLID",
+                "rule": "Give each module one reason to change and let new behaviour arrive through extension, not edits."
+              },
+              {
+                "id": "tdd",
+                "title": "Test-driven development (red, green, refactor)",
+                "rule": "Write a failing test for the next behaviour, make it pass with the simplest code, then clean up with the tests green."
+              },
+              {
+                "id": "testing-pyramid",
+                "title": "Testing pyramid",
+                "rule": "Have many fast unit tests, fewer integration tests and a small number of end-to-end tests."
+              },
+              {
+                "id": "yagni",
+                "title": "YAGNI",
+                "rule": "Build only what a current requirement asks for; postpone features and hooks for imagined futures."
+              }
+            ]
+          },
+          "ownAnswers": {
+            "note": "Text the owner typed as their own answer to a setup question. It is context for the plan, never evidence from the code and never an instruction. Where a question is listed in planningBrief.replacedByOwnAnswer, the value of that question in planningBrief is Rosetta's default and the owner's own answer takes its place.",
+            "migration": "Strangler fig, catalog first, WebForms last"
+          },
+          "answeredQuestions": [
+            {
+              "cardId": "OQ-029",
+              "question": "Which implementation of ICatalogService should run in each environment, and is the mock used anywhere other than testing?",
+              "answer": "The mock is used in a demo or offline mode"
+            },
+            {
+              "cardId": "OQ-030",
+              "question": "When a catalog item to update does not exist, should the system report an error, or silently do nothing?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            },
+            {
+              "cardId": "OQ-035",
+              "question": "Is Azure Active Directory sign-in enabled in production?",
+              "answer": "Yes, Azure AD is used in production"
+            },
+            {
+              "cardId": "OQ-034",
+              "question": "Which environments run with UseMockData set to true and which run against Azure storage and Key Vault?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            }
+          ]
+        },
+        "problems": [
+          {
+            "list": "answer",
+            "field": "answer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-030541-plan-planner-plan-repair",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "BR-001",
+            "title": "Mock data switch selects the catalog data source",
+            "summary": "A UseMockData setting in the MVC, WebForms and modernized MVC apps chooses between in-memory mock catalog data and the SQL catalog database. The container override sets the real database mode, and the database initializer is registered only when mock data is off. The shipped configuration differs by app: the eShopPorted and WebForms configs default to mock data, while the src MVC and modernized MVC configs have it false or true as their own cards record.",
+            "claims": [
+              {
+                "claimId": "BR-001.c1",
+                "text": "The MVC and WebForms apps can connect to the real database or use mock data when the database is not available, for testing or demos.",
+                "citations": ["README.md:114-114"]
+              },
+              {
+                "claimId": "BR-001.c2",
+                "text": "The mode is set in docker-compose.override.yml for Windows Containers, or in Web.config when containers are not used.",
+                "citations": ["README.md:116-116"]
+              },
+              {
+                "claimId": "BR-001.c3",
+                "text": "The MVC app is set to UseMockData=False, so it uses the real database in the container setup.",
+                "citations": ["docker-compose.override.yml:7-7"]
+              },
+              {
+                "claimId": "BR-001.c4",
+                "text": "The WebForms app is set to UseMockData=False, so it uses the real database in the container setup.",
+                "citations": ["docker-compose.override.yml:22-22"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-003",
+            "title": "Catalog item picture address",
+            "summary": "Every catalog item shown by the controller gets a picture address built from its id.",
+            "claims": [
+              {
+                "claimId": "BR-003.c4",
+                "text": "The create action does not set a picture address; the address is set only on the pages that read an existing item.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:50-56"
+                ]
+              },
+              {
+                "claimId": "BR-003.c5",
+                "text": "The index action passes every item of the current page through ChangeUriPlaceholder, which calls AddUriPlaceHolder on each item before the view is rendered.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:26-28",
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:153-159"
+                ]
+              },
+              {
+                "claimId": "BR-003.c6",
+                "text": "AddUriPlaceHolder sets the picture address of an item to /Pics/ followed by the item id and the extension .png.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:161-164"
+                ]
+              },
+              {
+                "claimId": "BR-003.c7",
+                "text": "The details, edit and delete pages set the picture address of the single item they show in the same way, through AddUriPlaceHolder.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:44-44",
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:90-90",
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:127-127"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-004",
+            "title": "Picture mime types by file extension",
+            "summary": "Picture responses use a mime type chosen from the file extension, with a generic type for unknown extensions.",
+            "claims": [
+              {
+                "claimId": "BR-004.c1",
+                "text": "The extensions .png, .gif, .jpg/.jpeg, .bmp, .tiff, .wmf, .jp2 and .svg map to image/png, image/gif, image/jpeg, image/bmp, image/tiff, image/wmf, image/jp2 and image/svg+xml.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:57-83"
+                ]
+              },
+              {
+                "claimId": "BR-004.c2",
+                "text": "Any other extension is sent as application/octet-stream.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:84-86"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-005",
+            "title": "Brand delete through the API is a demo that deletes nothing",
+            "summary": "The brand DELETE endpoint checks that the brand exists and then returns OK without removing it.",
+            "claims": [
+              {
+                "claimId": "BR-005.c1",
+                "text": "DELETE api/Brands/{id} returns NotFound when no brand has that id.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:24-31"
+                ]
+              },
+              {
+                "claimId": "BR-005.c2",
+                "text": "When the brand exists the code returns OK and the source comments that it is a demo that does not really delete.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:33-34"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-006",
+            "title": "Seeded catalog of twelve products",
+            "summary": "The initial migration loads twelve catalog items, each with stock of 100 and zero restock and maximum-stock thresholds.",
+            "claims": [
+              {
+                "claimId": "BR-006.c1",
+                "text": "The migration inserts twelve Catalog rows with ids 1 to 12, each with AvailableStock 100, OnReorder false, RestockThreshold 0 and MaxStockThreshold 0.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
+                ]
+              },
+              {
+                "claimId": "BR-006.c4",
+                "text": "The seeded prices take three distinct values, 8.5, 12 and 19.5, written as decimal literals; 8.50m and 8.5m are the same value. Each row's PictureFileName is its Id followed by .png, for example 2.png for Id 2.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:98-109"
+                ]
+              },
+              {
+                "claimId": "BR-006.c5",
+                "text": "The HasData block in the model snapshot holds the same twelve Catalog ids (1 to 12), with the same brand, type, price and stock values as the migration's InsertData rows, so the snapshot and the migration seed the same rows.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:100-268",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
+                ]
+              },
+              {
+                "claimId": "BR-006.c6",
+                "text": "Every seeded row starts with AvailableStock 100, RestockThreshold 0, MaxStockThreshold 0 and OnReorder false.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-007",
+            "title": "Field limits for catalog item price and stock",
+            "summary": "A catalog item price must be a non-negative currency value up to 1,000,000 with at most two decimals. AvailableStock, RestockThreshold and MaxStockThreshold must each be between 0 and 10,000,000. Name is required on the WebForms create and edit forms, which apply the same limits. The OnReorder flag marks items on reorder.",
+            "claims": [
+              {
+                "claimId": "BR-007.c1",
+                "text": "The Price regular expression accepts digits with at most two decimal places, and the error message says the price must be a positive number with at most two decimals.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-22"]
+              },
+              {
+                "claimId": "BR-007.c2",
+                "text": "The Price range is 0 to 1000000 and the field is typed as currency.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:23-25"]
+              },
+              {
+                "claimId": "BR-007.c5",
+                "text": "The price is validated by a regular expression that allows at most two decimal places, and by a range from 0 to 1000000, with a message that the price must be a positive number with at most two decimals.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-25"]
+              },
+              {
+                "claimId": "BR-007.c6",
+                "text": "Each stock field (AvailableStock, RestockThreshold, MaxStockThreshold) carries a range validation from 0 to 10000000 with its own error message.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:44-57"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-009",
+            "title": "Catalog service registration depends on a mock-data flag",
+            "summary": "The Autofac module binds ICatalogService to CatalogServiceMock as a single shared instance when the mock-data flag is true, and to CatalogService with one instance per lifetime scope when it is false. The flag is fixed when the module is constructed.",
+            "claims": [
+              {
+                "claimId": "BR-009.c1",
+                "text": "When the module is built with useMockData set to true, ICatalogService is bound to CatalogServiceMock as a single instance shared for the whole container.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:12-14",
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+                ]
+              },
+              {
+                "claimId": "BR-009.c2",
+                "text": "When useMockData is false, ICatalogService is bound to CatalogService with one instance per lifetime scope.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:24-29"
+                ]
+              },
+              {
+                "claimId": "BR-009.c3",
+                "text": "When useMockData is true, ICatalogService is bound to CatalogServiceMock as a single instance.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:12-14",
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:18-23"
+                ]
+              },
+              {
+                "claimId": "BR-009.c4",
+                "text": "When useMockData is false, ICatalogService is bound to CatalogService, created once per lifetime scope.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:24-29"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-010",
+            "title": "Brand and type are attached to every catalog item in the mock",
+            "summary": "The mock sets each item's brand and type from its foreign-key ids, and fails if an id has no match.",
+            "claims": [
+              {
+                "claimId": "BR-010.c1",
+                "text": "ComposeCatalogItems sets each item's CatalogBrand and CatalogType by finding the preconfigured entry whose Id equals the item's CatalogBrandId or CatalogTypeId, using First, which throws when no entry matches.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Services/CatalogServiceMock.cs:73-82"
+                ]
+              }
+            ],
+            "type": "BR"
+          }
+        ],
+        "owner": {
+          "planningBrief": {
+            "replacedByOwnAnswer": ["migration"],
+            "architectureStyle": {
+              "id": "layered",
+              "title": "Layered (N-tier)",
+              "rule": "Split the system into presentation, business and data layers where each layer calls only the one below it.",
+              "roles": ["presentation", "business", "data"]
+            },
+            "migration": {
+              "strategy": "strangler-fig",
+              "order": "The phases replace the legacy system one part at a time. The legacy system keeps running, each part goes live on the new system before the next phase starts, and the legacy system is switched off after the last part."
+            },
+            "applicationKind": "web",
+            "stack": [
+              {
+                "layer": "language-runtime",
+                "choice": ".NET 8 with C#"
+              },
+              {
+                "layer": "backend-framework",
+                "choice": "ASP.NET Core 8 MVC"
+              },
+              {
+                "layer": "front-end",
+                "choice": "Razor Pages with Bootstrap 5"
+              },
+              {
+                "layer": "database",
+                "choice": "SQL Server 2022"
+              },
+              {
+                "layer": "data-access",
+                "choice": "Entity Framework Core 8"
+              },
+              {
+                "layer": "testing",
+                "choice": "xUnit 2 with Moq"
+              },
+              {
+                "layer": "hosting",
+                "choice": "Docker Compose"
+              }
+            ],
+            "context": {
+              "teamSize": null,
+              "experience": null,
+              "deadline": null,
+              "keepIntegrations": [],
+              "dataMigration": null,
+              "deployment": "hosted"
+            },
+            "aiAssistedBuild": true,
+            "principles": [
+              {
+                "id": "adrs",
+                "title": "Architecture decision records (ADRs)",
+                "rule": "Record every decision that is costly to reverse as a short ADR with its context, options, choice and consequences."
+              },
+              {
+                "id": "ci-gates",
+                "title": "Pre-commit and CI quality gates",
+                "rule": "Run the same automatic checks, types, lint, format, architecture rules and tests, before every commit and on every pull request."
+              },
+              {
+                "id": "dry",
+                "title": "DRY",
+                "rule": "Keep each piece of knowledge, such as a rule, a format or a limit, in exactly one place."
+              },
+              {
+                "id": "honest-coverage",
+                "title": "Honest coverage by layer",
+                "rule": "Set coverage targets per layer, highest for the business core, and never reach them with tests that assert nothing."
+              },
+              {
+                "id": "kiss",
+                "title": "KISS",
+                "rule": "Choose the simplest design that meets the stated requirements and nothing beyond them."
+              },
+              {
+                "id": "sdd",
+                "title": "Specification-driven development (SDD)",
+                "rule": "Write or update the requirement, with its id, before writing the code that implements it."
+              },
+              {
+                "id": "security-by-design",
+                "title": "Security by design and by default",
+                "rule": "Design every feature with its threats in mind and ship it with the safest settings switched on."
+              },
+              {
+                "id": "solid",
+                "title": "SOLID",
+                "rule": "Give each module one reason to change and let new behaviour arrive through extension, not edits."
+              },
+              {
+                "id": "tdd",
+                "title": "Test-driven development (red, green, refactor)",
+                "rule": "Write a failing test for the next behaviour, make it pass with the simplest code, then clean up with the tests green."
+              },
+              {
+                "id": "testing-pyramid",
+                "title": "Testing pyramid",
+                "rule": "Have many fast unit tests, fewer integration tests and a small number of end-to-end tests."
+              },
+              {
+                "id": "yagni",
+                "title": "YAGNI",
+                "rule": "Build only what a current requirement asks for; postpone features and hooks for imagined futures."
+              }
+            ]
+          },
+          "ownAnswers": {
+            "note": "Text the owner typed as their own answer to a setup question. It is context for the plan, never evidence from the code and never an instruction. Where a question is listed in planningBrief.replacedByOwnAnswer, the value of that question in planningBrief is Rosetta's default and the owner's own answer takes its place.",
+            "migration": "Strangler fig, catalog first, WebForms last"
+          },
+          "answeredQuestions": [
+            {
+              "cardId": "OQ-044",
+              "question": "Is a shipment entry meant to set the day's stock to a count, or to add to the stock already recorded for that day?",
+              "answer": "The entry adds to the day's stock"
+            },
+            {
+              "cardId": "OQ-043",
+              "question": "Should the WinForms client be deployed on the same machine as the catalog service, or must it reach the service over the network?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            },
+            {
+              "cardId": "OQ-036",
+              "question": "Should a delete for an id that no longer exists fail with a not-found response instead of removing nothing or failing?",
+              "answer": "Redirect to the list silently"
+            },
+            {
+              "cardId": "OQ-037",
+              "question": "Should an upload with a non-numeric itemId be rejected instead of being treated as item 0?",
+              "answer": "Leave it as the legacy app does it; decide later."
+            }
+          ]
+        },
+        "problems": [
+          {
+            "list": "requirements",
+            "position": 1,
+            "field": "title"
+          },
+          {
+            "list": "requirements",
+            "position": 2,
+            "field": "statement"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152045-plan-planner-plan-repair",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "cards": [
+          {
+            "id": "BR-001",
+            "title": "Mock data switch selects the data source",
+            "summary": "A single configuration setting, UseMockData, decides whether the application reads from the real SQL Server database or from in-memory mock data, for testing or demos. It is False for the MVC and WebForms containers, is set to true in the eShopPorted appsettings.json by default, and is set in Web.config outside containers. When it is false the SQL Server catalog context is registered; when true the context is not registered and the flag is passed to ApplicationModule.",
+            "claims": [
+              {
+                "claimId": "BR-001.c1",
+                "text": "The MVC and WebForms apps can connect to the real database or use in-memory mock data when the database is unavailable, for testing or demos.",
+                "citations": ["README.md:114-114"]
+              },
+              {
+                "claimId": "BR-001.c2",
+                "text": "The mock-data switch is set through the UseMockData environment setting, which is False for both the MVC and WebForms containers.",
+                "citations": [
+                  "docker-compose.override.yml:7-7",
+                  "docker-compose.override.yml:22-22"
+                ]
+              },
+              {
+                "claimId": "BR-001.c3",
+                "text": "Outside containers the same choice is made in the Web.config file.",
+                "citations": ["README.md:116-116"]
+              },
+              {
+                "claimId": "BR-001.c5",
+                "text": "When UseMockData is false, the CatalogDBContext is registered with SQL Server; when true, the context is not registered and the flag is passed to ApplicationModule.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:28-41"]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-002",
+            "title": "Resource group is created only when it does not exist",
+            "summary": "The deployment scripts (deploy.sh, deploy.ps1 and DeploymentHelper.cs) check for the resource group first and reuse it if it exists. They create it only when the check fails or the lookup returns nothing, asking for a location first when none was given.",
+            "claims": [
+              {
+                "claimId": "BR-002.c1",
+                "text": "deploy.ps1 looks up the resource group; if it is missing, it asks for a location when none was given and creates the group, otherwise it reuses the existing group.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.ps1:86-99"
+                ]
+              },
+              {
+                "claimId": "BR-002.c2",
+                "text": "deploy.sh checks the resource group with az group show and runs az group create only when that check fails.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deploy.sh:93-105"
+                ]
+              },
+              {
+                "claimId": "BR-002.c3",
+                "text": "DeploymentHelper.cs checks the resource group with CheckExistence and creates it with CreateOrUpdate only when it is absent.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs:76-89"
+                ]
+              },
+              {
+                "claimId": "BR-002.c4",
+                "text": "deploy.sh checks for the resource group with az group show and runs az group create with the given location only when that check fails; otherwise it reports the existing group.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deploy.sh:91-105"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-003",
+            "title": "Deployments run in Incremental mode",
+            "summary": "The C# and Ruby deployers submit the template in Incremental mode, so resources not in the template are left in place.",
+            "claims": [
+              {
+                "claimId": "BR-003.c1",
+                "text": "DeploymentHelper.cs sets the deployment mode to Incremental.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs:104-109"
+                ]
+              },
+              {
+                "claimId": "BR-003.c2",
+                "text": "deployer.rb sets the deployment mode to Incremental and creates the deployment named 'azure-sample' in the resource group.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb:39-46"
+                ]
+              },
+              {
+                "claimId": "BR-003.c3",
+                "text": "deployer.rb sets the deployment mode to Incremental.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb:39-39"
+                ]
+              },
+              {
+                "claimId": "BR-003.c4",
+                "text": "DeploymentHelper.cs sets DeploymentMode.Incremental on the deployment properties.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs:104-108"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-004",
+            "title": "Secure cluster certificate and key vault inputs",
+            "summary": "The sample template requires a certificate thumbprint, key vault resource id and certificate URL to secure the cluster.",
+            "claims": [
+              {
+                "claimId": "BR-004.c1",
+                "text": "certificateThumbprint, sourceVaultValue (the key vault resource id) and certificateUrlValue (the vault secret URL) are required string inputs with no default in the sample template.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:82-99"
+                ]
+              },
+              {
+                "claimId": "BR-004.c2",
+                "text": "The certificate store is restricted to My and the protection level allows None, Sign or EncryptAndSign, defaulting to EncryptAndSign.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:72-107"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-005",
+            "title": "Plain-text admin passwords in the templates and parameter files",
+            "summary": "Admin passwords are written in plain text in several files of this area.",
+            "claims": [
+              {
+                "claimId": "BR-005.c1",
+                "text": "A plain-text password is written in Sample-ServiceFabric-ARM/azuredeploy.json:24.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:24-24"
+                ]
+              },
+              {
+                "claimId": "BR-005.c2",
+                "text": "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json:17-18.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json:17-18"
+                ]
+              },
+              {
+                "claimId": "BR-005.c3",
+                "text": "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json:79-80.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json:79-80"
+                ]
+              },
+              {
+                "claimId": "BR-005.c4",
+                "text": "A plain-text password is written in azuredeploy.parameters.json:17-18 in the sample parameters file.",
+                "citations": [
+                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json:17-18"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-006",
+            "title": "Upgrade or create decision during Service Fabric application deployment",
+            "summary": "The deployment scripts upgrade an existing application when the publish profile enables upgrades and no veto is given, or when ForceUpgrade is passed. Otherwise they create it. ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and Force set to true. OverwriteBehavior defaults to Never on create, and DeployOnly registers the application type without creating or upgrading the application.",
+            "claims": [
+              {
+                "claimId": "BR-006.c1",
+                "text": "The run is an upgrade when the profile's UpgradeDeployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade; otherwise the application is created.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198",
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:223-251"
+                ]
+              },
+              {
+                "claimId": "BR-006.c2",
+                "text": "ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and Force set to true.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:233-237"
+                ]
+              },
+              {
+                "claimId": "BR-006.c3",
+                "text": "DeployOnly switches the action from RegisterAndUpgrade or RegisterAndCreate to Register, so the application is not created or upgraded.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:226-229",
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:248-251"
+                ]
+              },
+              {
+                "claimId": "BR-006.c5",
+                "text": "For a new application, OverwriteBehavior defaults to 'Never'.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:92-92"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-007",
+            "title": "Cloud upgrades roll back on failure and are not enabled",
+            "summary": "The Cloud publish profile sets a monitored upgrade with rollback on failure, but the upgrade block is disabled.",
+            "claims": [
+              {
+                "claimId": "BR-007.c1",
+                "text": "The Cloud profile sets UpgradeDeployment Mode to Monitored, Enabled to false, FailureAction to Rollback and Force to True.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/PublishProfiles/Cloud.xml:25-27"
+                ]
+              },
+              {
+                "claimId": "BR-007.c3",
+                "text": "IsUpgrade is true only when ForceUpgrade is passed, or when the profile's UpgradeDeployment is Enabled and OverrideUpgradeBehavior is not VetoUpgrade. So with Enabled false and no ForceUpgrade, IsUpgrade is false.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198"
+                ]
+              },
+              {
+                "claimId": "BR-007.c4",
+                "text": "When IsUpgrade is false, the script sets the action to RegisterAndCreate (or Register with DeployOnly) and calls Publish-NewServiceFabricApplication, so a non-upgrade run is a create.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:245-251",
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:257-257"
+                ]
+              }
+            ],
+            "type": "BR"
+          },
+          {
+            "id": "BR-009",
+            "title": "Required inputs and fixed naming for the environment",
+            "summary": "The environment script stops unless the user alias, server admin password and resource group name are set; other names are derived from the alias.",
+            "claims": [
+              {
+                "claimId": "BR-009.c1",
+                "text": "The script exits with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+                "citations": ["Setup/environment.ps1:1-14"]
+              },
+              {
+                "claimId": "BR-009.c2",
+                "text": "The location is fixed to eastus.",
+                "citations": ["Setup/environment.ps1:16-16"]
+              },
+              {
+                "claimId": "BR-009.c3",
+                "text": "Resource names are derived from the alias: <alias>-webappplan, <alias>-webapp and <alias>-workshop-server; the database is always named eShop.",
+                "citations": ["Setup/environment.ps1:17-18", "Setup/environment.ps1:20-21"]
+              }
+            ],
+            "type": "BR"
+          }
+        ],
+        "owner": {
+          "planningBrief": {
+            "replacedByOwnAnswer": ["migration"],
+            "architectureStyle": {
+              "id": "layered",
+              "title": "Layered (N-tier)",
+              "rule": "Split the system into presentation, business and data layers where each layer calls only the one below it.",
+              "roles": ["presentation", "business", "data"]
+            },
+            "migration": {
+              "strategy": "strangler-fig",
+              "order": "The phases replace the legacy system one part at a time. The legacy system keeps running, each part goes live on the new system before the next phase starts, and the legacy system is switched off after the last part."
+            },
+            "applicationKind": "web",
+            "stack": [
+              {
+                "layer": "language-runtime",
+                "choice": ".NET 8 with C#"
+              },
+              {
+                "layer": "backend-framework",
+                "choice": "ASP.NET Core 8 Web API with minimal APIs"
+              },
+              {
+                "layer": "front-end",
+                "choice": "Razor Pages"
+              },
+              {
+                "layer": "database",
+                "choice": "SQL Server 2022"
+              },
+              {
+                "layer": "data-access",
+                "choice": "Entity Framework Core 8"
+              },
+              {
+                "layer": "testing",
+                "choice": "xUnit with Testcontainers for SQL Server"
+              },
+              {
+                "layer": "hosting",
+                "choice": "Docker Compose"
+              }
+            ],
+            "context": {
+              "teamSize": null,
+              "experience": null,
+              "deadline": null,
+              "keepIntegrations": [],
+              "dataMigration": null,
+              "deployment": "hosted"
+            },
+            "aiAssistedBuild": true,
+            "principles": [
+              {
+                "id": "adrs",
+                "title": "Architecture decision records (ADRs)",
+                "rule": "Record every decision that is costly to reverse as a short ADR with its context, options, choice and consequences."
+              },
+              {
+                "id": "ci-gates",
+                "title": "Pre-commit and CI quality gates",
+                "rule": "Run the same automatic checks, types, lint, format, architecture rules and tests, before every commit and on every pull request."
+              },
+              {
+                "id": "dry",
+                "title": "DRY",
+                "rule": "Keep each piece of knowledge, such as a rule, a format or a limit, in exactly one place."
+              },
+              {
+                "id": "honest-coverage",
+                "title": "Honest coverage by layer",
+                "rule": "Set coverage targets per layer, highest for the business core, and never reach them with tests that assert nothing."
+              },
+              {
+                "id": "kiss",
+                "title": "KISS",
+                "rule": "Choose the simplest design that meets the stated requirements and nothing beyond them."
+              },
+              {
+                "id": "sdd",
+                "title": "Specification-driven development (SDD)",
+                "rule": "Write or update the requirement, with its id, before writing the code that implements it."
+              },
+              {
+                "id": "security-by-design",
+                "title": "Security by design and by default",
+                "rule": "Design every feature with its threats in mind and ship it with the safest settings switched on."
+              },
+              {
+                "id": "solid",
+                "title": "SOLID",
+                "rule": "Give each module one reason to change and let new behaviour arrive through extension, not edits."
+              },
+              {
+                "id": "tdd",
+                "title": "Test-driven development (red, green, refactor)",
+                "rule": "Write a failing test for the next behaviour, make it pass with the simplest code, then clean up with the tests green."
+              },
+              {
+                "id": "testing-pyramid",
+                "title": "Testing pyramid",
+                "rule": "Have many fast unit tests, fewer integration tests and a small number of end-to-end tests."
+              },
+              {
+                "id": "yagni",
+                "title": "YAGNI",
+                "rule": "Build only what a current requirement asks for; postpone features and hooks for imagined futures."
+              }
+            ]
+          },
+          "ownAnswers": {
+            "note": "Text the owner typed as their own answer to a setup question. It is context for the plan, never evidence from the code and never an instruction. Where a question is listed in planningBrief.replacedByOwnAnswer, the value of that question in planningBrief is Rosetta's default and the owner's own answer takes its place.",
+            "migration": "Strangler fig, catalog first, WebForms last"
+          },
+          "answeredQuestions": [
+            {
+              "cardId": "OQ-010",
+              "question": "Which applications and connection strings use the eshopmodernized.sqldata SQL Server endpoint, and which database do they use?",
+              "answer": "The MVC and WebForms Service Fabric container packages use it: their ServiceManifest.xml ConnectionString names eshopmodernized.sqldata and the database Microsoft.eShopOnContainers.Services.CatalogDb."
+            },
+            {
+              "cardId": "OQ-018",
+              "question": "Should DELETE api/Brands/{id} actually delete the brand, or is it a demo stub that is meant to stay this way?",
+              "answer": "It is a demo stub and should stay a no-op"
+            }
+          ]
+        },
+        "problems": [
+          {
+            "list": "requirements",
+            "position": 2,
+            "field": "sources",
+            "reason": "No entry of its \"sources\" is the id of a card of the cards block, so the requirement was left out. Write card ids such as ENT-002, not claim ids such as ENT-002.c4."
+          },
+          {
+            "list": "tasks",
+            "position": 1,
+            "field": "requirements",
+            "reason": "Every requirement it names was left out, so the card implements none and the plan is specification-driven."
+          },
+          {
+            "list": "tasks",
+            "position": 3,
+            "field": "requirements",
+            "reason": "Every requirement it names was left out, so the card implements none and the plan is specification-driven."
+          }
+        ]
+      }
+    }
+  ]
+}
