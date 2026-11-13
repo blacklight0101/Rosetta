@@ -174,6 +174,25 @@ describe('the cut of a continuation', () => {
   });
 });
 
+describe('a continuation that starts again', () => {
+  const again = `Here is the whole answer.\n${validCards}`;
+  const fence = '```';
+  const fenced = [`${fence}json`, validCards, fence].join('\n');
+
+  it('RF-1406 is Restarted, not usable, when the fragment is a new answer and not the rest', async () => {
+    const prose = await run('cards/continue', { text: again });
+    const inFence = await run('cards/continue', { text: fenced });
+
+    expect(prose.outcome).toEqual({ usable: false, detail: 'Restarted' });
+    expect(inFence.outcome).toEqual({ usable: false, detail: 'Restarted' });
+  });
+
+  it('RF-1406 is not valid on the first try either, and the rest of the cut is', () => {
+    expect(targets.get('cards/continue')?.readsAnswer(again)).toBe(false);
+    expect(targets.get('cards/continue')?.readsAnswer(rest)).toBe(true);
+  });
+});
+
 describe('the cases of the card surface targets', () => {
   it('RF-1406 refuses a case without reads, as every case replays them', () => {
     const bare = { area: input.area, files: input.files, turns: input.turns };
