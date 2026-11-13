@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
+import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
-// the side-by-side comparison of two. All figures are deterministic: no judge is involved.
+// the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
+// scores (RF-1407), present only in a run made with `--judge`, are kept apart in each case's `judge`.
 
 const count = z.number().int().min(0);
 
@@ -26,6 +29,8 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
+  /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
+  judge: judgementSchema.optional(),
 });
 
 const resultsSchema = z.strictObject({
@@ -50,6 +55,7 @@ const resultsSchema = z.strictObject({
   endState: z.enum(['Completed', 'Refused']),
   refusal: z.string().nullable(),
   cases: z.array(caseSchema),
+  judge: judgeInfoSchema.optional(),
 });
 
 export type LabCaseResult = z.infer<typeof caseSchema>;
@@ -82,6 +88,8 @@ export interface LabSummary {
   readonly meanOutputTokens: number | null;
   readonly meanLatencyMs: number | null;
   readonly costMicros: number;
+  /** RF-1407: the judge's means; null for a run without a judge. */
+  readonly judge: JudgeSummary | null;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -128,6 +136,7 @@ export function summariseLab(results: LabResults): LabSummary {
       calls,
     ),
     costMicros: sum(cases, (each) => each.costMicros),
+    judge: judgeSummaryOf(cases),
   };
 }
 

@@ -2,8 +2,8 @@
 
 For the owner, the orchestrator and builders of Phase 10 (DEC-231). The lab runs one version of one prompt over the
 cases of a case set with one model, through the same adapters, egress guard and budget guard as a run, and measures the
-answers without a judge. It is opt-in and spends money; no test and no CI job runs it against a real model (ADR-008).
-Design: [ADR-029](../adr/ADR-029-prompt-lab-cases-and-spend-ledger.md); requirements RF-1400..RF-1403; files in
+answers without a judge (or, with `--judge`, scores them against a written rubric, section 8). It is opt-in and spends money; no test and no CI job runs it against a real model (ADR-008).
+Design: [ADR-029](../adr/ADR-029-prompt-lab-cases-and-spend-ledger.md); requirements RF-1400..RF-1408; files in
 [data-model.md](../data-model.md) section 3.21.
 
 ## 1. Run one prompt
@@ -179,3 +179,42 @@ targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalo
 | `summariser/overview`       | wired   | summariser-overview, overview-sample               |
 | `verifier/claim`            | wired   | verifier-claim-sample (invented)                   |
 | `verifier/retry`            | not yet |                                                    |
+
+## 8. The judge (`--judge`) and the judge check (`--judge-check`)
+
+Some quality cannot be counted: whether an answer says only what its source shows, whether a summary covers the cards. A
+judge model scores the answer against a written rubric of the prompt's family (RF-1407, ADR-029).
+
+```text
+npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-haiku-5-5 \
+  --cases verifier-claim-sample --judge anthropic:claude-opus-5-5 --yes
+```
+
+- **Rubrics** are `lab/rubrics/<family>.md` for reader, verifier, summariser, planner, cards and shared; the family is the
+  folder of the prompt id. A criterion is a heading `## <id> - <title>` (with ` [veto]` when a score of 1 on it makes
+  the overall score 1) and the text under it says what 5, 3 and 1 look like. Every rubric has `grounding`; the verifier's
+  has `verdict-correct` (agreement with the hand label), a veto: a wrong verdict makes the overall score 1; the shared one vetoes a missed secret. A new criterion is a new
+  heading; the judge's reply must score exactly the criteria of the file.
+- **The judge prompt** is `prompts/lab/judge.v1.md`, a versioned file like the others. The rubric is appended to it as the
+  system prompt; the case's inputs, the answer and the hand label go to the judge only as the data blocks `lab_source`,
+  `lab_answer` and `lab_label`. The overall score is computed by the lab (the mean, or 1 on a vetoed criterion).
+- **Cost.** One judge call per answered case, through the same ledger gate, budget guard and shared ledger as the target
+  calls, so it counts in the invocation cap, the stop line and the $50. The judge model must be priced
+  (`prices/default-prices.yaml`). A judge call that fails after it was sent (a rejected key, an unknown model) is booked at its
+  worst case, so the invocation stops at the first such call and prints its RST code in `judge.rstCode` and the stop reason;
+  fix the cause before running again.
+- **Results.** `results.json` gets `judge` per case (criteria with reasons, `overall`, `vetoed`, `state`, tokens, `costMicros`)
+  and `judge` for the run (model, prompt and rubric with SHA-256). The summary prints the mean overall and per criterion, and
+  `--compare` shows `judge n.n` on each case and the means in the totals. Without `--judge` nothing changes.
+
+How far to trust the judge is measured by `npm run lab -- --judge-check <provider:model> --yes`: 12 of the hand-labelled
+calibration claims (shown with the label's verdict or its opposite, alternately, label withheld) and the 18 hand-scored
+samples of `eval/judge-check/hand-scored.json` (three per family, from public eShopModernizing code or invented material),
+30 judge calls (`--limit 1` scores 7: one calibration claim and one sample per family). The report `lab-out/<id>/judge-check.json` and the printed lines give the agreement with the hand labels and,
+per family and criterion, exact, within one point and the mean difference from the hand scores. A judge score may rule a
+prompt version in or out only where this agreement is good enough for the owner (see
+[judge-sample.md](../evaluation/prompt-lab/judge-sample.md)).
+
+### Smoke run on a local model
+
+A local Ollama model is free and shows that the chain works (prompt rendering, the answer parser, the judge's JSON, `results.json`, `--compare`, the ledger lines at $0); it says nothing about the judge's quality. Set `ROSETTA_OLLAMA_URL=http://127.0.0.1:11434` (the lab reads no other source for the Ollama address) and `ROSETTA_LAB_LEDGER`, then use a model that supports chat and has a price (`gemma4:e4b`, priced at zero): `--model ollama:gemma4:e4b --judge ollama:gemma4:e4b`, or `--judge-check ollama:gemma4:e4b --limit 1 --yes`. A model whose `/api/show` capabilities lack `completion` (such as `tev1`, `decision` only) answers every chat with HTTP 400 and cannot be used.

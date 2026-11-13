@@ -50,3 +50,33 @@ describe('the lab options', () => {
     expect(parseLabArgs(['--compare', 'run-a', 'run-b', '--yes']).ok).toBe(false);
   });
 });
+
+describe('the lab judge options', () => {
+  it('RF-1407 reads --judge as a provider:model and leaves it out when absent', () => {
+    const judged = parseLabArgs([...base, '--judge', 'anthropic:claude-opus-5-5']);
+    const plain = parseLabArgs(base);
+
+    expect(judged.ok && judged.value.kind === 'run' && judged.value.judge).toEqual({
+      provider: 'anthropic',
+      model: 'claude-opus-5-5',
+    });
+    expect(plain.ok && plain.value.kind === 'run' && 'judge' in plain.value).toBe(false);
+    expect(parseLabArgs([...base, '--judge', 'nocolon']).ok).toBe(false);
+  });
+
+  it('RF-1408 reads --judge-check with a model and consent, and no other option', () => {
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--yes'])).toEqual({
+      ok: true,
+      value: { kind: 'judge-check', model: { provider: 'fake', model: 'model-b' }, yes: true },
+    });
+    expect(parseLabArgs(['--judge-check', 'fake:model-b'])).toMatchObject({
+      value: { yes: false },
+    });
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--limit', '2', '--yes'])).toMatchObject({
+      value: { limit: 2, yes: true },
+    });
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--limit', '0']).ok).toBe(false);
+    expect(parseLabArgs(['--judge-check']).ok).toBe(false);
+    expect(parseLabArgs(['--judge-check', 'fake:model-b', '--prompt', 'x']).ok).toBe(false);
+  });
+});

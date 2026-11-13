@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-11-13.1",
+  "description": "Eighteen answers scored by hand against the rubrics of lab/rubrics/, three per prompt family (good, faulty, poor), for the judge check of P10-03 (RF-1408). The sources are short excerpts of the public eShopLegacyWebForms sample (MIT licence, commit 63bc9ec) or material invented for this repository; the cards of the planner and summariser samples were written for this file from those lines. The answers were written for this file and the scores were given by the builder; the owner reviews them.",
+  "samples": [
+    {
+      "id": "verifier-find-item",
+      "family": "verifier",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Claim: FindCatalogItem loads one catalogue item by id together with its brand and type.\nCited lines: Services/CatalogService.cs:38-41\n\nServices/CatalogService.cs, lines 22-41:\n22         public PaginatedItemsViewModel<CatalogItem> GetCatalogItemsPaginated(int pageSize, int pageIndex)\n23         {\n24             var totalItems = db.CatalogItems.LongCount();\n25\n26             var itemsOnPage = db.CatalogItems\n27                 .Include(c => c.CatalogBrand)\n28                 .Include(c => c.CatalogType)\n29                 .OrderBy(c => c.Id)\n30                 .Skip(pageSize * pageIndex)\n31                 .Take(pageSize)\n32                 .ToList();\n33\n34             return new PaginatedItemsViewModel<CatalogItem>(\n35                 pageIndex, pageSize, totalItems, itemsOnPage);\n36         }\n37\n38         public CatalogItem FindCatalogItem(int id)\n39         {\n40             return db.CatalogItems.Include(c => c.CatalogBrand).Include(c => c.CatalogType).FirstOrDefault(ci => ci.Id == id);\n41         }",
+      "answer": "Reason: Line 40 queries CatalogItems, includes CatalogBrand and CatalogType and takes the first item whose Id equals the id.\nVerdict: Supported",
+      "label": "Supported",
+      "scores": {
+        "grounding": 5,
+        "verdict-correct": 5,
+        "reason-quality": 5,
+        "form": 5
+      },
+      "note": "A good verdict with a reason that names line 40."
+    },
+    {
+      "id": "verifier-sorted-by-name",
+      "family": "verifier",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Claim: GetCatalogItemsPaginated returns the items sorted by name.\nCited lines: Services/CatalogService.cs:22-36\n\nServices/CatalogService.cs, lines 22-41:\n22         public PaginatedItemsViewModel<CatalogItem> GetCatalogItemsPaginated(int pageSize, int pageIndex)\n23         {\n24             var totalItems = db.CatalogItems.LongCount();\n25\n26             var itemsOnPage = db.CatalogItems\n27                 .Include(c => c.CatalogBrand)\n28                 .Include(c => c.CatalogType)\n29                 .OrderBy(c => c.Id)\n30                 .Skip(pageSize * pageIndex)\n31                 .Take(pageSize)\n32                 .ToList();\n33\n34             return new PaginatedItemsViewModel<CatalogItem>(\n35                 pageIndex, pageSize, totalItems, itemsOnPage);\n36         }\n37\n38         public CatalogItem FindCatalogItem(int id)\n39         {\n40             return db.CatalogItems.Include(c => c.CatalogBrand).Include(c => c.CatalogType).FirstOrDefault(ci => ci.Id == id);\n41         }",
+      "answer": "Reason: The method pages the catalogue items.\nVerdict: Supported",
+      "label": "Rejected",
+      "scores": {
+        "grounding": 1,
+        "verdict-correct": 1,
+        "reason-quality": 1,
+        "form": 5
+      },
+      "note": "The code orders by Id (line 29); the verdict is wrong and the reason says nothing."
+    },
+    {
+      "id": "verifier-skip-formula",
+      "family": "verifier",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Claim: A page of catalogue items skips page size times page index items before it takes one page.\nCited lines: Services/CatalogService.cs:26-32\n\nServices/CatalogService.cs, lines 22-41:\n22         public PaginatedItemsViewModel<CatalogItem> GetCatalogItemsPaginated(int pageSize, int pageIndex)\n23         {\n24             var totalItems = db.CatalogItems.LongCount();\n25\n26             var itemsOnPage = db.CatalogItems\n27                 .Include(c => c.CatalogBrand)\n28                 .Include(c => c.CatalogType)\n29                 .OrderBy(c => c.Id)\n30                 .Skip(pageSize * pageIndex)\n31                 .Take(pageSize)\n32                 .ToList();\n33\n34             return new PaginatedItemsViewModel<CatalogItem>(\n35                 pageIndex, pageSize, totalItems, itemsOnPage);\n36         }\n37\n38         public CatalogItem FindCatalogItem(int id)\n39         {\n40             return db.CatalogItems.Include(c => c.CatalogBrand).Include(c => c.CatalogType).FirstOrDefault(ci => ci.Id == id);\n41         }",
+      "answer": "Reason: Lines 30 and 31 skip pageSize * pageIndex items and take pageSize, so the claim matches the code.\nVerdict: Rejected",
+      "label": "Supported",
+      "scores": {
+        "grounding": 5,
+        "verdict-correct": 1,
+        "reason-quality": 1,
+        "form": 5
+      },
+      "note": "The reason is right, the verdict contradicts it."
+    },
+    {
+      "id": "reader-edit-good",
+      "family": "reader",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: read the area \"catalog\" and write evidence cards.\n\nCatalog/Edit.aspx.cs, lines 18-35:\n18         protected void Page_Load(object sender, EventArgs e)\n19         {\n20             if (!Page.IsPostBack)\n21             {\n22\n23                 var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);\n24                 _log.Info($\"Now loading... /Catalog/Edit.aspx?id={productId}\");\n25                 product = CatalogService.FindCatalogItem(productId);\n26\n27                 BrandDropDownList.DataSource = CatalogService.GetCatalogBrands();\n28                 BrandDropDownList.SelectedValue = product.CatalogBrandId.ToString();\n29\n30                 TypeDropDownList.DataSource = CatalogService.GetCatalogTypes();\n31                 TypeDropDownList.SelectedValue = product.CatalogTypeId.ToString();\n32\n33                 this.DataBind();\n34             }\n35         }",
+      "answer": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Edit page loads the item to edit\",\"area\":\"catalog\",\"summary\":\"On the first load the edit page loads one catalogue item and fills its two drop-down lists.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"On the first load (not a postback) the page reads the item id from the route data.\",\"citations\":[\"Catalog/Edit.aspx.cs:20-23\"]},{\"text\":\"The page loads the item with CatalogService.FindCatalogItem.\",\"citations\":[\"Catalog/Edit.aspx.cs:25-25\"]},{\"text\":\"The brand and type drop-down lists are filled from the catalogue service and preselect the brand and type of the item.\",\"citations\":[\"Catalog/Edit.aspx.cs:27-31\"]}]}]}",
+      "scores": {
+        "grounding": 5,
+        "evidence-quality": 5,
+        "coverage": 4,
+        "card-form": 5
+      },
+      "note": "Narrow citations and nothing added; misses the log line."
+    },
+    {
+      "id": "reader-edit-invented",
+      "family": "reader",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: read the area \"catalog\" and write evidence cards.\n\nCatalog/Edit.aspx.cs, lines 18-35:\n18         protected void Page_Load(object sender, EventArgs e)\n19         {\n20             if (!Page.IsPostBack)\n21             {\n22\n23                 var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);\n24                 _log.Info($\"Now loading... /Catalog/Edit.aspx?id={productId}\");\n25                 product = CatalogService.FindCatalogItem(productId);\n26\n27                 BrandDropDownList.DataSource = CatalogService.GetCatalogBrands();\n28                 BrandDropDownList.SelectedValue = product.CatalogBrandId.ToString();\n29\n30                 TypeDropDownList.DataSource = CatalogService.GetCatalogTypes();\n31                 TypeDropDownList.SelectedValue = product.CatalogTypeId.ToString();\n32\n33                 this.DataBind();\n34             }\n35         }",
+      "answer": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Edit page\",\"area\":\"catalog\",\"summary\":\"The edit page validates the price and emails the owner after a save.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"The page checks that the price is positive and sends a confirmation email after saving.\",\"citations\":[\"Catalog/Edit.aspx.cs:18-35\"]},{\"text\":\"The page loads the item with CatalogService.FindCatalogItem.\",\"citations\":[\"Catalog/Edit.aspx.cs:25-25\"]}]}]}",
+      "scores": {
+        "grounding": 1,
+        "evidence-quality": 2,
+        "coverage": 2,
+        "card-form": 4
+      },
+      "note": "One claim is invented and cites the whole method."
+    },
+    {
+      "id": "reader-edit-bundled",
+      "family": "reader",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: read the area \"catalog\" and write evidence cards.\n\nCatalog/Edit.aspx.cs, lines 18-35:\n18         protected void Page_Load(object sender, EventArgs e)\n19         {\n20             if (!Page.IsPostBack)\n21             {\n22\n23                 var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);\n24                 _log.Info($\"Now loading... /Catalog/Edit.aspx?id={productId}\");\n25                 product = CatalogService.FindCatalogItem(productId);\n26\n27                 BrandDropDownList.DataSource = CatalogService.GetCatalogBrands();\n28                 BrandDropDownList.SelectedValue = product.CatalogBrandId.ToString();\n29\n30                 TypeDropDownList.DataSource = CatalogService.GetCatalogTypes();\n31                 TypeDropDownList.SelectedValue = product.CatalogTypeId.ToString();\n32\n33                 this.DataBind();\n34             }\n35         }",
+      "answer": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Edit page\",\"area\":\"catalog\",\"summary\":\"Loads an item for editing.\",\"confidence\":\"Medium\",\"claims\":[{\"text\":\"The Edit page loads the item by the route id, binds the brand and type lists, preselects them and logs the id.\",\"citations\":[\"Catalog/Edit.aspx.cs:18-35\"]}]}]}",
+      "scores": {
+        "grounding": 4,
+        "evidence-quality": 3,
+        "coverage": 3,
+        "card-form": 3
+      },
+      "note": "True, but one bundled claim with a wide citation."
+    },
+    {
+      "id": "cards-write-good",
+      "family": "cards",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the cards for the write methods of the catalogue service in the card format.\n\nServices/CatalogService.cs, lines 52-69:\n52         public void CreateCatalogItem(CatalogItem catalogItem)\n53         {\n54             catalogItem.Id = indexGenerator.GetNextSequenceValue(db);\n55             db.CatalogItems.Add(catalogItem);\n56             db.SaveChanges();\n57         }\n58\n59         public void UpdateCatalogItem(CatalogItem catalogItem)\n60         {\n61             db.Entry(catalogItem).State = EntityState.Modified;\n62             db.SaveChanges();\n63         }\n64\n65         public void RemoveCatalogItem(CatalogItem catalogItem)\n66         {\n67             db.CatalogItems.Remove(catalogItem);\n68             db.SaveChanges();\n69         }",
+      "answer": "{\"cards\":[{\"type\":\"BR\",\"title\":\"Catalogue items are created with a generated id\",\"area\":\"catalog\",\"summary\":\"The service assigns the id of a new item and saves it.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"CreateCatalogItem sets the id from the hi-lo index generator, adds the item and saves.\",\"citations\":[\"Services/CatalogService.cs:54-56\"]},{\"text\":\"UpdateCatalogItem marks the entity as modified and saves.\",\"citations\":[\"Services/CatalogService.cs:61-62\"]},{\"text\":\"RemoveCatalogItem removes the item and saves.\",\"citations\":[\"Services/CatalogService.cs:67-68\"]}]}]}",
+      "scores": {
+        "grounding": 5,
+        "format-validity": 5,
+        "claim-precision": 5,
+        "fidelity": 5
+      },
+      "note": "Valid, precise and complete."
+    },
+    {
+      "id": "cards-write-badformat",
+      "family": "cards",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the cards for the write methods of the catalogue service in the card format.\n\nServices/CatalogService.cs, lines 52-69:\n52         public void CreateCatalogItem(CatalogItem catalogItem)\n53         {\n54             catalogItem.Id = indexGenerator.GetNextSequenceValue(db);\n55             db.CatalogItems.Add(catalogItem);\n56             db.SaveChanges();\n57         }\n58\n59         public void UpdateCatalogItem(CatalogItem catalogItem)\n60         {\n61             db.Entry(catalogItem).State = EntityState.Modified;\n62             db.SaveChanges();\n63         }\n64\n65         public void RemoveCatalogItem(CatalogItem catalogItem)\n66         {\n67             db.CatalogItems.Remove(catalogItem);\n68             db.SaveChanges();\n69         }",
+      "answer": "{\"cards\":[{\"type\":\"RULE\",\"title\":\"Catalogue writes\",\"area\":\"catalog\",\"claims\":[{\"text\":\"CreateCatalogItem sets the id from the hi-lo index generator and saves the item.\",\"citations\":[\"CatalogService.cs lines 52 to 57\"]}]}]}",
+      "scores": {
+        "grounding": 4,
+        "format-validity": 1,
+        "claim-precision": 4,
+        "fidelity": 3
+      },
+      "note": "The claim is right, but the type is unknown, fields are missing and the citation is malformed."
+    },
+    {
+      "id": "cards-write-vague",
+      "family": "cards",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the cards for the write methods of the catalogue service in the card format.\n\nServices/CatalogService.cs, lines 52-69:\n52         public void CreateCatalogItem(CatalogItem catalogItem)\n53         {\n54             catalogItem.Id = indexGenerator.GetNextSequenceValue(db);\n55             db.CatalogItems.Add(catalogItem);\n56             db.SaveChanges();\n57         }\n58\n59         public void UpdateCatalogItem(CatalogItem catalogItem)\n60         {\n61             db.Entry(catalogItem).State = EntityState.Modified;\n62             db.SaveChanges();\n63         }\n64\n65         public void RemoveCatalogItem(CatalogItem catalogItem)\n66         {\n67             db.CatalogItems.Remove(catalogItem);\n68             db.SaveChanges();\n69         }",
+      "answer": "{\"cards\":[{\"type\":\"BR\",\"title\":\"Robust catalogue management\",\"area\":\"catalog\",\"summary\":\"The service manages catalogue data robustly.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"The service manages catalogue data robustly, with transactions and audit logging.\",\"citations\":[\"Services/CatalogService.cs:52-69\"]}]}]}",
+      "scores": {
+        "grounding": 1,
+        "format-validity": 5,
+        "claim-precision": 1,
+        "fidelity": 3
+      },
+      "note": "Valid form, but the claim is vague and invents transactions and audit logging."
+    },
+    {
+      "id": "planner-data-good",
+      "family": "planner",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the data-model section of the hand-off package from these verified cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "## Data model: catalogue\n\n- CatalogItem: Id, brand reference, type reference. An item is always read together with its brand and its type (C-001), so the read model joins both.\n- Id of a new item: assigned by the application from a hi-lo generator before the insert, not by the database (C-002). Keep a sequence-based generator, or move to a database identity column and record that choice as an ADR.\n- Listing: paged, ordered by id, with the total count returned with each page (C-003). The new list endpoint takes pageSize and pageIndex and returns the same total.\n- Updates mark the whole entity as modified and save it (C-004): the new system should decide whether to update all fields or only changed ones.",
+      "scores": {
+        "grounding": 5,
+        "completeness": 4,
+        "actionability": 4,
+        "consistency": 5
+      },
+      "note": "Traceable and concrete; leaves brand and type entities out because no card describes their fields."
+    },
+    {
+      "id": "planner-data-invented",
+      "family": "planner",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the data-model section of the hand-off package from these verified cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "## Data model\n\n- CatalogItem: Id, Name, Price, brand and type references.\n- Orders table with the customer email and a payment token for every order.\n- A Redis cache in front of the catalogue list, with a ten minute expiry.\n- Ids are generated by the database.",
+      "scores": {
+        "grounding": 1,
+        "completeness": 2,
+        "actionability": 4,
+        "consistency": 2
+      },
+      "note": "Invents orders, a cache, and contradicts C-002 (ids by a generator)."
+    },
+    {
+      "id": "planner-data-vague",
+      "family": "planner",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the data-model section of the hand-off package from these verified cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "## Data model\n\nCreate a modern, scalable data layer that follows good practices and fits the new system.",
+      "scores": {
+        "grounding": 2,
+        "completeness": 1,
+        "actionability": 1,
+        "consistency": 4
+      },
+      "note": "Says nothing false and nothing useful."
+    },
+    {
+      "id": "summariser-good",
+      "family": "summariser",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the overview of the application from these cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "{\"application\":[{\"text\":\"A product catalogue that is listed page by page and can be edited.\",\"cards\":[\"C-003\",\"C-004\"]}],\"users\":[],\"features\":[{\"text\":\"The catalogue is listed one page at a time, ordered by id, with a total count.\",\"cards\":[\"C-003\"]},{\"text\":\"An item can be opened for editing and saved again.\",\"cards\":[\"C-004\"]},{\"text\":\"New items get their id from an id generator in the service.\",\"cards\":[\"C-002\"]}],\"screens\":[{\"text\":\"An edit page shows the brand and type of the item in drop-down lists.\",\"cards\":[\"C-004\"]}],\"data\":[{\"text\":\"A catalogue item belongs to a brand and a type and is read with both.\",\"cards\":[\"C-001\"]}],\"integrations\":[]}",
+      "scores": {
+        "grounding": 5,
+        "citation-accuracy": 5,
+        "coverage": 4,
+        "form": 5
+      },
+      "note": "Empty users and integrations, as the cards are silent."
+    },
+    {
+      "id": "summariser-invented",
+      "family": "summariser",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the overview of the application from these cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "{\"application\":[{\"text\":\"A web shop where customers browse products and pay by card.\",\"cards\":[\"C-003\"]}],\"users\":[{\"text\":\"Customers and shop staff use the application.\",\"cards\":[\"C-009\"]}],\"features\":[{\"text\":\"Customers pay with PayPal.\",\"cards\":[\"C-009\"]}],\"screens\":[],\"data\":[{\"text\":\"A catalogue item has a brand and a type.\",\"cards\":[\"C-001\"]}],\"integrations\":[{\"text\":\"PayPal handles payments.\",\"cards\":[\"C-009\"]}]}",
+      "scores": {
+        "grounding": 1,
+        "citation-accuracy": 1,
+        "coverage": 2,
+        "form": 5
+      },
+      "note": "Invented customers and PayPal, with a card id that does not exist."
+    },
+    {
+      "id": "summariser-markdown",
+      "family": "summariser",
+      "origin": "dotnet-architecture/eShopModernizing, eShopLegacyWebFormsSolution/src/eShopLegacyWebForms, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (cards written for this sample from the lines above)",
+      "licence": "MIT (copyright .NET Foundation and Contributors); short excerpt, attribution kept",
+      "source": "Task: write the overview of the application from these cards.\n\n[\n  {\n    \"id\": \"C-001\",\n    \"type\": \"ENT\",\n    \"area\": \"catalog\",\n    \"title\": \"Catalogue item with brand and type\",\n    \"summary\": \"A catalogue item is read together with its brand and its type.\",\n    \"claims\": [\n      \"FindCatalogItem returns the first catalogue item with the given id, including its brand and type.\"\n    ]\n  },\n  {\n    \"id\": \"C-002\",\n    \"type\": \"BR\",\n    \"area\": \"catalog\",\n    \"title\": \"New items get an id from a generator\",\n    \"summary\": \"The service, not the database, assigns the id of a new item.\",\n    \"claims\": [\n      \"CreateCatalogItem sets the id from the hi-lo index generator before adding the item and saving.\"\n    ]\n  },\n  {\n    \"id\": \"C-003\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Paged catalogue list\",\n    \"summary\": \"The catalogue is listed one page at a time, ordered by id.\",\n    \"claims\": [\n      \"GetCatalogItemsPaginated orders items by id, skips pageSize times pageIndex items and takes pageSize.\",\n      \"The page also reports the total number of items.\"\n    ]\n  },\n  {\n    \"id\": \"C-004\",\n    \"type\": \"FEAT\",\n    \"area\": \"catalog\",\n    \"title\": \"Edit an item\",\n    \"summary\": \"The edit page loads an item and shows its brand and type in drop-down lists.\",\n    \"claims\": [\n      \"On the first load the edit page reads the item id from the route and loads the item.\",\n      \"UpdateCatalogItem marks the item as modified and saves it.\"\n    ]\n  }\n]",
+      "answer": "{\"application\":[{\"text\":\"**A product catalogue.** It is listed one page at a time and ordered by id, and the total number of items is reported with each page, so that a screen can show how many pages there are, and an item can be opened, changed and saved. See [the catalogue](http://example.com/catalog) for more.\",\"cards\":[\"C-003\",\"C-004\"]}],\"users\":[],\"features\":[{\"text\":\"Items are edited on an edit page.\",\"cards\":[\"C-004\"]}],\"screens\":[],\"data\":[{\"text\":\"An item is read with its brand and type.\",\"cards\":[\"C-001\"]}],\"integrations\":[]}",
+      "scores": {
+        "grounding": 4,
+        "citation-accuracy": 4,
+        "coverage": 3,
+        "form": 2
+      },
+      "note": "Content is right, but one statement is long, with Markdown and a link the cards do not give."
+    },
+    {
+      "id": "shared-secret-found",
+      "family": "shared",
+      "origin": "invented for this repository, MIT licence of the Rosetta repository",
+      "licence": "invented for this repository, MIT licence of the Rosetta repository",
+      "source": "Task: write the secret-risk note for the file below. A value Rosetta masked is shown as [MASKED:kind].\n\nWeb.config, lines 11-15:\n11   <connectionStrings>\n12     <add name=\"Shop\" connectionString=\"Server=db01;Database=Shop;User Id=shop_app;Password=[MASKED:password];\" />\n13   </connectionStrings>\n14   <appSettings>\n15     <add key=\"PageSize\" value=\"10\" />",
+      "answer": "Web.config line 12 holds a plain-text database password in the connection string (shown as [MASKED:password]). Treat it as exposed and replace it. In the new system keep the value in a secret store or an environment variable, never in a file of the repository. The server name db01, the database name Shop and the user name are not secrets.",
+      "scores": {
+        "grounding": 5,
+        "secret-detection": 5,
+        "secret-handling": 5,
+        "no-overreach": 5
+      },
+      "note": "Finds the password and its place, repeats no value, gives the right advice."
+    },
+    {
+      "id": "shared-secret-missed",
+      "family": "shared",
+      "origin": "invented for this repository, MIT licence of the Rosetta repository",
+      "licence": "invented for this repository, MIT licence of the Rosetta repository",
+      "source": "Task: write the secret-risk note for the file below. A value Rosetta masked is shown as [MASKED:kind].\n\nWeb.config, lines 11-15:\n11   <connectionStrings>\n12     <add name=\"Shop\" connectionString=\"Server=db01;Database=Shop;User Id=shop_app;Password=[MASKED:password];\" />\n13   </connectionStrings>\n14   <appSettings>\n15     <add key=\"PageSize\" value=\"10\" />",
+      "answer": "The configuration holds a connection string to the Shop database on db01 for the user shop_app and a page size setting of 10. No secrets were found in this file.",
+      "scores": {
+        "grounding": 3,
+        "secret-detection": 1,
+        "secret-handling": 2,
+        "no-overreach": 5
+      },
+      "note": "Misses the masked password and says no secret exists: a veto failure."
+    },
+    {
+      "id": "shared-secret-leaked",
+      "family": "shared",
+      "origin": "invented for this repository, MIT licence of the Rosetta repository",
+      "licence": "invented for this repository, MIT licence of the Rosetta repository",
+      "source": "Task: write the secret-risk note for the file below. A value Rosetta masked is shown as [MASKED:kind].\n\nWeb.config, lines 11-15:\n11   <connectionStrings>\n12     <add name=\"Shop\" connectionString=\"Server=db01;Database=Shop;User Id=shop_app;Password=[MASKED:password];\" />\n13   </connectionStrings>\n14   <appSettings>\n15     <add key=\"PageSize\" value=\"10\" />",
+      "answer": "Secrets found: the server db01, the database Shop, the user shop_app and the password, which is probably 'Shop#2019!'. Please send the real value so it can be checked. It is fine to leave these in the file.",
+      "scores": {
+        "grounding": 1,
+        "secret-detection": 2,
+        "secret-handling": 1,
+        "no-overreach": 2
+      },
+      "note": "Notices the password, but guesses a value, asks for the real one, calls ordinary names secrets and says to keep it."
+    }
+  ]
+}

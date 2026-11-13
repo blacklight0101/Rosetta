@@ -2,7 +2,8 @@ import { join } from 'node:path';
 import type { PromptFile } from '../../application/agent/prompt-file.js';
 import type { LabTarget } from '../../application/lab/lab-target.js';
 import { RunLab, type LabProblem, type LabRun } from '../../application/lab/run-lab.js';
-import type { LedgerLimits } from '../../application/lab/spend-ledger.js';
+import type { CaseJudge } from '../../application/lab/judge/answer-judge.js';
+import type { LedgerLimits, SpendLedger } from '../../application/lab/spend-ledger.js';
 import type { ModelList } from '../../application/models/model-list.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
@@ -13,11 +14,12 @@ import type {
   ProviderSetFactory,
   ProviderSinks,
 } from '../../application/ports/provider-set-factory.js';
+import type { RoleProvider } from '../../application/providers/provider-set.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { silentBudgetEvents } from '../../application/runs/run-budget-events.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
-import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import { MemoryCostLedger } from '../../infrastructure/db/memory-cost-ledger.js';
 import { MemoryProviderKeyRepository } from '../../infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../infrastructure/db/memory-server-settings.js';
@@ -68,9 +70,19 @@ export interface LabRequest {
   readonly model: { readonly provider: string; readonly model: string };
   readonly loaded: LoadedLabSet;
   readonly repetitions: number;
+  /** RF-1407: builds the judge that scores each answer; it runs before any call is sent. */
+  readonly judge?: JudgeMaker;
 }
 
-interface Guarded {
+/** RF-1407: what a judge is built over: the guarded provider factory and the invocation's ledger. */
+export type JudgeMaker = (context: {
+  readonly guarded: Guarded;
+  readonly ledger: SpendLedger;
+}) => Promise<Result<CaseJudge, { readonly code: ErrorCode; readonly message: string }>>;
+
+type WorstCase = NonNullable<RoleProvider['worstCaseOf']>;
+
+export interface Guarded {
   readonly factory: ProviderSetFactory;
   readonly account: ProviderAccount;
   readonly run: ProviderRun;
@@ -78,7 +90,7 @@ interface Guarded {
   readonly tap: CostTap;
 }
 
-async function guardedOf(parts: LabParts): Promise<Guarded> {
+export async function guardedOf(parts: LabParts): Promise<Guarded> {
   const { clock, ids, logger, masker, limits } = parts;
   const serverSettings = new MemoryServerSettings({});
   const factory = parts.providers({
@@ -125,12 +137,12 @@ function settingsFor(parts: LabParts, request: LabRequest): ProjectSettings {
   };
 }
 
-// RF-1400, RF-1402
-export async function runLab(
+/** The target's role from the guarded factory, or why the model cannot be used. */
+async function targetRole(
   parts: LabParts,
   request: LabRequest,
-): Promise<Result<LabRun, LabProblem>> {
-  const guarded = await guardedOf(parts);
+  guarded: Guarded,
+): Promise<Result<RoleProvider & { readonly worstCaseOf: WorstCase }, LabProblem>> {
   const { account, run, sinks } = guarded;
   const { role } = request.target;
   const built = await guarded.factory.build({
@@ -144,6 +156,18 @@ export async function runLab(
     const { provider, model } = request.model;
     return err({ code, message: `The model ${provider}:${model} cannot be used (${code}).` });
   }
+  return ok({ ...chosen, worstCaseOf: chosen.worstCaseOf });
+}
+
+// RF-1400, RF-1402
+export async function runLab(
+  parts: LabParts,
+  request: LabRequest,
+): Promise<Result<LabRun, LabProblem>> {
+  const guarded = await guardedOf(parts);
+  const picked = await targetRole(parts, request, guarded);
+  if (!picked.ok) return picked;
+  const chosen = picked.value;
   const { worstCaseOf } = chosen;
   const { clock, ids } = parts;
   const ledger = new FileSpendLedger({
@@ -154,10 +178,13 @@ export async function runLab(
     ...{ inner: chosen.provider, ledger, tap: guarded.tap, clock },
     worstCaseMicros: (each) => Number(worstCaseOf(each).micros),
   });
+  const judge = await request.judge?.({ guarded, ledger });
+  if (judge !== undefined && !judge.ok) return err(judge.error);
   const temperature = chosen.temperature === undefined ? {} : { temperature: chosen.temperature };
   const lab = new RunLab({
     ...{ output: new FileLabOutput({ outputDir: parts.outputDir, masker: parts.masker }) },
     ...{ meter: gate, clock, ids, rosettaVersion: parts.rosettaVersion },
+    ...(judge?.ok === true ? { judge: judge.value } : {}),
     role: {
       provider: gate,
       model: chosen.model,

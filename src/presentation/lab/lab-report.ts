@@ -22,6 +22,17 @@ function errorsOf(summary: LabSummary): string {
     : entries.map(([code, count]) => `${code} x${String(count)}`).join(', ');
 }
 
+function judgeLines(summary: LabSummary): string[] {
+  const { judge } = summary;
+  if (judge === null) return [];
+  const criteria = Object.entries(judge.criteriaMeans)
+    .map(([id, value]) => `${id} ${mean(value)}`)
+    .join(', ');
+  return [
+    `Judge scores: ${String(judge.scored)} scored, ${String(judge.unscored)} not scored, mean overall ${mean(judge.meanOverall)} (${criteria}); vetoed: ${String(judge.vetoed)}; judge cost: ${money(judge.costMicros)}`,
+  ];
+}
+
 /** The metrics of one side, one line each, as the single report and the comparison show them. */
 function metricLines(summary: LabSummary): string[] {
   return [
@@ -30,7 +41,13 @@ function metricLines(summary: LabSummary): string[] {
     `Agreement with the expected labels: ${pct(summary.agreementRate)}`,
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
+    ...judgeLines(summary),
   ];
+}
+
+function judgeIdentity(judge: NonNullable<LabResults['judge']>): string {
+  const { prompt, rubric } = judge;
+  return `Judge ${judge.provider}:${judge.model} with ${prompt.name} (${prompt.sha256.slice(0, 12)}) and the ${rubric.family} rubric (${rubric.sha256.slice(0, 12)})`;
 }
 
 // RF-1403
@@ -43,6 +60,7 @@ export function summaryLines(results: LabResults, folder: string): string[] {
     `${String(summary.cases)} of ${String(results.planned)} planned cases run`,
     ...metricLines(summary),
   ];
+  if (results.judge !== undefined) lines.push(judgeIdentity(results.judge));
   return results.refusal === null ? lines : [...lines, `Stopped: ${results.refusal}`];
 }
 
@@ -56,7 +74,9 @@ function mark(each: LabCaseResult | undefined): string {
         ? 'repaired'
         : 'not usable';
   const agreed = each.agreed === null ? '' : each.agreed ? ', agrees' : ', differs';
-  return `${each.detail} (${how}${agreed}, ${String(each.calls)} calls)`;
+  const overall = each.judge?.overall ?? null;
+  const judged = overall === null ? '' : `, judge ${overall.toFixed(1)}`;
+  return `${each.detail} (${how}${agreed}${judged}, ${String(each.calls)} calls)`;
 }
 
 function sideLine(side: ComparedSide, label: string): string {

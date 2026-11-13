@@ -15,28 +15,52 @@ export type LabArgs =
       readonly cases: string;
       readonly repetitions: number;
       readonly yes: boolean;
+      /** RF-1407: the model that scores each answer against the family rubric. */
+      readonly judge?: { readonly provider: string; readonly model: string };
+    }
+  | {
+      readonly kind: 'judge-check';
+      readonly model: { readonly provider: string; readonly model: string };
+      readonly yes: boolean;
+      /** RF-1408: score only the first n items of each kind and family (a smoke run). */
+      readonly limit?: number;
     }
   | { readonly kind: 'compare'; readonly a: string; readonly b: string }
   | { readonly kind: 'help' };
 
 export const LAB_USAGE = [
   'Usage: npm run lab -- --prompt <id> --version <vN|file> --model <provider:model> --cases <set>',
-  '                      [--repetitions n] [--yes]',
+  '                      [--repetitions n] [--judge <provider:model>] [--yes]',
   '       npm run lab -- --compare <runA> <runB>',
+  '       npm run lab -- --judge-check <provider:model> [--limit n] [--yes]',
   '  --prompt <id>            the prompt, such as verifier/claim or summariser/overview',
   '  --version <vN|file>      a version of the prompts folder (v5), or the path of a draft file',
   '  --model <provider:model> the model that answers, such as anthropic:claude-haiku-5-5',
   '  --cases <set>            a case set of lab/cases/ (without .json)',
   '  --repetitions <n>        runs of every case, 1 to 20 (default 1)',
+  '  --judge <provider:model> score each answer against the rubric of its family (more calls)',
+  '  --judge-check <p:m>      check that judge on the calibration claims and the hand-scored samples',
   '  --yes                    send the calls; without it the plan and the caps are only shown',
   '  --compare <a> <b>        two run ids of lab-out/: their metrics side by side; sends nothing',
   'Calls the provider of the model with the server key of .env (node --env-file=.env), within the',
   'caps of lab/config.json and the shared ledger lab-out/ledger.jsonl. Results go to lab-out/<id>/.',
 ].join('\n');
 
-const VALUE_FLAGS = ['--prompt', '--version', '--model', '--cases', '--repetitions'] as const;
+const VALUE_FLAGS = [
+  '--prompt',
+  '--version',
+  '--model',
+  '--cases',
+  '--repetitions',
+  '--judge',
+] as const;
 
-function modelOf(value: string): Result<{ provider: string; model: string }, string> {
+interface ModelRef {
+  provider: string;
+  model: string;
+}
+
+function modelOf(value: string): Result<ModelRef, string> {
   const colon = value.indexOf(':');
   if (colon <= 0 || colon === value.length - 1) return err(`${value} is not provider:model`);
   return ok({ provider: value.slice(0, colon), model: value.slice(colon + 1) });
@@ -72,6 +96,10 @@ function repetitionsOf(value: string | undefined): Result<number, string> {
   return ok(count);
 }
 
+function judgeOf(value: string | undefined): Result<ModelRef | undefined, string> {
+  return value === undefined ? ok(undefined) : modelOf(value);
+}
+
 function runOf(draft: Draft): Result<LabArgs, string> {
   const missing = ['--prompt', '--version', '--model', '--cases'].filter(
     (flag) => !draft.values.has(flag),
@@ -81,6 +109,8 @@ function runOf(draft: Draft): Result<LabArgs, string> {
   if (!model.ok) return model;
   const repetitions = repetitionsOf(draft.values.get('--repetitions'));
   if (!repetitions.ok) return repetitions;
+  const judge = judgeOf(draft.values.get('--judge'));
+  if (!judge.ok) return judge;
   return ok({
     kind: 'run',
     prompt: draft.values.get('--prompt') ?? '',
@@ -89,6 +119,33 @@ function runOf(draft: Draft): Result<LabArgs, string> {
     cases: draft.values.get('--cases') ?? '',
     repetitions: repetitions.value,
     yes: draft.yes,
+    ...(judge.value === undefined ? {} : { judge: judge.value }),
+  });
+}
+
+// RF-1408
+/** `--limit n` of the judge check: the count, undefined when absent, null when it is not a count. */
+function limitOf(rest: readonly string[]): { limit: number | undefined | null; others: string[] } {
+  const at = rest.indexOf('--limit');
+  const others = rest.filter((each, index) => each !== '--yes' && index !== at && index !== at + 1);
+  if (at < 0) return { limit: undefined, others };
+  const count = Number(rest[at + 1]);
+  return { limit: Number.isInteger(count) && count >= 1 ? count : null, others };
+}
+
+function judgeCheckOf(args: readonly string[]): Result<LabArgs, string> {
+  const [value, ...rest] = args;
+  const model = modelOf(value ?? '');
+  const { limit, others } = limitOf(rest);
+  if (!model.ok || others.length > 0 || limit === null) {
+    return err('--judge-check takes a provider:model, optionally --limit n, and --yes to send');
+  }
+  const yes = rest.includes('--yes');
+  return ok({
+    kind: 'judge-check',
+    model: model.value,
+    yes,
+    ...(limit === undefined ? {} : { limit }),
   });
 }
 
@@ -102,6 +159,7 @@ export function parseLabArgs(args: readonly string[]): Result<LabArgs, string> {
     }
     return ok({ kind: 'compare', a, b });
   }
+  if (args[0] === '--judge-check') return judgeCheckOf(args.slice(1));
   const draft = readDraft(args);
   return draft.ok ? runOf(draft.value) : draft;
 }

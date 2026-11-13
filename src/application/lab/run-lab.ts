@@ -3,6 +3,9 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
+import { judgeStopReason, type CaseJudge } from './judge/answer-judge.js';
+import type { JudgeInfo } from './judge/judge-results.js';
+import { sourceText } from './judge/judge-source.js';
 import type { LabCaseSet } from './lab-case-set.js';
 import { REFUSED_BEFORE_SENDING, type LabCallMeter, type MeteredCase } from './lab-meter.js';
 import type { LabCaseResult, LabResults } from './lab-results.js';
@@ -27,6 +30,8 @@ export interface RunLabDependencies {
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly rosettaVersion: string;
+  /** RF-1407: scores each answered case against the rubric of the prompt's family. */
+  readonly judge?: CaseJudge;
 }
 
 export interface RunLabRequest {
@@ -56,6 +61,7 @@ interface Prepared {
   readonly caseId: string;
   readonly expected: string | undefined;
   readonly split: 'tune' | 'held-back';
+  readonly input: unknown;
   readonly prepared: PreparedCase;
 }
 
@@ -69,6 +75,7 @@ function prepare(request: RunLabRequest): Result<Prepared[], string> {
         caseId: each.id,
         expected: each.expected,
         split: each.split,
+        input: each.input,
         prepared: parsed.value,
       });
     } else problems.push(`case ${each.id}: ${parsed.error}`);
@@ -145,7 +152,8 @@ export class RunLab {
           .catch((): TargetOutcome => ({ usable: false, detail: 'Failed' }));
         const metered = this.deps.meter.end();
         modelVersion = metered.calls.at(-1)?.modelVersion ?? modelVersion;
-        const result = resultOf({ ...one, repetition }, outcome, metered, request.target);
+        const scored = resultOf({ ...one, repetition }, outcome, metered, request.target);
+        const result = await this.judged(scored, one, request.target, metered);
         cases.push(result);
         refusal = this.stopOf(result);
       }
@@ -154,12 +162,36 @@ export class RunLab {
     return this.write(results);
   }
 
-  /** Why the invocation stops after a case: the ledger stopped it, or a guard refused a call. */
+  /** RF-1407: the case with the judge's scores, when a judge is set and the case was answered. */
+  private async judged(
+    result: LabCaseResult,
+    one: Prepared,
+    target: LabTarget,
+    metered: MeteredCase,
+  ): Promise<LabCaseResult> {
+    const answer = metered.calls.at(-1)?.text;
+    if (this.deps.judge === undefined || answer === undefined) return result;
+    const judge = await this.deps.judge.score({
+      ...{ family: target.id.split('/')[0] ?? target.id, caseKey: result.caseId },
+      ...{ source: sourceText(one.input), answer, label: one.expected ?? null },
+    });
+    return { ...result, judge };
+  }
+
+  /** Why the invocation stops after a case: a ledger stopped it, or a guard refused a call. */
   private stopOf(result: LabCaseResult): string | null {
-    const stopped = this.deps.meter.stopped();
+    const stopped = this.deps.meter.stopped() ?? this.deps.judge?.stopped();
     if (stopped !== undefined) return stopped;
+    const judgeStop = judgeStopReason(result.judge, 'invocation');
+    if (judgeStop !== null) return judgeStop;
     if (!result.refused) return null;
     return `A guard refused the call (${result.rstCode ?? 'no code'}).`;
+  }
+
+  private judgeOf(request: RunLabRequest): { judge?: JudgeInfo } {
+    const family = request.target.id.split('/')[0] ?? request.target.id;
+    const info = this.deps.judge?.infoFor(family);
+    return info === undefined ? {} : { judge: info };
   }
 
   private resultsOf(
@@ -183,6 +215,7 @@ export class RunLab {
         sha256: prompt.sha256,
       },
       model: { ...model, modelVersion: done.modelVersion },
+      ...this.judgeOf(request),
       caseSet: { version: caseSet.version, sha256: request.setSha256 },
       repetitions: request.repetitions,
       planned: done.planned,

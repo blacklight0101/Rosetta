@@ -3,6 +3,7 @@ import { reservationLifetimeMs } from '../../infrastructure/providers/reservatio
 import { HOLD_TTL_MS } from '../../application/lab/spend-ledger.js';
 import type { ProviderKind } from '../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
+import type { PriceTable } from '../../domain/budget/price-table.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 
 // RF-1402, ADR-029: `ROSETTA_LAB_LEDGER`, the absolute path of the shared ledger file. It is required
@@ -41,6 +42,17 @@ export function sharedLedgerProblem(
   return `${ERROR_CODES.configurationInvalid}: set ${LEDGER_VARIABLE} to the shared Phase 10 ledger (an absolute .jsonl path). The $50 total and the $40 stop line cover all builders together, so a real call must use the one ledger they share.`;
 }
 
+/** RF-1402: whether the price table prices the model at zero. */
+export function modelIsFree(table: PriceTable, provider: string, model: string): boolean {
+  const price = table.prices.find((each) => each.provider === provider && each.model === model);
+  const zero = (micros: bigint | undefined): boolean => micros === 0n;
+  return (
+    zero(price?.inputPerMillionMicros) &&
+    zero(price?.outputPerMillionMicros) &&
+    zero(price?.cachedInputPerMillionMicros)
+  );
+}
+
 /**
  * RF-1402: a hold must outlive the longest call the provider settings allow, counted as the budget
  * guard counts the lifetime of its own reservation (every attempt's timeout, the longest wait
@@ -55,8 +67,10 @@ export function holdLifetimeProblem(
         readonly maxRetries: number;
       }
     | undefined,
+  free: boolean,
 ): string | undefined {
-  if (settings === undefined) return undefined;
+  // A local Ollama call at a price of zero costs nothing, so a hold that ran out before it ended loses no money.
+  if (settings === undefined || (settings.kind === 'ollama' && free)) return undefined;
   const longest = reservationLifetimeMs(settings);
   if (longest <= HOLD_TTL_MS) return undefined;
   const minutes = String(HOLD_TTL_MS / 60_000);

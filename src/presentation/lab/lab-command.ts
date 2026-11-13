@@ -21,12 +21,16 @@ import { SystemClock } from '../../infrastructure/system/system-clock.js';
 import { TimestampIdGenerator } from '../../infrastructure/system/timestamp-id-generator.js';
 import { evaluationProviderFactory } from '../compose-providers.js';
 import { dollars } from '../eval/eval-settings.js';
-import { runLab, type LabParts } from './compose-lab.js';
+import { runLab, type JudgeMaker, type LabParts } from './compose-lab.js';
+import { composeJudge, type JudgeSetup } from './compose-judge.js';
+import { judgeSetupOf } from './judge-setup.js';
+import { runJudgeCheck } from './judge-check-command.js';
 import { runLabCapture } from './lab-capture-command.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
 import {
   holdLifetimeProblem,
+  modelIsFree,
   ledgerFileFromEnvironment,
   sharedLedgerProblem,
 } from './lab-ledger-path.js';
@@ -40,6 +44,10 @@ import { findLabTarget } from './lab-targets.js';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const folder = (name: string): string => join(root, name);
+const folders = (): LabFolders => ({
+  labFolder: folder('lab/'),
+  promptsFolder: folder('prompts/'),
+});
 
 type Environment = Readonly<Record<string, string | undefined>>;
 type Print = (line: string) => void;
@@ -50,6 +58,20 @@ export interface LabFolders {
   readonly promptsFolder: string;
 }
 
+/** RF-1407: the judge is built once the lab has its guarded factory and its ledger. */
+const judgeMaker =
+  (parts: LabParts, setup: JudgeSetup): JudgeMaker =>
+  ({ guarded, ledger }) =>
+    composeJudge(parts, guarded, ledger, setup);
+
+function withJudge<T extends object>(
+  request: T,
+  parts: LabParts,
+  judge: JudgeSetup | undefined,
+): T & { judge?: JudgeMaker } {
+  return judge === undefined ? request : { ...request, judge: judgeMaker(parts, judge) };
+}
+
 const NOT_STARTED = 'Nothing was sent. Run again with --yes to start.';
 
 function planLines(args: RunArgs, parts: LabParts, cases: number, promptName: string): string[] {
@@ -58,6 +80,11 @@ function planLines(args: RunArgs, parts: LabParts, cases: number, promptName: st
   return [
     `npm run lab sends the prompt ${promptName} over ${String(cases)} cases, ${String(args.repetitions)} time(s) each,`,
     `at least ${String(calls)} calls, to ${args.model.provider}:${args.model.model} (case set ${args.cases}).`,
+    ...(args.judge === undefined
+      ? []
+      : [
+          `Each answer is then scored by the judge ${args.judge.provider}:${args.judge.model}: one more call per answered case.`,
+        ]),
     `This invocation may cost up to ${dollars(limits.invocationCapMicros)}; the phase has a stop line at ${dollars(limits.stopMicros)} and a cap of ${dollars(limits.totalCapMicros)}.`,
   ];
 }
@@ -66,6 +93,7 @@ interface Resolved {
   readonly target: LabTarget;
   readonly loaded: LoadedLabSet;
   readonly prompt: PromptFile;
+  readonly judge?: JudgeSetup;
 }
 
 /** The target, case set and prompt version of a run, or the first thing that is wrong with them. */
@@ -81,16 +109,24 @@ async function resolveRun(args: RunArgs, folders: LabFolders): Promise<Result<Re
   }
   const prompt = await loadPromptVersion(folders.promptsFolder, target.value.id, args.version);
   if (!prompt.ok) return prompt;
-  return ok({ target: target.value, loaded: loaded.value, prompt: prompt.value });
+  const judge = await judgeSetupOf(args, target.value, folders);
+  if (!judge.ok) return judge;
+  const found = { target: target.value, loaded: loaded.value, prompt: prompt.value };
+  return ok(judge.value === undefined ? found : { ...found, judge: judge.value });
 }
 
 /** What stops a run before anything is planned: no shared ledger for a real model, or a hold that could expire. */
 function startProblem(args: RunArgs, parts: LabParts): string | undefined {
-  const provider = parts.settings.providers[args.model.provider];
-  return (
-    sharedLedgerProblem(provider?.kind, parts.ledgerFile) ??
-    holdLifetimeProblem(args.model.provider, provider)
-  );
+  const models = [args.model, ...(args.judge ? [args.judge] : [])];
+  for (const { provider: name, model } of models) {
+    const provider = parts.settings.providers[name];
+    const free = modelIsFree(parts.priceTable, name, model);
+    const problem =
+      sharedLedgerProblem(provider?.kind, parts.ledgerFile) ??
+      holdLifetimeProblem(name, provider, free);
+    if (problem !== undefined) return problem;
+  }
+  return undefined;
 }
 
 // RF-1400
@@ -108,7 +144,8 @@ export async function runLabRun(
   for (const line of planLines(args, parts, loaded.set.cases.length, prompt.name)) print(line);
   if (!args.yes) return (print(NOT_STARTED), 1);
   const { model, repetitions } = args;
-  const run = await runLab(parts, { target, prompt, model, loaded, repetitions });
+  const request = { target, prompt, model, loaded, repetitions };
+  const run = await runLab(parts, withJudge(request, parts, resolved.value.judge));
   if (!run.ok) {
     print(`${run.error.code}: ${run.error.message}`);
     if (run.error.results !== undefined)
@@ -174,10 +211,9 @@ export async function runLabCommand(
   }
   const parts = await realParts(env);
   if (typeof parts === 'string') return (print(parts), 1);
-  return runLabRun(
-    parts,
-    args.value,
-    { labFolder: folder('lab/'), promptsFolder: folder('prompts/') },
-    print,
-  );
+  if (args.value.kind === 'judge-check') {
+    const checkFolders = { ...folders(), evalFolder: folder('eval/'), repositoryRoot: root };
+    return runJudgeCheck(parts, args.value, checkFolders, print);
+  }
+  return runLabRun(parts, args.value, folders(), print);
 }

@@ -1019,6 +1019,11 @@ input } }`. `prompt` is the prompt id (`verifier/claim`, `summariser/overview`);
   `input` is parsed by the prompt's target (a set may also hold `sources[] { key, name, url?, commit | snapshot, licence, runs[] }` and a case `from`, the key of its source, RF-1405): the verifier's is `{ claim, citations[], files { path: text } }`, the
   overview's `{ cards[] { id, type, area, title, summary, claims[] } }`, the gap's `{ items[] { id, kind, name, detail }, phases[], requirements[], tasks[] }`, the merge's `{ type, cards[] { id, area, title, summary, claims[] } }`, a reader prompt's `{ area, files[] { path, language, lines | skipped }, workbook?, turns, reads?[] { path, startLine, lines[] } }` (RF-1406).
 - `lab/sources.json` (committed): the sources the capture copies into a set, by key: `{ key, name, url?, commit | snapshot, licence }` (RF-1404).
+- `lab/rubrics/<family>.md` (committed, RF-1407): the rubric of a prompt family; criteria are `## <id> - <title>` headings
+  (` [veto]` at the end of the heading), `grounding` in every one, at least three.
+- `eval/judge-check/hand-scored.json` (committed, RF-1408): `{ schemaVersion: 1, version, description?, samples[] { id, family,
+origin, licence, source, answer, label?, scores { criterion: 1..5 }, note? } }`; `scores` names exactly the criteria of the
+  family's rubric.
 - `lab-out/ledger.jsonl`, or the file named by `ROSETTA_LAB_LEDGER` (git-ignored, append-only, each line led by a line break): lines `{ v: 1, t: "hold", id,
 invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, t: "release", id, at }` (`at` in epoch
   milliseconds). A hold older than thirty minutes that was never settled or released stops counting.
@@ -1026,7 +1031,12 @@ invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, 
 prompt { id, name, version, sha256 }, model { provider, model, modelVersion }, caseSet { version, sha256 },
 repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,
 detail, answer, usable, validFirstTry, repaired, refused, rstCode, agreed, calls, inputTokens, outputTokens,
-latencyMs, costMicros } }`. The schemas are in `src/application/lab/`.
+latencyMs, costMicros, judge? { state, criteria[] { id, score, reason }, overall, vetoed, rstCode, calls, inputTokens,
+outputTokens, costMicros } }, judge? { provider, model, modelVersion, prompt { name, version, sha256 }, rubric { family,
+sha256 } } }` (`judge` only in a run made with `--judge`, RF-1407). The schemas are in `src/application/lab/`.
+- `lab-out/<id>/judge-check.json` (git-ignored, masked, RF-1408): `{ calibration { items, scored, agreed, cases[] }, families {
+family: { samples, scored, overallAgreed, criteria { id: { n, exact, within1, meanAbsDiff } } } }, calls, costMicros, stopped,
+items[] }`.
 
 ## 4. Tables (PostgreSQL)
 

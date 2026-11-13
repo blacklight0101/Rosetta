@@ -65,6 +65,16 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 - **Unpublished inputs.** Inputs of unknown origin or licence are never committed (DEC-03): `--capture --local` writes them to the git-ignored `lab/local-cases/`, and `--cases` reads a committed set first and a local one otherwise.
 - **Not wired yet.** Every prompt family without a target is listed in the runbook (section 7); a tuning card wires its remaining family members first.
 
+## Amendment (2026-11-13, P10-03)
+
+The lab gets a judge (RF-1407, RF-1408). The decision above is unchanged; the judge adds, without changing the structure:
+a judge call is one more provider call made through a second `LabCallGate` over the same guarded provider factory and the
+same ledger object as the target's, so it is held, settled and capped like every lab call; its cost is kept in the case's
+`judge` and not in the target's `costMicros`. The judge's inputs and the answer are untrusted, so three data block sources
+(`lab_source`, `lab_answer`, `lab_label`) were added to the egress guard's list. A judge call that fails after it was sent
+stops the invocation, because a failed call is booked at its worst case (a rejected key would otherwise be booked on every case).
+The judge check is a mode of the same command, not a second entry point, so every real call still goes through `npm run lab`.
+
 ## References
 
 - RF-1400..RF-1403, RNF-015, DEC-231, ADR-003, ADR-007, ADR-008.
