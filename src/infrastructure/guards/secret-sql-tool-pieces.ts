@@ -17,7 +17,7 @@ const quotedFlag = String.raw`(?<=[\s,[])(?<fe>\\{0,4})(?<fq>["'])[-/]P(?<!\\)\k
 const slashFlag = String.raw`(?<!(?<!\S)[-/](?![ECXeIWbRuknwTqNc])[A-Za-z][ \t]+)/P${sep}+(?![/\\])`;
 const shellFlag = String.raw`(?<=\s)(?:-P${sep}*|${slashFlag})`;
 const flagThenQuote = String.raw`(?:${quotedFlag}${sep}*(?:,${sep}*)?|${shellFlag})(?<qe>\\{0,4})(?<qq>["'])`;
-const flagThenItem = String.raw`(?<=[\s,[])[-/]P${sep}*,${sep}*`;
+const flagThenItem = String.raw`(?<=[\s,[])[-/]P,${sep}*`;
 const flagThenWord = String.raw`(?:${quotedFlag}${sep}+|${shellFlag})`;
 
 const marker = String.raw`\[MASKED:[a-z-]+\]`;
@@ -38,10 +38,16 @@ const closing = String.raw`[\s,;:|&)\]}>]|$`;
 
 const escaped = (quote: string): string => quote.replaceAll('\\', '\\\\');
 
-/** The end of a shell word: a blank, an operator, or the quote that ends the string around it. */
+// What ends a shell word: what may follow the closing quote of a quoted value (a blank, an operator,
+// a bracket, a comma, or after an escaped closing quote the quote of the string around it).
+const afterClose = String.raw`(?:[\s,;|&)\]}<>\x60]|$|(?<=\\["'])\\{0,3}["'])`;
+
+/**
+ * The end of a word left alone: the same as after the closing quote of a quoted value, so a value
+ * masked between quotes is left alone the second time, or the quote that ends the string around it.
+ */
 function wordEnd(quote: string | null): string {
-  const end = String.raw`[\s|&;<>\x60)]|$`;
-  return quote === null ? `(?=${end})` : `(?=${end}|${escaped(quote)}(?:${closing}))`;
+  return quote === null ? `(?=${afterClose})` : `(?=${afterClose}|${escaped(quote)}(?:${closing}))`;
 }
 
 /** The whole word is one token that is left alone: a reference, a masked value, a placeholder. */
@@ -50,6 +56,8 @@ function leftAlone(quote: string | null): string {
   return [
     String.raw`(?:\\{0,4}["'])?${wholeMarker}(?:\\{0,4}["'])?${end}`,
     String.raw`(?:\\{0,4}")?${reference}(?:\\{0,4}")?${end}`,
+    // An enclosed reference that does not close (`${{ secrets.X -Q x`, `$(cat f -Q x`).
+    String.raw`(?!\$(?:${enclosed}))\$(?:\{\{?|\()[^\s"'\\]*${end}`,
     String.raw`(?:\\{0,4}["'])?${placeholderValue}(?:\\{0,4}["'])?${end}`,
     String.raw`\\{0,4}["'](?:${placeholderWord})\\{0,4}["']${end}`,
     `${prose}[.,:!?]?${end}`,
@@ -60,7 +68,6 @@ function leftAlone(quote: string | null): string {
 // A quoted value: the closing quote (group `close`) must end the shell word (an escaped one may
 // close a string around the command), or the value runs to the end of the line when it has none.
 const close = String.raw`(?<!\\)\k<qe>\k<qq>`;
-const afterClose = String.raw`(?:[\s,;|&)\]}<>\x60]|$|(?<=\\["'])\\{0,3}["'])`;
 const quotedValue = [
   String.raw`(?<=["'])(?!${marker}(?:[\s"'\\]|$))(?!${placeholderValue})(?!(?:(?<=")${reference}|${placeholderWord})${close})`,
   String.raw`(?:(?!${close})[^\r\n])+(?=(?<close>${close})${afterClose}|${lineEnd}|$)`,
@@ -103,7 +110,7 @@ function joinGuard(quote: string | null): string {
 
 function wordValue(quote: string | null): string {
   return [
-    String.raw`(?![\s,])(?!\](?:[\s,]|$))${notContinuation}`,
+    String.raw`(?!\s)(?!(?<=[-/]P),)(?!,(?:[\s,\]]|$))(?!\](?:[\s,]|$))${notContinuation}`,
     String.raw`(?<=(?:[-/]P|["'][-/]P\\{0,4}["'])${sep}*)(?!${leftAlone(quote)})`,
     String.raw`(?:${partsOf('1', '')})(?:${partsOf('2', joinGuard(quote))})*`,
   ].join('');
