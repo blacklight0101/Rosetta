@@ -14,9 +14,12 @@ afterEach(() => {
 
 const answers = { [`GET ${base}/planning-brief`]: json(200, savedBrief) };
 
-const short = (remaining: string, fits = false) => ({
+// As the server sends it: the approved run cap's limit is the journey's remainder (nothing is spent
+// against it), and the journey block holds what was approved and whether it is used up.
+const short = (remaining: string, fits = false, usedUp = remaining === '0') => ({
   ...planEstimate,
   runLine: 'journey',
+  journey: { approved: { tokens: '5000000', costMicros: '3100000' }, usedUp },
   planner: {
     ...planEstimate.planner,
     likely: { inputTokens: 1000, outputTokens: 500, costMicros: '1200000' },
@@ -26,7 +29,7 @@ const short = (remaining: string, fits = false) => ({
       kind: 'run-cost',
       unit: 'micros',
       approved: true,
-      limit: '3100000',
+      limit: remaining,
       spent: '0',
       remaining,
       fits: { low: true, likely: fits, high: fits },
