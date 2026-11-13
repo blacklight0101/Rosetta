@@ -38,7 +38,7 @@ function CapRow({ cap }: { readonly cap: PlanCap }): JSX.Element {
 /** RF-613, P8-01: a figure over a cap never reads as fitting; the likely one first, then the high. */
 function warningsOf(estimate: PlanEstimate): readonly string[] {
   // P9-02: the approved amount that is short has its own notice below the figures.
-  const short = journeyShortOf(estimate)?.cap.kind;
+  const short = journeyShortOf(estimate)?.cap?.kind;
   const likely = overCaps(estimate, 'likely').filter((cap) => cap.kind !== short);
   const names = new Set(likely.map(capName));
   const high = overCaps(estimate, 'high').filter(

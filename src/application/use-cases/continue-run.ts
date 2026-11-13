@@ -40,14 +40,27 @@ export interface ContinueRunDependencies {
 export type ContinueProblem =
   typeof ERROR_CODES.notFound | typeof ERROR_CODES.conflict | typeof ERROR_CODES.journeyAmountUsed;
 
+/** P9-14: the N a Continue gave the run next to the N that was offered; they differ when the room shrank. */
+export interface ContinuedRun extends SubmittedRun {
+  readonly offered: Amount;
+  readonly granted: Amount;
+}
+
 /** What one Continue did: the queued run, a refusal, or nothing (the run is not paused). */
-type Continued = Run | typeof ERROR_CODES.journeyAmountUsed | undefined;
+type Continued =
+  | { readonly run: Run; readonly offered: Amount; readonly granted: Amount }
+  | typeof ERROR_CODES.journeyAmountUsed
+  | undefined;
 
 /** The manifest raised by N and the raise of the journey that goes with it. */
 interface Raise {
   readonly manifest: RunManifest;
   readonly journey: Omit<JourneyRaise, 'extra'>;
+  readonly offered: Amount;
+  readonly granted: Amount;
 }
+
+const nothing: Amount = { tokens: 0, costMicros: 0 };
 
 const unchanged = (): Promise<void> => Promise.resolve();
 const runAlone = { takesNothing: false, keepsQueuedAt: false, apply: unchanged, undo: unchanged };
@@ -65,7 +78,7 @@ export class ContinueRun {
     readonly runId: string;
     /** N; the remainder of the approved journey when left out. */
     readonly extra?: Amount;
-  }): Promise<Result<SubmittedRun, ContinueProblem>> {
+  }): Promise<Result<ContinuedRun, ContinueProblem>> {
     const { userId } = request.actor;
     const run = await this.deps.runs.find(userId, request.runId);
     if (run === undefined) return err(ERROR_CODES.notFound);
@@ -76,8 +89,11 @@ export class ContinueRun {
     if (!continued.ok || continued.value === undefined) return err(ERROR_CODES.conflict);
     if (typeof continued.value === 'string') return err(continued.value);
     const current = await this.deps.runs.find(userId, run.id);
+    const { offered, granted } = continued.value;
     return ok({
-      run: current ?? continued.value,
+      run: current ?? continued.value.run,
+      offered,
+      granted,
       position: await this.deps.queue.positionOf(run.id),
     });
   }
@@ -111,8 +127,11 @@ export class ContinueRun {
       throw error;
     }
     // The row did not move: the manifest and the journey go back, so neither is raised alone.
-    if (queued === undefined) await putBack();
-    return queued;
+    if (queued === undefined) {
+      await putBack();
+      return undefined;
+    }
+    return { run: queued, offered: raise.offered, granted: raise.granted };
   }
 
   /** RF-432, RF-435: the manifest with its approved amount raised by N, and the journey's raise. */
@@ -123,7 +142,7 @@ export class ContinueRun {
   ): Promise<Raise> {
     const { approvedAmount } = readUnderstandOptions(manifest.options);
     if (approvedAmount === undefined) {
-      return { manifest, journey: runAlone };
+      return { manifest, journey: runAlone, offered: nothing, granted: nothing };
     }
     // RF-432: N is at most the offered one; the sum stays within the ceilings.
     const offered = offeredExtra(approvedAmount, extra);
@@ -133,6 +152,8 @@ export class ContinueRun {
     return {
       manifest: { ...manifest, options: { ...manifest.options, approvedAmount: raised } },
       journey,
+      offered,
+      granted: journey.extra,
     };
   }
 }

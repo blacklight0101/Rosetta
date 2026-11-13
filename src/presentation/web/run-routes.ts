@@ -51,8 +51,8 @@ import { runView } from './run-view.js';
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
 // - POST /api/runs/:runId/continue answers Continue (+N) for a run waiting for its owner's approval
 //   (RF-432): the approved amount grows by `extra` (the offered N when left out) and the run is
-//   queued again (202 with the run and its position); a run that is not paused answers 409,
-//   another user's run 404. Stop here is POST /stop, which ends a paused run `CapReached`.
+//   queued again (202 with the run, its position, the `granted` N and `lessThanOffered` (P9-14)); a
+//   run that is not paused answers 409, another user's run 404. Stop here is POST /stop, which ends a paused run `CapReached`.
 // - POST /api/runs/:runId/deepen and /deepen/estimate: the Deepen of a completed run (deepen-routes.ts, RF-209).
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
@@ -201,8 +201,13 @@ function registerContinue(server: FastifyInstance, services: RunServices): void 
         ...(extra === undefined ? {} : { extra }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
-      const { run, position } = outcome.value;
-      return reply.status(202).send({ ...runView(run), position: position ?? null });
+      const { run, position, offered, granted } = outcome.value;
+      // P9-14: when the journey's room shrank after the pause, the run got less than the N offered.
+      const lessThanOffered =
+        granted.tokens < offered.tokens || granted.costMicros < offered.costMicros;
+      return reply
+        .status(202)
+        .send({ ...runView(run), position: position ?? null, granted, lessThanOffered });
     },
   );
 }
