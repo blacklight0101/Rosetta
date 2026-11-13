@@ -1,7 +1,8 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
+import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
@@ -206,6 +207,12 @@ export function compareLab(a: LabResults, b: LabResults): Result<LabComparison, 
   if (a.caseSet.sha256 !== b.caseSet.sha256) {
     return err(
       `The runs used different case sets (${a.caseSet.version} and ${b.caseSet.version}): compare runs of the same case set.`,
+    );
+  }
+  if (!sameSelection(a.selection, b.selection)) {
+    const [first, second] = [a.selection ?? ALL_CASES, b.selection ?? ALL_CASES];
+    return err(
+      `The runs used different case selections (${describeSelection(first)} and ${describeSelection(second)}): compare runs over the same selection.`,
     );
   }
   return ok({ a: sideOf(a), b: sideOf(b), cases: pairedCases(a, b) });

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   compareLab,
   parseLabResults,
@@ -186,14 +186,14 @@ describe('the lab comparison of case selections', () => {
   });
 
   it('RF-1409 keeps the selection a results file records', () => {
-    const written = JSON.parse(
-      JSON.stringify(selected({ split: 'held-back', sample: 3 })),
-    ) as Record<string, unknown>;
+    const one = selected({ split: 'held-back', sample: 3 });
+    const hashed = { ...one, prompt: { ...one.prompt, sha256: '0'.repeat(64) } };
+    const written = JSON.parse(JSON.stringify(hashed)) as Record<string, unknown>;
 
     const parsed = parseLabResults(written);
 
     expect(parsed.ok && parsed.value.selection).toEqual({ split: 'held-back', sample: 3 });
-    written.selection = { split: 'later', sample: null };
-    expect(parseLabResults(written).ok).toBe(false);
+    const later = { ...written, selection: { split: 'later', sample: null } };
+    expect(parseLabResults(later).ok).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-﻿import { join } from 'node:path';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ModelRouter } from '../../../support/calibration-harness.js';
 import { labParts, verdict } from '../../../support/lab-harness.js';
