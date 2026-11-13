@@ -11,7 +11,7 @@ import { fakeValue } from '../../support/fake-value.js';
 import { handoffOf } from '../../support/handoff-package-fixture.js';
 
 // P7-11 (RF-141, ADR-006, DEC-16): the composed package writer masks a secret with the bare marker;
-// the note of `prompts/shared/masked-value.v1.md` is meant for the model, not for the package.
+// the note of `prompts/shared/masked-value.v2.md` is meant for the model, not for the package.
 // FAKE values only (RNF-003).
 
 const scope = {
@@ -50,7 +50,7 @@ describe('composePlan: the package writer (P7-11)', () => {
     await packageHandoffWriter(writer).write(scope, handoffOf(`The password: ${secret} is set.`));
 
     const all = writer.files.join('\n');
-    const note = (await readFile('prompts/shared/masked-value.v1.md', 'utf8'))
+    const note = (await readFile('prompts/shared/masked-value.v2.md', 'utf8'))
       .trim()
       .replace('[MASKED:{{kind}}]', '')
       .trim();

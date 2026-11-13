@@ -27,8 +27,9 @@ import { askOnce, problemsOf } from './single-call.js';
 //                              the lab puts the value in, masks the reads with the masker of the run
 //                              using the file under test, and sends the replay. `Leaked` is a value
 //                              that is still in the text sent or is repeated in the answer; else the
-//                              answer (the last turn, no tools) is read by the card parser (`Valid`, `Partial`, `Unusable`;
-//                              `ReadsMore`)
+//                              answer is read by the card parser (`Valid`, `Partial`, `Unusable`). The
+//                              call is the last turn and carries no tools; a real run keeps its tools
+//                              there, the lab drops them on purpose so the answer is text
 //   shared/text-tool-protocol  the protocol of a model without native tool calling, appended to the
 //                              system prompt with the tools as the Ollama adapter appends it; the
 //                              request carries no native tools, the replay of the reads travels as

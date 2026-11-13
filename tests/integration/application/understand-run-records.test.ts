@@ -65,7 +65,7 @@ describe('an understand run: prompts', () => {
       'reader/read-more.v2.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
-      'shared/masked-value.v1.md',
+      'shared/masked-value.v2.md',
       'verifier/claim.v5.md',
       'verifier/retry.v1.md',
     ]);

@@ -29,8 +29,8 @@ describe('the replacement text of a masked value', () => {
   it('P5-34 comes from a versioned prompt file with the kind as its one placeholder', async () => {
     const file = await loadMaskedValuePrompt('prompts');
 
-    expect(file.name).toBe('shared/masked-value.v1.md');
-    expect(file.version).toBe('v1');
+    expect(file.name).toBe('shared/masked-value.v2.md');
+    expect(file.version).toBe('v2');
     expect(file.text.split('{{kind}}')).toHaveLength(2);
   });
 
@@ -41,6 +41,7 @@ describe('the replacement text of a masked value', () => {
       /Password=\[MASKED:connection-string\] \(.*plain text.*Rosetta masked it/u,
     );
     expect(masked).not.toContain(fakePassword);
+    expect(masked).toMatch(/secret store/u);
   });
 
   it('P5-34 keeps the marker RF-141 names, and the lines where they were', async () => {
