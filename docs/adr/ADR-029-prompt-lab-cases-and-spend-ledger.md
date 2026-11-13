@@ -67,7 +67,7 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 
 ## Amendment (2026-11-13, P10-03)
 
-The lab gets a judge (RF-1407, RF-1408). The decision above is unchanged; the judge adds, without changing the structure:
+The lab gets a judge (RF-1407, the judge and its per-family rubrics) and a judge check (RF-1408, the judge scored against hand-labelled and hand-scored samples). The decision above is unchanged; the judge adds, without changing the structure:
 a judge call is one more provider call made through a second `LabCallGate` over the same guarded provider factory and the
 same ledger object as the target's, so it is held, settled and capped like every lab call; its cost is kept in the case's
 `judge` and not in the target's `costMicros`. The judge's inputs and the answer are untrusted, so three data block sources
@@ -77,4 +77,4 @@ The judge check is a mode of the same command, not a second entry point, so ever
 
 ## References
 
-- RF-1400..RF-1403, RNF-015, DEC-231, ADR-003, ADR-007, ADR-008.
+- RF-1400..RF-1403, RF-1407, RF-1408, RNF-015, DEC-231, ADR-003, ADR-007, ADR-008.
