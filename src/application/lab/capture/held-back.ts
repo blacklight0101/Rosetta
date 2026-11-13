@@ -41,10 +41,16 @@ export function inputKey(input: unknown, sha256: Sha256): string {
 /** The space of a SHA-256 hash: 2^256. */
 const SPACE = 1n << 256n;
 
-/** Whether an input key (64 hexadecimal digits) is held back: its value is below a third of the space. */
+/**
+ * Whether an input key (64 hexadecimal digits) is held back: its value is below a third of the space.
+ * A key that is not a SHA-256 is a fault, never a tune case.
+ */
 // RF-1405
 export function heldBackKey(key: string): boolean {
-  return /^[0-9a-fA-F]{64}$/u.test(key) && BigInt(`0x${key}`) * 3n < SPACE;
+  if (!/^[0-9a-fA-F]{64}$/u.test(key)) {
+    throw new Error('The input key is not a SHA-256 in hexadecimal (64 digits).');
+  }
+  return BigInt(`0x${key}`) * 3n < SPACE;
 }
 
 /** The side of each input, in the order given. */

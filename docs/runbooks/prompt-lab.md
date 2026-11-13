@@ -58,7 +58,8 @@ npm run lab -- --compare 20261113-101500-lab 20261113-102200-lab
 
 Both ids are folders of `lab-out/`. The report gives the totals of each version and each case side by side. It refuses
 two runs of different case sets (compared by the SHA-256 of the file) and makes no call. A version is kept only when it
-beats the current one on the held-back cases without a regression on any check (DEC-231).
+beats the current one on the held-back cases without a regression on any check (DEC-231). When the runs have no
+held-back case, the report ends with a `Warning:` line: such a comparison cannot keep a version.
 
 ## 4. Add a case set
 
@@ -126,7 +127,8 @@ the sets `<prompt>-workbooks` (for example `planner-gap-workbooks`) are rebuilt 
 `p8w3-haiku-{am,inv}-{understand,deepen}`, `p8w3-haiku-am-plan`, `p6/p8-haiku-am-plan` and `p6/p7/p8-haiku-inv-plan`. A tuning
 card may use them for tuning on that machine; a result on them is not published with its inputs. The local sets
 captured before the second round of P10 lab fixes may hold twins, an older split and texts the masker now masks
-(escaped quotes after `sqlcmd -P`): rebuild each one with the same capture command before it is used for P10-04 or a
+(escaped quotes after `sqlcmd -P`, and since the P10 masker gaps a joined or continued word after `-P`, a value that
+starts with `$`, `%` or `-`, and `/P`); a re-masked input has a new hash, so its side may move: rebuild each one with the same capture command before it is used for P10-04 or a
 tuning card, and read its `Warning:` lines.
 
 **The plan documents (P10-08).** `planner/data-model`, `planner/prd`, `planner/api-contract`, `planner/ux`, `planner/flows`, `planner/coverage`, `planner/package` (the plan call itself), `planner/workbook` and `planner/adr-model` are wired with `--prompt planner/<stem>` over the saved `planner-<stem>` tasks of the plan runs (`planner-package` for both package and workbook). Committed sets `planner-<stem>` come from the eShopModernizing plan runs (`p8w3-haiku-eshop-plan`, `p8-haiku-eshop-plan`, `p7-haiku-eshop-plan`, `p6-haiku-eshop-plan`, `h-eshop2-plan`, an older run whose cards have no claim ids is not read); a case keeps at most 8 cards of 4 claims and the owner block as the run sent it. The local sets `planner-<stem>-workbooks` come from the Asset Manager and Invoice Generator plan runs with `--local`. `planner/workbook` has a local set only: the guidance is appended to the package prompt of a workbook plan, so its set is the package message of the workbook runs (capture it from those runs only) and the target sends the run's package prompt followed by the file under test. `planner/adr-model` has a target and a capture rule but no set yet, since no saved run holds its call. The lab replays the one call, not the domain checks, the repair or the continuation of the run.

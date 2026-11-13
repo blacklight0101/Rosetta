@@ -71,6 +71,10 @@ describe('the time the SQL Server rules take', () => {
     ['joined quoted parts', `sqlcmd -P ${'"a"b'.repeat(50_000)}`],
     ['unclosed escaped quotes', `sqlcmd -P a${'\\"x'.repeat(50_000)}`],
     ['unclosed quotes in a word', `sqlcmd -P a${'"x'.repeat(50_000)}`],
+    ['runs of five backslashes and a quote', `sqlcmd -P ${'\\\\\\\\\\"'.repeat(30_000)}`],
+    ['blanks after -P', `sqlcmd -P${' '.repeat(100_000)}`],
+    ['continued blanks after -P', `sqlcmd -P${' \\\n'.repeat(50_000)}`],
+    ['blanks after /P', `sqlcmd /P${' '.repeat(100_000)}`],
   ])('stays linear on a long line of %s', (_name, long) => {
     const started = performance.now();
 

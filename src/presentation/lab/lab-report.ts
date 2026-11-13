@@ -99,5 +99,17 @@ export function compareLines(compared: LabComparison): string[] {
     ...compared.cases.map(
       (each) => `  ${each.caseId} #${String(each.repetition)}: ${mark(each.a)} | ${mark(each.b)}`,
     ),
+    ...heldBackWarning(compared),
   ];
+}
+
+/** A warning when no compared case is held back: a version is kept on held-back cases only. */
+// RF-1405, DEC-231
+function heldBackWarning(compared: LabComparison): string[] {
+  const heldBack = compared.cases.some((each) => (each.a ?? each.b)?.split === 'held-back');
+  return heldBack
+    ? []
+    : [
+        'Warning: the case set has no held-back case, so this comparison cannot decide whether to keep a version (DEC-231).',
+      ];
 }
