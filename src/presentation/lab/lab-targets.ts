@@ -1,21 +1,28 @@
 import type { LabTarget } from '../../application/lab/lab-target.js';
 import { cardSurfaceTargets } from '../../application/lab/targets/card-surface-targets.js';
+import { cardsRepairTarget } from '../../application/lab/targets/cards-repair-target.js';
 import { gapTarget } from '../../application/lab/targets/gap-target.js';
 import { mergeTarget } from '../../application/lab/targets/merge-target.js';
 import { planDocTargets } from '../../application/lab/targets/plan-doc-targets.js';
 import { overviewTarget } from '../../application/lab/targets/overview-target.js';
+import { repairTargets } from '../../application/lab/targets/repair-targets.js';
 import { readerPartTargets } from '../../application/lab/targets/reader-part-targets.js';
 import { readerTargets } from '../../application/lab/targets/reader-targets.js';
 import { verifierClaimTarget } from '../../application/lab/targets/verifier-claim-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { loadPlannerPrompt, loadReaderPrompts } from '../../infrastructure/prompts/prompt-files.js';
+import {
+  loadGapPrompt,
+  loadPlannerPrompt,
+  loadReaderPrompts,
+} from '../../infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 
 // RF-1401, RF-1406, ADR-029: the registry of the prompts the lab can run. To wire another prompt id:
 // write its target in `src/application/lab/targets/` (the schema of its case input, the call of the
 // run's own message builder, the run's parser) and add it here, then mark it `wired` in the runbook
 // (section 7). The targets that need a prompt the lab does not vary (the verifier's retry message,
-// the rest of the reader's prompts) take the run's current files, loaded here.
+// the rest of the reader's prompts, the system prompts of the calls the planner repairs) take the
+// run's current files, loaded here.
 
 /** Every target the lab has. */
 // RF-1406
@@ -23,15 +30,18 @@ export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]
   const verifier = await loadVerifierPrompts(promptsFolder);
   const reader = await loadReaderPrompts(promptsFolder);
   const planner = await loadPlannerPrompt(promptsFolder);
+  const gap = await loadGapPrompt(promptsFolder);
   return [
     verifierClaimTarget(verifier.retry),
     overviewTarget(),
     gapTarget(),
     ...planDocTargets(planner),
+    ...repairTargets({ gap, plan: planner }),
     mergeTarget(),
     ...readerTargets(reader),
     ...readerPartTargets(reader),
     ...cardSurfaceTargets(reader),
+    cardsRepairTarget(reader),
   ];
 }
 

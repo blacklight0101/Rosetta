@@ -20,14 +20,19 @@ import { sectionTargets } from './plan-doc-sections.js';
 
 const text = (max: number) => z.string().max(max);
 
-const planInput = z.strictObject({
+/** RF-1406: the input of a case of the plan call; the plan repair adds its problem lines to it. */
+export const planInput = z.strictObject({
   cards: z.array(cardShape).min(1).max(30),
   /** The owner's block as the run sent it: the brief, the typed answers and the answered questions. */
   owner: z.record(z.string(), z.unknown()).refine((value) => JSON.stringify(value).length < 40_000),
 });
 type PlanCase = z.infer<typeof planInput>;
 
-const planMessageOf = (input: PlanCase, tags: () => string): string =>
+/** The plan message of a case, from the text of its two blocks as the run wrote them. */
+export const planMessageOf = (
+  input: Pick<PlanCase, 'cards' | 'owner'>,
+  tags: () => string,
+): string =>
   planBlocks(
     {
       cards: planCardsText({ cards: input.cards.map((card) => sourceCardOf(card, card.type)) }),
@@ -65,7 +70,7 @@ function prd(): LabTarget {
   });
 }
 
-const readPlan: DocTargetDefinition<PlanCase>['read'] = (answer) => {
+export const readPlan: DocTargetDefinition<PlanCase>['read'] = (answer) => {
   const read = parsePlanAnswer(answer);
   return labelled(read, read?.tasks.length ?? 0, ['Tasks', 'NoTasks']);
 };
