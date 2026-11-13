@@ -108,10 +108,10 @@ describe('the masked-value target', () => {
     expect(requests).toHaveLength(1);
     const sent = JSON.stringify(requests[0]?.messages);
     expect(sent).toContain('Password=[MASKED:connection-string] NOTE;');
-    expect(sent).not.toContain('FakeSecret1');
-    expect(sent).not.toContain('{secret}');
+    expect([sent.includes('FakeSecret1'), sent.includes('{secret}')]).toEqual([false, false]);
     expect(requests[0]?.system).toBe(readerSystemPrompt(prompts));
-    expect(requests[0]?.tools.map((tool) => tool.name)).toContain('read_file');
+    expect(requests[0]?.tools).toEqual([]);
+    expect(requests[0]?.messages.at(-1)?.content).toContain('Turns left: 1.');
   });
 
   it('RF-1406 keeps the lines where they were, so the citations stay valid', async () => {

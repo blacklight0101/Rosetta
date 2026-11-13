@@ -27,8 +27,9 @@ import { askOnce, problemsOf } from './single-call.js';
 //                              the lab puts the value in, masks the reads with the masker of the run
 //                              using the file under test, and sends the replay. `Leaked` is a value
 //                              that is still in the text sent or is repeated in the answer; else the
-//                              answer is read by the card parser (`Valid`, `Partial`, `Unusable`,
-//                              `ReadsMore`)
+//                              answer is read by the card parser (`Valid`, `Partial`, `Unusable`). The
+//                              call is the last turn and carries no tools; a real run keeps its tools
+//                              there, the lab drops them on purpose so the answer is text
 //   shared/text-tool-protocol  the protocol of a model without native tool calling, appended to the
 //                              system prompt with the tools as the Ollama adapter appends it; the
 //                              request carries no native tools, the replay of the reads travels as
@@ -67,6 +68,8 @@ export interface SharedKit {
 const SECRET_TOKEN = '{secret}';
 /** The note starts with the marker, as the `ReplacementOf` contract of the masker requires. */
 const MARKER = '[MASKED:';
+/** The replay ends with one turn left and no tools: the call must be the answer (P10-10). */
+const LAST_TURN = 2;
 
 const maskedCaseSchema = readerCaseSchema.extend({
   secret: z.string().regex(/^[A-Za-z0-9]{6,60}$/u),
@@ -105,10 +108,13 @@ function maskedPrepared(input: MaskedCase, current: ReaderPrompts, kit: SharedKi
         role: 'user',
         content: readerTaskMessage(prompts, areaBlock(input, tag())),
       };
-      const messages = [task, ...replayOfReads({ ...input, reads }, prompts, tag)];
+      const messages = [
+        task,
+        ...replayOfReads({ ...input, reads, turns: LAST_TURN }, prompts, tag),
+      ];
       const asked = await askOnce(env, {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
-        ...{ messages, tools: readerToolDefinitions },
+        ...{ messages, tools: [] },
       });
       if (!asked.ok) return asked.error;
       const calls = JSON.stringify(asked.value.toolCalls);
