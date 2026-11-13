@@ -38,6 +38,21 @@ describe('the calibration items of the judge check', () => {
   });
 });
 
+describe('the calibration reasons', () => {
+  it('RF-1408 give a flipped verdict a reason of the same style as a true one, so the judge cannot tell them apart', async () => {
+    const set = parseCalibrationSet(await json('eval/calibration/webforms-shop.json'));
+    if (!set.ok) throw new Error(set.error.join('; '));
+
+    const items = calibrationItems(set.value, {});
+    const reasons = new Set(items.map((item) => item.answer.split(String.fromCharCode(10))[0]));
+
+    expect([...reasons].sort()).toEqual([
+      'Reason: The cited lines do not show what the claim says.',
+      'Reason: The cited lines show what the claim says.',
+    ]);
+  });
+});
+
 describe('the hand-scored samples', () => {
   it('RF-1408 hold at least three per family, each with its origin, licence and a score for every criterion', async () => {
     const parsed = parseHandScored(await json('eval/judge-check/hand-scored.json'));
@@ -51,6 +66,17 @@ describe('the hand-scored samples', () => {
       expect(sample.origin.length).toBeGreaterThan(0);
       expect(sample.licence.length).toBeGreaterThan(0);
     }
+  });
+
+  it('RF-1408 scores secret-detection only 5, 2 or 1, as the shared rubric allows', async () => {
+    const parsed = parseHandScored(await json('eval/judge-check/hand-scored.json'));
+    if (!parsed.ok) throw new Error(parsed.error);
+
+    const given = parsed.value
+      .filter((sample) => sample.family === 'shared')
+      .map((sample) => sample.scores['secret-detection']);
+
+    for (const score of given) expect([5, 2, 1]).toContain(score);
   });
 
   it('RF-1408 refuses a sample with a score out of range or an unknown family', () => {

@@ -60,7 +60,9 @@ describe('a rubric', () => {
   );
 
   it('RF-1407 the verifier rubric scores agreement with the hand label and the shared one vetoes a missed secret', async () => {
-    expect((await criteriaOf('verifier')).map((each) => each.id)).toContain('verdict-correct');
+    expect(
+      (await criteriaOf('verifier')).filter((each) => each.veto).map((each) => each.id),
+    ).toEqual(['verdict-correct']);
     expect((await criteriaOf('shared')).filter((each) => each.veto).map((each) => each.id)).toEqual(
       ['secret-detection'],
     );

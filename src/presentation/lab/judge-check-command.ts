@@ -51,7 +51,8 @@ function startProblem(parts: LabParts, args: CheckArgs): string | undefined {
   const { provider } = args.model;
   const settings = parts.settings.providers[provider];
   return (
-    sharedLedgerProblem(settings?.kind, parts.ledgerFile) ?? holdLifetimeProblem(provider, settings)
+    sharedLedgerProblem(settings?.kind, parts.ledgerFile) ??
+    holdLifetimeProblem(provider, settings, false)
   );
 }
 

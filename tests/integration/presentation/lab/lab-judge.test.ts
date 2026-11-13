@@ -136,7 +136,7 @@ describe('a judged lab run without a usable judge', () => {
     expect(code).toBe(1);
     expect(results?.endState).toBe('Refused');
     expect(results?.cases).toHaveLength(1);
-    expect(results?.cases[0]?.judge).toMatchObject({ state: 'failed', calls: 0 });
+    expect(results?.cases[0]?.judge).toMatchObject({ state: 'failed', calls: 1 });
     expect(results?.cases[0]?.judge?.rstCode).toMatch(/^RST-[0-9]{4}$/u);
     expect(results?.refusal).toContain('judge call failed');
   });

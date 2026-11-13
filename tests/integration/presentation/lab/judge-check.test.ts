@@ -146,3 +146,45 @@ describe('the judge check inputs and disagreement', () => {
     expect(lines.join('\n')).toContain('Calibration claims: 6 of 12');
   });
 });
+
+describe('the judge check with a judge that cannot answer', () => {
+  it('RF-1408 stops at the first call that fails and counts it in the report', async () => {
+    const router = new ModelRouter({});
+    const lines: string[] = [];
+
+    const code = await runJudgeCheck(
+      labParts({ outputDir: out(), router }),
+      args,
+      folders,
+      (line) => lines.push(line),
+    );
+
+    const [folder] = await readdir(out(), { withFileTypes: true }).then((list) =>
+      list.filter((entry) => entry.isDirectory()),
+    );
+    const report = JSON.parse(
+      await readFile(join(out(), folder?.name ?? '', 'judge-check.json'), 'utf8'),
+    ) as { calls: number; stopped: string | null };
+    expect(code).toBe(1);
+    expect(router.requests).toHaveLength(1);
+    expect(report.calls).toBe(1);
+    expect(report.stopped).toContain('judge call failed');
+    expect(lines.join('\n')).toContain('Stopped:');
+  });
+
+  it('RF-1408 sends nothing when the judge model has no price', async () => {
+    const router = new ModelRouter({});
+    const lines: string[] = [];
+
+    const code = await runJudgeCheck(
+      labParts({ outputDir: out(), router }),
+      { ...args, model: { provider: 'fake', model: 'model-z' } },
+      folders,
+      (line) => lines.push(line),
+    );
+
+    expect(code).toBe(1);
+    expect(router.requests).toHaveLength(0);
+    expect(lines.join('\n')).toContain('model-z');
+  });
+});

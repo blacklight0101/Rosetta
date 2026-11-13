@@ -120,7 +120,8 @@ function startProblem(args: RunArgs, parts: LabParts): string | undefined {
   for (const name of names) {
     const provider = parts.settings.providers[name];
     const problem =
-      sharedLedgerProblem(provider?.kind, parts.ledgerFile) ?? holdLifetimeProblem(name, provider);
+      sharedLedgerProblem(provider?.kind, parts.ledgerFile) ??
+      holdLifetimeProblem(name, provider, false);
     if (problem !== undefined) return problem;
   }
   return undefined;
