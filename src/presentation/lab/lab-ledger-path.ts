@@ -44,7 +44,13 @@ export function sharedLedgerProblem(
 
 /** RF-1402: whether the price table prices the model at zero. */
 export function modelIsFree(table: PriceTable, provider: string, model: string): boolean {
-  throw new Error(`not implemented: ${String(table.prices.length)} ${provider} ${model}`);
+  const price = table.prices.find((each) => each.provider === provider && each.model === model);
+  const zero = (micros: bigint | undefined): boolean => micros === 0n;
+  return (
+    zero(price?.inputPerMillionMicros) &&
+    zero(price?.outputPerMillionMicros) &&
+    zero(price?.cachedInputPerMillionMicros)
+  );
 }
 
 /**
@@ -63,10 +69,8 @@ export function holdLifetimeProblem(
     | undefined,
   free: boolean,
 ): string | undefined {
-  // A local Ollama call costs nothing, so a hold that ran out before it ended loses no money.
-  if (settings === undefined || (settings.kind === 'ollama' && String(free).length > 0)) {
-    return undefined;
-  }
+  // A local Ollama call at a price of zero costs nothing, so a hold that ran out before it ended loses no money.
+  if (settings === undefined || (settings.kind === 'ollama' && free)) return undefined;
   const longest = reservationLifetimeMs(settings);
   if (longest <= HOLD_TTL_MS) return undefined;
   const minutes = String(HOLD_TTL_MS / 60_000);

@@ -4,7 +4,8 @@ import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
-// the side-by-side comparison of two. All figures are deterministic: no judge is involved.
+// the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
+// scores (RF-1407), present only in a run made with `--judge`, are kept apart in each case's `judge`.
 
 const count = z.number().int().min(0);
 

@@ -193,7 +193,7 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
 - **Rubrics** are `lab/rubrics/<family>.md` for reader, verifier, summariser, planner, cards and shared; the family is the
   folder of the prompt id. A criterion is a heading `## <id> - <title>` (with ` [veto]` when a score of 1 on it makes
   the overall score 1) and the text under it says what 5, 3 and 1 look like. Every rubric has `grounding`; the verifier's
-  has `verdict-correct` (agreement with the hand label); the shared one vetoes a missed secret. A new criterion is a new
+  has `verdict-correct` (agreement with the hand label), a veto: a wrong verdict makes the overall score 1; the shared one vetoes a missed secret. A new criterion is a new
   heading; the judge's reply must score exactly the criteria of the file.
 - **The judge prompt** is `prompts/lab/judge.v1.md`, a versioned file like the others. The rubric is appended to it as the
   system prompt; the case's inputs, the answer and the hand label go to the judge only as the data blocks `lab_source`,

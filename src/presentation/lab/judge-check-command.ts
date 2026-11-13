@@ -12,7 +12,7 @@ import { dollars } from '../eval/eval-settings.js';
 import { composeJudge } from './compose-judge.js';
 import { guardedOf, type LabParts } from './compose-lab.js';
 import type { LabArgs } from './lab-args.js';
-import { holdLifetimeProblem, sharedLedgerProblem } from './lab-ledger-path.js';
+import { holdLifetimeProblem, modelIsFree, sharedLedgerProblem } from './lab-ledger-path.js';
 
 // RF-1408, RF-1402, ADR-029: `npm run lab -- --judge-check <provider:model> [--yes]`. The judge scores
 // the sampled calibration claims and the hand-scored samples; every call goes through the lab's
@@ -52,7 +52,11 @@ function startProblem(parts: LabParts, args: CheckArgs): string | undefined {
   const settings = parts.settings.providers[provider];
   return (
     sharedLedgerProblem(settings?.kind, parts.ledgerFile) ??
-    holdLifetimeProblem(provider, settings, false)
+    holdLifetimeProblem(
+      provider,
+      settings,
+      modelIsFree(parts.priceTable, provider, args.model.model),
+    )
   );
 }
 

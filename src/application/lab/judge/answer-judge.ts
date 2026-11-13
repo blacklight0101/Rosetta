@@ -91,7 +91,10 @@ export class AnswerJudge implements CaseJudge {
     this.modelVersion = metered.calls.at(-1)?.modelVersion ?? this.modelVersion;
     const spent = {
       rstCode: metered.failures[0] ?? null,
-      calls: metered.calls.length,
+      // Every call that was sent counts, answered or not; only one refused before sending does not.
+      calls:
+        metered.calls.length +
+        metered.failures.filter((code) => !REFUSED_BEFORE_SENDING.has(code)).length,
       inputTokens: metered.calls.reduce((sum, call) => sum + call.inputTokens, 0),
       outputTokens: metered.calls.reduce((sum, call) => sum + call.outputTokens, 0),
       costMicros:

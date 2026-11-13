@@ -97,9 +97,9 @@ export function calibrationItems(
     .map((claim, position): CheckItem => {
       const followsLabel = position % 2 === 0;
       const shown = claim.supported === followsLabel ? 'Supported' : 'Rejected';
-      const reason = followsLabel
-        ? claim.note
-        : shown === 'Supported'
+      // The same two sentences for a true and a flipped verdict, so the judge cannot tell them apart.
+      const reason =
+        shown === 'Supported'
           ? 'The cited lines show what the claim says.'
           : 'The cited lines do not show what the claim says.';
       const cited = claim.citations.map((each) => fileText(each.path, each, files));

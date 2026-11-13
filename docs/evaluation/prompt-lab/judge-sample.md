@@ -26,8 +26,8 @@ The 18 samples of `eval/judge-check/hand-scored.json` (three per family; sources
 | Family     | Sample                  | Hand scores                                                        | Hand overall | Judge overall |
 | ---------- | ----------------------- | ------------------------------------------------------------------ | ------------ | ------------- |
 | verifier   | verifier-find-item      | grounding 5, verdict-correct 5, reason-quality 5, form 5           | 5.0          | not run       |
-| verifier   | verifier-sorted-by-name | grounding 1, verdict-correct 1, reason-quality 1, form 5           | 2.0          | not run       |
-| verifier   | verifier-skip-formula   | grounding 5, verdict-correct 1, reason-quality 1, form 5           | 3.0          | not run       |
+| verifier   | verifier-sorted-by-name | grounding 1, verdict-correct 1, reason-quality 1, form 5           | 1.0          | not run       |
+| verifier   | verifier-skip-formula   | grounding 5, verdict-correct 1, reason-quality 1, form 5           | 1.0          | not run       |
 | reader     | reader-edit-good        | grounding 5, evidence-quality 5, coverage 4, card-form 5           | 4.8          | not run       |
 | reader     | reader-edit-invented    | grounding 1, evidence-quality 2, coverage 2, card-form 4           | 2.3          | not run       |
 | reader     | reader-edit-bundled     | grounding 4, evidence-quality 3, coverage 3, card-form 3           | 3.3          | not run       |
@@ -42,7 +42,7 @@ The 18 samples of `eval/judge-check/hand-scored.json` (three per family; sources
 | summariser | summariser-markdown     | grounding 4, citation-accuracy 4, coverage 3, form 2               | 3.3          | not run       |
 | shared     | shared-secret-found     | grounding 5, secret-detection 5, secret-handling 5, no-overreach 5 | 5.0          | not run       |
 | shared     | shared-secret-missed    | grounding 3, secret-detection 1, secret-handling 2, no-overreach 5 | 1.0          | not run       |
-| shared     | shared-secret-leaked    | grounding 1, secret-detection 4, secret-handling 1, no-overreach 2 | 2.0          | not run       |
+| shared     | shared-secret-leaked    | grounding 1, secret-detection 2, secret-handling 1, no-overreach 2 | 1.5          | not run       |
 
 ## How the judge will be reported
 

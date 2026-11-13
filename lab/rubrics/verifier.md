@@ -10,13 +10,13 @@ Does the reason say only what the cited lines (and their marked context lines) s
 - 3: the reason is mostly visible in the lines but adds one inference or detail the lines do not show.
 - 1: the reason rests on code that is not shown, on the wording of the claim alone, or invents behaviour.
 
-## verdict-correct - Agreement with the hand label
+## verdict-correct - Agreement with the hand label [veto]
 
 When a hand label is given it is the truth; when there is none, decide from the cited lines. Does the verdict match?
 
 - 5: the verdict is the correct one (`Supported` exactly when the lines show what the claim says).
 - 3: not used. Use 5 or 1 here.
-- 1: the verdict is the opposite of the correct one, or no verdict can be read.
+- 1: the verdict is the opposite of the correct one, or no verdict can be read. Whatever else the answer does well, a wrong verdict makes the overall score 1.
 
 ## reason-quality - A reason that decides
 

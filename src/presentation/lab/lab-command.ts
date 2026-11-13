@@ -30,6 +30,7 @@ import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
 import {
   holdLifetimeProblem,
+  modelIsFree,
   ledgerFileFromEnvironment,
   sharedLedgerProblem,
 } from './lab-ledger-path.js';
@@ -116,12 +117,13 @@ async function resolveRun(args: RunArgs, folders: LabFolders): Promise<Result<Re
 
 /** What stops a run before anything is planned: no shared ledger for a real model, or a hold that could expire. */
 function startProblem(args: RunArgs, parts: LabParts): string | undefined {
-  const names = [args.model.provider, ...(args.judge ? [args.judge.provider] : [])];
-  for (const name of names) {
+  const models = [args.model, ...(args.judge ? [args.judge] : [])];
+  for (const { provider: name, model } of models) {
     const provider = parts.settings.providers[name];
+    const free = modelIsFree(parts.priceTable, name, model);
     const problem =
       sharedLedgerProblem(provider?.kind, parts.ledgerFile) ??
-      holdLifetimeProblem(name, provider, false);
+      holdLifetimeProblem(name, provider, free);
     if (problem !== undefined) return problem;
   }
   return undefined;
