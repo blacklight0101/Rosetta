@@ -88,7 +88,7 @@ describe('the spend ledger of two processes', () => {
     expect(decideHold([first, second], 'h1', wide, now).ok).toBe(true);
   });
 
-  it('RF-1402 stops counting a hold that was released and one older than ten minutes', () => {
+  it('RF-1402 stops counting a hold that was released and one older than the hold lifetime', () => {
     const lines = [
       hold('h1', 'inv-b', 39_000_000),
       release('h1'),
@@ -109,6 +109,10 @@ describe('the spend ledger of two processes', () => {
     ];
 
     expect(ledgerTotals(lines, now)).toEqual({ spentMicros: 500, heldMicros: 300 });
+  });
+
+  it('RF-1402 keeps a hold for at least as long as the longest call can run: 30 minutes', () => {
+    expect(HOLD_TTL_MS).toBeGreaterThanOrEqual(30 * 60_000);
   });
 
   it('RF-1402 reads the lines of a file and ignores a torn or foreign line', () => {

@@ -61,16 +61,19 @@ describe('the file spend ledger', () => {
 });
 
 describe('the file spend ledger over time', () => {
-  it('RF-1402 stops counting a hold that was never settled after ten minutes', async () => {
+  it('RF-1402 stops counting a hold that was never settled before thirty minutes and then stops counting', async () => {
     const clock = new FixedClock(start);
     const limits = { ...labLimits, stopMicros: 1_500, invocationCapMicros: 1_500 };
     await ledger('inv-a', limits, clock).hold(1_000);
 
     const early = await ledger('inv-b', limits, clock).hold(1_000);
+    clock.advance(20 * 60_000);
+    const middle = await ledger('inv-b', limits, clock).hold(1_000);
     clock.advance(10 * 60_000 + 1);
     const late = await ledger('inv-b', limits, clock).hold(1_000);
 
     expect(early.ok).toBe(false);
+    expect(middle.ok).toBe(false);
     expect(late.ok).toBe(true);
   });
 

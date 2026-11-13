@@ -92,6 +92,21 @@ describe('a real provider and the shared ledger', () => {
     expect(router.requests).toHaveLength(0);
   });
 
+  it('RF-1402 judges the provider kind of the settings, not its name', async () => {
+    const router = new ModelRouter({ 'model-a': answers });
+    const base = labParts({ outputDir: join(temp.path, 'kind'), router });
+    const fake = base.settings.providers['fake'];
+    if (fake === undefined) throw new Error('no fake provider in the settings');
+    const named = { ...fake, kind: 'openai' as const };
+    const settings = { ...base.settings, providers: { ...base.settings.providers, fake: named } };
+
+    const { code, lines } = await runLab({ ...base, settings }, verifierArgs);
+
+    expect(code).toBe(1);
+    expect(lines.join(String.fromCharCode(10))).toContain('ROSETTA_LAB_LEDGER');
+    expect(router.requests).toHaveLength(0);
+  });
+
   it('RF-1402 lets the fake provider keep the ledger of the checkout', async () => {
     const router = new ModelRouter({ 'model-a': answers });
 

@@ -26,6 +26,20 @@ describe('the lab caps', () => {
     ).toEqual([460, 460, 460, 460]);
   });
 
+  it('RF-1402 gives the retry of the verifier its own hold and its own settle', async () => {
+    const router = new ModelRouter({ 'model-a': ['Maybe.', verdict('Supported')] });
+    const parts = labParts({ outputDir: out('retry'), router });
+
+    await runLab(parts, { ...verifierArgs, cases: 'verifier-claim-sample' });
+    const lines = parseLedgerText(await readFile(join(out('retry'), 'ledger.jsonl'), 'utf8'));
+
+    const holds = lines.filter((line) => line.t === 'hold').map((line) => line.id);
+    const settled = lines.filter((line) => line.t === 'settle').map((line) => line.id);
+    expect(holds.slice(0, 2)).toHaveLength(2);
+    expect(new Set(holds.slice(0, 2)).size).toBe(2);
+    expect(settled.slice(0, 2)).toEqual(holds.slice(0, 2));
+  });
+
   it('RF-1402 refuses a call that would pass the cap of the invocation and skips the rest', async () => {
     const router = new ModelRouter({ 'model-a': answers });
     const limits = { ...labLimits, invocationCapMicros: 1_000 };
