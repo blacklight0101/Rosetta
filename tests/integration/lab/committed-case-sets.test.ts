@@ -41,7 +41,7 @@ const REPAIR_KEYS = new Set(['problems', 'answer']);
  * kept on them until more runs are captured (runbook section 4). A change to this list is a change
  * to what the lab can decide, so it is stated here.
  */
-const ONE_SIDED = ['planner-plan-repair'];
+const ONE_SIDED: string[] = [];
 const CAPTURED = [
   'cards-card-format',
   'cards-continue',

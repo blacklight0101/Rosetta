@@ -32,7 +32,7 @@
     {
       "id": "eshop-20261109-071300-plan-planner-package",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "cards": [
           {
@@ -104,209 +104,180 @@
             "type": "BR"
           },
           {
-            "id": "BR-003",
-            "title": "Plain-text secrets in configuration files",
-            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "id": "ENT-001",
+            "title": "CatalogItem (product entity, legacy and modernized)",
+            "summary": "A sellable catalog product with an id, a name (max 50), an optional description, a price (decimal, money), a picture file name (default dummy.png), required links to one brand and one type, and stock figures (available stock, restock threshold, max stock threshold) plus an on-reorder flag. In the legacy EF model it is the CatalogItems set; in the modernized model it is the Catalog table. PictureUri and TempImageName are not stored. Ids are assigned by the application (hi-lo or sequence) or by the seed, and the foreign keys cascade deletes by EF default in some versions.",
             "claims": [
               {
-                "claimId": "BR-003.c1",
-                "text": "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
-                "citations": ["eShopLegacyNTier/src/eShopWCFService/Web.config:5-5"]
+                "claimId": "ENT-001.c1",
+                "text": "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:18-22"]
               },
               {
-                "claimId": "BR-003.c2",
-                "text": "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:8-8"]
+                "claimId": "ENT-001.c2",
+                "text": "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:13-15",
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs:21-25",
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:30-32"
+                ]
               },
               {
-                "claimId": "BR-003.c3",
-                "text": "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:43-43"]
+                "claimId": "ENT-001.c3",
+                "text": "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs:18-31"]
               },
               {
-                "claimId": "BR-003.c4",
-                "text": "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config:47-47"]
+                "claimId": "ENT-001.c4",
+                "text": "The brand and type names are stored as non-Unicode strings.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:26-28",
+                  "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs:36-38"
+                ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-006",
-            "title": "Catalog item id generation with hi-lo sequences",
-            "summary": "A hi-lo generator reads the catalog_hilo sequence (and the brand and type sequences) in blocks of ten and serves the other nine ids from memory under a lock. The sequences start at 1 and increment by 10. The modernized service ignores the generator and assigns ids as the maximum existing id plus one, which throws on an empty table.",
+            "id": "FEAT-001",
+            "title": "Browse the catalog with brand and type filters",
+            "summary": "The catalog screen lists items with thumbnails, names, descriptions and prices, and filters them by brand and type. Changing either filter reloads the grid, with 0 meaning All. Thumbnails are read from the Assets/Images/Catalog folder.",
             "claims": [
               {
-                "claimId": "BR-006.c1",
-                "text": "The hi-lo generator fetches a new block from the sequence catalog_hilo every ten ids and hands out the ids in between from memory.",
+                "claimId": "FEAT-001.c1",
+                "text": "On load, the controller shows the discount banner, loads all items, loads the brand and type filter lists and loads the shipment view.",
                 "citations": [
-                  "eShopModernizedNTier/src/eShopWCFService/Models/CatalogItemHiLoGenerator.cs:10-32"
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:150-158"
                 ]
               },
               {
-                "claimId": "BR-006.c2",
-                "text": "The service's CreateCatalogItem and CreateAvailableStock assign the id as the maximum existing id plus one, not through the generator.",
+                "claimId": "FEAT-001.c2",
+                "text": "The brand and type dropdowns each raise a filter change with the selected ids, and the controller reloads the grid for that filter. Id 0 means All.",
                 "citations": [
-                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:65-69",
-                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:113-114"
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:106-136",
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:27-30",
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:104-107"
                 ]
               },
               {
-                "claimId": "BR-006.c4",
-                "text": "When no IDs remain in the current block, the generator reads the next value of catalog_hilo and then serves nine further IDs from memory before it queries the sequence again.",
+                "claimId": "FEAT-001.c3",
+                "text": "The dropdown change handlers are wired in the designer for the brand and type combo boxes.",
                 "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:11-31"
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs:218-218",
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs:252-252"
                 ]
               },
               {
-                "claimId": "BR-006.c5",
-                "text": "The generator guards its state with a lock, so the IDs it hands out are issued one at a time within one process.",
-                "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models/CatalogItemHiLoGenerator.cs:14-18"
-                ]
+                "claimId": "FEAT-001.c4",
+                "text": "Each row shows a 384x216 thumbnail loaded from the Assets/Images/Catalog folder under the current directory, the item id, name and description, and the price prefixed with $.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:48-63"]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-007",
-            "title": "Azure Active Directory sign-in with OpenID Connect",
-            "summary": "Azure AD (OpenID Connect) sign-in is configured only when UseAzureActiveDirectory is true, otherwise a placeholder authentication middleware is added. The setting is false by default and the client id, tenant and instance are placeholders. Cookie authentication is the default sign-in type, the authority is built from the AAD instance and tenant, and a failed OpenID Connect authentication redirects to /Error with the exception message in the query string.",
+            "id": "FLOW-001",
+            "title": "Open the catalog screen",
+            "summary": "The catalog form loads the discount, items, filters and shipment list when it opens.",
             "claims": [
               {
-                "claimId": "BR-007.c3",
-                "text": "When CatalogConfiguration.UseAzureActiveDirectory is true the startup calls ConfigureAuth; otherwise it adds AuthenticationMiddleware to the OWIN pipeline.",
+                "claimId": "FLOW-001.c1",
+                "text": "Main creates the catalog view and a service client, wires them into the controller, and calls LoadView before showing the dialog.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/Program.cs:17-27"]
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "The controller clears the grid, loads all items with the discount, and fills the grid with discounted prices.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Startup.cs:13-20"
+                  "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs:75-85",
+                  "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs:48-63"
                 ]
-              },
-              {
-                "claimId": "BR-007.c4",
-                "text": "Web.config sets UseAzureActiveDirectory to false, leaves the Azure Active Directory client ID and tenant as bracketed placeholder text, and sets the instance to a login URL template with a {0} placeholder for the tenant.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:29-32"
-                ]
-              },
-              {
-                "claimId": "BR-007.c5",
-                "text": "Startup.Configuration calls ConfigureAuth when CatalogConfiguration.UseAzureActiveDirectory is true.",
-                "citations": ["eShopModernizedMVCSolution/src/eShopModernizedMVC/Startup.cs:11-16"]
-              },
-              {
-                "claimId": "BR-007.c6",
-                "text": "Otherwise it adds AuthenticationMiddleware to the OWIN pipeline.",
-                "citations": ["eShopModernizedMVCSolution/src/eShopModernizedMVC/Startup.cs:17-20"]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-008",
-            "title": "Application setting flags that select optional features",
-            "summary": "Boolean application settings enable optional features, including UseMockData, which chooses between mock data and the SQL catalog database. When UseMockData is true the database initializer or context is not set up. Each flag is parsed with bool.Parse, so a missing or non-boolean value fails when it is read. The checked-in configuration sets UseMockData to true in some projects and false in others, and the shipped appsettings.json holds it as a string.",
+            "id": "INT-001",
+            "title": "WinForms client calls the catalog WCF service over HTTP",
+            "summary": "The desktop client reaches the catalog service at a fixed localhost address.",
             "claims": [
               {
-                "claimId": "BR-008.c1",
-                "text": "The application module receives the mock data, Azure storage and managed identity flags.",
+                "claimId": "INT-001.c1",
+                "text": "The client endpoint is http://localhost:62314/CatalogService.svc using basic HTTP.",
+                "citations": ["eShopLegacyNTier/src/eShopWinForms/App.config:19-29"]
+              },
+              {
+                "claimId": "INT-001.c2",
+                "text": "The service's database connection points at the LocalDB instance and the eShopDatabase catalog.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/Web.config:62-64"]
+              },
+              {
+                "claimId": "INT-001.c3",
+                "text": "The service reference metadata source is an HTTP address on localhost port 62314 serving CatalogService.svc.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:73-80"
+                  "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap:22-22"
                 ]
               },
               {
-                "claimId": "BR-008.c2",
-                "text": "The catalog database initializer is set only when UseMockData is false.",
+                "claimId": "INT-001.c6",
+                "text": "The CatalogItem schema fields are CatalogBrand, CatalogBrandId, CatalogType, CatalogTypeId, Description, Id, Name, Picturefilename and Price.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:82-88"
-                ]
-              },
-              {
-                "claimId": "BR-008.c3",
-                "text": "The Web.config sets UseMockData to true, UseAzureStorage to false and UseAzureManagedIdentity to false.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:24-28"
-                ]
-              },
-              {
-                "claimId": "BR-008.c4",
-                "text": "Web.config sets UseMockData to true, UseCustomizationData to false, and UseAzureStorage to false.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Web.config:24-28"
+                  "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd:3-15"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-009",
-            "title": "Request logging with activity id and rolling log file",
-            "summary": "Each request is traced with its URL and gets an activity id and request info (URL and user agent) in the log context. Log output goes to a rolling file logFiles\\myapp.log, rolled at 10MB with 5 backups, with the root logger accepting all levels.",
+            "id": "OQ-001",
+            "title": "Which discount applies when more than one covers the same day?",
+            "summary": "The service returns the first discount found for the day, with no ordering.",
             "claims": [
               {
-                "claimId": "BR-009.c1",
-                "text": "At the beginning of each request the application traces the request URL and sets the activity id and request info log properties.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:57-68",
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:109-128"
-                ]
-              },
-              {
-                "claimId": "BR-009.c2",
-                "text": "An unhandled error is written to the trace as an error.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:51-55"
-                ]
-              },
-              {
-                "claimId": "BR-009.c3",
-                "text": "Logging is set to level ALL on the root logger, and the Azure append blob appender is commented out so no log is written there.",
-                "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:2-5",
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/log4Net.xml:9-15"
-                ]
-              },
-              {
-                "claimId": "BR-009.c4",
-                "text": "The root logger accepts all levels and writes to the file appender.",
-                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml:2-5"]
+                "claimId": "OQ-001.c1",
+                "text": "GetDiscount returns FirstOrDefault of the matching discounts, with no order by.",
+                "citations": ["eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:28-31"]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           },
           {
-            "id": "BR-010",
-            "title": "Application Insights telemetry setup",
-            "summary": "A custom telemetry initializer is added at startup, and the instrumentation key is replaced only when a key is configured. Request, dependency, performance and exception telemetry is collected, bot user agents are filtered, and adaptive sampling is capped at five items per second.",
+            "id": "SCRN-001",
+            "title": "Home page (Catalog Manager product list)",
+            "summary": "The default page lists catalog products in a table with Edit, Details and Delete links per row, a Create New link, and Previous and Next pager links.",
             "claims": [
               {
-                "claimId": "BR-010.c1",
-                "text": "A custom telemetry initializer is added to the active telemetry configuration at startup.",
+                "claimId": "SCRN-001.c1",
+                "text": "The page uses the Site.Master layout, places its content in the MainContent region, and has the title Home Page.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:96-99"
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:1-3"
                 ]
               },
               {
-                "claimId": "BR-010.c2",
-                "text": "The instrumentation key is set only when the configured key is not empty.",
+                "claimId": "SCRN-001.c2",
+                "text": "A Create New link points to the CreateProductRoute.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Global.asax.cs:100-105"
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:7-7"
                 ]
               },
               {
-                "claimId": "BR-010.c3",
-                "text": "The synthetic user-agent initializer filters requests whose user agent matches search, spider, crawl, Bot, Monitor or AlwaysOn.",
+                "claimId": "SCRN-001.c3",
+                "text": "A list view of CatalogItem rows shows the picture, name, description, brand, type, price, picture file name, stock, restock threshold and max stock. It shows 'No data was returned.' when empty.",
                 "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config:9-13"
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:12-19",
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:20-49",
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:50-100"
                 ]
               },
               {
-                "claimId": "BR-010.c4",
-                "text": "Adaptive sampling is capped at five telemetry items per second for the default sink.",
+                "claimId": "SCRN-001.c4",
+                "text": "Each row has Edit, Details and Delete links built from EditProductRoute, ProductDetailsRoute and DeleteProductRoute with the item id.",
                 "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config:122-129"
+                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Default.aspx:101-112"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "SCRN"
           }
         ],
         "owner": {
@@ -452,7 +423,7 @@
     {
       "id": "eshop-20261102-203736-plan-planner-package",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "cards": [
           {
@@ -509,154 +480,157 @@
             "type": "BR"
           },
           {
-            "id": "BR-004",
-            "title": "Catalog item picture URIs follow the item id",
-            "summary": "The picture URI shown for a catalog item is built from its id, not from its stored picture file name.",
+            "id": "ENT-001",
+            "title": "eShop database on the workshop SQL server",
+            "summary": "The setup creates an empty database named eShop at the S0 service level. The scripts create no tables; the comment says the data is populated later when the web app is migrated.",
             "claims": [
               {
-                "claimId": "BR-004.c2",
-                "text": "The index action passes the page of items to ChangeUriPlaceholder, which sets the picture URI of each item to /Pics/{Id}.png.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:26-28",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:153-159",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:163-163"
-                ]
+                "claimId": "ENT-001.c1",
+                "text": "The database name is eShop.",
+                "citations": ["Setup/environment.ps1:21-21"]
+              },
+              {
+                "claimId": "ENT-001.c2",
+                "text": "The database is created with the requested service objective S0 on the workshop SQL server.",
+                "citations": ["Setup/setup.ps1:19-21"]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The code states that the database is populated later, when the web app is migrated; no schema or data load is in this area.",
+                "citations": ["Setup/setup.ps1:19-20"]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-005",
-            "title": "Catalog deletes cascade from brand and type",
-            "summary": "Removing a brand or a type also removes every catalog item that uses it.",
+            "id": "FEAT-001",
+            "title": "Back-office catalog maintenance (sample eShop apps)",
+            "summary": "The README describes the sample apps as internal back-office CRUD tools that let employees update the product catalog in SQL Server.",
             "claims": [
               {
-                "claimId": "BR-005.c1",
-                "text": "Both foreign keys on Catalog are declared with ReferentialAction.Cascade, so a delete of a brand or a type removes the items that reference it.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:56-67"
-                ]
+                "claimId": "FEAT-001.c1",
+                "text": "The sample web apps are simple back-office CRUD applications that update the product catalog in a SQL Server database.",
+                "citations": ["README.md:23-24"]
               },
               {
-                "claimId": "BR-005.c2",
-                "text": "The model snapshot records the same cascade delete behaviour for CatalogItem.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:308-319"
-                ]
+                "claimId": "FEAT-001.c2",
+                "text": "A WinForms catalog management application uses a WCF service as its back end.",
+                "citations": ["README.md:42-44"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "The WinForms sample is described as a fictional inventory app for tracking item counts at different calendar dates.",
+                "citations": ["winforms-wcf.md:8-8"]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-006",
-            "title": "Catalog item price and stock validation",
-            "summary": "Catalog items must have a price that is a non-negative number with at most two decimals, within 0 to 1,000,000. AvailableStock, RestockThreshold and MaxStockThreshold must each be between 0 and 10,000,000. Name is required in the MVC model. The create and edit forms apply the same value ranges. The price is shown as a currency value.",
+            "id": "FLOW-001",
+            "title": "Browser request to the default MVC route",
+            "summary": "A browser request is handled by the web host, static files or MVC, and the default route.",
             "claims": [
               {
-                "claimId": "BR-006.c1",
-                "text": "Price must match the pattern of digits with at most two decimal places, and the error message says it must be a positive number with at most two decimals.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-22"]
+                "claimId": "FLOW-001.c1",
+                "text": "The web host created in Program runs the Startup pipeline.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Program.cs:10-15"]
               },
               {
-                "claimId": "BR-006.c2",
-                "text": "Price must be within the range 0 to 1000000.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:23-23"]
+                "claimId": "FLOW-001.c2",
+                "text": "Static file requests are answered first by the static files middleware.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:60-60"]
               },
               {
-                "claimId": "BR-006.c3",
-                "text": "Price is displayed as a currency type.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:24-24"]
-              },
-              {
-                "claimId": "BR-006.c4",
-                "text": "AvailableStock must be between 0 and 10000000, with the error message 'Stock must be between 0 and 10 million'.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:45-47"]
+                "claimId": "FLOW-001.c3",
+                "text": "Other requests are matched by the default route and sent to a controller action, Catalog Index when no route values are given.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:62-65"]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-008",
-            "title": "New items default to the dummy picture",
-            "summary": "A new CatalogItem gets the picture file name dummy.png unless a value is set.",
+            "id": "INT-001",
+            "title": "Container topology: web apps, WCF service and SQL Server",
+            "summary": "The compose files define three application containers that connect to one SQL Server container and expose their ports on the host.",
             "claims": [
               {
-                "claimId": "BR-008.c1",
-                "text": "The constant default picture name is dummy.png.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:8-8"]
+                "claimId": "INT-001.c1",
+                "text": "The compose file defines the WCF service, the WebForms app, the MVC app and a SQL Server container named sql.data, and the three apps depend on sql.data.",
+                "citations": ["docker-compose.yml:5-30"]
               },
               {
-                "claimId": "BR-008.c2",
-                "text": "The constructor sets PictureFileName to the default picture name.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:10-13"]
+                "claimId": "INT-001.c2",
+                "text": "The MVC app connects to the SQL Server host sql.data, database Microsoft.eShopOnContainers.Services.CatalogDb, and is published on host port 5115.",
+                "citations": [
+                  "docker-compose.override.yml:6-6",
+                  "docker-compose.override.yml:16-17"
+                ]
+              },
+              {
+                "claimId": "INT-001.c4",
+                "text": "The WCF service connects to database eShopDatabase on sql.data and is published on host port 5113.",
+                "citations": ["docker-compose.override.yml:36-38"]
+              },
+              {
+                "claimId": "INT-001.c5",
+                "text": "The SQL Server container is published on host port 5433 and is checked with a sqlcmd select 1 health check.",
+                "citations": ["docker-compose.override.yml:43-48"]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-009",
-            "title": "Seed data for the catalog is supplied by the model layer",
-            "summary": "The mapping classes seed brands, types and twelve catalog items as initial rows, so a fresh database starts with a sample catalog.",
+            "id": "OQ-001",
+            "title": "Is the hard-coded sa login intended for shared or production use?",
+            "summary": "The compose and override files write the SQL Server sa login and its password in plain text, and the health check repeats the password.",
             "claims": [
               {
-                "claimId": "BR-009.c1",
-                "text": "CatalogItemConfig seeds its rows from PreconfiguredData.GetPreconfiguredCatalogItems.",
+                "claimId": "OQ-001.c1",
+                "text": "The override file writes the sa login and a plain-text password in the connection strings and in the SQL Server environment.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogItemConfig.cs:35-37"
+                  "docker-compose.override.yml:6-6",
+                  "docker-compose.override.yml:41-41"
                 ]
               },
               {
-                "claimId": "BR-009.c2",
-                "text": "Twelve catalog items are defined, each with AvailableStock 100 and a picture named by its id, for example 1.png to 12.png.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Models/Infrastructure/PreconfiguredData.cs:14-25"
-                ]
-              },
-              {
-                "claimId": "BR-009.c3",
-                "text": "CatalogBrandConfig seeds its rows from PreconfiguredData.GetPreconfiguredCatalogBrands.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Models/Config/CatalogBrandConfig.cs:22-24"
-                ]
+                "claimId": "OQ-001.c2",
+                "text": "The health check repeats a plain-text SQL password.",
+                "citations": ["docker-compose.override.yml:46-46"]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           },
           {
-            "id": "BR-010",
-            "title": "Catalog service selected by a mock-data flag",
-            "summary": "The Autofac module binds ICatalogService to CatalogServiceMock as a single shared instance when the mock-data flag is true, and to the real CatalogService with one instance per lifetime scope when it is false.",
+            "id": "SCRN-001",
+            "title": "Catalog index (paged list)",
+            "summary": "Lists catalog items in a table with paging controls and a Create New link.",
             "claims": [
               {
-                "claimId": "BR-010.c1",
-                "text": "The module takes a boolean useMockData flag in its constructor and stores it in a field.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:10-15"
-                ]
+                "claimId": "SCRN-001.c1",
+                "text": "The page is typed to a paginated list of catalog items and shows a Create New link.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:1-9"]
               },
               {
-                "claimId": "BR-010.c2",
-                "text": "When the flag is true, ICatalogService is bound to CatalogServiceMock as a single instance shared for the whole container.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
-                ]
+                "claimId": "SCRN-001.c2",
+                "text": "The table is rendered by the CatalogTable partial with the page data.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:12-12"]
               },
               {
-                "claimId": "BR-010.c3",
-                "text": "When the flag is false, ICatalogService is bound to CatalogService with one instance per lifetime scope.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:24-29"
-                ]
+                "claimId": "SCRN-001.c3",
+                "text": "The footer text shows the items per page, the total item count, the current page and the total page count. Previous is shown as hidden on the first page and Next is hidden on the last page.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:19-39"]
               },
               {
-                "claimId": "BR-010.c4",
-                "text": "When the module is built with useMockData true, ICatalogService is registered to CatalogServiceMock as a single instance, so one mock object is shared for the whole container.",
+                "claimId": "SCRN-001.c4",
+                "text": "Action Create New starts the handler Create.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:1-9",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:12-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:19-39"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "SCRN"
           }
         ],
         "owner": {
@@ -873,166 +847,173 @@
             "type": "BR"
           },
           {
-            "id": "BR-004",
-            "title": "Picture mime types by file extension",
-            "summary": "Picture responses use a mime type chosen from the file extension, with a generic type for unknown extensions.",
+            "id": "ENT-001",
+            "title": "CatalogBrand and CatalogType entities",
+            "summary": "The CatalogBrand and CatalogType lookup tables: integer keys, required name up to 100 characters, seeded with brands (Azure, .NET, Visual Studio, SQL Server, Other) and types (Mug, T-Shirt, Sheet, USB Memory Stick). Keys come from identity in migrations or from hi-lo sequences in the modernized code. Services read these sets and the client lists them in filter drop-downs.",
             "claims": [
               {
-                "claimId": "BR-004.c1",
-                "text": "The extensions .png, .gif, .jpg/.jpeg, .bmp, .tiff, .wmf, .jp2 and .svg map to image/png, image/gif, image/jpeg, image/bmp, image/tiff, image/wmf, image/jp2 and image/svg+xml.",
+                "claimId": "ENT-001.c1",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:57-83"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-15",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:20-20"
                 ]
               },
               {
-                "claimId": "BR-004.c2",
-                "text": "Any other extension is sent as application/octet-stream.",
+                "claimId": "ENT-001.c2",
+                "text": "Column CatalogBrand.Brand: string, maxLength 100, NOT NULL.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:84-86"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-16"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c3",
+                "text": "The table is seeded with five rows: 1 Azure, 2 .NET, 3 Visual Studio, 4 SQL Server, 5 Other.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:70-80"
+                ]
+              },
+              {
+                "claimId": "ENT-001.c4",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity, primary key (PK_CatalogBrand).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:14-20"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-005",
-            "title": "Brand delete through the API is a demo that deletes nothing",
-            "summary": "The brand DELETE endpoint checks that the brand exists and then returns OK without removing it.",
+            "id": "FEAT-001",
+            "title": "Back-office product catalog maintenance (sample web apps)",
+            "summary": "The README describes the MVC and WebForms sample apps as internal back-office CRUD tools that let employees update the product catalog in SQL Server.",
             "claims": [
               {
-                "claimId": "BR-005.c1",
-                "text": "DELETE api/Brands/{id} returns NotFound when no brand has that id.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:24-31"
-                ]
+                "claimId": "FEAT-001.c1",
+                "text": "The sample apps are simple web apps for the internal backoffice of an eShop so employees can update the Product Catalog.",
+                "citations": ["README.md:23-23"]
               },
               {
-                "claimId": "BR-005.c2",
-                "text": "When the brand exists the code returns OK and the source comments that it is a demo that does not really delete.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:33-34"
-                ]
+                "claimId": "FEAT-001.c2",
+                "text": "Both apps are simple CRUD web applications that update data in a SQL Server database.",
+                "citations": ["README.md:24-24"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "The WebForms and MVC apps are described as pretty similar in UI and business features, so either can be used to compare the two technologies.",
+                "citations": ["README.md:38-38"]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-006",
-            "title": "Seeded catalog of twelve products",
-            "summary": "The initial migration loads twelve catalog items, each with stock of 100 and zero restock and maximum-stock thresholds.",
+            "id": "FLOW-001",
+            "title": "Delete a catalog item",
+            "summary": "A user confirms the removal of a catalog item from a delete page; the item is removed and the user returns to the index.",
             "claims": [
               {
-                "claimId": "BR-006.c1",
-                "text": "The migration inserts twelve Catalog rows with ids 1 to 12, each with AvailableStock 100, OnReorder false, RestockThreshold 0 and MaxStockThreshold 0.",
+                "claimId": "FLOW-001.c1",
+                "text": "The delete page (GET) returns BadRequest without an id, loads the item by id and returns NotFound when none exists, then shows the item.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-129"
                 ]
               },
               {
-                "claimId": "BR-006.c4",
-                "text": "The seeded prices take three distinct values, 8.5, 12 and 19.5, written as decimal literals; 8.50m and 8.5m are the same value. Each row's PictureFileName is its Id followed by .png, for example 2.png for Id 2.",
+                "claimId": "FLOW-001.c2",
+                "text": "The confirmed POST (action name Delete) requires an anti-forgery token, loads the item by id and passes it to RemoveCatalogItem, then redirects to Index.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:98-109"
-                ]
-              },
-              {
-                "claimId": "BR-006.c5",
-                "text": "The HasData block in the model snapshot holds the same twelve Catalog ids (1 to 12), with the same brand, type, price and stock values as the migration's InsertData rows, so the snapshot and the migration seed the same rows.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:100-268",
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
-                ]
-              },
-              {
-                "claimId": "BR-006.c6",
-                "text": "Every seeded row starts with AvailableStock 100, RestockThreshold 0, MaxStockThreshold 0 and OnReorder false.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:93-110"
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:133-140"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-007",
-            "title": "Field limits for catalog item price and stock",
-            "summary": "A catalog item price must be a non-negative currency value up to 1,000,000 with at most two decimals. AvailableStock, RestockThreshold and MaxStockThreshold must each be between 0 and 10,000,000. Name is required on the WebForms create and edit forms, which apply the same limits. The OnReorder flag marks items on reorder.",
+            "id": "INT-001",
+            "title": "Shared SQL Server catalog database used by the three containers",
+            "summary": "The MVC, WebForms and WCF containers connect to one SQL Server container (sql.data) for the catalog database. Connection strings with credentials are written in plain text.",
             "claims": [
               {
-                "claimId": "BR-007.c1",
-                "text": "The Price regular expression accepts digits with at most two decimal places, and the error message says the price must be a positive number with at most two decimals.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-22"]
+                "claimId": "INT-001.c2",
+                "text": "The MVC app connects to Server=sql.data, Database=Microsoft.eShopOnContainers.Services.CatalogDb, with a plain-text password written in the connection string.",
+                "citations": ["docker-compose.override.yml:6-6"]
               },
               {
-                "claimId": "BR-007.c2",
-                "text": "The Price range is 0 to 1000000 and the field is typed as currency.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:23-25"]
+                "claimId": "INT-001.c3",
+                "text": "The WebForms app connects to the same CatalogDb database with a plain-text password written in the connection string.",
+                "citations": ["docker-compose.override.yml:21-21"]
               },
               {
-                "claimId": "BR-007.c5",
-                "text": "The price is validated by a regular expression that allows at most two decimal places, and by a range from 0 to 1000000, with a message that the price must be a positive number with at most two decimals.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:21-25"]
+                "claimId": "INT-001.c4",
+                "text": "The WCF service connects to Server=sql.data, Database=eShopDatabase, with a plain-text password written in the connection string.",
+                "citations": ["docker-compose.override.yml:36-36"]
               },
               {
-                "claimId": "BR-007.c6",
-                "text": "Each stock field (AvailableStock, RestockThreshold, MaxStockThreshold) carries a range validation from 0 to 10000000 with its own error message.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Models/CatalogItem.cs:44-57"]
+                "claimId": "INT-001.c5",
+                "text": "A plain-text password for the sa account is written as SA_PASSWORD for the SQL Server container.",
+                "citations": ["docker-compose.override.yml:41-41"]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-009",
-            "title": "Catalog service registration depends on a mock-data flag",
-            "summary": "The Autofac module binds ICatalogService to CatalogServiceMock as a single shared instance when the mock-data flag is true, and to CatalogService with one instance per lifetime scope when it is false. The flag is fixed when the module is constructed.",
+            "id": "OQ-001",
+            "title": "Are the Azure storage, Application Insights and Azure AD integrations used in the deployed environments?",
+            "summary": "The override file turns Azure storage and Azure AD off and reads the Application Insights key from a variable. The code does not show whether any deployed environment uses these services.",
             "claims": [
               {
-                "claimId": "BR-009.c1",
-                "text": "When the module is built with useMockData set to true, ICatalogService is bound to CatalogServiceMock as a single instance shared for the whole container.",
+                "claimId": "OQ-001.c1",
+                "text": "UseAzureStorage and UseAzureActiveDirectory are set to False in the MVC and WebForms containers.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:12-14",
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:18-23"
+                  "docker-compose.override.yml:9-9",
+                  "docker-compose.override.yml:12-12"
                 ]
               },
               {
-                "claimId": "BR-009.c2",
-                "text": "When useMockData is false, ICatalogService is bound to CatalogService with one instance per lifetime scope.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Modules/ApplicationModule.cs:24-29"
-                ]
-              },
-              {
-                "claimId": "BR-009.c3",
-                "text": "When useMockData is true, ICatalogService is bound to CatalogServiceMock as a single instance.",
-                "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:12-14",
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:18-23"
-                ]
-              },
-              {
-                "claimId": "BR-009.c4",
-                "text": "When useMockData is false, ICatalogService is bound to CatalogService, created once per lifetime scope.",
-                "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Modules/ApplicationModule.cs:24-29"
-                ]
+                "claimId": "OQ-001.c2",
+                "text": "The Application Insights key and Azure storage connection string are read from environment variables that the file does not set.",
+                "citations": ["docker-compose.override.yml:10-11"]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           },
           {
-            "id": "BR-010",
-            "title": "Brand and type are attached to every catalog item in the mock",
-            "summary": "The mock sets each item's brand and type from its foreign-key ids, and fails if an id has no match.",
+            "id": "SCRN-001",
+            "title": "Catalog list (MVC)",
+            "summary": "The MVC catalog index page, which shows catalog items in a paged table with thumbnails, stock figures, Create New, and Edit, Details and Delete links per row, plus Previous and Next paging.",
             "claims": [
               {
-                "claimId": "BR-010.c1",
-                "text": "ComposeCatalogItems sets each item's CatalogBrand and CatalogType by finding the preconfigured entry whose Id equals the item's CatalogBrandId or CatalogTypeId, using First, which throws when no entry matches.",
+                "claimId": "SCRN-001.c1",
+                "text": "The table has one column header for each of Name, Description, brand, type, Price, PictureFileName, AvailableStock, RestockThreshold and MaxStockThreshold, with names taken from the model.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Services/CatalogServiceMock.cs:73-82"
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:5-35"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "Each row shows a thumbnail image from the item's picture URI, and the item's name, description, brand, type, price, picture file name and the three stock figures.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c3",
+                "text": "Each row has Edit, Details and Delete links that pass the item id to the actions of the same name.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c5",
+                "text": "Action Edit starts the handler Edit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:5-35",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "SCRN"
           }
         ],
         "owner": {
@@ -1249,189 +1230,180 @@
             "type": "BR"
           },
           {
-            "id": "BR-003",
-            "title": "Deployments run in Incremental mode",
-            "summary": "The C# and Ruby deployers submit the template in Incremental mode, so resources not in the template are left in place.",
+            "id": "ENT-001",
+            "title": "CatalogBrand table and entity",
+            "summary": "A lookup table of product brands with an int identity key and a required brand name of at most 100 characters. Catalog items refer to it. The seed rows are Azure, .NET, Visual Studio, SQL Server and Other, supplied by PreconfiguredData.",
             "claims": [
               {
-                "claimId": "BR-003.c1",
-                "text": "DeploymentHelper.cs sets the deployment mode to Incremental.",
+                "claimId": "ENT-001.c1",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/DeploymentHelper.cs:104-109"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:10-21"
                 ]
               },
               {
-                "claimId": "BR-003.c2",
-                "text": "deployer.rb sets the deployment mode to Incremental and creates the deployment named 'azure-sample' in the resource group.",
+                "claimId": "ENT-001.c2",
+                "text": "Column CatalogBrand.Brand: nvarchar(100) as declared by maxLength 100, NOT NULL.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/deployer.rb:39-46"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:16-16"
                 ]
               },
               {
-                "claimId": "BR-003.c3",
-                "text": "deployer.rb sets the deployment mode to Incremental.",
+                "claimId": "ENT-001.c3",
+                "text": "The model snapshot also declares Brand as required with a maximum length of 100.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/deployer.rb:39-39"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/CatalogDBContextModelSnapshot.cs:27-33"
                 ]
               },
               {
-                "claimId": "BR-003.c4",
-                "text": "DeploymentHelper.cs sets DeploymentMode.Incremental on the deployment properties.",
+                "claimId": "ENT-001.c4",
+                "text": "Column CatalogBrand.Id: int, NOT NULL, identity (value generated on add), primary key.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-template-SECURED-NOFUNCI/DeploymentHelper.cs:104-108"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:25-33"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-004",
-            "title": "Secure cluster certificate and key vault inputs",
-            "summary": "The sample template requires a certificate thumbprint, key vault resource id and certificate URL to secure the cluster.",
+            "id": "ENT-002",
+            "title": "CatalogType table and entity",
+            "summary": "A lookup table of product types, such as Mug, T-Shirt, Sheet and USB Memory Stick, with an int identity key and a required type name of at most 100 characters. The seed rows are Mug (1), T-Shirt (2), Sheet (3) and USB Memory Stick (4), written inline in the configuration.",
             "claims": [
               {
-                "claimId": "BR-004.c1",
-                "text": "certificateThumbprint, sourceVaultValue (the key vault resource id) and certificateUrlValue (the vault secret URL) are required string inputs with no default in the sample template.",
+                "claimId": "ENT-002.c1",
+                "text": "Column CatalogType.Id: int, NOT NULL, identity, primary key.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:82-99"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:23-34"
                 ]
               },
               {
-                "claimId": "BR-004.c2",
-                "text": "The certificate store is restricted to My and the protection level allows None, Sign or EncryptAndSign, defaulting to EncryptAndSign.",
+                "claimId": "ENT-002.c2",
+                "text": "Column CatalogType.Type: nvarchar(100), NOT NULL.",
                 "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:72-107"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:29-29"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c3",
+                "text": "Column CatalogType.Id: int, NOT NULL, identity (value generated on add), primary key.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:275-283"
+                ]
+              },
+              {
+                "claimId": "ENT-002.c4",
+                "text": "Column CatalogType.Type: string, NOT NULL, max length 100.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.Designer.cs:279-281"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-005",
-            "title": "Plain-text admin passwords in the templates and parameter files",
-            "summary": "Admin passwords are written in plain text in several files of this area.",
+            "id": "FEAT-001",
+            "title": "Product catalog backoffice web apps (MVC and WebForms)",
+            "summary": "The repository's README describes two sample back-office web apps, one in MVC and one in WebForms, that let employees maintain the eShop product catalog.",
             "claims": [
               {
-                "claimId": "BR-005.c1",
-                "text": "A plain-text password is written in Sample-ServiceFabric-ARM/azuredeploy.json:24.",
-                "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.json:24-24"
-                ]
+                "claimId": "FEAT-001.c1",
+                "text": "The sample apps are simple web apps for the internal back office of an eShop, so employees can update the Product Catalog.",
+                "citations": ["README.md:23-24"]
               },
               {
-                "claimId": "BR-005.c2",
-                "text": "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json:17-18.",
-                "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/parameters.json:17-18"
-                ]
+                "claimId": "FEAT-001.c2",
+                "text": "Both apps are simple CRUD web applications that update data in a SQL Server database.",
+                "citations": ["README.md:24-24"]
               },
               {
-                "claimId": "BR-005.c3",
-                "text": "A plain-text password is written in pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json:79-80.",
-                "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/pro-eshop-sfwin-cluster-ARM-SECURED-tests/template.json:79-80"
-                ]
-              },
-              {
-                "claimId": "BR-005.c4",
-                "text": "A plain-text password is written in azuredeploy.parameters.json:17-18 in the sample parameters file.",
-                "citations": [
-                  "ServiceFabric/ServiceFabric-ARM-Templates-Scripts/Sample-ServiceFabric-ARM/azuredeploy.parameters.json:17-18"
-                ]
+                "claimId": "FEAT-001.c3",
+                "text": "The WebForms and MVC apps are described as similar in UI and business features.",
+                "citations": ["README.md:38-38"]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-006",
-            "title": "Upgrade or create decision during Service Fabric application deployment",
-            "summary": "The deployment scripts upgrade an existing application when the publish profile enables upgrades and no veto is given, or when ForceUpgrade is passed. Otherwise they create it. ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and Force set to true. OverwriteBehavior defaults to Never on create, and DeployOnly registers the application type without creating or upgrading the application.",
+            "id": "FLOW-001",
+            "title": "Host start-up and request pipeline",
+            "summary": "The web host builds the service container, then routes each HTTP request to a controller action by the default MVC route.",
             "claims": [
               {
-                "claimId": "BR-006.c1",
-                "text": "The run is an upgrade when the profile's UpgradeDeployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade; otherwise the application is created.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198",
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:223-251"
-                ]
+                "claimId": "FLOW-001.c1",
+                "text": "Main builds the default web host with Startup as its startup class and runs it.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Program.cs:8-15"]
               },
               {
-                "claimId": "BR-006.c2",
-                "text": "ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and Force set to true.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:233-237"
-                ]
+                "claimId": "FLOW-001.c2",
+                "text": "ConfigureServices registers MVC, reads the UseMockData setting, and when it is false registers the CatalogDBContext against the DefaultConnection string on SQL Server.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:25-36"]
               },
               {
-                "claimId": "BR-006.c3",
-                "text": "DeployOnly switches the action from RegisterAndUpgrade or RegisterAndCreate to Register, so the application is not created or upgraded.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:226-229",
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:248-251"
-                ]
+                "claimId": "FLOW-001.c3",
+                "text": "ConfigureServices builds an Autofac container, populates it from the service collection, registers ApplicationModule with the UseMockData flag, and returns it as the service provider.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:38-45"]
               },
               {
-                "claimId": "BR-006.c5",
-                "text": "For a new application, OverwriteBehavior defaults to 'Never'.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:92-92"
-                ]
+                "claimId": "FLOW-001.c4",
+                "text": "Configure shows the developer exception page in development, otherwise it routes errors to /Home/Error, and it enables static files.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:49-60"]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-007",
-            "title": "Cloud upgrades roll back on failure and are not enabled",
-            "summary": "The Cloud publish profile sets a monitored upgrade with rollback on failure, but the upgrade block is disabled.",
+            "id": "INT-001",
+            "title": "Containers reach the SQL Server database container",
+            "summary": "The MVC, WebForms and WCF containers connect to a SQL Server container named sql.data through connection strings set in the compose override file.",
             "claims": [
               {
-                "claimId": "BR-007.c1",
-                "text": "The Cloud profile sets UpgradeDeployment Mode to Monitored, Enabled to false, FailureAction to Rollback and Force to True.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/PublishProfiles/Cloud.xml:25-27"
-                ]
+                "claimId": "INT-001.c1",
+                "text": "The MVC app's CatalogDBContext connection string points at the host sql.data, and a plain-text connection-string with a database user and password is written there.",
+                "citations": ["docker-compose.override.yml:6-6"]
               },
               {
-                "claimId": "BR-007.c3",
-                "text": "IsUpgrade is true only when ForceUpgrade is passed, or when the profile's UpgradeDeployment is Enabled and OverrideUpgradeBehavior is not VetoUpgrade. So with Enabled false and no ForceUpgrade, IsUpgrade is false.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198"
-                ]
+                "claimId": "INT-001.c2",
+                "text": "The WebForms app's CatalogDBContext connection string points at the host sql.data, and a plain-text connection-string with a database user and password is written there.",
+                "citations": ["docker-compose.override.yml:21-21"]
               },
               {
-                "claimId": "BR-007.c4",
-                "text": "When IsUpgrade is false, the script sets the action to RegisterAndCreate (or Register with DeployOnly) and calls Publish-NewServiceFabricApplication, so a non-upgrade run is a create.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:245-251",
-                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:257-257"
-                ]
+                "claimId": "INT-001.c3",
+                "text": "The WCF service's CatalogDBContext connection string points at the host sql.data with database eShopDatabase, and a plain-text connection-string with a password is written there.",
+                "citations": ["docker-compose.override.yml:36-36"]
+              },
+              {
+                "claimId": "INT-001.c4",
+                "text": "The SQL Server container takes its SA password from a plain-text password written in the compose override file.",
+                "citations": ["docker-compose.override.yml:41-41"]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-009",
-            "title": "Required inputs and fixed naming for the environment",
-            "summary": "The environment script stops unless the user alias, server admin password and resource group name are set; other names are derived from the alias.",
+            "id": "OQ-001",
+            "title": "Are the plain-text credentials in the compose override meant for production use?",
+            "summary": "The compose override file holds plain-text database credentials and a plain-text SA password, and the health check repeats one of them.",
             "claims": [
               {
-                "claimId": "BR-009.c1",
-                "text": "The script exits with a message when useralias, serveradminpassword or resourcegroupname is not set.",
-                "citations": ["Setup/environment.ps1:1-14"]
+                "claimId": "OQ-001.c1",
+                "text": "Plain-text connection strings with credentials are written in the compose override for the MVC, WebForms and WCF containers.",
+                "citations": [
+                  "docker-compose.override.yml:6-6",
+                  "docker-compose.override.yml:21-21",
+                  "docker-compose.override.yml:36-36"
+                ]
               },
               {
-                "claimId": "BR-009.c2",
-                "text": "The location is fixed to eastus.",
-                "citations": ["Setup/environment.ps1:16-16"]
-              },
-              {
-                "claimId": "BR-009.c3",
-                "text": "Resource names are derived from the alias: <alias>-webappplan, <alias>-webapp and <alias>-workshop-server; the database is always named eShop.",
-                "citations": ["Setup/environment.ps1:17-18", "Setup/environment.ps1:20-21"]
+                "claimId": "OQ-001.c2",
+                "text": "A plain-text SA password is set for the SQL Server container and repeated in its health check command.",
+                "citations": [
+                  "docker-compose.override.yml:41-41",
+                  "docker-compose.override.yml:46-46"
+                ]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           }
         ],
         "owner": {
@@ -1567,7 +1539,7 @@
     {
       "id": "eshop-20261029-175606-plan-planner-package",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "cards": [
           {
@@ -1643,182 +1615,184 @@
             "type": "BR"
           },
           {
-            "id": "BR-003",
-            "title": "When an upgrade is chosen, the script decides it from the publish profile and the override",
-            "summary": "The script upgrades an existing application only when the profile enables upgrade deployment, unless a veto or force override says otherwise.",
+            "id": "ENT-001",
+            "title": "Catalog item entity (Catalog table and CatalogItem class)",
+            "summary": "The Catalog table and the CatalogItem class hold one row per sellable product with an int identity-like Id (application-assigned via hi-lo generator), name, description, price, picture file name, brand and type foreign keys, and stock fields (AvailableStock, RestockThreshold, MaxStockThreshold, OnReorder). Services eager-load CatalogBrand and CatalogType navigation properties. PictureUri is not stored. Column nullability, length and precision details vary slightly by source.",
             "claims": [
               {
-                "claimId": "BR-003.c1",
-                "text": "The script upgrades only when the profile's upgrade deployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade.",
+                "claimId": "ENT-001.c1",
+                "text": "Column Catalog.Id: int, NOT NULL, identity (SQL Server IdentityColumn), primary key (PK_Catalog).",
                 "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:40-41",
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:55-55"
                 ]
               },
               {
-                "claimId": "BR-003.c2",
-                "text": "ForceUpgrade replaces the profile's upgrade parameters with unmonitored automatic upgrade and force.",
+                "claimId": "ENT-001.c2",
+                "text": "Column Catalog.Name: nvarchar (string) max length 50, NOT NULL.",
                 "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:233-237"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:42-42"
                 ]
               },
               {
-                "claimId": "BR-003.c4",
-                "text": "Without an upgrade, the overwrite behaviour defaults to Never, and it may be set to Always or SameAppTypeAndVersion.",
+                "claimId": "ENT-001.c3",
+                "text": "Column Catalog.Description: string, NULL.",
                 "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:91-92"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:43-43"
                 ]
               },
               {
-                "claimId": "BR-003.c5",
-                "text": "The script treats a deployment as an upgrade only when the publish profile's UpgradeDeployment is enabled and the override is not VetoUpgrade, or when the override is ForceUpgrade.",
+                "claimId": "ENT-001.c4",
+                "text": "Column Catalog.Price: decimal, NOT NULL, no precision given in the migration.",
                 "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:198-198"
+                  "eShopLegacyMVCSolution/eShopPorted/Migrations/20201130044339_Initial.cs:44-44"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-004",
-            "title": "Environment profiles choose the cluster and the application parameters",
-            "summary": "The Cloud profile targets a named Azure dev cluster; the two Local profiles use the local cluster default and point to their parameter files.",
+            "id": "FEAT-001",
+            "title": "Back-office catalog maintenance in the MVC and WebForms sample apps",
+            "summary": "The README describes two sample web apps for the internal back office of an eShop, where employees update the product catalog.",
             "claims": [
               {
-                "claimId": "BR-004.c1",
-                "text": "The Cloud profile connects to the cluster dev-eshop-sfwin-cluster.westus.cloudapp.azure.com on port 19000.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml:23-23"
-                ]
+                "claimId": "FEAT-001.c1",
+                "text": "The sample apps are simple back-office web apps that let employees update the Product Catalog.",
+                "citations": ["README.md:23-24"]
               },
               {
-                "claimId": "BR-004.c3",
-                "text": "The Cloud and Local application parameter files set no value for the SQL container instance count except the Cloud file, which sets it to 1; the Local.1Node and Local.5Node files have an empty parameter list.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Cloud.xml:4-4",
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.1Node.xml:3-4",
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml:3-4"
-                ]
-              },
-              {
-                "claimId": "BR-004.c4",
-                "text": "Unless an existing cluster connection is used, the script connects with the profile's ClusterConnectionParameters, and it adds a security token when one is given.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:175-185"
-                ]
-              },
-              {
-                "claimId": "BR-004.c5",
-                "text": "The Local.1Node and Local.5Node profiles each give an empty self-closing ClusterConnectionParameters, so the script passes no endpoint parameters to the connect call for them.",
-                "citations": [
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml:9-9",
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml:9-9",
-                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:177-185"
-                ]
+                "claimId": "FEAT-001.c2",
+                "text": "Both the MVC and the WebForms versions are CRUD web applications that update data in a SQL Server database.",
+                "citations": ["README.md:23-24", "README.md:38-38"]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-005",
-            "title": "Containers join the external nat network",
-            "summary": "The compose overrides attach all services to an existing external Docker network named nat.",
+            "id": "FLOW-001",
+            "title": "Delete a catalog item",
+            "summary": "An administrator confirms a delete and the item is removed.",
             "claims": [
               {
-                "claimId": "BR-005.c1",
-                "text": "The default network is declared as external with the name nat, so the containers must join a pre-existing nat network.",
+                "claimId": "FLOW-001.c1",
+                "text": "The GET Delete action checks the id and loads the item, then shows the confirmation view.",
                 "citations": [
-                  "VM/eShopModernizedMVC/docker-compose.override.yml:26-29",
-                  "VM/eShopModernizedWebForms/docker-compose.override.yml:26-29"
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:115-129"
+                ]
+              },
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "The POST DeleteConfirmed action loads the item by id and passes it to the catalog service's remove method.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:133-139"
+                ]
+              },
+              {
+                "claimId": "FLOW-001.c3",
+                "text": "The action redirects to the Index list.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:140-140"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-007",
-            "title": "Logging level and host settings",
-            "summary": "Log output defaults to Warning and the host accepts any host name.",
+            "id": "INT-001",
+            "title": "SQL Server database container used by the web apps and the WCF service",
+            "summary": "The compose setup runs a SQL Server container, and the MVC, WebForms and WCF containers connect to it with the sa login.",
             "claims": [
               {
-                "claimId": "BR-007.c1",
-                "text": "The default log level is Warning.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/appsettings.json:5-8"]
+                "claimId": "INT-001.c2",
+                "text": "The MVC app's CatalogDBContext connection string points to server sql.data and database Microsoft.eShopOnContainers.Services.CatalogDb.",
+                "citations": ["docker-compose.override.yml:6-6"]
               },
               {
-                "claimId": "BR-007.c2",
-                "text": "AllowedHosts is set to * so any host name is accepted.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/appsettings.json:10-10"]
+                "claimId": "INT-001.c3",
+                "text": "The WCF service's CatalogDBContext connection string points to server sql.data and database eShopDatabase.",
+                "citations": ["docker-compose.override.yml:36-36"]
               },
               {
-                "claimId": "BR-007.c3",
-                "text": "The legacy app.config enables server garbage collection.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/app.config:4-4"]
+                "claimId": "INT-001.c4",
+                "text": "A plain-text password is written in the MVC CatalogDBContext connection string at docker-compose.override.yml:6.",
+                "citations": ["docker-compose.override.yml:6-6"]
               },
               {
-                "claimId": "BR-007.c4",
-                "text": "AllowedHosts is set to \"*\", which accepts any host name.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/appsettings.json:10-10"]
+                "claimId": "INT-001.c5",
+                "text": "A plain-text password is written in the WebForms CatalogDBContext connection string at docker-compose.override.yml:21.",
+                "citations": ["docker-compose.override.yml:21-21"]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-008",
-            "title": "Missing catalog item id is a bad request, unknown id is not found",
-            "summary": "Details, Edit and Delete actions return HTTP 400 when the id is missing and HTTP 404 when no item matches the id.",
+            "id": "OQ-001",
+            "title": "Who uses the sample apps, and are they used outside demos?",
+            "summary": "The README calls the apps hypothetical samples and BETA demos. The code shows a mock-data fallback and real database settings, but nothing says who uses them.",
             "claims": [
               {
-                "claimId": "BR-008.c1",
-                "text": "When the id is null the Details, Edit and Delete actions return BadRequest.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:35-38",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:81-84",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:118-121"
-                ]
+                "claimId": "OQ-001.c1",
+                "text": "The README describes the apps as hypothetical legacy samples for modernization.",
+                "citations": ["README.md:4-4"]
               },
               {
-                "claimId": "BR-008.c2",
-                "text": "When the service finds no item for the id, the Details, Edit and Delete actions return NotFound.",
-                "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:40-43",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:86-89",
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs:123-126"
-                ]
+                "claimId": "OQ-001.c2",
+                "text": "The WinForms README says the current state is BETA, a 0.01 version built to show a concept or demo.",
+                "citations": ["winforms-wcf.md:3-3"]
               },
               {
-                "claimId": "BR-008.c3",
-                "text": "Details, Edit and Delete return HTTP 400 when no id is supplied and HTTP 404 when no item is found for the id.",
+                "claimId": "OQ-001.c3",
+                "text": "Plain-text database passwords are written in the override file.",
                 "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:34-42",
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:80-88",
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:117-125"
-                ]
-              },
-              {
-                "claimId": "BR-008.c4",
-                "text": "Create and Edit save only when ModelState is valid; otherwise the form is shown again with the brand and type lists.",
-                "citations": [
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:65-73",
-                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/Controllers/CatalogController.cs:103-110"
+                  "docker-compose.override.yml:6-6",
+                  "docker-compose.override.yml:41-41"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           },
           {
-            "id": "BR-009",
-            "title": "Brand delete is a demo that deletes nothing",
-            "summary": "The brand delete endpoint reports success for an existing brand without removing it.",
+            "id": "SCRN-001",
+            "title": "Catalog list (MVC)",
+            "summary": "The MVC catalog index page lists products in a table with paging, a Create New button and per-row Edit, Details and Delete links. It is served at /Catalog/Index.",
             "claims": [
               {
-                "claimId": "BR-009.c1",
-                "text": "The code comment says the delete is for demo only and does not actually delete, and the method returns Ok after the existence check.",
+                "claimId": "SCRN-001.c1",
+                "text": "The page is the Catalog Index view and shows a Create New button, a product table and a pager.",
                 "citations": [
-                  "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:33-34"
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:7-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:14-43"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c2",
+                "text": "The table has columns for picture, name, description, brand, type, price, picture file name, available stock, restock threshold and maximum stock threshold.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:3-35",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c3",
+                "text": "Each row has Edit, Details and Delete links that pass the item id.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
+                ]
+              },
+              {
+                "claimId": "SCRN-001.c5",
+                "text": "Action Edit starts the handler Edit.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:7-12",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Index.cshtml:14-43",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:3-35",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:39-71",
+                  "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/CatalogTable.cshtml:72-76"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "SCRN"
           }
         ],
         "owner": {
@@ -1943,7 +1917,7 @@
     {
       "id": "eshop-20261029-141853-plan-planner-package",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "cards": [
           {
@@ -2003,96 +1977,204 @@
             "type": "BR"
           },
           {
-            "id": "BR-069",
-            "title": "Discount is active on a specific day",
-            "summary": "The system checks if a discount item is active for a given day by comparing the day against the discount's start and end dates.",
+            "id": "ENT-024",
+            "title": "CatalogItemsStock Entity",
+            "summary": "The CatalogItemsStock entity tracks the available inventory for a specific item on a given date.",
             "claims": [
               {
-                "claimId": "BR-069.c1",
-                "text": "The GetDiscount method retrieves a discount if the provided date falls within the discount item's start and end dates.",
-                "citations": ["eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs:30-30"]
-              }
-            ],
-            "type": "BR"
-          },
-          {
-            "id": "BR-070",
-            "title": "Discount availability check",
-            "summary": "A discount is considered available if the given day falls between its start and end dates.",
-            "claims": [
-              {
-                "claimId": "BR-070.c1",
-                "text": "The GetDiscount method returns a discount if its start date is less than or equal to the provided day, AND its end date is greater than or equal to the provided day.",
+                "claimId": "ENT-024.c6",
+                "text": "The entity uses 'Date' with type 'date'.",
                 "citations": [
-                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:30-30"
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:16-16"
                 ]
-              }
-            ],
-            "type": "BR"
-          },
-          {
-            "id": "BR-071",
-            "title": "Catalog item retrieval based on filters",
-            "summary": "Catalog items can be filtered by Brand ID and Type ID; if a filter ID is 0, that filter is ignored.",
-            "claims": [
-              {
-                "claimId": "BR-071.c1",
-                "text": "The GetCatalogItems method filters CatalogItems where CatalogBrandId matches brandIdFilter if brandIdFilter is not 0, and CatalogTypeId matches typeIdFilter if typeIdFilter is not 0.",
-                "citations": [
-                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:60-62"
-                ]
-              }
-            ],
-            "type": "BR"
-          },
-          {
-            "id": "BR-074",
-            "title": "Application Session Information Display",
-            "summary": "The application displays the server's machine name and the time the current session started in the footer.",
-            "claims": [
-              {
-                "claimId": "BR-074.c1",
-                "text": "The SessionInfoLabel in the Site.Master footer is populated with the current machine name and session start time from the session state.",
-                "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master:70-70",
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs:17-17"
-                ]
-              }
-            ],
-            "type": "BR"
-          },
-          {
-            "id": "BR-075",
-            "title": "Database Context Initialization",
-            "summary": "The application uses a specific initialiser for the CatalogDBContext, which is conditional on the 'UseMockData' application setting.",
-            "claims": [
-              {
-                "claimId": "BR-075.c1",
-                "text": "The CatalogDBContext is initialized via CatalogDBInitializer unless the 'UseMockData' setting is true.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:83-90"]
               },
               {
-                "claimId": "BR-075.c3",
-                "text": "The CatalogDBContext is initialized with an initializer resolved from the container.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:89-89"]
-              }
-            ],
-            "type": "BR"
-          },
-          {
-            "id": "BR-077",
-            "title": "Application Configuration for Local 1 Node Deployment",
-            "summary": "The application is configured for a local deployment on a single node.",
-            "claims": [
-              {
-                "claimId": "BR-077.c1",
-                "text": "The application configuration uses the name 'fabric:/eShopModernizedWebFormsSF' and is intended for a local setting.",
+                "claimId": "ENT-024.c7",
+                "text": "The entity includes 'CatalogItemId' with type 'int'.",
                 "citations": [
-                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationParameters/Local.1Node.xml:2-2"
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:18-18"
+                ]
+              },
+              {
+                "claimId": "ENT-024.c8",
+                "text": "The entity includes 'AvailableStock' with type 'int'.",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:20-20"
+                ]
+              },
+              {
+                "claimId": "ENT-024.c9",
+                "text": "The entity has 'StockId' as its primary key (Key).",
+                "citations": [
+                  "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs:22-25"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
+          },
+          {
+            "id": "FEAT-013",
+            "title": "WebForms Container Service Definition and Exposure",
+            "summary": "The application defines a stateless WebForms Container service, specifies its image, and exposes a communication endpoint on port 5114.",
+            "claims": [
+              {
+                "claimId": "FEAT-013.c1",
+                "text": "The service is defined as 'WebForms_ContainerType' and runs as a StatelessServiceType.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:10-10"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c2",
+                "text": "The service uses the container image 'eshop/modernizedwebforms'.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:18-18"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c3",
+                "text": "A communication endpoint named 'WebForms_ContainerTypeEndpoint' is exposed on port 5114 using HTTP.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:45-45"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c4",
+                "text": "The service is defined as a StatelessServiceType named 'WebForms_ContainerType' and is a guest service.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:10-10"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FLOW-001",
+            "title": "Application Startup and Configuration",
+            "summary": "The application initializes by setting up dependency injection, configuring MVC areas and Web API, setting up session tracking, and configuring the database connection using Entity Framework.",
+            "claims": [
+              {
+                "claimId": "FLOW-001.c2",
+                "text": "Web API configuration is set up globally.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:30-30"]
+              },
+              {
+                "claimId": "FLOW-001.c4",
+                "text": "Global filters are registered for the application.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:32-32"]
+              },
+              {
+                "claimId": "FLOW-001.c5",
+                "text": "Routes are registered for the application.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:33-33"]
+              },
+              {
+                "claimId": "FLOW-001.c6",
+                "text": "Bundles are registered for the application.",
+                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:34-34"]
+              }
+            ],
+            "type": "FLOW"
+          },
+          {
+            "id": "INT-005",
+            "title": "Database Integration",
+            "summary": "The application connects to an external SQL database.",
+            "claims": [
+              {
+                "claimId": "INT-005.c1",
+                "text": "The service integrates with an external database instance accessible at 'sql-data' using the username 'sa' for the database 'Microsoft.eShopOnContainers.Services.CatalogDb'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:25-25"
+                ]
+              },
+              {
+                "claimId": "INT-005.c2",
+                "text": "The environment variable StorageConnectionString is set to a value substituted by #{your_storage_connection_string#}.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:33-33"
+                ]
+              },
+              {
+                "claimId": "INT-005.c3",
+                "text": "The environment variable AppInsightsInstrumentationKey is set to a value substituted by #{your_app_insights_instrument_key#}.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:35-35"
+                ]
+              },
+              {
+                "claimId": "INT-005.c4",
+                "text": "The container environment variable ConnectionString points to the database 'Microsoft.eShopOnContainers.Services.CatalogDb' on host 'sql-data'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:25-25"
+                ]
+              }
+            ],
+            "type": "INT"
+          },
+          {
+            "id": "OQ-002",
+            "title": "External Configuration Substitution Mechanism",
+            "summary": "Several environment variables contain placeholders like '#{use_azure_storage}#' and '#{your_storage_connection_string}#', suggesting external configuration is required for full operation.",
+            "claims": [
+              {
+                "claimId": "OQ-002.c1",
+                "text": "The environment variable UseAzureStorage is set to '\"#{use_azure_storage}#\"'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:31-31"
+                ]
+              },
+              {
+                "claimId": "OQ-002.c2",
+                "text": "The environment variable StorageConnectionString is set to '\"#{your_storage_connection_string}#\"'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:33-33"
+                ]
+              },
+              {
+                "claimId": "OQ-002.c3",
+                "text": "Environment variables like UseAzureStorage, StorageConnectionString, AppInsightsInstrumentationKey, UseAzureActiveDirectory, AzureActiveDirectoryClientId, AzureActiveDirectoryTenant, and PostLogoutRedirectUri are defined using placeholders.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-CD-deployment.yml:31-43"
+                ]
+              }
+            ],
+            "type": "OQ"
+          },
+          {
+            "id": "SCRN-003",
+            "title": "About Page",
+            "summary": "A page providing general information about the application.",
+            "claims": [
+              {
+                "claimId": "SCRN-003.c1",
+                "text": "The About page exists and initializes logging on load.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-7",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c2",
+                "text": "The About page loads and logs the message 'Now loading... /About.aspx'.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c3",
+                "text": "The screen is at the route /About.aspx.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs:13-13"
+                ]
+              },
+              {
+                "claimId": "SCRN-003.c4",
+                "text": "The About page exists as a web form.",
+                "citations": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx:1-1"]
+              }
+            ],
+            "type": "SCRN"
           }
         ],
         "owner": {
@@ -2268,155 +2350,158 @@
             "type": "BR"
           },
           {
-            "id": "BR-013",
-            "title": "Data persistence for catalog",
-            "summary": "Catalog operations rely on persisting data via a database context.",
+            "id": "ENT-010",
+            "title": "CatalogItem entity",
+            "summary": "The CatalogItem entity stores product details and relates to CatalogBrand and CatalogType.",
             "claims": [
               {
-                "claimId": "BR-013.c1",
-                "text": "Catalog items are persisted and fetched using an injected CatalogDBContext.",
-                "citations": ["eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:11-16"]
+                "claimId": "ENT-010.c1",
+                "text": "CatalogItem has an Id (implicitly used for lookups and pagination).",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:37-39"]
+              },
+              {
+                "claimId": "ENT-010.c4",
+                "text": "CatalogItem includes CatalogBrand",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:23-24"]
+              },
+              {
+                "claimId": "ENT-010.c5",
+                "text": "CatalogItem includes CatalogType",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Services/CatalogService.cs:23-24"]
               }
             ],
-            "type": "BR"
+            "type": "ENT"
           },
           {
-            "id": "BR-018",
-            "title": "Database Initialization Strategy",
-            "summary": "The database is initialized using a specific initializer provided by the container, unless mock data is enabled via configuration.",
+            "id": "FEAT-001",
+            "title": "Product Catalog Management Screens and Operations",
+            "summary": "The application provides interfaces (WebForms/Web/Desktop) for comprehensive product catalog management, including screens/pages for viewing details, creating new items, editing existing items, and deleting items. CRUD operations can be performed via web forms or desktop applications, and detailed views can fetch item information. Pagination is supported for listing items.",
             "claims": [
               {
-                "claimId": "BR-018.c1",
-                "text": "If the 'UseMockData' setting in App.config is false, the application sets the database initializer for CatalogDBContext using a service resolved from the dependency container.",
-                "citations": ["eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs:87-90"]
+                "claimId": "FEAT-001.c1",
+                "text": "The WebForms and MVC apps are simple CRUD web applications to update data into a SQL Server database.",
+                "citations": ["README.md:24-24"]
+              },
+              {
+                "claimId": "FEAT-001.c2",
+                "text": "The winforms application is a catalog management, and uses a WCF as a back-end.",
+                "citations": ["winforms-wcf.md:21-21"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "The application has screens for creating, deleting, viewing details, and editing catalog items.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:1-104",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:1-91",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:1-84",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:1-107"
+                ]
+              },
+              {
+                "claimId": "FEAT-001.c4",
+                "text": "The Create page allows input for Name, Description, Brand (via dropdown populated by GetBrands), Type (via dropdown populated by GetTypes), Price, Stock, Restock, and Maxstock.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:10-89"
+                ]
               }
             ],
-            "type": "BR"
+            "type": "FEAT"
           },
           {
-            "id": "BR-033",
-            "title": "Session Information Display",
-            "summary": "The master page displays the application's machine name and session start time upon loading.",
+            "id": "FLOW-001",
+            "title": "Browse Product Catalog",
+            "summary": "A user views the catalog listing page, which displays items in a paginated table and allows navigation to edit, view details, or delete an item.",
             "claims": [
               {
-                "claimId": "BR-033.c1",
-                "text": "The SessionInfoLabel displays a string combining the MachineName and SessionStartTime from the current HTTP context session.",
+                "claimId": "FLOW-001.c1",
+                "text": "The page loads a list of products, which is populated by the ListView control, displaying fields such as Name, Description, Brand, Type, Price, Picture name, Stock, Restock, and Max stock.",
                 "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs:17-17"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:21-100"
                 ]
               },
               {
-                "claimId": "BR-033.c2",
-                "text": "The application stores the machine name and session start time in the HTTP session.",
+                "claimId": "FLOW-001.c2",
+                "text": "The displayed data is paginated, showing a specific page of items (e.g., showing X of Y products on Page Z of TotalPages).",
                 "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs:41-45"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:127-128"
                 ]
               },
               {
-                "claimId": "BR-033.c3",
-                "text": "The site master page displays a label containing the session information.",
+                "claimId": "FLOW-001.c5",
+                "text": "For each item, the user has links to 'Edit', 'Details', and 'Delete', each triggering a specific route action based on the item's ID.",
                 "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master:70-71"
-                ]
-              },
-              {
-                "claimId": "BR-033.c4",
-                "text": "When a session starts, the machine name of the client is stored in the session.",
-                "citations": [
-                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs:43-43"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:102-112"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "FLOW"
           },
           {
-            "id": "BR-049",
-            "title": "Catalog Service and Image Service Contracts",
-            "summary": "The CatalogService interface defines methods to find, list, create, update, and remove catalog items, brands, and types. The IImageService interface defines methods for managing image uploads, URLs, and initialization, including building full URLs for catalog item images.",
+            "id": "INT-001",
+            "title": "WCF Service for Desktop Application Backend",
+            "summary": "The WinForms desktop client connects to a WCF Service as its back-end.",
             "claims": [
               {
-                "claimId": "BR-049.c1",
-                "text": "The system supports finding a catalog item by its ID.",
-                "citations": [
-                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs:10-10"
-                ]
+                "claimId": "INT-001.c1",
+                "text": "The project showcases the following features: - Containerizing a WCF Service and consuming it from a WinForms App",
+                "citations": ["winforms-wcf.md:10-10"]
               },
               {
-                "claimId": "BR-049.c2",
-                "text": "The system supports retrieving a list of all catalog brands.",
-                "citations": [
-                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs:11-11"
-                ]
-              },
-              {
-                "claimId": "BR-049.c3",
-                "text": "The system supports retrieving catalog items in a paginated view, accepting a page size and page index.",
-                "citations": [
-                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs:12-12"
-                ]
-              },
-              {
-                "claimId": "BR-049.c4",
-                "text": "The system supports retrieving a list of catalog types.",
-                "citations": [
-                  "eShopModernizedMVCSolution/src/eShopModernizedMVC/Services/ICatalogService.cs:13-13"
-                ]
+                "claimId": "INT-001.c2",
+                "text": "The legacy solution interfaces with a local WCF service which talks with a local SQL database.",
+                "citations": ["winforms-wcf.md:21-21"]
               }
             ],
-            "type": "BR"
+            "type": "INT"
           },
           {
-            "id": "BR-052",
-            "title": "Discount availability rule",
-            "summary": "A discount is valid for a given day if the day falls between the discount's start and end dates.",
+            "id": "OQ-001",
+            "title": "SQL Server Database Schema Details",
+            "summary": "The system interacts with a SQL Server database to manage the Product Catalog, but the structure of this database is not defined in the provided documentation.",
             "claims": [
               {
-                "claimId": "BR-052.c1",
-                "text": "A discount item is considered valid if its Start date is less than or equal to the target day, AND its End date is greater than or equal to the target day.",
-                "citations": [
-                  "eShopModernizedNTier/src/eShopWCFService/CatalogService.svc.cs:30-30"
-                ]
+                "claimId": "OQ-001.c1",
+                "text": "Both apps are therefore simple CRUD web application to update data into a SQL Server database.",
+                "citations": ["README.md:24-24"]
               }
             ],
-            "type": "BR"
+            "type": "OQ"
           },
           {
-            "id": "BR-055",
-            "title": "Catalog Item Persistence Requirements",
-            "summary": "For a catalog item to be successfully created or updated, certain fields must be provided, and image files must be managed via the ImageService.",
+            "id": "SCRN-003",
+            "title": "Default Product Listing Page",
+            "summary": "A dashboard page showing a paginated list of products available in the catalog, with navigation and actions for each product.",
             "claims": [
               {
-                "claimId": "BR-055.c1",
-                "text": "The Name field must be present for creation/editing.",
+                "claimId": "SCRN-003.c2",
+                "text": "Create New links to <%$RouteUrl:RouteName=CreateProductRoute%>.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx:35-36"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-9"
                 ]
               },
               {
-                "claimId": "BR-055.c2",
-                "text": "Prices must be a positive number with a maximum of two decimals between 0 and 1 million.",
+                "claimId": "SCRN-003.c6",
+                "text": "The page content is contained within the MainContent ContentPlaceHolder.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx:77-78"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:3-3"
                 ]
               },
               {
-                "claimId": "BR-055.c3",
-                "text": "Stock, Restock, and Maxstock values must be integers between 0 and 10 million.",
+                "claimId": "SCRN-003.c7",
+                "text": "A link is provided to create a new product via the 'Create New' button, which links to the CreateProductRoute.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx:86-87",
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx:95-96",
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx:104-105"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:7-8"
                 ]
               },
               {
-                "claimId": "BR-055.c4",
-                "text": "If a temporary image name is used, the ImageService must be called to update the image record after the catalog item is saved.",
+                "claimId": "SCRN-003.c8",
+                "text": "The page displays a list of catalog items using an asp:ListView, which expects items of type eShopLegacyWebForms.Models.CatalogItem.",
                 "citations": [
-                  "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs:77-77"
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx:12-12"
                 ]
               }
             ],
-            "type": "BR"
+            "type": "SCRN"
           }
         ],
         "owner": {
