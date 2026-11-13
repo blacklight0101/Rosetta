@@ -33,7 +33,8 @@ describe('the file spend ledger', () => {
     await book.release(second.value);
 
     expect(await book.totals()).toEqual({ spentMicros: 700, heldMicros: 0 });
-    expect((await readFile(file(), 'utf8')).trim().split('\n')).toHaveLength(4);
+    const written = (await readFile(file(), 'utf8')).split('\n').filter((line) => line !== '');
+    expect(written).toHaveLength(4);
   });
 
   it('RF-1402 refuses a hold past the cap of its invocation and releases it', async () => {

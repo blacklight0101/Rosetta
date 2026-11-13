@@ -59,7 +59,7 @@ takes the next free range. This table is the canonical list of ranges.
 | RF-1100..RF-1199 | Accounts, sessions, keys and administration                              | R1 (M1)               |
 | RF-1200..RF-1299 | Landing page                                                             | R1 (M1)               |
 | RF-1300..RF-1399 | Container, local and hosted deployment                                   | R1 (M1)               |
-| RF-1400..RF-1499 | Prompt lab (opt-in tuning of one prompt on its cases)                    | R1 (Phase 10)         |
+| RF-1400..RF-1499 | Prompt lab (opt-in tuning of one prompt on its cases)                    | R2 (Phase 10)         |
 | RF-900..RF-999   | Multi-target evaluation and provider comparison                          | R2 (deferred)         |
 | RNF-001..RNF-099 | Non-functional requirements, grouped in tens by quality (see section 6)  | all                   |
 
@@ -2255,7 +2255,7 @@ The prompt lab (DEC-231) tries one prompt at a time: `npm run lab` sends the rea
 inputs of a case set, to one model and measures the answers without a judge. Like `npm run eval` it is opt-in and
 costs money; no test and no CI job runs it against a real model (ADR-008, ADR-029).
 
-**RF-1400 Run one prompt on its cases** - R1 (Phase 10) - Must - Source DEC-231 - ADR-003, ADR-007, ADR-008, ADR-029
+**RF-1400 Run one prompt on its cases** - R2 (Phase 10) - Must - Source DEC-231 - ADR-003, ADR-007, ADR-008, ADR-029
 As a developer I want to run one version of one prompt over a set of cases with one model so that I can measure it alone, not only inside a whole run.
 
 - Given `npm run lab -- --prompt <id> --version <vN|file> --model <provider:model> --cases <set> [--repetitions n] --yes`, when it runs, then every case of the set is rendered into the prompt's real system prompt and messages by the same code the run uses, sent through the real adapter wrapped by the egress and budget guards, and one result per case and repetition is written to the git-ignored `lab-out/<id>/results.json`.
@@ -2264,7 +2264,7 @@ As a developer I want to run one version of one prompt over a set of cases with 
 - Given the command without `--yes`, when it starts, then it only shows the prompt, the model, the number of calls and the caps, and sends nothing (RF-143).
   Verification: `tests/integration/presentation/lab/lab-run.test.ts`, `tests/unit/presentation/lab/lab-args.test.ts` (fake provider only).
 
-**RF-1401 Case sets** - R1 (Phase 10) - Must - Source DEC-231 - ADR-029
+**RF-1401 Case sets** - R2 (Phase 10) - Must - Source DEC-231 - ADR-029
 As a developer I want a case to hold the inputs of a prompt, not its text, so that another version of the prompt can be rendered over the same inputs.
 
 - Given a case set `lab/cases/<set>.json`, when it is read, then it is parsed strictly (unknown keys refused, every text limited): `schemaVersion` 1, a `version`, the `prompt` id it is written for, and cases with a unique `id`, an optional `expected` label, a `split` (`tune` or `held-back`, default `tune`) and the `input` the prompt's target defines; every problem is named with the case id and nothing is sent.
@@ -2272,16 +2272,16 @@ As a developer I want a case to hold the inputs of a prompt, not its text, so th
 - Given a prompt id and its target, when a target is added to the registry, then the input schema of its cases, the call of the run's own message builder and the check of an answer are the only things it supplies.
   Verification: `tests/unit/application/lab/lab-case-set.test.ts`, `tests/unit/application/lab/lab-targets.test.ts`.
 
-**RF-1402 Spend ledger and caps** - R1 (Phase 10) - Must - Source DEC-231 - ADR-007, ADR-029
+**RF-1402 Spend ledger and caps** - R2 (Phase 10) - Must - Source DEC-231 - ADR-007, ADR-029
 As the product owner I want one ledger for the whole phase so that the lab can never spend past $50 and stops at $40 for me.
 
-- Given `lab/config.json` (`totalCapMicros` 50 000 000, `stopMicros` 40 000 000, `invocationCapMicros`), when a call is about to be sent, then the lab appends a hold of the call's worst case to `lab-out/ledger.jsonl` and sends the call only when what the ledger holds up to that line, spent and held together, stays within the invocation cap, the stop line and the total cap, in that order; otherwise it refuses the call with RST-1600 and the reason, and the rest of the invocation is skipped.
+- Given `lab/config.json` (`totalCapMicros` 50 000 000, `stopMicros` 40 000 000, `invocationCapMicros`), when a call is about to be sent, then the lab appends a hold of the call's worst case to `lab-out/ledger.jsonl` and sends the call only when what the ledger holds up to that line, spent and held together, stays within the invocation cap, the total cap and the stop line, in that order; otherwise it refuses the call with RST-1600 and the reason, and the rest of the invocation is skipped.
 - Given a call that was answered, when its cost is known, then the hold is replaced by a line with the real cost, priced by the price table; a call that failed releases its hold.
 - Given two lab commands that run at the same time, when both write to the ledger, then the file is append-only and each decides on the lines up to its own hold, so both together never pass a cap; a hold older than ten minutes that was never settled stops counting.
 - Given a phase total that has reached the stop line, when the lab runs again, then every call is refused naming the stop line, until the owner raises `stopMicros` in `lab/config.json`.
   Verification: `tests/unit/application/lab/spend-ledger.test.ts`, `tests/integration/infrastructure/lab/file-spend-ledger.test.ts`, `tests/integration/presentation/lab/lab-caps.test.ts`.
 
-**RF-1403 Metrics and comparison** - R1 (Phase 10) - Must - Source DEC-231 - RNF-015
+**RF-1403 Metrics and comparison** - R2 (Phase 10) - Must - Source DEC-231 - RNF-015
 As a developer I want deterministic metrics per case and a side-by-side report so that a prompt version is kept only when it measurably beats the current one.
 
 - Given a finished case, when its result is written, then it holds: valid on the first try, repaired (a later call was needed and gave a usable answer), refused (a guard or the ledger refused the call), the RST code of a failure, input and output tokens, latency, cost, the number of calls and, when the case has an `expected` label, whether the answer agreed.

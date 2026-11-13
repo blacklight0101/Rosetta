@@ -32,6 +32,7 @@ npm-debug.log*
 # Tool output
 .eslintcache
 eval-out/
+lab-out/
 test-results/
 playwright-report/
 graphify-out/

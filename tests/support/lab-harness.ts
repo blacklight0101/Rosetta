@@ -33,7 +33,7 @@ function priceOf(model: string): Price {
   };
 }
 
-export const labPrices: PriceTable = {
+const labPrices: PriceTable = {
   version: '2026-11-13',
   currency: 'USD',
   prices: ['model-a', 'model-b'].map(priceOf),

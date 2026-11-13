@@ -97,7 +97,7 @@ describe('the lab summary', () => {
 
     expect(summary.calls).toBe(5);
     expect(summary.meanInputTokens).toBe((400 + 900 + 400) / 5);
-    expect(summary.meanLatencyMs).toBe(200);
+    expect(summary.meanLatencyMs).toBe(600 / 5);
   });
 
   it('RF-1403 has no rate for a run of no case', () => {

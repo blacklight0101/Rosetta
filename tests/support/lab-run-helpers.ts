@@ -10,7 +10,7 @@ import { labFolder } from './lab-harness.js';
 // RF-1400, RF-1403: a lab command over the fake provider and the committed sample sets, and a read
 // of what it wrote.
 
-export const promptsFolder = fileURLToPath(new URL('../../prompts/', import.meta.url));
+const promptsFolder = fileURLToPath(new URL('../../prompts/', import.meta.url));
 
 export type RunArgs = Extract<LabArgs, { kind: 'run' }>;
 

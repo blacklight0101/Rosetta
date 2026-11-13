@@ -1,65 +1,134 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- red skeleton, replaced by the feat commit */
-import type { Result } from '../../domain/errors/result.js';
+import { z } from 'zod';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 
-// RF-1403, RNF-015: what one lab invocation writes, its summary and the comparison of two.
+// RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
+// the side-by-side comparison of two. All figures are deterministic: no judge is involved.
 
-export interface LabCaseResult {
-  readonly caseId: string;
-  readonly repetition: number;
-  readonly split: 'tune' | 'held-back';
-  readonly expected: string | null;
-  readonly detail: string;
-  readonly answer: string;
-  readonly usable: boolean;
-  readonly validFirstTry: boolean;
-  readonly repaired: boolean;
-  readonly refused: boolean;
-  readonly rstCode: string | null;
-  readonly agreed: boolean | null;
-  readonly calls: number;
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly latencyMs: number;
-  readonly costMicros: number;
-}
+const count = z.number().int().min(0);
 
-export interface LabResults {
-  readonly schemaVersion: 1;
-  readonly id: string;
-  readonly at: string;
-  readonly rosettaVersion: string;
-  readonly prompt: {
-    readonly id: string;
-    readonly name: string;
-    readonly version: string;
-    readonly sha256: string;
-  };
-  readonly model: {
-    readonly provider: string;
-    readonly model: string;
-    readonly modelVersion: string | null;
-  };
-  readonly caseSet: { readonly version: string; readonly sha256: string };
-  readonly repetitions: number;
-  readonly planned: number;
-  readonly endState: 'Completed' | 'Refused';
-  readonly refusal: string | null;
-  readonly cases: LabCaseResult[];
+const caseSchema = z.strictObject({
+  caseId: z.string().min(1),
+  repetition: z.number().int().min(1),
+  split: z.enum(['tune', 'held-back']),
+  expected: z.string().nullable(),
+  /** The target's short label of the result (for the verifier: Supported, Rejected, Unverified). */
+  detail: z.string(),
+  /** The last answer of the model, masked and cut. */
+  answer: z.string(),
+  usable: z.boolean(),
+  validFirstTry: z.boolean(),
+  repaired: z.boolean(),
+  refused: z.boolean(),
+  rstCode: z.string().nullable(),
+  agreed: z.boolean().nullable(),
+  calls: count,
+  inputTokens: count,
+  outputTokens: count,
+  latencyMs: count,
+  costMicros: count,
+});
+
+const resultsSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  id: z.string().min(1),
+  at: z.string(),
+  rosettaVersion: z.string(),
+  prompt: z.strictObject({
+    id: z.string(),
+    name: z.string(),
+    version: z.string(),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/u),
+  }),
+  model: z.strictObject({
+    provider: z.string(),
+    model: z.string(),
+    modelVersion: z.string().nullable(),
+  }),
+  caseSet: z.strictObject({ version: z.string(), sha256: z.string().regex(/^[0-9a-f]{64}$/u) }),
+  repetitions: count,
+  planned: count,
+  endState: z.enum(['Completed', 'Refused']),
+  refusal: z.string().nullable(),
+  cases: z.array(caseSchema),
+});
+
+export type LabCaseResult = z.infer<typeof caseSchema>;
+export type LabResults = z.infer<typeof resultsSchema>;
+
+// RF-1403
+export function parseLabResults(data: unknown): Result<LabResults, string> {
+  const parsed = resultsSchema.safeParse(data);
+  if (parsed.success) return ok(parsed.data);
+  const problems = parsed.error.issues.map(
+    (issue) => `${issue.path.map(String).join('.')}: ${issue.message}`,
+  );
+  return err(problems.join('; '));
 }
 
 export interface LabSummary {
   readonly cases: number;
   readonly calls: number;
+  /** The share of cases whose first answer was valid; null for a run of no case. */
   readonly firstTryRate: number | null;
   readonly repairedRate: number | null;
   readonly invalidRate: number | null;
   readonly refusedCount: number;
+  /** Cases that failed with an RST code, by code. */
   readonly errorsByCode: Readonly<Record<string, number>>;
+  /** The share of cases with an expected label whose answer agreed; null when none has one. */
   readonly agreementRate: number | null;
+  /** Per call. */
   readonly meanInputTokens: number | null;
   readonly meanOutputTokens: number | null;
   readonly meanLatencyMs: number | null;
   readonly costMicros: number;
+}
+
+function rate(part: number, whole: number): number | null {
+  return whole === 0 ? null : part / whole;
+}
+
+function sum(cases: readonly LabCaseResult[], pick: (each: LabCaseResult) => number): number {
+  return cases.reduce((total, each) => total + pick(each), 0);
+}
+
+function errorsOf(cases: readonly LabCaseResult[]): Record<string, number> {
+  const errors: Record<string, number> = {};
+  for (const each of cases) {
+    if (each.rstCode !== null) errors[each.rstCode] = (errors[each.rstCode] ?? 0) + 1;
+  }
+  return errors;
+}
+
+// RF-1403
+export function summariseLab(results: LabResults): LabSummary {
+  const { cases } = results;
+  const calls = sum(cases, (each) => each.calls);
+  const labelled = cases.filter((each) => each.agreed !== null);
+  const invalid = cases.filter((each) => !each.usable && !each.refused && each.rstCode === null);
+  return {
+    cases: cases.length,
+    calls,
+    firstTryRate: rate(cases.filter((each) => each.validFirstTry).length, cases.length),
+    repairedRate: rate(cases.filter((each) => each.repaired).length, cases.length),
+    invalidRate: rate(invalid.length, cases.length),
+    refusedCount: cases.filter((each) => each.refused).length,
+    errorsByCode: errorsOf(cases),
+    agreementRate: rate(labelled.filter((each) => each.agreed === true).length, labelled.length),
+    meanInputTokens: rate(
+      sum(cases, (each) => each.inputTokens),
+      calls,
+    ),
+    meanOutputTokens: rate(
+      sum(cases, (each) => each.outputTokens),
+      calls,
+    ),
+    meanLatencyMs: rate(
+      sum(cases, (each) => each.latencyMs),
+      calls,
+    ),
+    costMicros: sum(cases, (each) => each.costMicros),
+  };
 }
 
 export interface ComparedSide {
@@ -81,14 +150,39 @@ export interface LabComparison {
   }[];
 }
 
-export function parseLabResults(_data: unknown): Result<LabResults, string> {
-  throw new Error('not implemented');
+function sideOf(results: LabResults): ComparedSide {
+  const { prompt, model } = results;
+  return {
+    ...{ name: prompt.name, version: prompt.version, sha256: prompt.sha256 },
+    model: `${model.provider}:${model.model}`,
+    summary: summariseLab(results),
+  };
 }
 
-export function summariseLab(_results: LabResults): LabSummary {
-  throw new Error('not implemented');
+const keyOf = (each: LabCaseResult): string => `${each.caseId}#${String(each.repetition)}`;
+
+/** The cases of both runs, in the order of the first run and then those only the second has. */
+function pairedCases(a: LabResults, b: LabResults): LabComparison['cases'] {
+  const second = new Map(b.cases.map((each) => [keyOf(each), each]));
+  const first = new Map(a.cases.map((each) => [keyOf(each), each]));
+  const keys = [...new Set([...first.keys(), ...second.keys()])];
+  return keys.map((key) => {
+    const one = first.get(key) ?? second.get(key);
+    return {
+      caseId: one?.caseId ?? key,
+      repetition: one?.repetition ?? 1,
+      a: first.get(key),
+      b: second.get(key),
+    };
+  });
 }
 
-export function compareLab(_a: LabResults, _b: LabResults): Result<LabComparison, string> {
-  throw new Error('not implemented');
+// RF-1403
+export function compareLab(a: LabResults, b: LabResults): Result<LabComparison, string> {
+  if (a.caseSet.sha256 !== b.caseSet.sha256) {
+    return err(
+      `The runs used different case sets (${a.caseSet.version} and ${b.caseSet.version}): compare runs of the same case set.`,
+    );
+  }
+  return ok({ a: sideOf(a), b: sideOf(b), cases: pairedCases(a, b) });
 }

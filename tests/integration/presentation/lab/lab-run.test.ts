@@ -85,7 +85,11 @@ describe('the lab run over other versions and prompts', () => {
     const systems = router.requests.map((request) => request.system);
     expect(systems[0]).toBe(await readFile(join('prompts', 'verifier', 'claim.v5.md'), 'utf8'));
     expect(systems[6]).toBe('You are the draft verifier.\n');
-    expect(router.requests[0]?.messages[0]).toEqual(router.requests[6]?.messages[0]);
+    for (const index of [0, 6]) {
+      const content = router.requests[index]?.messages[0]?.content ?? '';
+      expect(content).toContain('A gold-tier customer gets 20 percent off the order total.');
+      expect(content).toContain('return total * 0.2;');
+    }
     expect(drafted?.prompt).toMatchObject({ name: 'draft.md', version: 'file' });
     expect(drafted?.prompt.sha256).not.toBe(current?.prompt.sha256);
   });

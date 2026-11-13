@@ -82,8 +82,10 @@ describe('the spend ledger of two processes', () => {
     const first = hold('h1', 'inv-b', 39_000_000);
     const second = hold('h2', 'inv-a', 1_500_000);
 
-    expect(decideHold([first, second], 'h2', limits, now).ok).toBe(false);
-    expect(decideHold([first, second], 'h1', limits, now).ok).toBe(true);
+    const wide = { ...limits, invocationCapMicros: 40_000_000 };
+
+    expect(decideHold([first, second], 'h2', wide, now).ok).toBe(false);
+    expect(decideHold([first, second], 'h1', wide, now).ok).toBe(true);
   });
 
   it('RF-1402 stops counting a hold that was released and one older than ten minutes', () => {

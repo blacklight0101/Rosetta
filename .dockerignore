@@ -14,11 +14,13 @@ playwright-report
 rosetta-out
 _legacy
 eval-out
+lab-out
 **/*.map
 **/*.tsbuildinfo
 **/*.log
 docs
 eval
+lab
 *.md
 Dockerfile
 .dockerignore
