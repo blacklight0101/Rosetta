@@ -46,7 +46,7 @@ the reserve; a builder that reaches its slice stops and reports (Phase 10 intro)
 The $50 is one maximum for all builders together, so `ROSETTA_LAB_LEDGER` is required for every real run: without it the
 lab refuses to start a real model (RST-1000, "set ROSETTA_LAB_LEDGER to the shared Phase 10 ledger"), with or without
 `--yes`. Only tests with the fake provider use `lab-out/ledger.jsonl` of the checkout. Every real lab run in Phase 10 sets
-`ROSETTA_LAB_LEDGER` to the same file, e.g. `G:/BuildingFolder/Rosetta-lab/ledger.jsonl`, outside every checkout, so two
+`ROSETTA_LAB_LEDGER` to the same file, e.g. `<shared folder outside every checkout>/ledger.jsonl`, so two
 builders in two worktrees share one phase total (put it in `.env`, or set it in the shell). The value must be an absolute
 path ending in `.jsonl`; anything else stops the command with RST-1000 before a call is sent. Its folder is created if
 missing.

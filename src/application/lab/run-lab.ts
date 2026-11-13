@@ -4,7 +4,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LabCaseSet } from './lab-case-set.js';
-import type { LabCallMeter, MeteredCase } from './lab-meter.js';
+import { REFUSED_BEFORE_SENDING, type LabCallMeter, type MeteredCase } from './lab-meter.js';
 import type { LabCaseResult, LabResults } from './lab-results.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from './lab-target.js';
 
@@ -52,14 +52,6 @@ export interface LabRun {
 
 const ANSWER_CHARS = 2000;
 
-/** The codes of a call a guard or the ledger refused before it was sent (RF-1403). */
-const REFUSAL_CODES: ReadonlySet<string> = new Set([
-  ERROR_CODES.budgetCapReached,
-  ERROR_CODES.modelUnpriced,
-  ERROR_CODES.cloudConsentMissing,
-  ERROR_CODES.egressMessageRefused,
-]);
-
 interface Prepared {
   readonly caseId: string;
   readonly expected: string | undefined;
@@ -105,14 +97,14 @@ function resultOf(
     ...{ detail: outcome.detail, answer: (last?.text ?? '').slice(0, ANSWER_CHARS) },
     ...{ usable: outcome.usable, validFirstTry },
     repaired: outcome.usable && !validFirstTry && metered.calls.length > 1,
-    refused: metered.failures.some((code) => REFUSAL_CODES.has(code)),
+    refused: metered.failures.some((code) => REFUSED_BEFORE_SENDING.has(code)),
     rstCode: metered.failures[0] ?? null,
     agreed: one.expected === undefined ? null : outcome.detail === one.expected,
     calls: metered.calls.length,
     inputTokens: total(metered, (call) => call.inputTokens),
     outputTokens: total(metered, (call) => call.outputTokens),
     latencyMs: total(metered, (call) => call.latencyMs),
-    costMicros: total(metered, (call) => call.costMicros),
+    costMicros: total(metered, (call) => call.costMicros) + metered.unansweredCostMicros,
   };
 }
 
@@ -163,6 +155,14 @@ export class RunLab {
     }
     const results = this.resultsOf(request, { at, planned, cases, modelVersion, refusal });
     return this.write(results);
+  }
+
+  /** Why the invocation stops after a case: the ledger stopped it, or a guard refused a call. */
+  private stopOf(result: LabCaseResult): string | null {
+    const stopped = this.deps.meter.stopped();
+    if (stopped !== undefined) return stopped;
+    if (!result.refused) return null;
+    return `A guard refused the call (${result.rstCode ?? 'no code'}).`;
   }
 
   private resultsOf(

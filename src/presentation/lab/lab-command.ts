@@ -88,7 +88,10 @@ export async function runLabRun(
 ): Promise<number> {
   const resolved = await resolveRun(args, folders);
   if (!resolved.ok) return (print(resolved.error), 1);
-  const missing = sharedLedgerProblem(args.model.provider, parts.ledgerFile);
+  const missing = sharedLedgerProblem(
+    parts.settings.providers[args.model.provider]?.kind,
+    parts.ledgerFile,
+  );
   if (missing !== undefined) return (print(missing), 1);
   const { target, loaded, prompt } = resolved.value;
   for (const line of planLines(args, parts, loaded.set.cases.length, prompt.name)) print(line);
@@ -97,7 +100,8 @@ export async function runLabRun(
   const run = await runLab(parts, { target, prompt, model, loaded, repetitions });
   if (!run.ok) {
     print(`${run.error.code}: ${run.error.message}`);
-    if (run.error.results !== undefined) print(JSON.stringify(run.error.results, null, 2));
+    if (run.error.results !== undefined)
+      print(parts.masker.mask(JSON.stringify(run.error.results, null, 2)).text);
     return 1;
   }
   for (const line of summaryLines(run.value.results, run.value.folder)) print(line);

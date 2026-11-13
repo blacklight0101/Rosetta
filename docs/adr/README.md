@@ -40,9 +40,9 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-026](ADR-026-pause-and-ask-near-the-approved-amount.md)          | Pause a run near its approved amount and ask, instead of a hard stop                                                                                                          | Proposed              | 2026-10-29 |
 | [ADR-027](ADR-027-guided-journey-per-project.md)                      | Guide each project through one journey under one approved amount                                                                                                              | Accepted              | 2026-11-01 |
 | [ADR-028](ADR-028-on-time-release-start-from-a-container-apps-job.md) | Start the production release on time from a Container Apps job                                                                                                                | Proposed              | 2026-11-04 |
-| [ADR-029](ADR-029-prompt-lab-cases-and-spend-ledger.md)               | Describe a prompt lab case by its inputs and keep one append-only spend ledger                                                                                                | Proposed              | 2026-11-13 |
+| [ADR-029](ADR-029-prompt-lab-cases-and-spend-ledger.md)               | Describe a prompt lab case by its inputs and keep one append-only spend ledger                                                                                                | Accepted              | 2026-11-13 |
 
-**Totals**: 29 in total - Accepted 10, Proposed 6, Amended 12, Superseded 1.
+**Totals**: 29 in total - Accepted 11, Proposed 5, Amended 12, Superseded 1.
 
 ## Relationships
 

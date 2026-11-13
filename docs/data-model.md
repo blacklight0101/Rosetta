@@ -1020,7 +1020,7 @@ input } }`. `prompt` is the prompt id (`verifier/claim`, `summariser/overview`);
   overview's `{ cards[] { id, type, area, title, summary, claims[] } }`.
 - `lab-out/ledger.jsonl`, or the file named by `ROSETTA_LAB_LEDGER` (git-ignored, append-only, each line led by a line break): lines `{ v: 1, t: "hold", id,
 invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, t: "release", id, at }` (`at` in epoch
-  milliseconds). A hold older than ten minutes that was never settled or released stops counting.
+  milliseconds). A hold older than thirty minutes that was never settled or released stops counting.
 - `lab-out/<yyyyMMdd-HHmmss-lab>/results.json` (git-ignored, masked): `{ schemaVersion: 1, id, at, rosettaVersion,
 prompt { id, name, version, sha256 }, model { provider, model, modelVersion }, caseSet { version, sha256 },
 repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,

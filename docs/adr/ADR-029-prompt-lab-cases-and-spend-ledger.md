@@ -1,7 +1,7 @@
 # ADR-029: Describe a prompt lab case by its inputs and keep one append-only spend ledger
 
 **Date**: 2026-11-13
-**Status**: Proposed
+**Status**: Accepted (2026-11-13, DEC-231)
 **Deciders**: Product owner (phase scope, DEC-231); builder P10-01 (design)
 
 ## Context
@@ -28,7 +28,7 @@ supplies that schema, a function that calls the run's own builder with the promp
 parser as the check of an answer. The lab composes the same guarded provider factory as `npm run eval`, and puts one
 decorator on top of it that holds, settles and releases the cost of each call in `lab-out/ledger.jsonl`. The ledger is
 append-only JSON lines of hold, settle and release; a process decides on the lines up to its own hold, so two processes
-never pass a cap together, and a hold older than ten minutes stops counting. The ledger file is `lab-out/ledger.jsonl`, or the absolute `.jsonl` path in the environment variable `ROSETTA_LAB_LEDGER`, which all Phase 10 builders set to the same file outside every checkout so the phase total does not depend on the worktree that runs the lab. The variable is required for every real provider: the $50 is one maximum for all builders together (DEC-231), so the lab refuses to start a real model without it; only the fake provider of the tests may keep the per-checkout default. `lab/config.json` holds the total
+never pass a cap together, and a hold older than thirty minutes stops counting. The ledger file is `lab-out/ledger.jsonl`, or the absolute `.jsonl` path in the environment variable `ROSETTA_LAB_LEDGER`, which all Phase 10 builders set to the same file outside every checkout so the phase total does not depend on the worktree that runs the lab. The variable is required for every real provider: the $50 is one maximum for all builders together (DEC-231), so the lab refuses to start a real model without it; only the fake provider of the tests may keep the per-checkout default. `lab/config.json` holds the total
 ($50), the stop line ($40) and the cap of one invocation.
 
 ## Rationale
@@ -52,8 +52,8 @@ never pass a cap together, and a hold older than ten minutes stops counting. The
 **Negative**
 
 - A target must be written per prompt id; agent-loop prompts (the reader) need their own targets and are not wired by P10-01.
-- The ledger holds worst-case amounts while calls are in flight, so two processes can refuse a call the real cost would have allowed; a crashed process leaves a hold for ten minutes.
-- A call that failed after being sent may have cost money the ledger does not see.
+- The ledger holds worst-case amounts while calls are in flight, so two processes can refuse a call the real cost would have allowed; a crashed process leaves a hold for thirty minutes.
+- A call that failed after being sent is booked at the cost the budget guard knows, else at its held worst case, so the ledger may over-count it; only a call refused before sending is released.
 
 ## References
 

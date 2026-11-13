@@ -1,4 +1,9 @@
-import type { LabCallMeter, MeteredCall, MeteredCase } from '../../application/lab/lab-meter.js';
+import {
+  REFUSED_BEFORE_SENDING,
+  type LabCallMeter,
+  type MeteredCall,
+  type MeteredCase,
+} from '../../application/lab/lab-meter.js';
 import type { HoldTicket, SpendLedger } from '../../application/lab/spend-ledger.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type {
@@ -39,6 +44,7 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
   private readonly options: LabCallGateOptions;
   private calls: MeteredCall[] = [];
   private failures: ErrorCode[] = [];
+  private unansweredCostMicros = 0;
   private stopReason: string | undefined;
 
   constructor(options: LabCallGateOptions) {
@@ -48,10 +54,12 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
   begin(): void {
     this.calls = [];
     this.failures = [];
+    this.unansweredCostMicros = 0;
   }
 
   end(): MeteredCase {
-    return { calls: this.calls, failures: this.failures };
+    const { calls, failures, unansweredCostMicros } = this;
+    return { calls, failures, unansweredCostMicros };
   }
 
   stopped(): string | undefined {
@@ -60,29 +68,57 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
 
   // RF-1402
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    const ticket = await this.reserve(request);
+    const { ticket, worst } = await this.reserve(request);
     const started = this.options.clock.now().getTime();
     let response: LlmResponse;
     try {
       this.options.tap.lastCostMicros = 0;
       response = await this.options.inner.complete(request, observer);
     } catch (error) {
-      await this.options.ledger.release(ticket);
-      this.failures.push(codeOf(error));
+      await this.afterFailure(ticket, worst, error);
       throw error;
     }
     const costMicros = this.options.tap.lastCostMicros;
-    await this.options.ledger.settle(ticket, costMicros);
+    await this.book(ticket, costMicros);
     const latencyMs = this.options.clock.now().getTime() - started;
     this.calls.push(meteredOf(response, latencyMs, costMicros));
     return response;
   }
 
+  /**
+   * A call that failed. One a guard refused before sending is released: nothing was billed. Any
+   * other may have been billed, so it is booked at the cost the budget guard knows, else at the
+   * worst case that was held (RF-1402).
+   */
+  private async afterFailure(ticket: HoldTicket, worst: number, error: unknown): Promise<void> {
+    const code = codeOf(error);
+    this.failures.push(code);
+    if (REFUSED_BEFORE_SENDING.has(code)) {
+      await this.options.ledger.release(ticket);
+      return;
+    }
+    const known = this.options.tap.lastCostMicros;
+    const booked = known > 0 ? known : worst;
+    this.unansweredCostMicros += booked;
+    await this.book(ticket, booked);
+  }
+
+  /** Books the cost of a call that was sent; when the ledger cannot be written, no call follows. */
+  private async book(ticket: HoldTicket, micros: number): Promise<void> {
+    try {
+      await this.options.ledger.settle(ticket, micros);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.stopReason = `The ledger could not be written (${reason}), so the invocation stops: no call may be made that it cannot record.`;
+    }
+  }
+
   /** The hold of the call, or a refusal that stops the invocation. */
-  private async reserve(request: LlmRequest): Promise<HoldTicket> {
+  private async reserve(request: LlmRequest): Promise<{ ticket: HoldTicket; worst: number }> {
     if (this.stopReason !== undefined) return this.refuse(this.stopReason);
-    const held = await this.options.ledger.hold(this.options.worstCaseMicros(request));
-    if (held.ok) return held.value;
+    const worst = this.options.worstCaseMicros(request);
+    const held = await this.options.ledger.hold(worst);
+    if (held.ok) return { ticket: held.value, worst };
     this.stopReason = held.error.message;
     return this.refuse(held.error.message);
   }

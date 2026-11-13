@@ -5,7 +5,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 // file is append-only JSON lines: a `hold` reserves the worst case of a call, a `settle` replaces
 // it by the real cost, a `release` gives it back. A command judges its hold on the lines up to
 // its own hold, so two commands that write at once never pass a cap together; a hold that is never
-// settled stops counting after ten minutes (a crashed command).
+// settled stops counting after thirty minutes (a crashed command).
 
 export interface LedgerLimits {
   readonly totalCapMicros: number;
@@ -65,8 +65,11 @@ export interface SpendLedger {
   totals(): Promise<LedgerTotals>;
 }
 
-/** How long a hold that is never settled keeps counting. */
-export const HOLD_TTL_MS = 600_000;
+/**
+ * How long a hold that is never settled keeps counting: longer than the longest call can run (the
+ * reservation of the budget guard lasts about 24 minutes), so a call in flight is never forgotten.
+ */
+export const HOLD_TTL_MS = 1_800_000;
 
 /** The lines of a ledger file; a torn or foreign line is left out. */
 // RF-1402
