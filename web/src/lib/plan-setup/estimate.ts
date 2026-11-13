@@ -119,7 +119,7 @@ export function scenarioCost(estimate: PlanEstimate, scenario: Scenario): string
 }
 
 /** The figure of a scenario in the unit of a cap: tokens for a token cap, the cost for a cost cap. */
-export function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap): string {
+function scenarioFigure(estimate: PlanEstimate, scenario: Scenario, cap: PlanCap): string {
   return cap.unit === 'tokens'
     ? tokensText(tokensOfScenario(estimate, scenario))
     : dollars(estimate.planner[scenario].costMicros);
