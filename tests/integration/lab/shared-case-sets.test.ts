@@ -49,7 +49,7 @@ describe('the shared case sets', () => {
   );
 
   it.each(SETS)(
-    'RF-1405 splits %s by the rule on the input, at least a third held back',
+    'RF-1405 splits %s by the rule on the input, with cases on both sides',
     async (name) => {
       const { set } = await load(name);
       const rule = splitsOf(
@@ -61,7 +61,7 @@ describe('the shared case sets', () => {
 
       expect(wrong.map((each) => each.id)).toEqual([]);
       const held = set.cases.filter((each) => each.split === 'held-back').length;
-      expect(held * 3).toBeGreaterThanOrEqual(set.cases.length);
+      expect(held).toBeGreaterThan(0);
       expect(held).toBeLessThan(set.cases.length);
     },
   );

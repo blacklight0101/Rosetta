@@ -6,7 +6,7 @@
   "cases": [
     {
       "id": "billing-config-connection",
-      "split": "tune",
+      "split": "held-back",
       "expected": "Valid",
       "input": {
         "area": "billing",

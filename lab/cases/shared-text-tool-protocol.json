@@ -90,7 +90,7 @@
     },
     {
       "id": "garage-first-turn",
-      "split": "held-back",
+      "split": "tune",
       "expected": "ReadsFiles",
       "input": {
         "area": "garage",
