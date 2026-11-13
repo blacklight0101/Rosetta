@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "version": "summariser-overview-1",
+  "prompt": "summariser/overview",
+  "description": "Inputs of summariser/overview captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-054942-understand",
+        "20261109-063857-understand",
+        "20261101-235310-understand",
+        "20261102-185338-understand",
+        "20261029-142029-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-054942-understand-summariser-overview",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Browse the catalog with brand and type filters",
+            "summary": "The catalog screen lists items with thumbnails, names, descriptions and prices, and filters them by brand and type. Changing either filter reloads the grid, with 0 meaning All. Thumbnails are read from the Assets/Images/Catalog folder.",
+            "claims": [
+              "On load, the controller shows the discount banner, loads all items, loads the brand and type filter lists and loads the shipment view.",
+              "The brand and type dropdowns each raise a filter change with the selected ids, and the controller reloads the grid for that filter. Id 0 means All.",
+              "The dropdown change handlers are wired in the designer for the brand and type combo boxes.",
+              "Each row shows a 384x216 thumbnail loaded from the Assets/Images/Catalog folder under the current directory, the item id, name and description, and the price prefixed with $."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Add a stock shipment for an item (WinForms)",
+            "summary": "A user records an arrival of stock for a catalog item on a date.",
+            "claims": [
+              "The Add Shipment button does nothing unless a product, a quantity and an arrival date are all filled in.",
+              "After saving, a message box says the shipment was added and the input fields are cleared."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Check available stock for an item on a date (WinForms)",
+            "summary": "A user selects an item and a calendar date to see its available stock.",
+            "claims": [
+              "The item id is read from the selected list entry text and the date from the month calendar, and the controller asks the service for the stock.",
+              "The Search button calls the search handler.",
+              "The result is added as a row in the stock list with the date, item id and quantity.",
+              "The mock service variant does not handle a missing record: it dereferences the first match and fails when none exists."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Daily discount applied to prices and shown as a banner",
+            "summary": "A discount whose inclusive date range covers today reduces the displayed price by its size, formatted to two decimals, and shows a banner with the rounded percentage and end date. Six seeded discounts from September to December 2017 range from 10% to 50%.",
+            "claims": [
+              "The service returns the first discount whose start and end dates (compared by day) include the requested day.",
+              "The displayed price is the price multiplied by (1 minus the discount size), formatted with two decimals.",
+              "The banner reads '<percent>% sale endson <end date>!', with the percent rounded to a whole number.",
+              "The seeded discounts are six fixed date ranges in September, October, November and December 2017, with sizes from 10% to 50%."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Stock record is one row per item and date",
+            "summary": "Saving stock for an item and date overwrites the existing quantity for that day, or inserts a new row with the next id when none exists. The live service reports zero stock for a day with no row, while the mock service's GetAvailableStock fails when no row matches.",
+            "claims": [
+              "If a stock record exists for the same item and date, its AvailableStock is replaced by the new value and saved.",
+              "Otherwise a new stock record is inserted with the next StockId (maximum plus one).",
+              "Stock is matched by item id and calendar date, ignoring the time part.",
+              "When a row for that item and date exists, its quantity is replaced by the new quantity; otherwise a new row is added."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog WCF service operations",
+            "summary": "A WCF catalog service exposes find item, list brands, list items and types, get and create stock, create, update and remove item, and get discount. Create assigns the next id, update marks the entity modified, and remove deletes it. The mock and client wrapper throw NotImplementedException for some operations.",
+            "claims": [
+              "The service contract exposes find item, list brands, list items with brand and type filters, list types, get and create stock, create, update, remove item, and get discount.",
+              "Creating an item assigns the id as the maximum existing id plus one and saves; update marks the entity modified and saves; remove deletes it and saves.",
+              "Item lookup fills in the brand and type of the item.",
+              "The service is published on a basic HTTP endpoint, with metadata exposed over HTTP and HTTPS and directory browsing enabled."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog data entities",
+            "summary": "The EF model maps catalog brands, items, types, stock and discounts to tables.",
+            "claims": [
+              "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+              "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+              "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+              "The brand and type names are stored as non-Unicode strings."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Database is created and seeded with preconfigured catalog data",
+            "summary": "On first use the database is created if missing and filled with sample types, brands, items, stock and discounts.",
+            "claims": [
+              "The context uses an initializer that creates the database only if it does not exist.",
+              "The seed adds catalog types, brands, items, stock and discount items, saving after each group.",
+              "The seed contains twelve catalog items, five brands, four types and six stock records.",
+              "The connection string comes from the ConnectionString environment variable when set, otherwise from the EntityModel connection string name."
+            ]
+          },
+          {
+            "id": "INT-001",
+            "type": "INT",
+            "area": "eShopLegacyNTier/src",
+            "title": "WinForms client calls the catalog WCF service over HTTP",
+            "summary": "The desktop client reaches the catalog service at a fixed localhost address.",
+            "claims": [
+              "The client endpoint is http://localhost:62314/CatalogService.svc using basic HTTP.",
+              "The service's database connection points at the LocalDB instance and the eShopDatabase catalog."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Plain-text secrets in configuration files",
+            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "claims": [
+              "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
+              "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
+              "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
+              "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-overview",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Browse the catalog with brand and type filters",
+            "summary": "The catalog screen lists items with thumbnails, names, descriptions and prices, and filters them by brand and type. Changing either filter reloads the grid, with 0 meaning All. Thumbnails are read from the Assets/Images/Catalog folder.",
+            "claims": [
+              "On load, the controller shows the discount banner, loads all items, loads the brand and type filter lists and loads the shipment view.",
+              "The brand and type dropdowns each raise a filter change with the selected ids, and the controller reloads the grid for that filter. Id 0 means All.",
+              "The dropdown change handlers are wired in the designer for the brand and type combo boxes.",
+              "Each row shows a 384x216 thumbnail loaded from the Assets/Images/Catalog folder under the current directory, the item id, name and description, and the price prefixed with $."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Add a stock shipment for an item (WinForms)",
+            "summary": "A user records an arrival of stock for a catalog item on a date.",
+            "claims": [
+              "The Add Shipment button does nothing unless a product, a quantity and an arrival date are all filled in.",
+              "After saving, a message box says the shipment was added and the input fields are cleared.",
+              "The add-shipment button reads the selected item id, parses the quantity with int.Parse and the arrival date with Convert.ToDateTime, then raises the availability event.",
+              "The controller builds a CatalogItemsStock from the event arguments and calls the service's CreateAvailableStock, then tells the view that the availability was updated."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Check available stock for an item on a date (WinForms)",
+            "summary": "A user selects an item and a calendar date to see its available stock.",
+            "claims": [
+              "The item id is read from the selected list entry text and the date from the month calendar, and the controller asks the service for the stock.",
+              "The Search button calls the search handler.",
+              "The result is added as a row in the stock list with the date, item id and quantity.",
+              "The mock service variant does not handle a missing record: it dereferences the first match and fails when none exists."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Daily discount applied to prices and shown as a banner",
+            "summary": "A discount whose inclusive date range covers today reduces the displayed price by its size, formatted to two decimals, and shows a banner with the rounded percentage and end date. Six seeded discounts from September to December 2017 range from 10% to 50%.",
+            "claims": [
+              "The service returns the first discount whose start and end dates (compared by day) include the requested day.",
+              "The displayed price is the price multiplied by (1 minus the discount size), formatted with two decimals.",
+              "The banner reads '<percent>% sale endson <end date>!', with the percent rounded to a whole number.",
+              "The seeded discounts are six fixed date ranges in September, October, November and December 2017, with sizes from 10% to 50%."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Stock record is one row per item and date",
+            "summary": "Saving stock for an item and date overwrites the existing quantity for that day, or inserts a new row with the next id when none exists. The live service reports zero stock for a day with no row, while the mock service's GetAvailableStock fails when no row matches.",
+            "claims": [
+              "If a stock record exists for the same item and date, its AvailableStock is replaced by the new value and saved.",
+              "Otherwise a new stock record is inserted with the next StockId (maximum plus one).",
+              "The CatalogItemsStock record holds AvailableStock, CatalogItemId, Date and StockId fields.",
+              "Stock is matched by item id and calendar date, ignoring the time part."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog WCF service operations",
+            "summary": "A WCF catalog service exposes find item, list brands, list items and types, get and create stock, create, update and remove item, and get discount. Create assigns the next id, update marks the entity modified, and remove deletes it. The mock and client wrapper throw NotImplementedException for some operations.",
+            "claims": [
+              "The service contract exposes find item, list brands, list items with brand and type filters, list types, get and create stock, create, update, remove item, and get discount.",
+              "Creating an item assigns the id as the maximum existing id plus one and saves; update marks the entity modified and saves; remove deletes it and saves.",
+              "Item lookup fills in the brand and type of the item.",
+              "The service is published on a basic HTTP endpoint, with metadata exposed over HTTP and HTTPS and directory browsing enabled."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "eShopLegacyNTier/src",
+            "title": "CatalogItem (product entity, legacy and modernized)",
+            "summary": "A sellable catalog product with an id, a name (max 50), an optional description, a price (decimal, money), a picture file name (default dummy.png), required links to one brand and one type, and stock figures (available stock, restock threshold, max stock threshold) plus an on-reorder flag. In the legacy EF model it is the CatalogItems set; in the modernized model it is the Catalog table. PictureUri and TempImageName are not stored. Ids are assigned by the application (hi-lo or sequence) or by the seed, and the foreign keys cascade deletes by EF default in some versions.",
+            "claims": [
+              "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+              "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+              "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+              "The brand and type names are stored as non-Unicode strings."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Database is created and seeded with preconfigured catalog data",
+            "summary": "On first use the database is created if missing and filled with sample types, brands, items, stock and discounts.",
+            "claims": [
+              "The context uses an initializer that creates the database only if it does not exist.",
+              "The seed adds catalog types, brands, items, stock and discount items, saving after each group.",
+              "The seed contains twelve catalog items, five brands, four types and six stock records.",
+              "The connection string comes from the ConnectionString environment variable when set, otherwise from the EntityModel connection string name."
+            ]
+          },
+          {
+            "id": "INT-001",
+            "type": "INT",
+            "area": "eShopLegacyNTier/src",
+            "title": "WinForms client calls the catalog WCF service over HTTP",
+            "summary": "The desktop client reaches the catalog service at a fixed localhost address.",
+            "claims": [
+              "The client endpoint is http://localhost:62314/CatalogService.svc using basic HTTP.",
+              "The service's database connection points at the LocalDB instance and the eShopDatabase catalog.",
+              "The service reference metadata source is an HTTP address on localhost port 62314 serving CatalogService.svc.",
+              "The CatalogItem schema fields are CatalogBrand, CatalogBrandId, CatalogType, CatalogTypeId, Description, Id, Name, Picturefilename and Price."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Plain-text secrets in configuration files",
+            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "claims": [
+              "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
+              "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
+              "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
+              "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-142029-understand-summariser-overview",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "(root)",
+            "title": "Product catalog backoffice web apps (MVC and WebForms)",
+            "summary": "The repository's README describes two sample back-office web apps, one in MVC and one in WebForms, that let employees maintain the eShop product catalog.",
+            "claims": [
+              "The sample apps are simple web apps for the internal back office of an eShop, so employees can update the Product Catalog.",
+              "Both apps are simple CRUD web applications that update data in a SQL Server database.",
+              "The WebForms and MVC apps are described as similar in UI and business features."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "(root)",
+            "title": "WinForms inventory viewer on a WCF back end",
+            "summary": "The winforms-wcf.md document describes a fictional WinForms inventory app that shows item inventory counts at different calendar dates, backed by a WCF service and SQL database.",
+            "claims": [
+              "The WinForms front end is a fictional inventory app that lets users track inventory for items sold through a store and look up counts for particular items at different calendar dates.",
+              "The WinForms app consumes a WCF service, and a part of that service is broken out into an ASP.NET Core Web API in the modernized version.",
+              "The project is described as a BETA sample of version 0.01, intended as a concept demo."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "(root)",
+            "title": "Mock data switch selects the data source",
+            "summary": "A single configuration setting, UseMockData, decides whether the application reads from the real SQL Server database or from in-memory mock data, for testing or demos. It is False for the MVC and WebForms containers, is set to true in the eShopPorted appsettings.json by default, and is set in Web.config outside containers. When it is false the SQL Server catalog context is registered; when true the context is not registered and the flag is passed to ApplicationModule.",
+            "claims": [
+              "The MVC and WebForms apps can connect to the real database or use in-memory mock data when the database is unavailable, for testing or demos.",
+              "The mock-data switch is set through the UseMockData environment setting, which is False for both the MVC and WebForms containers.",
+              "Outside containers the same choice is made in the Web.config file.",
+              "When UseMockData is false, the CatalogDBContext is registered with SQL Server; when true, the context is not registered and the flag is passed to ApplicationModule."
+            ]
+          },
+          {
+            "id": "INT-001",
+            "type": "INT",
+            "area": "(root)",
+            "title": "Containers reach the SQL Server database container",
+            "summary": "The MVC, WebForms and WCF containers connect to a SQL Server container named sql.data through connection strings set in the compose override file.",
+            "claims": [
+              "The MVC app's CatalogDBContext connection string points at the host sql.data, and a plain-text connection-string with a database user and password is written there.",
+              "The WebForms app's CatalogDBContext connection string points at the host sql.data, and a plain-text connection-string with a database user and password is written there.",
+              "The WCF service's CatalogDBContext connection string points at the host sql.data with database eShopDatabase, and a plain-text connection-string with a password is written there.",
+              "The SQL Server container takes its SA password from a plain-text password written in the compose override file."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "(root)",
+            "title": "Build and containerize the three apps with build.cmd",
+            "summary": "The build.cmd script publishes the MVC, WebForms and WCF projects into a deploy folder and builds the Docker images with docker-compose.",
+            "claims": [
+              "The script restores packages and publishes the MVC, WebForms and WCF projects with a folder publish profile into deploy subfolders.",
+              "The script copies each project's Dockerfile into the deploy folders and then runs docker-compose build with both compose files.",
+              "The README lists the three images built: eshop/modernizedwebforms, eshop/modernizedmvc and eshop/wcfservice."
+            ]
+          },
+          {
+            "id": "INT-002",
+            "type": "INT",
+            "area": "ACI",
+            "title": "Container group receives a ConnectionString and mock-data switch",
+            "summary": "The Azure Container Instances template passes a ConnectionString and a UseMockData flag into the application container. The parameter files set mock data on, with a placeholder connection string.",
+            "claims": [
+              "The template passes a ConnectionString environment variable to the container, taken from the constr parameter.",
+              "The template passes a UseMockData environment variable to the container, taken from the usemock parameter.",
+              "The template sets UseAzureActiveDirectory to the literal value false in the container environment.",
+              "The MVC, WCF and WebForms parameter files all set usemock to true and constr to the placeholder text NOT NEEDED DUE MOCK DATA, so these deployments run on mock data."
+            ]
+          },
+          {
+            "id": "INT-003",
+            "type": "INT",
+            "area": "Kubernetes-DockerForWindows/RabbitMQ-Linux-K8s",
+            "title": "RabbitMQ message broker deployed for the eshop application",
+            "summary": "The manifest deploys a RabbitMQ broker, exposed inside the cluster as the Service `rabbitmq` on port 5672, for pods labelled app=eshop and component=rabbitmq.",
+            "claims": [
+              "A Service named rabbitmq exposes port 5672 and selects pods labelled app=eshop and component=rabbitmq.",
+              "A Deployment named rabbitmq runs the image rabbitmq:3-management in one container and opens container port 5672.",
+              "The Deployment uses the extensions/v1beta1 API group, which is an old Kubernetes API version.",
+              "The manifest sets no credentials, no volume or persistent storage, no replica count and no resource limits for the broker."
+            ]
+          },
+          {
+            "id": "INT-004",
+            "type": "INT",
+            "area": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s",
+            "title": "Catalog database connection in the Kubernetes and Compose deployment files",
+            "summary": "Both deployment files pass the eShop web app a SQL connection string for the Catalog database on a host named sql.data (compose) or sql-data (Kubernetes deployment).",
+            "claims": [
+              "The Compose file sets the ConnectionString environment variable for the eshop-modernized-mvc service to a SQL Server connection on host sql.data, database Microsoft.eShopOnContainers.Services.CatalogDb, user sa.",
+              "The Kubernetes Deployment sets the same ConnectionString variable to a connection on host sql-data (note the hyphen, not the dot used in the Compose file), database Microsoft.eShopOnContainers.Services.CatalogDb, user sa.",
+              "A plain-text password is written in the Compose file's ConnectionString value.",
+              "A plain-text password is written in the Kubernetes Deployment's ConnectionString value."
+            ]
+          },
+          {
+            "id": "INT-005",
+            "type": "INT",
+            "area": "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s",
+            "title": "SQL Server database container exposed through a Kubernetes LoadBalancer service",
+            "summary": "This deployment runs a Windows SQL Server container and publishes it on port 1433 through a LoadBalancer service named sql-data. The file itself does not show which application connects to it.",
+            "claims": [
+              "The deployment runs the image microsoft/mssql-server-windows-developer in a container named sql-data, scheduled on Windows nodes by the nodeSelector beta.kubernetes.io/os: windows.",
+              "The container accepts the SQL Server licence by setting ACCEPT_EULA to Y.",
+              "The service sql-data has type LoadBalancer and maps port 1433 to target port 1433 of the pods labelled app: sql-data, which makes the database reachable from outside the cluster.",
+              "A plain-text password is written for the SA account in the SA_PASSWORD environment variable."
+            ]
+          },
+          {
+            "id": "INT-006",
+            "type": "INT",
+            "area": "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments",
+            "title": "Container connects to SQL Server host sql-data for the CatalogDb database",
+            "summary": "Both deployment manifests give the eshop-modernized-mvc container a SQL connection string that points at the host sql-data and the CatalogDb database, authenticated as user sa with a password written in plain text.",
+            "claims": [
+              "The ConnectionString environment variable names the server sql-data and the database Microsoft.eShopOnContainers.Services.CatalogDb.",
+              "A plain-text password is written in the ConnectionString value of the deployment manifest.",
+              "A plain-text password is written in the ConnectionString value of the CD deployment manifest."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

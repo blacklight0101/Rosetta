@@ -22,6 +22,7 @@ import { TimestampIdGenerator } from '../../infrastructure/system/timestamp-id-g
 import { evaluationProviderFactory } from '../compose-providers.js';
 import { dollars } from '../eval/eval-settings.js';
 import { runLab, type LabParts } from './compose-lab.js';
+import { runLabCapture } from './lab-capture-command.js';
 import { LAB_USAGE, parseLabArgs, type LabArgs } from './lab-args.js';
 import { compareLines, summaryLines } from './lab-report.js';
 import {
@@ -164,6 +165,7 @@ export async function runLabCommand(
   env: Environment,
   print: Print,
 ): Promise<number> {
+  if (argv[0] === '--capture') return runLabCapture(argv.slice(1), folder('lab/'), print);
   const args = parseLabArgs(argv);
   if (!args.ok) return (print(`${args.error}\n${LAB_USAGE}`), 1);
   if (args.value.kind === 'help') return (print(LAB_USAGE), 0);

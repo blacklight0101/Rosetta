@@ -11,21 +11,52 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/u, 'must be lower-case wo
 
 const caseSchema = z.strictObject({
   id,
+  /** The key of the set's `sources` entry the input comes from. */
+  from: z.string().min(1).max(40).optional(),
   expected: z.string().min(1).max(100).optional(),
   split: z.enum(['tune', 'held-back']).default('tune'),
   input: z.unknown(),
 });
+
+// RF-1405: where the inputs of a captured set come from. `commit` is the commit of a repository;
+// `snapshot` the hash of an uploaded archive that has no commit. One of the two is always given.
+export const labSourceFields = z.strictObject({
+  key: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/u),
+  name: z.string().min(1).max(200),
+  url: z.string().max(400).optional(),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{7,64}$/u)
+    .optional(),
+  snapshot: z
+    .string()
+    .regex(/^sha256:[0-9a-f]{64}$/u)
+    .optional(),
+  licence: z.string().min(1).max(400),
+  runs: z.array(z.string().min(1).max(100)).max(50),
+});
+
+const sourceSchema = labSourceFields.refine(
+  (source) => source.commit !== undefined || source.snapshot !== undefined,
+  {
+    message: 'must name a commit or a snapshot hash',
+  },
+);
 
 const setSchema = z.strictObject({
   schemaVersion: z.literal(1),
   version: z.string().trim().min(1).max(60),
   prompt: z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/u, 'must be <folder>/<name>'),
   description: z.string().max(2000),
+  sources: z.array(sourceSchema).max(20).optional(),
   cases: z.array(caseSchema).min(1).max(500),
 });
 
+export type LabCaseSource = z.infer<typeof sourceSchema>;
+
 interface LabCase {
   readonly id: string;
+  readonly from?: string | undefined;
   readonly expected: string | undefined;
   readonly split: 'tune' | 'held-back';
   readonly input: unknown;
@@ -37,6 +68,7 @@ export interface LabCaseSet {
   /** The prompt id the set is written for, such as `verifier/claim`. */
   readonly prompt: string;
   readonly description: string;
+  readonly sources?: readonly LabCaseSource[] | undefined;
   readonly cases: readonly LabCase[];
 }
 
@@ -70,8 +102,14 @@ export function parseLabCaseSet(data: unknown): Result<LabCaseSet, string[]> {
     return err([...issues, ...twice]);
   }
   if (twice.length > 0) return err(twice);
+  const keys = new Set((parsed.data.sources ?? []).map((source) => source.key));
+  const unknown = parsed.data.cases
+    .filter((each) => each.from !== undefined && !keys.has(each.from))
+    .map((each) => `cases.${each.id}: the source ${each.from ?? ''} is not in sources`);
+  if (unknown.length > 0) return err(unknown);
   const cases = parsed.data.cases.map((each) => ({
     id: each.id,
+    from: each.from,
     expected: each.expected,
     split: each.split,
     input: each.input,

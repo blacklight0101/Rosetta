@@ -51,10 +51,19 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 
 **Negative**
 
-- A target must be written per prompt id; agent-loop prompts (the reader) need their own targets and are not wired by P10-01.
+- A target must be written per prompt id; agent-loop prompts (the reader) need their own targets: P10-01 wired none, P10-02 wired the first turn of three (see the amendment below).
 - The ledger holds worst-case amounts while calls are in flight, so two processes can refuse a call the real cost would have allowed; a crashed process leaves a hold for thirty minutes.
 - A call that failed after being sent is booked at the larger of the cost the budget guard knows and its held worst case, so the ledger may over-count it; only a call refused before sending is released.
-- A hold is not renewed while a call runs: the lab refuses to start when the provider settings could keep one call longer than a hold lasts (30 minutes, counted as the budget guard counts its own reservation), and when a hold or a settle cannot be written the invocation stops, so nothing is sent without a hold.
+- A hold is not renewed while a call runs: the lab refuses to start when the provider settings could keep one call longer than a hold lasts (30 minutes, counted as the budget guard counts its own reservation), and when a hold, a settle or a release cannot be written the invocation stops, so nothing is sent without a hold.
+
+## Amendment (2026-11-13, P10-02): captured case sets, held-back rule and agent-loop prompts
+
+- **Capture.** `npm run lab -- --capture` reads the `transcripts/` of a saved run folder and writes a case set with the inputs of the prompt's agent tasks, read back from the data blocks of their first messages. It stores no system prompt and no assistant text, writes no `expected`, makes no call, and leaves out a case that holds an e-mail address, a drive path, a home folder or a key-like string. The inputs of the planner and the summariser were themselves written by models earlier in the run (cards, plan titles); they are inputs here, never truth.
+- **Format.** A set may hold `sources` (key, name, address, source commit or the hash of the upload, licence, run ids) and a case may name its source in `from`. The change is additive; `schemaVersion` stays 1.
+- **Held-back rule.** At capture, the first `ceil(n / 3)` cases in the order of the SHA-256 of `<prompt id>:<case id>` are `held-back`. The rule reads no input, so it exists before any version is tried and cannot be tuned to a result; the tests recompute it for every committed set.
+- **Agent-loop prompts.** The lab does not run a reader loop. A reader case measures one turn: the conversation up to that turn is built from the case with the run's own prompt builders, and the single answer is classified (`reader/task`, `reader/area`, `reader/read-first`: whether it reads files with valid tool calls; `cards/card-format`: whether the answer after a replay of the reads the case holds is a valid card list). The case holds the area's file list and, for the card format, small excerpts of the files the run read. Options not taken: a short loop over files embedded in the case (needs a code map and an area per case, and a turn cap that changes what is measured); a recorded conversation (freezes the prompt text). The cost of this choice is that it does not measure the later turns of a loop; a tuning card that needs them adds a loop target.
+- **Unpublished inputs.** Inputs of unknown origin or licence are never committed (DEC-03): `--capture --local` writes them to the git-ignored `lab/local-cases/`, and `--cases` reads a committed set first and a local one otherwise.
+- **Not wired yet.** Every prompt family without a target is listed in the runbook (section 7); a tuning card wires its remaining family members first.
 
 ## References
 

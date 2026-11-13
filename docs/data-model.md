@@ -1007,7 +1007,7 @@ when the answers are the same as the stored ones, so `savedAt` moves only with a
 when `savedAt` is later than the start of the newest `Completed` run of stage `plan` of the project (the package
 was written from an earlier brief); a project with no such run is never out of date.
 
-### 3.21 Prompt lab files: `lab/` and `lab-out/` (added 2026-11-13, P10-01)
+### 3.21 Prompt lab files: `lab/` and `lab-out/` (added 2026-11-13, P10-01; extended by P10-02)
 
 Files of `npm run lab` (RF-1400..RF-1403, ADR-029), inside the Rosetta repository; none is in a user's project.
 
@@ -1016,8 +1016,9 @@ Files of `npm run lab` (RF-1400..RF-1403, ADR-029), inside the Rosetta repositor
 - `lab/cases/<set>.json` (committed): `{ schemaVersion: 1, version, prompt, description, cases[] { id, expected?, split,
 input } }`. `prompt` is the prompt id (`verifier/claim`, `summariser/overview`); `id` is lower-case words joined by `-`
   and unique; `split` is `tune` (default) or `held-back`; `expected` is the label the target's `detail` is compared with;
-  `input` is parsed by the prompt's target: the verifier's is `{ claim, citations[], files { path: text } }`, the
-  overview's `{ cards[] { id, type, area, title, summary, claims[] } }`.
+  `input` is parsed by the prompt's target (a set may also hold `sources[] { key, name, url?, commit | snapshot, licence, runs[] }` and a case `from`, the key of its source, RF-1405): the verifier's is `{ claim, citations[], files { path: text } }`, the
+  overview's `{ cards[] { id, type, area, title, summary, claims[] } }`, the gap's `{ items[] { id, kind, name, detail }, phases[], requirements[], tasks[] }`, the merge's `{ type, cards[] { id, area, title, summary, claims[] } }`, a reader prompt's `{ area, files[] { path, language, lines | skipped }, workbook?, turns, reads?[] { path, startLine, lines[] } }` (RF-1406).
+- `lab/sources.json` (committed): the sources the capture copies into a set, by key: `{ key, name, url?, commit | snapshot, licence }` (RF-1404).
 - `lab-out/ledger.jsonl`, or the file named by `ROSETTA_LAB_LEDGER` (git-ignored, append-only, each line led by a line break): lines `{ v: 1, t: "hold", id,
 invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, t: "release", id, at }` (`at` in epoch
   milliseconds). A hold older than thirty minutes that was never settled or released stops counting.
