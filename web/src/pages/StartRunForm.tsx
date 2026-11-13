@@ -175,6 +175,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
       <ProjectHeading heading={heading} project={form.project} started={started} />
       <StartRoleWarning
         project={form.project}
+        facts={form.roleFacts}
         onSaved={(saved) => {
           form.setProject(saved);
           form.choice.reestimate();

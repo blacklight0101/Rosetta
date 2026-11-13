@@ -43,3 +43,25 @@ export function roleStates(
     summariser: stateOf(roles.summariser.provider),
   };
 }
+
+/** P9-09: what the start page cannot offer because of the answers it has on its roles. */
+export interface ProvidersDown {
+  /** Ollama answered that it could not be reached, so a switch to it cannot work. */
+  readonly ollama: boolean;
+  /** Every role is on a provider that cannot answer, and one of them is an unreachable Ollama. */
+  readonly everyRole: boolean;
+}
+
+// RF-434, RF-436
+export function providersDown(
+  states: Readonly<Record<RoleName, RoleState | undefined>>,
+  ollama: ModelListState | undefined,
+): ProvidersDown {
+  const all = Object.values(states);
+  const cannot = (state: RoleState | undefined): boolean =>
+    state === 'not-reachable' || state === 'no-key';
+  return {
+    ollama: ollamaState(ollama) === 'not-reachable',
+    everyRole: all.every(cannot) && all.includes('not-reachable'),
+  };
+}

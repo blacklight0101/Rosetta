@@ -16,6 +16,7 @@ import { useSpendLimits } from './use-spend-limits.js';
 import { useAnsweredCount } from './use-answered-count.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
 import { useAutoScan, type AutoScan } from './use-auto-scan.js';
+import { useRoleFacts, type RoleFacts } from './use-start-role-warning.js';
 import { approvalText, approvedAmountOf, missingKeyProviders } from '../lib/journey-approval.js';
 
 // RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
@@ -57,6 +58,8 @@ export interface StartForm {
     readonly set: (checked: boolean) => void;
   };
   readonly project: Project;
+  /** RF-436, P9-09: the warning on the roles, and what the page cannot offer because of it. */
+  readonly roleFacts: RoleFacts;
   readonly choice: EstimateChoice;
   readonly stage: RunStageChoice;
   readonly url: string;
@@ -249,6 +252,7 @@ export function useStartForm(loaded: Project): StartForm {
     setRefused(false);
     choice.reestimate();
   });
+  const roleFacts = useRoleFacts(project);
   const approval = approvalOf(stage, estimate);
   const actions = useStartActions({
     ...{ project, stage, url, ...fields, areas: choice.chosen, consent: checked },
@@ -268,10 +272,10 @@ export function useStartForm(loaded: Project): StartForm {
     oldMapUnconfirmed: isOutdated(estimate) && !confirmed.oldMap.confirmed,
     libraryUnconfirmed: libraryChosen && !confirmed.library.confirmed,
     ...noSourceOf(project),
-    ...approval.gate,
+    ...{ ...approval.gate, rolesDown: roleFacts.down.everyRole },
   });
   return {
-    ...{ project, choice, stage, url, setUrl, ...fields, ...runCaps },
+    ...{ project, roleFacts, choice, stage, url, setUrl, ...fields, ...runCaps },
     ...{ consent: { roles, names, checked, set: setChecked, held }, gate, actions, setProject },
     scan,
     ...{ privateCode, rerun },

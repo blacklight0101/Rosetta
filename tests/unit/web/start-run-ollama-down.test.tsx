@@ -23,13 +23,15 @@ const unreachable = json(200, {
   models: [],
   reason: 'Ollama could not be reached.',
 });
-const noKeys = json(200, {
-  providers: ['anthropic', 'openai', 'openai-compatible'].map((provider) => ({
-    provider,
-    ownKey: false,
-    serverKey: false,
-  })),
-});
+const keys = (openai: boolean) =>
+  json(200, {
+    providers: ['anthropic', 'openai', 'openai-compatible'].map((provider) => ({
+      provider,
+      ownKey: openai && provider === 'openai',
+      serverKey: false,
+    })),
+  });
+const noKeys = keys(false);
 const switchName = /every role to Ollama/u;
 const reasonText =
   'Every role uses a provider that cannot answer now, so a run would fail at its first call. Fix the roles above first.';
@@ -90,7 +92,12 @@ it('RF-434 Analyse is not held back when the answer on Ollama could not be had',
 });
 
 it('RF-434 Analyse stays available when only some roles use a provider that cannot answer', async () => {
-  renderStart(answers(unreachable, { [`GET ${projectPath}`]: withOpenAiRoles(['planner']) }));
+  renderStart(
+    answers(unreachable, {
+      [`GET ${projectPath}`]: withOpenAiRoles(['planner']),
+      'GET /api/account/key-access': keys(true),
+    }),
+  );
   await ready();
 
   await screen.findByRole('alert');
