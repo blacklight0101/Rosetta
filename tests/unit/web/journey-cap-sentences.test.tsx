@@ -122,3 +122,28 @@ it('RF-434 DEC-205 the approved amount is the same on two reads of the same inpu
   expect(journeyEstimateOf(inputs).approvable).toEqual(journeyEstimateOf(inputs).approvable);
   expect(journeyEstimateOf(inputs).approvable).toEqual(journeyEstimateOf({ ...inputs }).worstCase);
 });
+
+// RF-434 P9-12 EV-85: with a journey the start page names one limit, the approved amount.
+it('RF-434 EV-85 with a journey the cap meter is against the approved amount and no project cap link shows', () => {
+  render(
+    <EstimateSection
+      scanOnly={false}
+      sourceKind="github"
+      estimate={{ status: 'ready', estimate }}
+      cap={{
+        capMicros: 500_000n,
+        serverRunCap: { administrator: undefined, serverKeys: false },
+        capTokens: 2_000_000,
+      }}
+      warnings={[]}
+      capsHref="/projects/p-1/settings#caps"
+      onRetry={() => undefined}
+    />,
+  );
+
+  const meter = screen.getByRole('meter');
+  const text = document.getElementById(meter.getAttribute('aria-describedby') ?? '')?.textContent;
+  expect(text).toContain('of the approved amount');
+  expect(text).not.toContain('of the cap;');
+  expect(document.body.textContent).not.toContain('Change the caps in the project settings');
+});
