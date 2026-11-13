@@ -34,6 +34,8 @@ export interface Captured {
   readonly leftOut: readonly string[];
   /** Candidate tasks dropped because an earlier case holds the same input. */
   readonly repeated: readonly string[];
+  /** Not filled yet (red). */
+  readonly warnings: readonly string[];
 }
 
 const slug = (text: string): string =>
@@ -134,7 +136,9 @@ export function buildCaseSet(request: CaptureRequest): Result<Captured, string> 
       input: each.input,
     })),
   });
-  return set.ok ? ok({ set: set.value, leftOut, repeated }) : err(set.error.join('; '));
+  return set.ok
+    ? ok({ set: set.value, leftOut, repeated, warnings: [] })
+    : err(set.error.join('; '));
 }
 
 /** Runs of one source are listed once under it. */

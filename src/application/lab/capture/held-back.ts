@@ -45,3 +45,8 @@ export function splitsOf(inputs: readonly unknown[], sha256: Sha256): Split[] {
   const held = new Set(distinct.slice(0, Math.ceil(distinct.length / 3)));
   return keys.map((key) => (held.has(key) ? 'held-back' : 'tune'));
 }
+
+/** Not built yet (red). */
+export function heldBackKey(key: string): boolean {
+  return key === '';
+}

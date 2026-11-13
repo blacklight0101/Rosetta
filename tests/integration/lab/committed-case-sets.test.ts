@@ -10,8 +10,8 @@ import { sha256Hex } from '../../../src/infrastructure/lab/run-folder.js';
 import { listLabTargets } from '../../../src/presentation/lab/lab-targets.js';
 
 // RF-1405, DEC-57, DEC-231, ADR-029: the committed case sets are read by their targets, name their
-// source and licence, keep a third back by the fixed rule on the input, hold no input twice, nothing
-// personal, no secret the run's masker finds and no model's answer as truth.
+// source and licence, split by the fixed rule on the input (one input, one side in every set), hold
+// no input twice, nothing personal, no secret the run's masker finds and no model's answer as truth.
 // Each check collects its problems, so one failure names every set and case at fault.
 
 const labFolder = fileURLToPath(new URL('../../../lab/', import.meta.url));
@@ -24,6 +24,14 @@ const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url
 const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
 /** The repair sets take the side of their base case (repair-case-sets.test.ts), not the rule. */
 const REPAIRS = new Set(['planner-gap-repair', 'planner-plan-repair', 'cards-repair']);
+/** What a repair case adds to the input of its base case. */
+const REPAIR_KEYS = new Set(['problems', 'answer']);
+/**
+ * The sets whose few inputs all fall on the tune side of the rule: no version of their prompt can be
+ * kept on them until more runs are captured (runbook section 4). A change to this list is a change
+ * to what the lab can decide, so it is stated here.
+ */
+const ONE_SIDED = ['planner-api-contract', 'planner-package', 'planner-plan-repair', 'planner-prd'];
 const CAPTURED = [
   'cards-card-format',
   'cards-continue',
@@ -79,12 +87,34 @@ function splitProblems({ name, set }: Loaded): string[] {
     sha256Hex,
   );
   const wrong = set.cases.filter((each, index) => each.split !== rule[index]);
-  const held = set.cases.filter((each) => each.split === 'held-back');
-  return [
-    ...wrong.map((each) => `${name}: ${each.id} is not on the side the rule picks`),
-    ...(held.length * 3 < set.cases.length ? [`${name}: less than a third held back`] : []),
-  ];
+  return wrong.map((each) => `${name}: ${each.id} is not on the side the rule picks`);
 }
+
+/** The input of a case as the rule reads it: a repair case is read as its base case. */
+function baseInput(name: string, input: unknown): unknown {
+  if (!REPAIRS.has(name) || input === null || typeof input !== 'object') return input;
+  return Object.fromEntries(Object.entries(input).filter(([key]) => !REPAIR_KEYS.has(key)));
+}
+
+/** Every input held on both sides across the sets, with the sets and cases that disagree. */
+function crossSetProblems(all: readonly Loaded[]): string[] {
+  const seen = new Map<string, { side: string; where: string }>();
+  const problems: string[] = [];
+  for (const { name, set } of all) {
+    for (const each of set.cases) {
+      const key = inputKey(baseInput(name, each.input), sha256Hex);
+      const first = seen.get(key);
+      if (first === undefined) seen.set(key, { side: each.split, where: `${name} ${each.id}` });
+      else if (first.side !== each.split) {
+        problems.push(`${name} ${each.id} (${each.split}) and ${first.where} (${first.side})`);
+      }
+    }
+  }
+  return problems;
+}
+
+const oneSided = ({ set }: Loaded): boolean =>
+  new Set(set.cases.map((each) => each.split)).size < 2;
 
 /** An input that two cases of one set hold: a twin is measured twice and may cross the split. */
 function repeatProblems({ name, set }: Loaded): string[] {
@@ -163,10 +193,20 @@ describe('the committed case sets', () => {
 });
 
 describe('the split and the texts of the committed case sets', () => {
-  it('RF-1405 holds back exactly the cases the fixed rule picks, at least a third', async () => {
+  it('RF-1405 holds back exactly the cases the fixed rule picks', async () => {
     const ruled = (await captured()).filter((each) => !REPAIRS.has(each.name));
 
     expect(ruled.flatMap(splitProblems)).toEqual([]);
+  });
+
+  it('RF-1405 puts one canonical input on the same side in every committed set', async () => {
+    expect(crossSetProblems(await captured())).toEqual([]);
+  });
+
+  it('RF-1405 has both sides in every captured set but the ones stated as one-sided', async () => {
+    const found = (await captured()).filter(oneSided).map((each) => each.name);
+
+    expect(found.sort()).toEqual(ONE_SIDED);
   });
 
   it('RF-1405 holds no input twice in a set, so no input is on both sides', async () => {
