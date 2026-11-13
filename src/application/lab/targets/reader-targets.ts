@@ -37,9 +37,9 @@ import { askOnce, problemsOf } from './single-call.js';
 type Part = 'system' | 'task' | 'readFirst' | 'cardFormat';
 
 /** The answer given before any read in the read-first case: fixed text, not a model's. */
-const PREMATURE_ANSWER = '{"cards": []}';
+export const PREMATURE_ANSWER = '{"cards": []}';
 
-function firstTurn(response: LlmResponse): TargetOutcome {
+export function firstTurn(response: LlmResponse): TargetOutcome {
   const { toolCalls } = response;
   if (toolCalls.length === 0) {
     return { usable: false, detail: response.text.trim() === '' ? 'Empty' : 'Answered' };
@@ -50,7 +50,7 @@ function firstTurn(response: LlmResponse): TargetOutcome {
   return { usable: valid, detail: valid ? 'ReadsFiles' : 'BadToolCall' };
 }
 
-function cardsOutcome(response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
+export function cardsOutcome(response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
   if (response.toolCalls.length > 0) return { usable: false, detail: 'ReadsMore' };
   const suggested = asksSuggestedAnswers(prompts.cardFormat) ? 'required' : 'optional';
   const parsed = parseCardsLenient(response.text, new Map(), { suggestedAnswers: suggested });

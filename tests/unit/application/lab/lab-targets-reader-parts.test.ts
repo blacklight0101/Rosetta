@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import {
+  readerPromptsFor,
   readerSystemPrompt,
   type ReaderPrompts,
 } from '../../../../src/application/agent/reader-prompts.js';
@@ -97,7 +98,8 @@ describe('the other reader targets', () => {
       expect(content).toContain('Draft ');
       expect(content).toContain(fact);
       expect(content).toContain(`"source":"${source}"`);
-      expect(request?.system).toBe(readerSystemPrompt(prompts));
+      const marks = { flows: false, screens: false };
+      expect(request?.system).toBe(readerSystemPrompt(readerPromptsFor(prompts, marks, true)));
       expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
     },
   );

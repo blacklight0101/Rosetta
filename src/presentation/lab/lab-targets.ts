@@ -2,6 +2,7 @@ import type { LabTarget } from '../../application/lab/lab-target.js';
 import { gapTarget } from '../../application/lab/targets/gap-target.js';
 import { mergeTarget } from '../../application/lab/targets/merge-target.js';
 import { overviewTarget } from '../../application/lab/targets/overview-target.js';
+import { readerPartTargets } from '../../application/lab/targets/reader-part-targets.js';
 import { readerTargets } from '../../application/lab/targets/reader-targets.js';
 import { verifierClaimTarget } from '../../application/lab/targets/verifier-claim-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -25,6 +26,7 @@ export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]
     gapTarget(),
     mergeTarget(),
     ...readerTargets(reader),
+    ...readerPartTargets(reader),
   ];
 }
 

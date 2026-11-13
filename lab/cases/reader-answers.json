@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "version": "reader-answers-1",
+  "prompt": "reader/answers",
+  "description": "Inputs of reader/answers captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-063857-understand",
+        "20261102-195943-understand",
+        "20261102-012533-understand",
+        "20261029-164343-understand",
+        "20261029-150101-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-063857-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-005 (Area: eShopModernizedMVCSolution/src/eShopModernizedMVC): Which session store should production use: the in-process default or the Redis provider?\nOwner's answer: The Redis session provider\n\nQuestion OQ-006 (Area: eShopModernizedMVCSolution/src/eShopModernizedMVC): Should logs also be written to Azure Blob storage, and if so which storage account?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-005 (Area: eShopModernizedMVCSolution/src/eShopModernizedMVC): Which session store should production use: the in-process default or the Redis provider?\nOwner's answer: The Redis session provider\n\nQuestion OQ-006 (Area: eShopModernizedMVCSolution/src/eShopModernizedMVC): Should logs also be written to Azure Blob storage, and if so which storage account?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-191",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+        "files": [
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/eShopModernizedMVC.csproj",
+            "language": "xml",
+            "lines": 741
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/packages.config",
+            "language": "xml",
+            "lines": 149
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-029 (Area: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services): Which implementation of ICatalogService should run in each environment, and is the mock used anywhere other than testing?\nOwner's answer: The mock is used in a demo or offline mode\n\nQuestion OQ-030 (Area: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services): When a catalog item to update does not exist, should the system report an error, or silently do nothing?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261102-195943-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopLegacy.Utilities",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopLegacy.Utilities/eShopLegacy.Utilities.csproj",
+            "language": "xml",
+            "lines": 48
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-029 (Area: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services): Which implementation of ICatalogService should run in each environment, and is the mock used anywhere other than testing?\nOwner's answer: The mock is used in a demo or offline mode\n\nQuestion OQ-030 (Area: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services): When a catalog item to update does not exist, should the system report an error, or silently do nothing?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-044 (Area: eShopModernizedNTier): Is a shipment entry meant to set the day's stock to a count, or to add to the stock already recorded for that day?\nOwner's answer: The entry adds to the day's stock\n\nQuestion OQ-043 (Area: eShopModernizedNTier): Should the WinForms client be deployed on the same machine as the catalog service, or must it reach the service over the network?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261102-012533-understand-reader-104",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/FilesController.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 166
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-044 (Area: eShopModernizedNTier): Is a shipment entry meant to set the day's stock to a count, or to add to the stock already recorded for that day?\nOwner's answer: The entry adds to the day's stock\n\nQuestion OQ-043 (Area: eShopModernizedNTier): Should the WinForms client be deployed on the same machine as the catalog service, or must it reach the service over the network?\nOwner's answer: Leave it as the legacy app does it; decide later."
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-102",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
+        "files": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Cloud.xml",
+            "language": "xml",
+            "lines": 28
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.1Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/PublishProfiles/Local.5Node.xml",
+            "language": "xml",
+            "lines": 11
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "language": "powershell",
+            "lines": 258
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-010: Which applications and connection strings use the eshopmodernized.sqldata SQL Server endpoint, and which database do they use?\nRaised from: ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:30-30 The service DNS name eshopmodernized.sqldata and the port 1433 endpoint are declared, but no client of them appears in this area.\nOwner's answer: The MVC and WebForms Service Fabric container packages use it: their ServiceManifest.xml ConnectionString names eshopmodernized.sqldata and the database Microsoft.eShopOnContainers.Services.CatalogDb."
+      }
+    },
+    {
+      "id": "eshop-20261029-164343-understand-reader-197",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 166
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-018: Should DELETE api/Brands/{id} actually delete the brand, or is it a demo stub that is meant to stay this way?\nRaised from: eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs:24-35 The code finds the brand and returns Ok with the comment 'demo only - don't actually delete'.\nOwner's answer: It is a demo stub and should stay a no-op"
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-043",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
+        "files": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.1Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationParameters/Local.5Node.xml",
+            "language": "xml",
+            "lines": 5
+          },
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1",
+            "language": "powershell",
+            "lines": 258
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-010: Which applications and connection strings use the eshopmodernized.sqldata SQL Server endpoint, and which database do they use?\nRaised from: ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:30-30 The service DNS name eshopmodernized.sqldata and the port 1433 endpoint are declared, but no client of them appears in this area.\nOwner's answer: The MVC and WebForms Service Fabric container packages use it: their ServiceManifest.xml ConnectionString names eshopmodernized.sqldata and the database Microsoft.eShopOnContainers.Services.CatalogDb."
+      }
+    },
+    {
+      "id": "eshop-20261029-150101-understand-reader-068",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp",
+        "files": [
+          {
+            "path": "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml",
+            "language": "xml",
+            "lines": 36
+          }
+        ],
+        "turns": 12,
+        "answers": "Question OQ-010: Which applications and connection strings use the eshopmodernized.sqldata SQL Server endpoint, and which database do they use?\nRaised from: ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/ApplicationManifest.xml:30-30 The service DNS name eshopmodernized.sqldata and the port 1433 endpoint are declared, but no client of them appears in this area.\nOwner's answer: The MVC and WebForms Service Fabric container packages use it: their ServiceManifest.xml ConnectionString names eshopmodernized.sqldata and the database Microsoft.eShopOnContainers.Services.CatalogDb."
+      }
+    }
+  ]
+}
