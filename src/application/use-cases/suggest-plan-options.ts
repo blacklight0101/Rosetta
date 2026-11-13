@@ -11,7 +11,11 @@ import { consentNeedOf } from '../consent/consent-need.js';
 import { settleConsent, type StartConsents } from '../consent/start-consent.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recommend-plan-options.js';
+import {
+  recommendPlanOptions,
+  type PlanOptionsInput,
+  type PlanOptionsProblem,
+} from '../planning/recommend-plan-options.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { JourneyRecords } from '../ports/journey-records.js';
 import { stepAmountChecked } from '../journey/journey-budget.js';
@@ -181,18 +185,18 @@ export class SuggestPlanOptions {
       },
       { ...input, catalogue },
     );
-    return outcome.ok ? outcome : err(journeyWords(outcome.error.code, line.value !== undefined));
+    return outcome.ok ? outcome : err(journeyWords(outcome.error));
   }
 }
 
 /**
- * RF-435, P9-02: under a journey the call is stopped by the journey's remainder, not by a project
- * cap, so it answers RST-2311 (press Analyse again) instead of RST-1600 (raise the project cap).
+ * RF-435, P9-02: a call stopped at the journey's approved line answers RST-2311 (press Analyse
+ * again) instead of RST-1600 (raise a cap); a call stopped by any other cap keeps RST-1600.
  */
-function journeyWords(code: ErrorCode, underJourney: boolean): ErrorCode {
-  return underJourney && code === ERROR_CODES.budgetCapReached
+function journeyWords(problem: PlanOptionsProblem): ErrorCode {
+  return problem.approvedLine === true && problem.code === ERROR_CODES.budgetCapReached
     ? ERROR_CODES.journeyAmountUsed
-    : code;
+    : problem.code;
 }
 
 function traceIdOf(ids: Pick<IdGenerator, 'uuid'>): string {

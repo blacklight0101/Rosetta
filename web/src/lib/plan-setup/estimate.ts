@@ -143,16 +143,29 @@ export interface JourneyShort {
 }
 
 /**
- * RF-435, RF-613, P9-02: what is short of the journey's approved amount, with both figures, and the
- * one way on: with something left the plan starts and pauses to Continue (+N); with nothing left
- * only Analyse again on the start page approves a new amount.
+ * The cap the journey's shortness is told in: the approved cap the likely figure passes, else (the
+ * server says the amount is used up) the approved cap of the first unit it has.
+ */
+function shortCapOf(estimate: PlanEstimate): PlanCap | undefined {
+  const over = overCaps(estimate, 'likely').find((each) => each.approved);
+  if (over !== undefined || estimate.journey?.usedUp !== true) return over;
+  return estimate.caps.find((each) => each.approved);
+}
+
+/**
+ * RF-435, RF-613, P9-02: what is short of the journey's approved amount, with both figures (the
+ * amount approved, which the server gives, and what is left, the approved cap's limit), and the one
+ * way on: with something left the plan starts and pauses to Continue (+N); with nothing left only
+ * Analyse again on the start page approves a new amount. "Used up" is the server's own rule.
  */
 export function journeyShortOf(estimate: PlanEstimate): JourneyShort | undefined {
-  const cap = overCaps(estimate, 'likely').find((each) => each.approved);
-  if (cap === undefined) return undefined;
-  const approved = capFigure(cap, cap.limit);
+  const { journey } = estimate;
+  const cap = shortCapOf(estimate);
+  if (journey === undefined || cap === undefined) return undefined;
+  const total = cap.unit === 'tokens' ? journey.approved.tokens : journey.approved.costMicros;
+  const approved = capFigure(cap, total);
   const needs = `the plan is estimated at ${scenarioFigure(estimate, 'likely', cap)}`;
-  const usedUp = cap.remaining <= 0n;
+  const { usedUp } = journey;
   const text = usedUp
     ? `Nothing is left of the ${approved} you approved, and ${needs}. The plan cannot start until you approve a new amount.`
     : `Only ${capFigure(cap, cap.remaining)} is left of the ${approved} you approved, and ${needs}. You can still start it: the run pauses before it passes what is left and asks you to Continue (+N), which raises the approved amount.`;

@@ -52,6 +52,8 @@ async function reservedBy(deps: JourneyBudgetDependencies, steps: readonly Run[]
 /** A step's line, and whether the journey's approved amount is used up. */
 export interface StepLine {
   readonly amount: ApprovedAmount;
+  /** P9-02: the one amount the owner approved, of which `amount` is what a new step may use. */
+  readonly approved: Amount;
   readonly usedUp: boolean;
 }
 
@@ -72,7 +74,7 @@ export async function stepLineOf(
   };
   // Nothing to run on: no tokens, or no dollars in an amount that has dollars.
   const usedUp = free.tokens <= 0 || (record.approved.costMicros > 0 && free.costMicros <= 0);
-  return { amount: free, usedUp };
+  return { amount: free, approved: record.approved, usedUp };
 }
 
 /** The amount a new step may use: the journey's remainder; undefined when the project has no journey. */
