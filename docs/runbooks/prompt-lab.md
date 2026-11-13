@@ -106,10 +106,14 @@ recomputes the rule for every committed set, checks that one input has one side 
 one-sided sets, and refuses an input held twice or a text the run's masker would mask; `tests/integration/lab/repair-case-sets.test.ts`
 checks the side of every repair case (ADR-029, amendments of the P10 lab fixes).
 
-**Sets with no held-back case (2026-11-13).** `planner-api-contract` (3 cases), `planner-package` and `planner-prd`
-(4 each, the same inputs) and `planner-plan-repair` (4, built on `planner-package`): every input falls on the tune
-side. They serve the P10-04 baseline and tuning; a keep decision on `planner/api-contract`, `planner/package`,
-`planner/prd` or `planner/plan-repair` needs more eShopModernizing plan runs captured first.
+**Sets with no held-back case (2026-11-13, P10-08).** Only `planner-plan-repair` (4 cases, built by hand on the
+first four `planner-package` inputs) has no held-back case, so no version of `planner/plan-repair` can be kept until it
+is rebuilt (P10-07). The other three sets that had none (`planner-api-contract`, `planner-package`, `planner-prd`) were
+re-captured with the saved eShopModernizing plan runs the first capture left out (the Ollama runs, the failed and
+`-try1` runs and the two `p6-haiku-eshop-v2-plan` runs; their cards are inputs, whoever wrote them), and now hold one
+held-back case each (`planner-prd` 7 cases, `planner-package` 7, `planner-api-contract` 6; `planner-ux` 7/1,
+`planner-data-model` 8/2, `planner-flows` 13/6, `planner-coverage` 10/4). One case is a thin basis for a decision: a
+keep on these sets is read together with the tune figures (docs/evaluation/prompt-lab/plan-docs.md).
 
 **The committed sets (2026-11-13).** Built from saved Haiku 5.5 evaluation runs of one published source,
 eShopModernizing (MIT, commit 63bc9ec4414d7e281dc9f9d7bdcf70030950457d, `lab/sources.json`): 5 cases for `planner-gap`,

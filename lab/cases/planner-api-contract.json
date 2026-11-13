@@ -15,7 +15,16 @@
         "20261102-203736-plan",
         "20261102-030541-plan",
         "20261029-152045-plan",
-        "20261023-152751-plan"
+        "20261023-152751-plan",
+        "20261029-175606-plan",
+        "20261029-180026-plan",
+        "20261029-141853-plan",
+        "20261102-025517-plan",
+        "20261102-025520-plan",
+        "20261102-202910-plan",
+        "20261102-023125-plan",
+        "20261023-020712-plan",
+        "20261023-021158-plan"
       ]
     }
   ],
@@ -911,6 +920,1296 @@
             "id": "ENT-017",
             "title": "Catalog database context",
             "summary": "An Entity Framework DbContext exposing the three catalog entities and loading their mapping configurations from the assembly."
+          }
+        ],
+        "frontEnd": "Razor Pages (for WebForms/MVC replacement)",
+        "backEnd": "ASP.NET Core Minimal APIs",
+        "database": "SQL Server (as per legacy context)",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261029-141853-plan-planner-api-contract",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "featureCards": [
+          {
+            "id": "FEAT-001",
+            "title": "Modernization of Legacy eShop Applications",
+            "summary": "The repository provides examples of modernizing legacy eShop applications (WebForms, MVC, WCF/WinForms) to run in Windows Containers and Azure.",
+            "claims": [
+              {
+                "claimId": "FEAT-001.c1",
+                "text": "The repository demonstrates lifting and shifting three sample hypothetical legacy eShop web apps (ASP.NET WebForms, ASP.NET MVC, and N-Tier WCF/WinForms) to modern environments.",
+                "citations": ["README.md:2-4"]
+              },
+              {
+                "claimId": "FEAT-001.c2",
+                "text": "The target deployment environments include local Docker builds, Azure Container Instances (ACI), Windows Server 2016 VMs, AKS Kubernetes, and Azure Web App for Containers.",
+                "citations": ["README.md:6-10"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "The sample applications are simple CRUD web applications designed for an internal backoffice to update the Product Catalog.",
+                "citations": ["README.md:23-24"]
+              },
+              {
+                "claimId": "FEAT-001.c4",
+                "text": "The WebFoms and MVC apps share similar UI and business features.",
+                "citations": ["README.md:38-39"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-002",
+            "title": "Kubernetes Service Exposure Definitions",
+            "summary": "Various services are defined in Kubernetes. RabbitMQ (component: rabbitmq) is exposed on port 5672. The SQL data service is exposed on port 1433. The eShop WCF service is exposed on port 80. WebForms are exposed on port 5114, and the MVC application is exposed on port 5115.",
+            "claims": [
+              {
+                "claimId": "FEAT-002.c1",
+                "text": "The service is labeled with app: eshop and component: rabbitmq.",
+                "citations": ["Kubernetes-DockerForWindows/RabbitMQ-Linux-K8s/rabbitmq.yaml:5-6"]
+              },
+              {
+                "claimId": "FEAT-002.c2",
+                "text": "The service exposes port 5672, selecting pods with labels app: eshop and component: rabbitmq.",
+                "citations": ["Kubernetes-DockerForWindows/RabbitMQ-Linux-K8s/rabbitmq.yaml:10-13"]
+              },
+              {
+                "claimId": "FEAT-002.c3",
+                "text": "The deployment uses the image 'rabbitmq:3-management' for the container.",
+                "citations": ["Kubernetes-DockerForWindows/RabbitMQ-Linux-K8s/rabbitmq.yaml:28-28"]
+              },
+              {
+                "claimId": "FEAT-002.c4",
+                "text": "The container exposes port 5672.",
+                "citations": ["Kubernetes-DockerForWindows/RabbitMQ-Linux-K8s/rabbitmq.yaml:30-30"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-004",
+            "title": "MVC Application Deployment on Windows Nodes",
+            "summary": "The eShop Modernized MVC application runs with 1 replica, built from the 'eshop/modernizedmvc' image, exposing container port 80. The deployment is restricted to nodes running Windows OS ('beta.kubernetes.io/os: windows'), and configuration allows setting 'UseMockData' to true/false.",
+            "claims": [
+              {
+                "claimId": "FEAT-004.c1",
+                "text": "The application is configured to run with 1 replica in the deployment.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:6-6"
+                ]
+              },
+              {
+                "claimId": "FEAT-004.c2",
+                "text": "The application container is built from the image 'eshop/modernizedmvc' and exposes port 80 internally.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-compose.yml:5-5",
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:19-19"
+                ]
+              },
+              {
+                "claimId": "FEAT-004.c3",
+                "text": "The service exposes port 5115 externally and targets container port 80.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:56-56"
+                ]
+              },
+              {
+                "claimId": "FEAT-004.c4",
+                "text": "The application is configured to use mock data and not use customization data by default.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-compose.yml:11-11",
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:27-27"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-005",
+            "title": "SQL Data Service Exposure",
+            "summary": "The deployed SQL data service is exposed via a LoadBalancer service on port 1433.",
+            "claims": [
+              {
+                "claimId": "FEAT-005.c1",
+                "text": "A Deployment named 'sql-data' is configured to run the 'microsoft/mssql-server-windows-developer' container image.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:2-13"
+                ]
+              },
+              {
+                "claimId": "FEAT-005.c2",
+                "text": "The deployment requires the environment variable ACCEPT_EULA to be set to 'Y'.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:15-16"
+                ]
+              },
+              {
+                "claimId": "FEAT-005.c3",
+                "text": "The deployment configures a password for the SA user, set to 'Pass@word'.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:17-18"
+                ]
+              },
+              {
+                "claimId": "FEAT-005.c5",
+                "text": "A Service named 'sql-data' of type LoadBalancer is configured to expose port 1433, mapping to target port 1433 on the application.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedSQL-K8s/eshop-modernized-sql-k8s-services-deployment.yml:23-33"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-011",
+            "title": "MVC Container Service with External Configuration",
+            "summary": "The Service Fabric application deploys an MVC Container service configured to use an image and expose an HTTP endpoint, while allowing external configuration via environment variables.",
+            "claims": [
+              {
+                "claimId": "FEAT-011.c1",
+                "text": "The application deploys a StatelessServiceType named MVC_ContainerType as the MVC_Container service.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/ApplicationPackageRoot/MVC_ContainerPkg/ServiceManifest.xml:10-10"
+                ]
+              },
+              {
+                "claimId": "FEAT-011.c2",
+                "text": "The service uses the Docker image 'eshop/modernizedmvc' as its container image.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/ApplicationPackageRoot/MVC_ContainerPkg/ServiceManifest.xml:18-18"
+                ]
+              },
+              {
+                "claimId": "FEAT-011.c3",
+                "text": "The MVC_Container service exposes an HTTP endpoint named MVC_ContainerTypeEndpoint on port 5115.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/ApplicationPackageRoot/MVC_ContainerPkg/ServiceManifest.xml:46-46"
+                ]
+              },
+              {
+                "claimId": "FEAT-011.c4",
+                "text": "The application allows setting environment variables during deployment, including connection strings, storage flags, and directory endpoints.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedMVC-ServiceFabricApp/ApplicationPackageRoot/MVC_ContainerPkg/ServiceManifest.xml:22-34"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-012",
+            "title": "Service Fabric SQL Container Service Deployment",
+            "summary": "The application defines a containerized SQL service that can be deployed to Service Fabric, with parameters configurable per environment.",
+            "claims": [
+              {
+                "claimId": "FEAT-012.c2",
+                "text": "The service uses the container image 'microsoft/mssql-server-windows-developer:2017' and exposes TCP port 1433.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:18-18",
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:39-39"
+                ]
+              },
+              {
+                "claimId": "FEAT-012.c3",
+                "text": "The service requires the 'ACCEPT_EULA' environment variable to be set to 'Y' and the 'SA_PASSWORD' environment variable to be set for its operation.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/ApplicationPackageRoot/SQL_ContainerPkg/ServiceManifest.xml:24-25"
+                ]
+              },
+              {
+                "claimId": "FEAT-012.c5",
+                "text": "The deployment script 'Deploy-FabricApplication.ps1' deploys a Service Fabric application type to a cluster.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:3-3"
+                ]
+              },
+              {
+                "claimId": "FEAT-012.c6",
+                "text": "The script is invoked by Visual Studio when deploying a Service Fabric Application project.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedSQL_ServiceFabricApp/Scripts/Deploy-FabricApplication.ps1:6-6"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-013",
+            "title": "WebForms Container Service Definition and Exposure",
+            "summary": "The application defines a stateless WebForms Container service, specifies its image, and exposes a communication endpoint on port 5114.",
+            "claims": [
+              {
+                "claimId": "FEAT-013.c1",
+                "text": "The service is defined as 'WebForms_ContainerType' and runs as a StatelessServiceType.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:10-10"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c2",
+                "text": "The service uses the container image 'eshop/modernizedwebforms'.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:18-18"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c3",
+                "text": "A communication endpoint named 'WebForms_ContainerTypeEndpoint' is exposed on port 5114 using HTTP.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:45-45"
+                ]
+              },
+              {
+                "claimId": "FEAT-013.c4",
+                "text": "The service is defined as a StatelessServiceType named 'WebForms_ContainerType' and is a guest service.",
+                "citations": [
+                  "ServiceFabric/eShopModernizedWebForms-ServiceApp/ApplicationPackageRoot/WebForms_ContainerPkg/ServiceManifest.xml:10-10"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-014",
+            "title": "Application setup and resource provisioning",
+            "summary": "The setup scripts provision necessary Azure resources for the application, including an App Service plan, a Web App, an Azure SQL Server, and an SQL Database.",
+            "claims": [
+              {
+                "claimId": "FEAT-014.c1",
+                "text": "The setup process validates the presence of useralias, serveradminpassword, and resourcegroupname before proceeding.",
+                "citations": ["Setup/environment.ps1:1-14"]
+              },
+              {
+                "claimId": "FEAT-014.c2",
+                "text": "An Azure App Service plan is created using the provided resource group, location ('eastus'), useralias, and the name suffix '-webappplan'.",
+                "citations": ["Setup/setup.ps1:5-5"]
+              },
+              {
+                "claimId": "FEAT-014.c3",
+                "text": "An Azure Web App is created, associated with the App Service plan, resource group, location, and named using the useralias and suffix '-webapp'.",
+                "citations": ["Setup/setup.ps1:8-8"]
+              },
+              {
+                "claimId": "FEAT-014.c4",
+                "text": "A managed identity is assigned to the newly created web app.",
+                "citations": ["Setup/setup.ps1:11-11"]
+              }
+            ],
+            "type": "FEAT"
+          }
+        ],
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "SQL Data Deployment Configuration",
+            "summary": "The SQL data deployment is configured using the 'microsoft/mssql-server-windows-developer' container image. It requires accepting the EULA and uses the SA username with credentials configured via environment variables. Health checks validate connectivity using 'sqlcmd' to the 'sa' user."
+          },
+          {
+            "id": "ENT-002",
+            "title": "Catalog Database Context Registration/Connection",
+            "summary": "Describes the connection setup for the Catalog Database, specifying the server 'sql-data' and database name, and the registration of CatalogDBContext and CatalogDBInitializer to be instantiated per lifetime scope."
+          },
+          {
+            "id": "ENT-003",
+            "title": "Application Configuration Parameters",
+            "summary": "Describes application settings managed via parameter files or configuration flags, including instance counts for SQL containers, and configuration flags like UseMockData and storage connection details."
+          },
+          {
+            "id": "ENT-004",
+            "title": "CatalogBrand",
+            "summary": "Defines catalog brands, having an Id (primary key) and a Brand string property with a maximum length of 100."
+          },
+          {
+            "id": "ENT-005",
+            "title": "CatalogType",
+            "summary": "Defines catalog types, having an Id (primary key) and a Type string property with a maximum length of 100."
+          },
+          {
+            "id": "ENT-006",
+            "title": "CatalogItem",
+            "summary": "Represents a catalog item with an Id (primary key), Name (string, max 50), Description (optional string), Price (decimal, required, range constraints vary), PictureFileName (string, required), and flags OnReorder. It links to CatalogBrand and CatalogType via CatalogBrandId and CatalogTypeId. It may also have stock tracking properties like AvailableStock, RestockThreshold, and MaxStockThreshold."
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity stores details about a product in the catalog, persisted to the 'Catalog' table."
+          },
+          {
+            "id": "ENT-008",
+            "title": "CatalogBrand",
+            "summary": "The CatalogBrand entity stores brand information for products."
+          },
+          {
+            "id": "ENT-009",
+            "title": "CatalogType",
+            "summary": "The CatalogType entity defines the type of a product."
+          },
+          {
+            "id": "ENT-011",
+            "title": "PaginatedItemsViewModel",
+            "summary": "A view model for paginated lists, holding read-only properties for current page, items per page, and total items, and a settable property for total pages. It also holds a read-only collection of data items."
+          },
+          {
+            "id": "ENT-015",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity has several attributes defining it within the system."
+          },
+          {
+            "id": "ENT-016",
+            "title": "CatalogBrand",
+            "summary": "The system utilizes a CatalogBrand entity."
+          },
+          {
+            "id": "ENT-017",
+            "title": "CatalogType",
+            "summary": "The system utilizes a CatalogType entity."
+          },
+          {
+            "id": "ENT-018",
+            "title": "Catalog Item, Brand, and Type Data Sources",
+            "summary": "Describes the data source and content for catalog items, brands, and types. Catalog Brands include entries like 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'. Catalog Types include 'Mug', 'T-Shirt', 'Sheet', and 'USB Memory Stick'. Catalog Items are detailed in CSVs, having Name, Price, PictureFileName, and linking to specific CatalogType and CatalogBrand names, along with stock and reorder status."
+          },
+          {
+            "id": "ENT-024",
+            "title": "CatalogItemsStock Entity",
+            "summary": "The CatalogItemsStock entity tracks the available inventory for a specific item on a given date."
+          },
+          {
+            "id": "ENT-025",
+            "title": "DiscountItem Entity",
+            "summary": "The DiscountItem entity defines time-bound discounts for catalog items based on size."
+          },
+          {
+            "id": "ENT-031",
+            "title": "CatalogItemHiLoGenerator registration",
+            "summary": "CatalogItemHiLoGenerator is registered as a single instance."
+          },
+          {
+            "id": "ENT-041",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity stores information about catalog items."
+          },
+          {
+            "id": "ENT-047",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity holds item details including Id, Name, Description, Price, PictureFileName, PictureUri, CatalogBrand, CatalogType, AvailableStock, RestockThreshold, MaxStockThreshold, and OnReorder status. It uses relationships via CatalogBrandId and CatalogTypeId."
+          },
+          {
+            "id": "ENT-054",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity stores information about catalog items, including Id (primary key), Name (string, max 50), Description (optional string), Price (decimal, required), PictureFileName (string, required), CatalogBrandId (FK), CatalogTypeId (FK), AvailableStock, RestockThreshold, MaxStockThreshold, and OnReorder (boolean). It can be linked to CatalogBrand and CatalogType. CatalogItemHiLoGenerator is registered as a single instance."
+          },
+          {
+            "id": "ENT-065",
+            "title": "CatalogItem Entity",
+            "summary": "Defines the structure of a catalog item, including properties like Id, Name, Description, Price, Picturefilename, CatalogTypeId, CatalogBrandId, AvailableStock, RestockThreshold, and MaxStockThreshold. It is subject to various constraints, including price ranges and stock limits, and links to CatalogType and CatalogBrand."
+          },
+          {
+            "id": "ENT-068",
+            "title": "CatalogBrand Entity",
+            "summary": "Defines the structure of a catalog brand, including an Id and a Brand name. It is used in preconfigured data examples."
+          },
+          {
+            "id": "ENT-069",
+            "title": "CatalogType Entity",
+            "summary": "Details the catalog type, including an Id, Name, and Type. It is associated with database sequences (catalog_type_hilo) and configuration settings for the type."
+          },
+          {
+            "id": "ENT-077",
+            "title": "Database Context for Catalog",
+            "summary": "The application utilizes Entity Framework for data access, specifically referencing a Catalog database context."
+          },
+          {
+            "id": "ENT-078",
+            "title": "ActivityIdHelper",
+            "summary": "A helper class used to generate and manage unique activity IDs for tracking requests."
+          },
+          {
+            "id": "ENT-079",
+            "title": "WebRequestInfo",
+            "summary": "A helper class used to capture information about the incoming web request."
+          },
+          {
+            "id": "ENT-082",
+            "title": "CatalogItemHiLoGenerator Logic",
+            "summary": "The CatalogItemHiLoGenerator contains logic related to catalog item high/low categorization."
+          },
+          {
+            "id": "ENT-087",
+            "title": "Catalog Configuration Settings",
+            "summary": "The application relies on configuration settings defined in CatalogConfiguration."
+          },
+          {
+            "id": "ENT-088",
+            "title": "Service Container and Port Mappings for eShop Modernized Services",
+            "summary": "Defines containerized services for eShopModernizedMVC and eShopModernizedWebForms, specifying dependencies, network configurations ('nat'), and their respective port mappings (e.g., MVC service maps 80 to host port 5115, WebForms maps 80 to host port 5114; SQL services map 1433 to 5433 for MVC and 5435 for WebForms)."
+          },
+          {
+            "id": "ENT-092",
+            "title": "CatalogBrandSequence",
+            "summary": "A sequence named catalog_brand_hilo is defined in the database script."
+          },
+          {
+            "id": "ENT-093",
+            "title": "CatalogHiloSequence",
+            "summary": "A sequence named catalog_hilo is defined in the database script."
+          },
+          {
+            "id": "ENT-099",
+            "title": "CatalogDBContext Entity",
+            "summary": "CatalogDBContext exposes DbSet properties for CatalogItem, CatalogBrand, and CatalogType."
+          },
+          {
+            "id": "ENT-120",
+            "title": "EntityModel Configuration and Entities",
+            "summary": "The EntityModel class is a DbContext that defines the entities for the eShopWCFService, configured to use CatalogConfiguration.ConnectionString for its database connection and CatalogDBInitializer for setup."
+          }
+        ],
+        "frontEnd": "Razor Pages",
+        "backEnd": "ASP.NET Core Minimal APIs",
+        "database": "SQL Server",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261102-025517-plan-planner-api-contract",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "featureCards": [
+          {
+            "id": "FEAT-001",
+            "title": "Product Catalog Management Screens and Operations",
+            "summary": "The application provides interfaces (WebForms/Web/Desktop) for comprehensive product catalog management, including screens/pages for viewing details, creating new items, editing existing items, and deleting items. CRUD operations can be performed via web forms or desktop applications, and detailed views can fetch item information. Pagination is supported for listing items.",
+            "claims": [
+              {
+                "claimId": "FEAT-001.c1",
+                "text": "The WebForms and MVC apps are simple CRUD web applications to update data into a SQL Server database.",
+                "citations": ["README.md:24-24"]
+              },
+              {
+                "claimId": "FEAT-001.c2",
+                "text": "The winforms application is a catalog management, and uses a WCF as a back-end.",
+                "citations": ["winforms-wcf.md:21-21"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "The application has screens for creating, deleting, viewing details, and editing catalog items.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:1-104",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx:1-91",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx:1-84",
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx:1-107"
+                ]
+              },
+              {
+                "claimId": "FEAT-001.c4",
+                "text": "The Create page allows input for Name, Description, Brand (via dropdown populated by GetBrands), Type (via dropdown populated by GetTypes), Price, Stock, Restock, and Maxstock.",
+                "citations": [
+                  "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:10-89"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-002",
+            "title": "Client-side Asset Management and Inventory Tracking",
+            "summary": "Client-side assets are bundled for optimized loading, including scripts for jQuery, Bootstrap, Modernizr, and custom CSS, alongside WebForms-specific scripts. Additionally, the system supports tracking inventory counts for various items at different calendar dates using the WinForms front-end.",
+            "claims": [
+              {
+                "claimId": "FEAT-002.c1",
+                "text": "This sample project shows how to modernize a traditional Line of Business WinForms applications. The WinForms front-end is a fictional inventory app which allows it's users to track inventory for a variety of items being sold through their store. You can look at inventory counts for particular items at different calendar dates.",
+                "citations": ["winforms-wcf.md:8-9"]
+              },
+              {
+                "claimId": "FEAT-002.c2",
+                "text": "A script bundle for jQuery is registered, including 'jquery-{version}.js'.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start/BundleConfig.cs:10-11"
+                ]
+              },
+              {
+                "claimId": "FEAT-002.c3",
+                "text": "A script bundle for jQuery validation is registered, including 'jquery.validate*'.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start/BundleConfig.cs:13-14"
+                ]
+              },
+              {
+                "claimId": "FEAT-002.c4",
+                "text": "A script bundle for Modernizr is registered.",
+                "citations": [
+                  "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start/BundleConfig.cs:18-19"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-004",
+            "title": "Deployment configuration for different application types",
+            "summary": "The ACI area provides deployment templates and parameter files for three different application types: Modernized MVC, WCF Service, and WebForms, all deploying to Azure Container Instance.",
+            "claims": [
+              {
+                "claimId": "FEAT-004.c1",
+                "text": "A deployment template (ACI/aci.json) exists for deploying applications to Microsoft.ContainerInstance/containerGroups.",
+                "citations": ["ACI/aci.json:25-26"]
+              },
+              {
+                "claimId": "FEAT-004.c2",
+                "text": "Parameter sets exist for MVC (ACI/mvc.parameters.json), WCF (ACI/wcf.parameters.json), and WebForms (ACI/webforms.parameters.json) applications.",
+                "citations": [
+                  "ACI/mvc.parameters.json:1-18",
+                  "ACI/wcf.parameters.json:1-18",
+                  "ACI/webforms.parameters.json:1-18"
+                ]
+              },
+              {
+                "claimId": "FEAT-004.c3",
+                "text": "The MVC deployment template uses the 'eshop/modernizedmvc:latest' image as a default value in ACI/mvc.parameters.json.",
+                "citations": ["ACI/mvc.parameters.json:6-7"]
+              },
+              {
+                "claimId": "FEAT-004.c4",
+                "text": "The WCF deployment template uses the 'eshop/wcfservice:latest' image as a default value in ACI/wcf.parameters.json.",
+                "citations": ["ACI/wcf.parameters.json:6-7"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-005",
+            "title": "Azure Resource Provisioning Workflow",
+            "summary": "The setup process provisions several Azure resources sequentially: an App Service Plan, an Azure Web App, an Azure SQL Server, and an Azure SQL Database.",
+            "claims": [
+              {
+                "claimId": "FEAT-005.c2",
+                "text": "An Azure Web App is created, associated with the App Service Plan, in the specified location.",
+                "citations": ["Setup/setup.ps1:8-8"]
+              },
+              {
+                "claimId": "FEAT-005.c3",
+                "text": "A managed identity is assigned to the created web app.",
+                "citations": ["Setup/setup.ps1:11-11"]
+              },
+              {
+                "claimId": "FEAT-005.c4",
+                "text": "An Azure SQL Database server is created using administrator credentials derived from 'serveradminname' and 'serveradminpassword'.",
+                "citations": ["Setup/setup.ps1:14-14"]
+              },
+              {
+                "claimId": "FEAT-005.c5",
+                "text": "The firewall for the created SQL Server is configured to allow access from all IP addresses (0.0.0.0 to 0.0.0.0).",
+                "citations": ["Setup/setup.ps1:17-17"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-006",
+            "title": "Containerized Deployment Configuration",
+            "summary": "The area contains Docker Compose configuration files for deploying two different application stacks: eShopModernizedMVC and eShopModernizedWebForms.",
+            "claims": [
+              {
+                "claimId": "FEAT-006.c3",
+                "text": "Override configurations exist to specify environment-specific behaviors (e.g., using NoSQL storage).",
+                "citations": [
+                  "VM/eShopModernizedMVC/docker-compose.override.nosql.yml:1-22",
+                  "VM/eShopModernizedMVC/docker-compose.override.yml:1-29"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-007",
+            "title": "Binary serialization and deserialization",
+            "summary": "The Serializing class provides functionality to serialize and deserialize objects using binary format.",
+            "claims": [
+              {
+                "claimId": "FEAT-007.c1",
+                "text": "The SerializeBinary method takes an object as input and returns a MemoryStream containing the serialized binary data.",
+                "citations": ["eShopLegacyMVCSolution/eShopLegacy.Utilities/Serializing.cs:8-15"]
+              },
+              {
+                "claimId": "FEAT-007.c2",
+                "text": "The DeserializeBinary method accepts a Stream and returns the deserialized object.",
+                "citations": ["eShopLegacyMVCSolution/eShopLegacy.Utilities/Serializing.cs:17-22"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-008",
+            "title": "Default Web Route Configuration",
+            "summary": "The application's default route directs requests to the Catalog controller's Index action.",
+            "claims": [
+              {
+                "claimId": "FEAT-008.c1",
+                "text": "The default route is set to map to the Catalog controller and Index action, accepting an optional ID parameter.",
+                "citations": ["eShopLegacyMVCSolution/eShopPorted/Startup.cs:64-64"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-009",
+            "title": "Catalog Item Picture Handling",
+            "summary": "Users can view the picture associated with a catalog item via a dedicated route, retrieving the image content based on the item's ID. The PicController also supports uploading images for catalog items, validates the format (JPEG, PNG, GIF), and returns a temporary URI for the uploaded image.",
+            "claims": [
+              {
+                "claimId": "FEAT-009.c1",
+                "text": "Accessing the picture for a catalog item is done via a GET request to /items/{catalogItemId:int}/pic.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:24-25"
+                ]
+              },
+              {
+                "claimId": "FEAT-009.c3",
+                "text": "If found, the system reads the image file content from the path derived by combining a web root and the item's PictureFileName.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:40-45"
+                ]
+              },
+              {
+                "claimId": "FEAT-009.c4",
+                "text": "The returned file includes the correct MIME type based on the file extension (.png, .gif, .jpg, .jpeg, .bmp, .tiff, .wmf, .jp2, .svg).",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:42-87"
+                ]
+              },
+              {
+                "claimId": "FEAT-009.c6",
+                "text": "If the item is found, the system serves the image file using its content and determined MIME type.",
+                "citations": [
+                  "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs:45-47"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          }
+        ],
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "Container Group Outputs",
+            "summary": "The deployment outputs the public IPv4 address assigned to the container group."
+          },
+          {
+            "id": "ENT-002",
+            "title": "Database Names and Identifiers",
+            "summary": "The setup process defines specific names for the created resources."
+          },
+          {
+            "id": "ENT-003",
+            "title": "CatalogItem Entity",
+            "summary": "The CatalogItem entity contains details about a product."
+          },
+          {
+            "id": "ENT-004",
+            "title": "CatalogBrand entity (Model Snapshot)",
+            "summary": "The CatalogBrand entity maintains a record of available brands in the system."
+          },
+          {
+            "id": "ENT-005",
+            "title": "CatalogType entity (Model Snapshot)",
+            "summary": "The CatalogType entity defines product categories."
+          },
+          {
+            "id": "ENT-006",
+            "title": "CatalogItem entity (Model Snapshot)",
+            "summary": "The CatalogItem entity represents a specific item available in the catalog, tracking stock and pricing."
+          },
+          {
+            "id": "ENT-007",
+            "title": "CatalogBrand",
+            "summary": "Defines the catalog brand entity."
+          },
+          {
+            "id": "ENT-008",
+            "title": "CatalogType",
+            "summary": "Defines the catalog type entity."
+          },
+          {
+            "id": "ENT-009",
+            "title": "CatalogItem",
+            "summary": "Defines the catalog item entity with various constraints and properties."
+          },
+          {
+            "id": "ENT-010",
+            "title": "CatalogItem entity",
+            "summary": "The CatalogItem entity stores product details and relates to CatalogBrand and CatalogType."
+          },
+          {
+            "id": "ENT-011",
+            "title": "CatalogType entity",
+            "summary": "The CatalogType entity stores types for catalog items."
+          },
+          {
+            "id": "ENT-012",
+            "title": "CatalogBrand entity",
+            "summary": "The CatalogBrand entity stores brands for catalog items."
+          },
+          {
+            "id": "ENT-013",
+            "title": "PaginatedItemsViewModel",
+            "summary": "The PaginatedItemsViewModel is a structure used to hold data for a paginated list of entities. It tracks the current page number (ActualPage), the number of items displayed per page (ItemsPerPage), the total number of items available (TotalItems), the total number of pages (TotalPages), and the collection of data items (Data)."
+          },
+          {
+            "id": "ENT-014",
+            "title": "Popper Positioning Data Structure",
+            "summary": "The Popper data structure tracks the state and properties of a rendered Popper element or a positioning calculation. It includes references to the Popper instance, placement details (current and original), tracking of whether the element has been flipped or hidden, applied styles, and calculated positions for popper, reference, and arrow elements."
+          },
+          {
+            "id": "ENT-015",
+            "title": "Catalog Item Entity",
+            "summary": "The CatalogItem entity tracks item details within the system."
+          },
+          {
+            "id": "ENT-016",
+            "title": "Catalog Brand Entity",
+            "summary": "The CatalogBrand entity manages brands available in the system."
+          },
+          {
+            "id": "ENT-017",
+            "title": "Catalog Type Entity",
+            "summary": "The CatalogType entity classifies different types of items."
+          },
+          {
+            "id": "ENT-018",
+            "title": "CatalogBrand entity",
+            "summary": "Defines the available brands for catalog items."
+          },
+          {
+            "id": "ENT-019",
+            "title": "CatalogType entity",
+            "summary": "Defines the available types for catalog items."
+          },
+          {
+            "id": "ENT-020",
+            "title": "CatalogItem entity",
+            "summary": "Represents an individual item in the catalog, including stock and pricing information."
+          },
+          {
+            "id": "ENT-021",
+            "title": "CatalogItem Entity",
+            "summary": "The CatalogItem entity is associated with a CatalogBrand and a CatalogType."
+          },
+          {
+            "id": "ENT-022",
+            "title": "CatalogBrand",
+            "summary": "CatalogBrand is used to classify catalog items by brand and is accessible via ICatalogService.GetCatalogBrands() to populate BrandDropDownList."
+          },
+          {
+            "id": "ENT-023",
+            "title": "CatalogType",
+            "summary": "CatalogType is used to classify catalog items by type and is accessible via ICatalogService.GetCatalogTypes() to populate TypeDropDownList."
+          },
+          {
+            "id": "ENT-024",
+            "title": "CatalogBrands",
+            "summary": "A list of available catalog brands."
+          },
+          {
+            "id": "ENT-025",
+            "title": "CatalogTypes",
+            "summary": "A list of defined catalog types."
+          },
+          {
+            "id": "ENT-026",
+            "title": "CatalogItems",
+            "summary": "A list of catalog items with details such as brand, type, price, and stock status."
+          },
+          {
+            "id": "ENT-027",
+            "title": "eShopLegacyNTier Solution Structure",
+            "summary": "The solution contains two projects: 'eShopWinForms' and 'eShopWCFService'."
+          },
+          {
+            "id": "ENT-028",
+            "title": "CatalogBrand",
+            "summary": "The CatalogBrand entity stores information about brand."
+          },
+          {
+            "id": "ENT-029",
+            "title": "CatalogItem",
+            "summary": "The CatalogItem entity stores information about a product item."
+          },
+          {
+            "id": "ENT-030",
+            "title": "CatalogType",
+            "summary": "The CatalogType entity categorizes catalog items."
+          },
+          {
+            "id": "ENT-031",
+            "title": "CatalogItemsStock",
+            "summary": "The CatalogItemsStock entity tracks inventory levels for catalog items on a specific date."
+          },
+          {
+            "id": "ENT-032",
+            "title": "DiscountItem",
+            "summary": "The DiscountItem entity defines discounts applicable to catalog items."
+          },
+          {
+            "id": "ENT-033",
+            "title": "CatalogItem Entity",
+            "summary": "The CatalogItem entity manages core product data."
+          },
+          {
+            "id": "ENT-036",
+            "title": "CatalogBrand",
+            "summary": "Defines known catalog brands, including Azure, .NET, Visual Studio, SQL Server, and Other."
+          },
+          {
+            "id": "ENT-037",
+            "title": "CatalogType Entity",
+            "summary": "The CatalogType entity stores the classification type for catalog items."
+          },
+          {
+            "id": "ENT-038",
+            "title": "CatalogItem Entity",
+            "summary": "The CatalogItem entity stores details about a catalog product."
+          },
+          {
+            "id": "ENT-039",
+            "title": "Catalog Items (DBEntity)",
+            "summary": "The CatalogItem entity is persisted and queried against the database."
+          },
+          {
+            "id": "ENT-041",
+            "title": "CatalogItem",
+            "summary": "Defines the structure of a catalog item, including name, description, price, picture file name, availability, and ordering status. Attributes include CatalogTypeName, CatalogBrandName, Description, Name, Price, PictureFileName, availablestock, and onreorder. CatalogItem is associated with CatalogBrand and CatalogType."
+          },
+          {
+            "id": "ENT-042",
+            "title": "CatalogType",
+            "summary": "Defines known catalog types."
+          },
+          {
+            "id": "ENT-043",
+            "title": "CatalogBrand",
+            "summary": "Represents a catalog brand. CatalogBrand has an identifier and a brand name. Known brands include Azure, .NET, Visual Studio, SQL Server, and Other. CatalogBrand is defined as an entity."
+          },
+          {
+            "id": "ENT-044",
+            "title": "CatalogType Entity",
+            "summary": "Represents a catalog type."
+          },
+          {
+            "id": "ENT-045",
+            "title": "CatalogItem Entity",
+            "summary": "Represents a catalog item entity with fields such as Id, Name, Description, Price, PictureFileName, AvailableStock, RestockThreshold, MaxStockThreshold. It links to CatalogType and CatalogBrand. The entity has various database mappings, including properties like CatalogTypeId and CatalogBrandId."
+          },
+          {
+            "id": "ENT-048",
+            "title": "CatalogType",
+            "summary": "Defines available catalog types."
+          },
+          {
+            "id": "ENT-053",
+            "title": "CatalogType Entity",
+            "summary": "Defines the structure for a catalog type."
+          },
+          {
+            "id": "ENT-055",
+            "title": "Solution Structure Entities",
+            "summary": "The solution file defines two primary project types within the solution."
+          },
+          {
+            "id": "ENT-057",
+            "title": "CatalogType entity",
+            "summary": "Defines the structure for catalog types."
+          },
+          {
+            "id": "ENT-060",
+            "title": "Popper Library Configurations",
+            "summary": "The Popper library defines how positioning calculations should be constrained (boundary: 'scrollParent', 'viewport', or 'window'), how elements should behave ('flip', 'clockwise', or 'counterclockwise'), supported placement types ('top', 'right', 'bottom', 'left', etc.), and uses modifiers to customize positioning logic (modifiers can have optional 'order', 'enabled', and a function 'fn')."
+          },
+          {
+            "id": "ENT-065",
+            "title": "CatalogItem Entity Reference",
+            "summary": "The CatalogItem is an entity used across catalog service operations."
+          },
+          {
+            "id": "ENT-066",
+            "title": "Catalog Types",
+            "summary": "The system defines several catalog types."
+          },
+          {
+            "id": "ENT-067",
+            "title": "Product Catalog Definition",
+            "summary": "The system uses predefined catalog brands (Azure, .NET, Visual Studio, SQL Server, and Other). Catalog items are defined in CatalogItems.csv and include attributes such as CatalogTypeName, CatalogBrandName, Description, Name, Price (a numeric value), PictureFileName, availablestock (integer stock counts), and onreorder (boolean flag)."
+          },
+          {
+            "id": "ENT-069",
+            "title": "PaginatedItemsViewModel",
+            "summary": "The PaginatedItemsViewModel class represents a view model for displaying a set of paginated items."
+          },
+          {
+            "id": "ENT-070",
+            "title": "Deployment Environment Parameters",
+            "summary": "Deployment metadata for the eShop modernized MVC application specifies the deployment name as 'eshop-modernized-mvc' and requires a node OS of 'windows' in Kubernetes. Infrastructure deployment templates also require defined parameters for 'clusterName' and 'clusterLocation', managing parameters for VM sizing including 'vmImageSku' (defaulting to '2012-R2-Datacenter' in the NOFUNCI context) and VM instance count."
+          },
+          {
+            "id": "ENT-071",
+            "title": "Service Container and Data Configuration",
+            "summary": "The SQL data service instance, named 'SQL_Container' and using 'SQL_ContainerType' in ExclusiveProcess mode, is configured to use the Docker image 'microsoft/mssql-server-windows-developer' in Kubernetes, or services defined within the application layer. For the SQL service container, ACCEPT_EULA is set to 'Y' and SA_PASSWORD is 'Pass@word'. In the application service, the executable is in 'eshop/modernizedmvc', and configuration includes a default masked 'ConnectionString', a hardcoded 'PostLogoutRedirectUri' of '10.0.75.1:5115', and 'UseMockData' defaulting to False. The application deployment also requires the SQL data to be configured with these settings."
+          },
+          {
+            "id": "ENT-086",
+            "title": "Popper Data Structure",
+            "summary": "The Popper Data structure includes references to elements and computed styles."
+          },
+          {
+            "id": "ENT-094",
+            "title": "CatalogItemsStock Entity",
+            "summary": "CatalogItemsStock entity tracks product availability on specific dates."
+          },
+          {
+            "id": "ENT-106",
+            "title": "Project Dependency on MSBuild Package",
+            "summary": "The project explicitly depends on the Microsoft.VisualStudio.Azure.Fabric.MSBuild package."
+          },
+          {
+            "id": "ENT-108",
+            "title": "Application Configuration Flags",
+            "summary": "The application exposes several configuration flags to control its runtime behavior."
+          },
+          {
+            "id": "ENT-109",
+            "title": "SQL Data Entity (Shared)",
+            "summary": "The deployed services depend on a database accessible via services like 'sql.data' or 'sqlwf.data', implying shared catalog database entities."
+          },
+          {
+            "id": "ENT-110",
+            "title": "Project Dependencies and Framework Version",
+            "summary": "The project targets the .NET Framework 4.6.1."
+          },
+          {
+            "id": "ENT-127",
+            "title": "DiscountItem Entity",
+            "summary": "EntityModel defines the DiscountItem entity as a DbSet."
+          }
+        ],
+        "frontEnd": "Razor Pages",
+        "backEnd": "ASP.NET Core MVC 8.0",
+        "database": "SQL Server 2022",
+        "style": "layered"
+      }
+    },
+    {
+      "id": "eshop-20261023-021158-plan-planner-api-contract",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "featureCards": [
+          {
+            "id": "FEAT-001",
+            "title": "Modernization and Deployment of eShop Components",
+            "summary": "The repository provides build scripts and Docker configurations to deploy modernized versions of three eShop components (MVC, WebForms, WCF Service) alongside a SQL Server database.",
+            "claims": [
+              {
+                "claimId": "FEAT-001.c1",
+                "text": "The build.cmd script handles NuGet restoration and compiles the MVC, WebForms, and WCF projects, publishing output to deployment folders. (build.cmd:4-11)",
+                "citations": ["build.cmd:4-11"]
+              },
+              {
+                "claimId": "FEAT-001.c2",
+                "text": "The build process copies Dockerfiles into respective deployment directories for image building. (build.cmd:13-15)",
+                "citations": ["build.cmd:13-15"]
+              },
+              {
+                "claimId": "FEAT-001.c3",
+                "text": "Docker images for the WCF service, WebForms app, and MVC app are built using their corresponding context and Dockerfiles. (docker-compose.yml:6, 14, 22)",
+                "citations": ["docker-compose.yml:6-25"]
+              },
+              {
+                "claimId": "FEAT-001.c4",
+                "text": "The deployment utilizes Docker Compose to run the services (WCF, WebForms, MVC) alongside a SQL Server instance. (docker-compose.yml:3-30)",
+                "citations": ["docker-compose.yml:1-31"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-002",
+            "title": "Container Application Deployment",
+            "summary": "A container group is configured to run a specific application image within the group.",
+            "claims": [
+              {
+                "claimId": "FEAT-002.c1",
+                "text": "The container group runs a single container named 'mainapp' using the image provided by the 'appimage' parameter.",
+                "citations": ["ACI/aci.json:19-21"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-003",
+            "title": "Retrieving Container IP",
+            "summary": "The deployment template provides an output that returns the IPv4 address of the container instance.",
+            "claims": [
+              {
+                "claimId": "FEAT-003.c1",
+                "text": "The output 'containerIPv4Address' retrieves the IP address from the deployed container group.",
+                "citations": ["ACI/aci.json:68-71"]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-004",
+            "title": "Application Access via LoadBalancer",
+            "summary": "The application is exposed through a Kubernetes Service configured as a LoadBalancer on port 5115, targeting the container's port 80.",
+            "claims": [
+              {
+                "claimId": "FEAT-004.c1",
+                "text": "The Kubernetes Service is configured with type LoadBalancer, exposing port 5115 which targets container port 80.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:48-57"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-005",
+            "title": "Application Deployment",
+            "summary": "The eShop Modernized MVC application is deployed using a Kubernetes Deployment with 1 replica and a rolling update strategy.",
+            "claims": [
+              {
+                "claimId": "FEAT-005.c1",
+                "text": "The deployment specifies 1 replica and uses a rolling update strategy with maxSurge and maxUnavailable set to 1.",
+                "citations": [
+                  "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s/eshop-modernized-mvc-k8s-services-deployment.yml:6-10"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-006",
+            "title": "Expose service via LoadBalancer",
+            "summary": "The eShop Modernized MVC service is exposed externally using a LoadBalancer service type.",
+            "claims": [
+              {
+                "claimId": "FEAT-006.c1",
+                "text": "A Service named 'eshop-modernized-mvc' of type LoadBalancer is defined.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:47-59"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-007",
+            "title": "Deploy eShop Modernized MVC application",
+            "summary": "The eShop Modernized MVC application is deployed as a Kubernetes Deployment with one replica.",
+            "claims": [
+              {
+                "claimId": "FEAT-007.c1",
+                "text": "A Deployment named 'eshop-modernized-mvc' is configured to run 1 replica.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:2-6"
+                ]
+              },
+              {
+                "claimId": "FEAT-007.c2",
+                "text": "The container image used is 'eshop/modernizedmvc:4.7.1'.",
+                "citations": [
+                  "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/eshop-modernized-mvc-k8s-services-deployment.yml:19-19"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          },
+          {
+            "id": "FEAT-008",
+            "title": "WCF Service Exposure",
+            "summary": "The WCF service is exposed externally via a LoadBalancer service.",
+            "claims": [
+              {
+                "claimId": "FEAT-008.c1",
+                "text": "The 'eshop-modernized-wcf' service is of type LoadBalancer and listens on port 80, routing traffic to port 80 on the WCF pods.",
+                "citations": [
+                  "Kubernetes/eShopModernizedNTier-WCF-K8s/eshop-wcf-container-deployment.yml:30-40"
+                ]
+              }
+            ],
+            "type": "FEAT"
+          }
+        ],
+        "entities": [
+          {
+            "id": "ENT-001",
+            "title": "SQL Data Service Definition",
+            "summary": "Defines a SQL Server database instance, named 'sql.data', used for catalog and business data. It uses a Windows Developer image (e.g., 'microsoft/mssql-server-windows-developer') and involves configuration for accepting the EULA and setting the SA password ('Pass@word'). Deployments utilize this service, often exposed via a LoadBalancer on port 1433, and require nodes to run on Windows OS."
+          },
+          {
+            "id": "ENT-002",
+            "title": "Container Group Resource",
+            "summary": "The configuration defines an Azure Container Instance (ACI) group resource."
+          },
+          {
+            "id": "ENT-003",
+            "title": "Database Connection Configuration",
+            "summary": "The application expects a database connection via a ConnectionString environment variable pointing to a specific SQL database instance."
+          },
+          {
+            "id": "ENT-005",
+            "title": "Deployment configuration",
+            "summary": "The deployment specifies configuration parameters for the container, including environment variables and node selection."
+          },
+          {
+            "id": "ENT-006",
+            "title": "Pod Definition for eShopModernizedMVC",
+            "summary": "The configuration defines a Kubernetes Pod named 'eshopmodernizedmvc'."
+          },
+          {
+            "id": "ENT-008",
+            "title": "WCF Service Deployment",
+            "summary": "Defines a deployment for the WCF service."
+          },
+          {
+            "id": "ENT-010",
+            "title": "Application Deployment Components",
+            "summary": "The application components are defined using standard Kubernetes resources."
+          },
+          {
+            "id": "ENT-011",
+            "title": "Solution Components",
+            "summary": "The solution contains three distinct projects: an MVC application, a SQL application, and a WebForms ServiceApp."
+          },
+          {
+            "id": "ENT-012",
+            "title": "Service Fabric Cluster Definition",
+            "summary": "The core deployment artifact is an ARM template that defines the structure of the Service Fabric cluster resources."
+          },
+          {
+            "id": "ENT-013",
+            "title": "MVC Container Service Configuration",
+            "summary": "Defines configuration for the MVC service, including environment variables like ConnectionString pointing to the database, and defining properties for pagination (ActualPage, ItemsPerPage, TotalItems, TotalPages, Data)."
+          },
+          {
+            "id": "ENT-014",
+            "title": "Stock Level Tracking",
+            "summary": "The system tracks stock availability, using entities like CatalogItemsStock or related configuration files to store AvailableStock linked to a specific CatalogItem and Date."
+          },
+          {
+            "id": "ENT-015",
+            "title": "Application Parameters",
+            "summary": "The application uses several configurable parameters defined across different XML files to control its runtime behavior."
+          },
+          {
+            "id": "ENT-016",
+            "title": "Configuration Variables for Azure Resources",
+            "summary": "Several configuration variables are defined, including the Azure location, derived names for the web app and app service plan, and fixed names for the server admin and database."
+          },
+          {
+            "id": "ENT-017",
+            "title": "Certificate Types",
+            "summary": "The system manages specific certificate types for infrastructure components."
+          },
+          {
+            "id": "ENT-018",
+            "title": "Assembly Metadata",
+            "summary": "The assembly is named 'eShopLegacy.Utilities' and has a version of '1.0.0.0'."
+          },
+          {
+            "id": "ENT-019",
+            "title": "Database Context and Initializer Management",
+            "summary": "The `CatalogDBContext` and `CatalogDBInitializer` are registered within the application container, typically using a per-lifetime-scope instance, to manage data access operations."
+          },
+          {
+            "id": "ENT-020",
+            "title": "CatalogBrand Entity",
+            "summary": "A data entity representing a product brand, defined by a unique identifier (Id) and a brand name (Brand). Known brands include 'Azure', '.NET', 'Visual Studio', 'SQL Server', and 'Other'. Test brands may also be present."
+          },
+          {
+            "id": "ENT-021",
+            "title": "CatalogType Entity",
+            "summary": "A data entity representing a general product category, defined by a unique identifier (Id) and a type name (Type). Known types include 'Mug', 'T-Shirt', 'Sheet', 'USB Memory Stick'."
+          },
+          {
+            "id": "ENT-022",
+            "title": "CatalogItem Entity",
+            "summary": "Represents a product in the catalog. It includes fields for Id, Name, Description, Price, PictureFileName/Uri, and inventory levels (AvailableStock, RestockThreshold, MaxStockThreshold). It links to CatalogBrand via CatalogBrandId and to CatalogType via CatalogTypeId. Status fields like OnReorder are also present."
+          },
+          {
+            "id": "ENT-026",
+            "title": "ApplicationModule",
+            "summary": "The ApplicationModule is a class inheriting from Module responsible for configuring services within the application container."
+          },
+          {
+            "id": "ENT-034",
+            "title": "Catalog item generator registration",
+            "summary": "The `CatalogItemHiLoGenerator` is registered in the container as a single instance."
+          },
+          {
+            "id": "ENT-035",
+            "title": "Assembly Metadata for eShopLegacyMVC",
+            "summary": "The assembly has the title 'eShopLegacyMVC' and the product name 'eShopLegacyMVC'."
+          },
+          {
+            "id": "ENT-036",
+            "title": "Assembly Copyright and Versioning",
+            "summary": "The assembly is copyrighted to 2017 and is versioned as 1.0.0.0."
+          },
+          {
+            "id": "ENT-037",
+            "title": "Catalog Access Services",
+            "summary": "Services exist to manage and retrieve CatalogType and CatalogBrand entities, and CatalogItem entities, allowing for data retrieval from the database context."
+          },
+          {
+            "id": "ENT-040",
+            "title": "CatalogItem",
+            "summary": "Catalog items represent individual products with associated metadata and stock levels."
+          },
+          {
+            "id": "ENT-042",
+            "title": "Solution Projects Defined",
+            "summary": "The solution contains two distinct projects: an application UI project and a service project."
+          },
+          {
+            "id": "ENT-046",
+            "title": "Discount Item Entity",
+            "summary": "The system defines a data entity for a discount period."
+          },
+          {
+            "id": "ENT-077",
+            "title": "Discount",
+            "summary": "The system manages discount definitions associated with date ranges."
+          },
+          {
+            "id": "ENT-078",
+            "title": "Containerized Services",
+            "summary": "The deployment defines two primary services: a web forms application and a SQL database instance."
+          },
+          {
+            "id": "ENT-080",
+            "title": "Application Telemetry Tracking",
+            "summary": "A telemetry initializer is present to track the application's context during runtime."
+          },
+          {
+            "id": "ENT-084",
+            "title": "Data Context and Initializer Registration",
+            "summary": "The CatalogDBContext and CatalogDBInitializer are registered within the module."
+          },
+          {
+            "id": "ENT-085",
+            "title": "CatalogItemHiLoGenerator",
+            "summary": "CatalogItemHiLoGenerator is registered as a single instance."
+          },
+          {
+            "id": "ENT-087",
+            "title": "Catalog Entity Relationship",
+            "summary": "Catalog items are associated with a single CatalogBrand and a single CatalogType."
           }
         ],
         "frontEnd": "Razor Pages (for WebForms/MVC replacement)",

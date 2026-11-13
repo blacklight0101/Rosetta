@@ -51,6 +51,11 @@ const answers: readonly (readonly [string, string, string])[] = [
   ],
   ['planner/data-model', '{"tables":[{"name":"orders"}]}', 'NoTables'],
   ['planner/data-model', '{"tables":[]}', 'Unusable'],
+  [
+    'planner/data-model',
+    '{"tables":[],"dropped":[{"claim":"ENT-001.c1","field":"Server","reason":"Not data."}]}',
+    'NoTables',
+  ],
   ['planner/api-contract', '{"applies":false,"reason":"none"}', 'NoOperations'],
   ['planner/flows', '{"flows":[]}', 'Unusable'],
   ['planner/coverage', '{"links":[]}', 'NoLinks'],
