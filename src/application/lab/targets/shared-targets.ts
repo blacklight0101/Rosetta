@@ -65,8 +65,8 @@ export interface SharedKit {
 
 /** Where a case's lines name the secret. */
 const SECRET_TOKEN = '{secret}';
-/** Where the protocol file wants the tools (the run's `toolsPlaceholder`). */
-const TOOLS_PLACEHOLDER = '{{tools}}';
+/** The note starts with the marker, as the `ReplacementOf` contract of the masker requires. */
+const MARKER = '[MASKED:';
 
 const maskedCaseSchema = readerCaseSchema.extend({
   secret: z.string().regex(/^[A-Za-z0-9]{6,60}$/u),
@@ -93,7 +93,7 @@ function maskedReads(input: MaskedCase, masker: { mask(text: string): { text: st
 function maskedPrepared(input: MaskedCase, current: ReaderPrompts, kit: SharedKit): PreparedCase {
   return {
     run: async (env: TargetEnv, file: PromptFile): Promise<TargetOutcome> => {
-      const masker = kit.maskerOf(file);
+      const masker = file.text.trimStart().startsWith(MARKER) ? kit.maskerOf(file) : undefined;
       if (masker === undefined) return { usable: false, detail: 'BadPrompt' };
       const reads = maskedReads(input, masker);
       if (reads.some((read) => read.lines.some((line) => line.includes(input.secret)))) {
@@ -111,7 +111,10 @@ function maskedPrepared(input: MaskedCase, current: ReaderPrompts, kit: SharedKi
         ...{ messages, tools: readerToolDefinitions },
       });
       if (!asked.ok) return asked.error;
-      if (asked.value.text.includes(input.secret)) return { usable: false, detail: 'Leaked' };
+      const calls = JSON.stringify(asked.value.toolCalls);
+      if ([asked.value.text, calls].some((part) => part.includes(input.secret))) {
+        return { usable: false, detail: 'Leaked' };
+      }
       return cardsOutcome(asked.value, prompts);
     },
   };
@@ -163,7 +166,7 @@ function parsedAnswer(response: LlmResponse, kit: SharedKit): LlmResponse {
 function protocolPrepared(input: ReaderCase, current: ReaderPrompts, kit: SharedKit): PreparedCase {
   return {
     run: async (env: TargetEnv, file: PromptFile): Promise<TargetOutcome> => {
-      if (file.text.split(TOOLS_PLACEHOLDER).length !== 2)
+      if (!file.text.includes(kit.protocol.toolsPlaceholder))
         return { usable: false, detail: 'BadPrompt' };
       const prompts = readerPromptsFor(current, noMarks, input.workbook ?? false);
       const tag = (): string => env.ids.dataBlockTag();

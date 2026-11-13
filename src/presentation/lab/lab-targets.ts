@@ -24,6 +24,7 @@ import {
 import {
   parseTextAnswer,
   textProtocolSystem,
+  toolsPlaceholder,
   toolCallBlock,
   toolResultBlock,
 } from '../../infrastructure/providers/ollama/text-tool-protocol.js';
@@ -46,6 +47,7 @@ const sharedKit: SharedKit = {
       ? new SecretMasker(undefined, maskedValueReplacement(file))
       : undefined,
   protocol: {
+    toolsPlaceholder,
     systemOf: textProtocolSystem,
     parse: parseTextAnswer,
     toolCallBlock,
