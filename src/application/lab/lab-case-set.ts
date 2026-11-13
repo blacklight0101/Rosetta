@@ -16,6 +16,32 @@ const caseSchema = z.strictObject({
   input: z.unknown(),
 });
 
+// RF-1405: where the inputs of a captured set come from. `commit` is the commit of a repository;
+// `snapshot` the hash of an uploaded archive that has no commit. One of the two is always given.
+export const labSourceFields = z.strictObject({
+  key: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/u),
+  name: z.string().min(1).max(200),
+  url: z.string().max(400).optional(),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{7,64}$/u)
+    .optional(),
+  snapshot: z
+    .string()
+    .regex(/^sha256:[0-9a-f]{64}$/u)
+    .optional(),
+  licence: z.string().min(1).max(400),
+  runs: z.array(z.string().min(1).max(100)).max(50),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub of the test commit (DEC-191)
+const sourceSchema = labSourceFields.refine(
+  (source) => source.commit !== undefined || source.snapshot !== undefined,
+  {
+    message: 'must name a commit or a snapshot hash',
+  },
+);
+
 const setSchema = z.strictObject({
   schemaVersion: z.literal(1),
   version: z.string().trim().min(1).max(60),
@@ -24,8 +50,11 @@ const setSchema = z.strictObject({
   cases: z.array(caseSchema).min(1).max(500),
 });
 
+export type LabCaseSource = z.infer<typeof labSourceFields>;
+
 interface LabCase {
   readonly id: string;
+  readonly from?: string | undefined;
   readonly expected: string | undefined;
   readonly split: 'tune' | 'held-back';
   readonly input: unknown;
@@ -37,6 +66,7 @@ export interface LabCaseSet {
   /** The prompt id the set is written for, such as `verifier/claim`. */
   readonly prompt: string;
   readonly description: string;
+  readonly sources?: readonly LabCaseSource[] | undefined;
   readonly cases: readonly LabCase[];
 }
 
@@ -72,6 +102,7 @@ export function parseLabCaseSet(data: unknown): Result<LabCaseSet, string[]> {
   if (twice.length > 0) return err(twice);
   const cases = parsed.data.cases.map((each) => ({
     id: each.id,
+    from: undefined,
     expected: each.expected,
     split: each.split,
     input: each.input,
