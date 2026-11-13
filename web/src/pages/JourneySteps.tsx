@@ -30,6 +30,7 @@ const words: Readonly<Record<StepState, string>> = {
   restarted: interruptedWord('Restart'),
   cancelled: interruptedWord('QueueCancel'),
   capped: 'Stopped at its cap',
+  'stopped-here': interruptedWord('StoppedAtApproval'),
 };
 
 const glyphs: Readonly<Record<StepState, GlyphName>> = {
@@ -46,6 +47,7 @@ const glyphs: Readonly<Record<StepState, GlyphName>> = {
   restarted: 'pause-bars',
   cancelled: 'pause-bars',
   capped: 'warning-triangle',
+  'stopped-here': 'pause-bars',
 };
 
 /** RF-627: the files and downloads of a step, plain links because they leave the app. */

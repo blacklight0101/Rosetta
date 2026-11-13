@@ -93,7 +93,14 @@ export function unfinishedStep(
   >,
 ): {
   readonly state:
-    'awaiting' | 'upcoming' | 'stopped' | 'restarted' | 'cancelled' | 'capped' | 'failed';
+    | 'awaiting'
+    | 'upcoming'
+    | 'stopped'
+    | 'restarted'
+    | 'cancelled'
+    | 'capped'
+    | 'stopped-here'
+    | 'failed';
   readonly detail: string;
 } {
   if (phaseOf(run) === 'working') {
@@ -102,6 +109,9 @@ export function unfinishedStep(
   }
   if (run.endState === 'Interrupted') {
     return { state: interruptedState(run.endReason), detail: run.errorCode ?? '' };
+  }
+  if (run.endState === 'CapReached' && run.endReason === 'StoppedAtApproval') {
+    return { state: 'stopped-here', detail: '' };
   }
   if (run.endState === 'CapReached') return { state: 'capped', detail: endText(run) };
   return { state: 'failed', detail: endText(run) };

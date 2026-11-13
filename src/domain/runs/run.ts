@@ -103,6 +103,17 @@ function endProblemOf(run: Run, endState: RunEndState): EndProblem | undefined {
     : undefined;
 }
 
+/**
+ * P8-111: only an interrupted run has a reason, except for the stop at the approval pause, which is
+ * the reason of a `CapReached` run alone (P9-03).
+ */
+function endReasonOf(endState: RunEndState, reason: RunEndReason | undefined): RunEndReason | null {
+  if (reason === undefined) return null;
+  const atApproval = reason === 'StoppedAtApproval';
+  if (endState === 'Interrupted') return atApproval ? null : reason;
+  return endState === 'CapReached' && atApproval ? reason : null;
+}
+
 // RF-003, RF-1108
 export function endRun(
   run: Run,
@@ -121,8 +132,7 @@ export function endRun(
     activeMs: activeAt(run, Math.min(at, detail.activeUntil ?? at)),
     failedAreas: detail.failedAreas ?? 0,
     unreadAreas: detail.unreadAreas ?? 0,
-    // P8-111: only an interrupted run has a reason.
-    endReason: endState === 'Interrupted' ? (detail.endReason ?? null) : null,
+    endReason: endReasonOf(endState, detail.endReason),
   });
 }
 

@@ -15,6 +15,8 @@ export interface PlanNextProps {
   readonly runId: string;
   readonly projectId: string;
   readonly endState: string;
+  /** P9-03: `StoppedAtApproval` when the owner chose Stop here; no cap stopped the run. */
+  readonly endReason?: string | null | undefined;
   readonly supportedClaims: number;
   /** RF-1021 (P8-84): Set up the plan is the primary button; false while Deepen is the next step. */
   readonly setUp: boolean;
@@ -54,13 +56,14 @@ function count(n: number | undefined, noun: string, what: string): string {
 function Capped(props: PlanNextProps): JSX.Element {
   const deepen = (props.left?.unreadAreas ?? 0) > 0;
   const plan = props.supportedClaims > 0;
+  const atApproval = props.endReason === 'StoppedAtApproval';
   return (
     <>
       <p>
-        {`This run stopped at its cap. Left: ${leftText(props.left)}.`}
+        {`This run stopped at ${atApproval ? 'the approved amount, by your choice' : 'its cap'}. Left: ${leftText(props.left)}.`}
         {deepen ? ' Deepen reads the areas that are left.' : ''}
         {plan
-          ? ' You can set up the plan now: it uses only the Supported claims, and the package says the run stopped at a cap.'
+          ? ' You can set up the plan now: it uses only the Supported claims, and the package says where the run stopped.'
           : ''}
       </p>
       {props.writeOverview}

@@ -111,10 +111,10 @@ function copiedIn(
 
 /** The folder of the source run and, RF-604 P3-121, its stop when it ended at a cap. */
 function sourceOf(
-  run: Pick<Run, 'runKey' | 'endState'>,
+  run: Pick<Run, 'runKey' | 'endState' | 'endReason'>,
   cards: readonly SourceCard[],
 ): Pick<HandoffPackage, 'sourceRun' | 'sourceStop'> {
-  const stop = sourceStopOf(run.endState, cards);
+  const stop = sourceStopOf(run.endState, cards, run.endReason);
   return stop === undefined
     ? { sourceRun: run.runKey }
     : { sourceRun: run.runKey, sourceStop: stop };

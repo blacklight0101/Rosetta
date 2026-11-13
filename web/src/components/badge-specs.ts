@@ -43,7 +43,7 @@ export const stateLists = {
   /** P7-02, DEC-194: how a `CapReached` run that left areas unread is shown; not a domain state list. */
   RunPartlyRead: ['PartlyRead'],
   /** P8-111, DEC-217: how an `Interrupted` run is shown when a restart or a queue cancel ended it; not a domain state list. */
-  RunInterruptedBy: ['Restart', 'QueueCancel'],
+  RunInterruptedBy: ['Restart', 'QueueCancel', 'StoppedAtApproval'],
   Role: ['admin', 'user'],
   AccountState: ['Active', 'MustChangePassword', 'Locked', 'Disabled'],
   MapLevel: ['coarse', 'symbols'],
@@ -103,6 +103,13 @@ export const badgeSpecs: SpecTable = {
   RunInterruptedBy: {
     Restart: badge(interruptedWord('Restart'), 'neutral', 'solid', 'pause-bars'),
     QueueCancel: badge(interruptedWord('QueueCancel'), 'neutral', 'solid', 'pause-bars'),
+    // P9-03: the owner's Stop here at the approved amount; no cap stopped the run.
+    StoppedAtApproval: badge(
+      interruptedWord('StoppedAtApproval'),
+      'neutral',
+      'solid',
+      'pause-bars',
+    ),
   },
   RunQueueState: {
     Queued: badge('Queued', 'info', 'tint', 'clock'),
