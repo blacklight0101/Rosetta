@@ -18,6 +18,8 @@ export const judgementSchema = z.strictObject({
   /** Mean of the criteria to one decimal, or 1 on a vetoed criterion; null without a score. */
   overall: z.number().min(1).max(5).nullable(),
   vetoed: z.boolean(),
+  /** The RST code of the first judge call that failed or was refused. */
+  rstCode: z.string().nullable(),
   calls: count,
   inputTokens: count,
   outputTokens: count,

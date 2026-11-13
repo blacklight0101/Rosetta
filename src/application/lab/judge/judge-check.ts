@@ -1,4 +1,4 @@
-import type { CaseJudge } from './answer-judge.js';
+import { judgeStopReason, type CaseJudge } from './answer-judge.js';
 import type { CheckItem } from './judge-check-set.js';
 import type { Judgement } from './judge-results.js';
 import { overallOf } from './judgement.js';
@@ -74,7 +74,7 @@ export async function scoreItems(
     results.push({ item, judgement });
     const why = judge.stopped();
     if (why !== undefined) stopped = why;
-    else if (judgement.state === 'refused') stopped = 'A guard refused a judge call.';
+    else stopped = judgeStopReason(judgement, 'check');
   }
   return { results, stopped };
 }

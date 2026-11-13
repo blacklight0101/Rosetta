@@ -30,6 +30,13 @@ export interface CaseJudge {
   infoFor(family: string): JudgeInfo | undefined;
 }
 
+/** Why a judge call that failed or was refused ends what is running (`what`); null for any other. */
+export function judgeStopReason(judged: Judgement | undefined, what: string): string | null {
+  if (judged?.state !== 'refused' && judged?.state !== 'failed') return null;
+  const how = judged.state === 'failed' ? 'failed' : 'was refused';
+  return `The judge call ${how} (${judged.rstCode ?? 'no code'}), so the ${what} stops.`;
+}
+
 export interface AnswerJudgeOptions {
   readonly role: TargetEnv['role'];
   readonly meter: LabCallMeter;
@@ -40,7 +47,7 @@ export interface AnswerJudgeOptions {
 }
 
 const NOTHING: Judgement = {
-  ...{ state: 'failed', criteria: [], overall: null, vetoed: false },
+  ...{ state: 'failed', criteria: [], overall: null, vetoed: false, rstCode: null },
   ...{ calls: 0, inputTokens: 0, outputTokens: 0, costMicros: 0 },
 };
 
@@ -83,6 +90,7 @@ export class AnswerJudge implements CaseJudge {
     const text = metered.calls.at(-1)?.text;
     this.modelVersion = metered.calls.at(-1)?.modelVersion ?? this.modelVersion;
     const spent = {
+      rstCode: metered.failures[0] ?? null,
       calls: metered.calls.length,
       inputTokens: metered.calls.reduce((sum, call) => sum + call.inputTokens, 0),
       outputTokens: metered.calls.reduce((sum, call) => sum + call.outputTokens, 0),

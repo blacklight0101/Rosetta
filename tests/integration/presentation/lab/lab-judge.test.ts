@@ -127,6 +127,20 @@ describe('a judged lab run that goes wrong', () => {
 });
 
 describe('a judged lab run without a usable judge', () => {
+  it('RF-1404 stops the invocation at the first judge call that fails and records its code', async () => {
+    const router = new ModelRouter({ 'model-a': targetScript });
+
+    const { code } = await runLab(labParts({ outputDir: out(), router }), judged);
+    const [results] = await writtenResults(out());
+
+    expect(code).toBe(1);
+    expect(results?.endState).toBe('Refused');
+    expect(results?.cases).toHaveLength(1);
+    expect(results?.cases[0]?.judge).toMatchObject({ state: 'failed', calls: 0 });
+    expect(results?.cases[0]?.judge?.rstCode).toMatch(/^RST-[0-9]{4}$/u);
+    expect(results?.refusal).toContain('judge call failed');
+  });
+
   it('RF-1404 sends nothing when the judge model has no price', async () => {
     const router = new ModelRouter({ 'model-a': targetScript });
     const args = { ...verifierArgs, judge: { provider: 'fake', model: 'model-z' } };

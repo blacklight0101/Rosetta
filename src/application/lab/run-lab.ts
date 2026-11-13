@@ -3,7 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
-import type { CaseJudge } from './judge/answer-judge.js';
+import { judgeStopReason, type CaseJudge } from './judge/answer-judge.js';
 import type { JudgeInfo } from './judge/judge-results.js';
 import { sourceText } from './judge/judge-source.js';
 import type { LabCaseSet } from './lab-case-set.js';
@@ -182,7 +182,8 @@ export class RunLab {
   private stopOf(result: LabCaseResult): string | null {
     const stopped = this.deps.meter.stopped() ?? this.deps.judge?.stopped();
     if (stopped !== undefined) return stopped;
-    if (result.judge?.state === 'refused') return 'A guard refused the judge call.';
+    const judgeStop = judgeStopReason(result.judge, 'invocation');
+    if (judgeStop !== null) return judgeStop;
     if (!result.refused) return null;
     return `A guard refused the call (${result.rstCode ?? 'no code'}).`;
   }
