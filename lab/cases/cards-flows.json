@@ -1,0 +1,2321 @@
+{
+  "schemaVersion": 1,
+  "version": "cards-flows-1",
+  "prompt": "cards/flows",
+  "description": "Inputs of cards/flows captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-054942-understand",
+        "20261109-063857-understand",
+        "20261101-235310-understand",
+        "20261102-185338-understand",
+        "20261029-152308-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-054942-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx",
+            "language": "aspnet",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Bundle.config",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx",
+            "language": "aspnet",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx",
+            "language": "aspnet",
+            "lines": 137
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "language": "csharp",
+            "lines": 59
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "language": "csharp",
+            "lines": 100
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+            "language": "aspnet",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs",
+            "language": "csharp",
+            "lines": 20
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.designer.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master",
+            "language": "aspnet",
+            "lines": 23
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.designer.cs",
+            "language": "csharp",
+            "lines": 51
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx",
+            "language": "aspnet",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config",
+            "language": "xml",
+            "lines": 99
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using eShopLegacyWebForms.ViewModel;",
+              "using System;",
+              "using System.Linq;",
+              "using System.Web.UI;",
+              "using log4net;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public partial class _Default : Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public const int DefaultPageIndex = 0;",
+              "        public const int DefaultPageSize = 10;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected PaginatedItemsViewModel<CatalogItem> Model { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            if (PaginationParamsAreSet())",
+              "            {",
+              "                var size = Convert.ToInt32(Page.RouteData.Values[\"size\"]);",
+              "                var index = Convert.ToInt32(Page.RouteData.Values[\"index\"]);",
+              "                Model = CatalogService.GetCatalogItemsPaginated(size, index);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={size}&index={index}\");",
+              "            }",
+              "            else",
+              "            {",
+              "                Model = CatalogService.GetCatalogItemsPaginated(DefaultPageSize, DefaultPageIndex);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={DefaultPageSize}&index={DefaultPageIndex}\");",
+              "            }",
+              "",
+              "            productList.DataSource = Model.Data;",
+              "            productList.DataBind();",
+              "            ConfigurePagination();",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Web;",
+              "using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Models.Infrastructure;",
+              "using eShopLegacyWebForms.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Web;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public class Global : HttpApplication, IContainerProviderAccessor",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        static IContainerProvider _containerProvider;",
+              "        IContainer container;",
+              "",
+              "        public IContainerProvider ContainerProvider",
+              "        {",
+              "            get { return _containerProvider; }",
+              "        }",
+              "",
+              "        protected void Application_Start(object sender, EventArgs e)",
+              "        {",
+              "            // Code that runs on application startup",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigureContainer();",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-001",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using System.Collections.Generic;",
+              "using System.Net;",
+              "using eShopWinForms.eShopServiceReference;",
+              "using System;",
+              "",
+              "namespace eShopWinForms.Controllers",
+              "{",
+              "    public class CatalogController",
+              "    {",
+              "        /*Reference to the service (for fetching data) and the view (so we can tell the view how to update)*/",
+              "        private ICatalogService _service;",
+              "        private ICatalogView _view;",
+              "",
+              "        public CatalogController(ICatalogService service, ICatalogView view)",
+              "        {",
+              "            this._service = service;",
+              "            this._view = view;",
+              "            this._view.filterChanged += new ViewHandler<ICatalogView>(this.filterChanged);",
+              "            this._view.availabilityButtonClicked += new AvailabilityHandler<ICatalogView>(this.addAvailability);",
+              "            this._view.searchStockButtonClicked += new SearchStockHandler<ICatalogView>(this.searchStockAvailable);",
+              "        }",
+              "",
+              "        /*",
+              "         * When a filter is changed in the view, we need to request all catalog items",
+              "         * in the database which satisfy the new filter",
+              "         */",
+              "        private void filterChanged(ICatalogView view, FilterEventArgs e)",
+              "        {",
+              "            LoadCatalogItems(e.brandFilterValue, e.typeFilterValue);",
+              "        }",
+              "",
+              "        /*",
+              "         * Adds a new \"shipment\" to the database for the given day, item id, and stock quantity",
+              "         */",
+              "        private void addAvailability(ICatalogView view, AvailabilityEventArgs e)",
+              "        {",
+              "            CatalogItemsStock shipment = new CatalogItemsStock();",
+              "            shipment.CatalogItemId = e.itemId;",
+              "            shipment.AvailableStock = e.itemStock;",
+              "            shipment.Date = e.shipDate;"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Mvc;",
+              "using Autofac.Integration.WebApi;",
+              "using eShopLegacyMVC.Models;",
+              "using eShopLegacyMVC.Models.Infrastructure;",
+              "using eShopLegacyMVC.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Reflection;",
+              "using System.Web;",
+              "using System.Web.Http;",
+              "using System.Web.Mvc;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyMVC",
+              "{",
+              "    public class MvcApplication : HttpApplication",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        IContainer container;",
+              "",
+              "        protected void Application_Start()",
+              "        {",
+              "            container = RegisterContainer();",
+              "            GlobalConfiguration.Configure(WebApiConfig.Register);",
+              "            AreaRegistration.RegisterAllAreas();",
+              "            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "startLine": 100,
+            "lines": [
+              "        ",
+              "        NOTE: handler configuration will be lost upon NuGet upgrade.",
+              "        -->",
+              "\t\t\t\t<Add>Microsoft.VisualStudio.Web.PageInspector.Runtime.Tracing.RequestDataHttpHandler</Add>",
+              "\t\t\t\t<Add>System.Web.StaticFileHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Handlers.AssemblyResourceLoader</Add>",
+              "\t\t\t\t<Add>System.Web.Optimization.BundleHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Script.Services.ScriptHandlerFactory</Add>",
+              "\t\t\t\t<Add>System.Web.Handlers.TraceHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Services.Discovery.DiscoveryRequestHandler</Add>",
+              "\t\t\t\t<Add>System.Web.HttpDebugHandler</Add>",
+              "\t\t\t</Handlers>",
+              "\t\t</Add>",
+              "\t\t<Add Type=\"Microsoft.ApplicationInsights.Web.ExceptionTrackingTelemetryModule, Microsoft.AI.Web\"/>",
+              "\t\t<Add Type=\"Microsoft.ApplicationInsights.Web.AspNetDiagnosticTelemetryModule, Microsoft.AI.Web\"/>",
+              "\t</TelemetryModules>",
+              "\t<ApplicationIdProvider Type=\"Microsoft.ApplicationInsights.Extensibility.Implementation.ApplicationId.ApplicationInsightsApplicationIdProvider, Microsoft.ApplicationInsights\"/>",
+              "\t<TelemetrySinks>",
+              "\t\t<Add Name=\"default\">",
+              "\t\t\t<TelemetryProcessors>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse.QuickPulseTelemetryProcessor, Microsoft.AI.PerfCounterCollector\"/>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.Extensibility.AutocollectedMetricsExtractor, Microsoft.ApplicationInsights\"/>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.AdaptiveSamplingTelemetryProcessor, Microsoft.AI.ServerTelemetryChannel\">",
+              "\t\t\t\t\t<MaxTelemetryItemsPerSecond>5</MaxTelemetryItemsPerSecond>",
+              "\t\t\t\t\t<ExcludedTypes>Event</ExcludedTypes>",
+              "\t\t\t\t</Add>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.AdaptiveSamplingTelemetryProcessor, Microsoft.AI.ServerTelemetryChannel\">",
+              "\t\t\t\t\t<MaxTelemetryItemsPerSecond>5</MaxTelemetryItemsPerSecond>",
+              "\t\t\t\t\t<IncludedTypes>Event</IncludedTypes>",
+              "\t\t\t\t</Add>",
+              "\t\t\t</TelemetryProcessors>",
+              "\t\t\t<TelemetryChannel Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.ServerTelemetryChannel, Microsoft.AI.ServerTelemetryChannel\"/>",
+              "\t\t</Add>",
+              "\t</TelemetrySinks>",
+              "<!-- ",
+              "    Learn more about Application Insights configuration with ApplicationInsights.config here: ",
+              "    http://go.microsoft.com/fwlink/?LinkID=513840",
+              "    ",
+              "    Note: If not present, please add <InstrumentationKey>Your Key</InstrumentationKey> to the top of this file.",
+              "  --></ApplicationInsights>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-196",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Create\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Create</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "",
+              "    <div class=\"form-horizontal\">",
+              "        @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.CatalogBrandId, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Edit\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Edit</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "            <img class=\"col-md-6 esh-picture\" src=\"@Model.PictureUri\" />",
+              "            <div class=\"col-md-6 form-horizontal\">",
+              "                @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "                @Html.HiddenFor(model => model.Id)",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.CatalogBrandId, \"CatalogBrandId\", htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                        @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-036",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the interface name \"IService1\" in both code and config file together.",
+              "    [ServiceContract]",
+              "    public interface ICatalogService : IDisposable",
+              "    {",
+              "        [OperationContract]",
+              "        CatalogItem FindCatalogItem(int id);",
+              "        [OperationContract]",
+              "        List<CatalogBrand> GetCatalogBrands();",
+              "        [OperationContract]",
+              "        List<CatalogItem> GetCatalogItems(int brandIdFilter, int typeIdFilter);",
+              "        [OperationContract]",
+              "        List<CatalogType> GetCatalogTypes();",
+              "        [OperationContract]",
+              "        int GetAvailableStock(System.DateTime date, int catalogItemId);",
+              "        [OperationContract]",
+              "        void CreateAvailableStock(CatalogItemsStock catalogItemsStock);",
+              "        [OperationContract]",
+              "        void CreateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void UpdateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void RemoveCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        DiscountItem GetDiscount(DateTime day);",
+              "    }",
+              "}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-073",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 120
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 84
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 105
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 124
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 94
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 114
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs",
+            "language": "csharp",
+            "lines": 82
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "        protected string pictureUri;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "",
+              "            // Send an OpenID Connect sign-in request.",
+              "            if (!Request.IsAuthenticated)",
+              "            {",
+              "                Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "            }",
+              "",
+              "            if (!CatalogConfiguration.UseAzureStorage)",
+              "            {",
+              "                UploadButton.Visible = false;",
+              "            }",
+              "",
+              "            pictureUri = ImageService.UrlDefaultImage();",
+              "            this.DataBind();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()"
+            ]
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "using System.Web.UI;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Edit : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        protected CatalogItem product;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Edit.aspx\");",
+              "",
+              "            if (!Page.IsPostBack)",
+              "            {",
+              "                // Send an OpenID Connect sign-in request.",
+              "                if (!Request.IsAuthenticated)",
+              "                {",
+              "                    Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "                }",
+              "                if (!CatalogConfiguration.UseAzureStorage)",
+              "                {",
+              "                    UploadButton.Visible = false;",
+              "                }",
+              "",
+              "                var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyNTier/src",
+        "files": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "language": "csharp",
+            "lines": 120
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceClient.cs",
+            "language": "csharp",
+            "lines": 56
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogServiceMock.cs",
+            "language": "csharp",
+            "lines": 123
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/EntityModel.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogBrand.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItem.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogItemsStock.cs",
+            "language": "csharp",
+            "lines": 27
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/CatalogType.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/DiscountItem.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogConfiguration.cs",
+            "language": "csharp",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/CatalogDBInitializer.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Models/Infrastructure/PreconfiguredData.cs",
+            "language": "csharp",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/Web.config",
+            "language": "xml",
+            "lines": 65
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/eShopWCFService.csproj",
+            "language": "xml",
+            "lines": 140
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/packages.config",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/App.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.disco",
+            "language": "xml",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.wsdl",
+            "language": "xml",
+            "lines": 211
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService.xsd",
+            "language": "xml",
+            "lines": 135
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService1.xsd",
+            "language": "xml",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService2.xsd",
+            "language": "xml",
+            "lines": 58
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/CatalogService3.xsd",
+            "language": "xml",
+            "lines": 12
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.cs",
+            "language": "csharp",
+            "lines": 669
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/Reference.svcmap",
+            "language": "xml",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration.svcinfo",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/configuration91.svcinfo",
+            "language": "xml",
+            "lines": 201
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Connected Services/eShopServiceReference/eShopWinForms.eShopServiceReference.DiscountItem.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 160
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Controllers/ICatalogView.cs",
+            "language": "csharp",
+            "lines": 82
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/DependencyObjectExtensions.cs",
+            "language": "csharp",
+            "lines": 40
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Json.cs",
+            "language": "csharp",
+            "lines": 24
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/NotificationsHelper.cs",
+            "language": "csharp",
+            "lines": 53
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/ResourceExtensions.cs",
+            "language": "csharp",
+            "lines": 14
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/SettingsStorageExtensions.cs",
+            "language": "csharp",
+            "lines": 116
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/Singleton.cs",
+            "language": "csharp",
+            "lines": 18
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Helpers/UploadImageHelper.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Program.cs",
+            "language": "csharp",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/AssemblyInfo.cs",
+            "language": "csharp",
+            "lines": 36
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogBrand.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogItem.datasource",
+            "language": "xml",
+            "lines": 21
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/DataSources/eShopServiceLibrary.CatalogType.datasource",
+            "language": "xml",
+            "lines": 10
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.Designer.cs",
+            "language": "csharp",
+            "lines": 273
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Resources.resx",
+            "language": "xml",
+            "lines": 184
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.Designer.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Properties/Settings.settings",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.Designer.cs",
+            "language": "csharp",
+            "lines": 647
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.cs",
+            "language": "csharp",
+            "lines": 198
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/Views/CatalogView.resx",
+            "language": "xml",
+            "lines": 150
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/app.manifest",
+            "language": "xml",
+            "lines": 76
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/eShopWinForms.csproj",
+            "language": "xml",
+            "lines": 281
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWinForms/packages.config",
+            "language": "xml",
+            "lines": 6
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/CatalogService.svc.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Data.Entity;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.ServiceModel.Web;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the class name \"CatalogService\" in both code and config file together.",
+              "    public class CatalogService : ICatalogService",
+              "    {",
+              "        private EntityModel ents;",
+              "",
+              "        public CatalogService()",
+              "        {",
+              "            ents = new EntityModel();",
+              "        }",
+              "",
+              "        public CatalogService(EntityModel ents)",
+              "        {",
+              "            this.ents = ents;",
+              "        }",
+              "",
+              "        public DiscountItem GetDiscount(DateTime _day)",
+              "        {",
+              "            return ents.DiscountItems.ToList().Where(y => y.Start.Date.Date <= _day.Date.Date && y.End.Date.Date >= _day.Date.Date).FirstOrDefault();",
+              "        }",
+              "",
+              "        public CatalogItem FindCatalogItem(int id)",
+              "        {",
+              "            CatalogItem item = ents.CatalogItems.FirstOrDefault(x => x.Id == id);",
+              "            if (item != null)",
+              "            {",
+              "                item.CatalogBrand = ents.CatalogBrands.FirstOrDefault(x => x.Id == item.CatalogBrandId);",
+              "                item.CatalogType = ents.CatalogTypes.FirstOrDefault(x => x.Id == item.CatalogTypeId);",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyNTier/src/eShopWCFService/ICatalogService.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopWCFService.Models;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Linq;",
+              "using System.Runtime.Serialization;",
+              "using System.ServiceModel;",
+              "using System.Text;",
+              "",
+              "namespace eShopWCFService",
+              "{",
+              "    // NOTE: You can use the \"Rename\" command on the \"Refactor\" menu to change the interface name \"IService1\" in both code and config file together.",
+              "    [ServiceContract]",
+              "    public interface ICatalogService : IDisposable",
+              "    {",
+              "        [OperationContract]",
+              "        CatalogItem FindCatalogItem(int id);",
+              "        [OperationContract]",
+              "        List<CatalogBrand> GetCatalogBrands();",
+              "        [OperationContract]",
+              "        List<CatalogItem> GetCatalogItems(int brandIdFilter, int typeIdFilter);",
+              "        [OperationContract]",
+              "        List<CatalogType> GetCatalogTypes();",
+              "        [OperationContract]",
+              "        int GetAvailableStock(System.DateTime date, int catalogItemId);",
+              "        [OperationContract]",
+              "        void CreateAvailableStock(CatalogItemsStock catalogItemsStock);",
+              "        [OperationContract]",
+              "        void CreateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void UpdateCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        void RemoveCatalogItem(CatalogItem catalogItem);",
+              "        [OperationContract]",
+              "        DiscountItem GetDiscount(DateTime day);",
+              "    }",
+              "}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-073",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 120
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 84
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 105
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 124
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 94
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 114
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs",
+            "language": "csharp",
+            "lines": 82
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "        protected string pictureUri;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "",
+              "            // Send an OpenID Connect sign-in request.",
+              "            if (!Request.IsAuthenticated)",
+              "            {",
+              "                Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "            }",
+              "",
+              "            if (!CatalogConfiguration.UseAzureStorage)",
+              "            {",
+              "                UploadButton.Visible = false;",
+              "            }",
+              "",
+              "            pictureUri = ImageService.UrlDefaultImage();",
+              "            this.DataBind();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()"
+            ]
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "startLine": 1,
+            "lines": [
+              "﻿<%@ Page Title=\"Create\" Language=\"C#\" MasterPageFile=\"~/Site.Master\" AutoEventWireup=\"true\" ValidateRequest=\"false\" CodeBehind=\"Create.aspx.cs\" Inherits=\"eShopModernizedWebForms.Catalog.Create\" %>",
+              "",
+              "<asp:Content ID=\"Create\" ContentPlaceHolderID=\"MainContent\" runat=\"server\">",
+              "",
+              "    <h2 class=\"esh-body-title\">Create</h2>",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "",
+              "            <div class=\"col-md-4\">",
+              "                <div class=\"row\">",
+              "                    <asp:Image runat=\"server\" CssClass=\"esh-picture\" ImageUrl='<%#pictureUri%>' />",
+              "                </div>",
+              "",
+              "                <div runat=\"server\" id=\"UploadButton\" class=\"row\">",
+              "                    <div class=\"col-md-6\">",
+              "                        <label class=\"btn btn-default esh-button-upload\">",
+              "                            Upload image",
+              "                            <input type=\"file\" id=\"uploadEditorImage\" accept=\"image/*\" class=\"hidden\" />",
+              "                        </label>",
+              "                        <asp:HiddenField ID=\"TempImageName\" runat=\"server\" Value=\"\" ClientIDMode=\"Static\"/>",
+              "                    </div>",
+              "",
+              "                    <div class=\"esh-loader col-md-3 hidden\"></div>",
+              "                    <div class=\"col-md-6\">",
+              "                        <span class=\"text-danger field-validation-error\" id=\"img-validation-error\"></span>",
+              "                    </div>",
+              "                </div>",
+              "            </div>",
+              "",
+              "            <div class=\"col-md-8 form-horizontal\">",
+              "                <div class=\"form-group\">",
+              "                    <label class=\"control-label col-md-2\">Name</label>",
+              "                    <div class=\"col-md-8\">",
+              "                        <asp:TextBox ID=\"Name\" runat=\"server\" CssClass=\"form-control\"></asp:TextBox>",
+              "                        <asp:RequiredFieldValidator runat=\"server\" ControlToValidate=\"Name\" Display=\"Dynamic\"",
+              "                            CssClass=\"field-validation-valid text-danger\" ErrorMessage=\"The Name field is required.\" />",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-044",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config",
+            "language": "xml",
+            "lines": 119
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/packages.config",
+            "language": "xml",
+            "lines": 45
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Mvc;",
+              "using Autofac.Integration.WebApi;",
+              "using eShopLegacyMVC.Models;",
+              "using eShopLegacyMVC.Models.Infrastructure;",
+              "using eShopLegacyMVC.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Reflection;",
+              "using System.Web;",
+              "using System.Web.Http;",
+              "using System.Web.Mvc;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyMVC",
+              "{",
+              "    public class MvcApplication : HttpApplication",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        IContainer container;",
+              "",
+              "        protected void Application_Start()",
+              "        {",
+              "            container = RegisterContainer();",
+              "            GlobalConfiguration.Configure(WebApiConfig.Register);",
+              "            AreaRegistration.RegisterAllAreas();",
+              "            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Web.config",
+            "startLine": 1,
+            "lines": [
+              "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?>",
+              "<!--",
+              "  For more information on how to configure your ASP.NET application, please visit",
+              "  https://go.microsoft.com/fwlink/?LinkId=301880",
+              "  -->",
+              "<configuration>",
+              "  <configSections>",
+              "    <section name=\"entityFramework\" type=\"System.Data.Entity.Internal.ConfigFile.EntityFrameworkSection, EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\" requirePermis",
+              "    ",
+              "  <!-- For more information on Entity Framework configuration, visit http://go.microsoft.com/fwlink/?LinkID=237468 --></configSections>",
+              "  <connectionStrings>",
+              "    <add name=\"CatalogDBContext\" connectionString=\"Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=Microsoft.eShopOnContainers.Services.CatalogDb; Integrated Security=True; MultipleActiveResultSets=True;\" providerName=\"System.Data.SqlClient\" />",
+              "  </connectionStrings>",
+              "  <appSettings>",
+              "    <add key=\"webpages:Version\" value=\"3.0.0.0\" />",
+              "    <add key=\"webpages:Enabled\" value=\"false\" />",
+              "    <add key=\"ClientValidationEnabled\" value=\"true\" />",
+              "    <add key=\"UnobtrusiveJavaScriptEnabled\" value=\"true\" />",
+              "    <add key=\"UseMockData\" value=\"false\" />",
+              "    <add key=\"UseCustomizationData\" value=\"false\" />",
+              "  </appSettings>",
+              "  <!--",
+              "    For a description of web.config changes see http://go.microsoft.com/fwlink/?LinkId=235367.",
+              "",
+              "    The following attributes can be set on the <httpRuntime> tag.",
+              "      <system.Web>",
+              "        <httpRuntime targetFramework=\"4.7\" />",
+              "      </system.Web>",
+              "  -->",
+              "  <system.web>",
+              "    <compilation debug=\"true\" targetFramework=\"4.7.2\" />",
+              "    <httpRuntime targetFramework=\"4.6.1\" />",
+              "    <sessionState mode=\"InProc\" />",
+              "    <httpModules>",
+              "      <add name=\"TelemetryCorrelationHttpModule\" type=\"Microsoft.AspNet.TelemetryCorrelation.TelemetryCorrelationHttpModule, Microsoft.AspNet.TelemetryCorrelation\" />",
+              "      <add name=\"ApplicationInsightsWebTracking\" type=\"Microsoft.ApplicationInsights.Web.ApplicationInsightsHttpModule, Microsoft.AI.Web\" />",
+              "    </httpModules>",
+              "    <globalization uiCulture=\"en-US\" culture=\"en-US\" />",
+              "  </system.web>",
+              "  <runtime>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-032",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Controllers",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/BrandsController.cs",
+            "language": "csharp",
+            "lines": 37
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/Api/FilesController.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "language": "csharp",
+            "lines": 166
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs",
+            "language": "csharp",
+            "lines": 92
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/CatalogController.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using System.Collections.Generic;",
+              "using System.Net;",
+              "using Microsoft.AspNetCore.Mvc;",
+              "using Microsoft.AspNetCore.Mvc.Rendering;",
+              "using eShopPorted.Models;",
+              "using eShopPorted.Services;",
+              "using log4net;",
+              "",
+              "namespace eShopPorted.Controllers",
+              "{",
+              "    public class CatalogController : Controller",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        private ICatalogService service;",
+              "",
+              "        public CatalogController(ICatalogService service)",
+              "        {",
+              "            this.service = service;",
+              "        }",
+              "",
+              "        // GET /[?pageSize=3&pageIndex=10]",
+              "        public ActionResult Index(int pageSize = 10, int pageIndex = 0)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Index?pageSize={pageSize}&pageIndex={pageIndex}\");",
+              "            var paginatedItems = service.GetCatalogItemsPaginated(pageSize, pageIndex);",
+              "            ChangeUriPlaceholder(paginatedItems.Data);",
+              "            return View(paginatedItems);",
+              "        }",
+              "",
+              "        // GET: Catalog/Details/5",
+              "        public ActionResult Details(int? id)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Details?id={id}\");",
+              "            if (id == null)",
+              "            {",
+              "                return BadRequest();",
+              "            }",
+              "            CatalogItem catalogItem = service.FindCatalogItem(id.Value);",
+              "            if (catalogItem == null)"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Controllers/PicController.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopPorted.Services;",
+              "using log4net;",
+              "using System.IO;",
+              "using System.Net;",
+              "using System.Web.Mvc;",
+              "",
+              "namespace eShopPorted.Controllers",
+              "{",
+              "    public class PicController : Controller",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public const string GetPicRouteName = \"GetPicRouteTemplate\";",
+              "",
+              "        private ICatalogService service;",
+              "",
+              "        public PicController(ICatalogService service)",
+              "        {",
+              "            this.service = service;",
+              "        }",
+              "",
+              "        // GET: Pic/5.png",
+              "        [HttpGet]",
+              "        [Route(\"items/{catalogItemId:int}/pic\", Name = GetPicRouteName)]",
+              "        public ActionResult Index(int catalogItemId)",
+              "        {",
+              "            _log.Info($\"Now loading... /items/Index?{catalogItemId}/pic\");",
+              "",
+              "            if (catalogItemId <= 0)",
+              "            {",
+              "                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);",
+              "            }",
+              "",
+              "            var item = service.FindCatalogItem(catalogItemId);",
+              "",
+              "            if (item != null)",
+              "            {",
+              "                var webRoot = \"\";",
+              "                //var webRoot = Server.MapPath(\"~/Pics\");",
+              "                var path = Path.Combine(webRoot, item.PictureFileName);"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

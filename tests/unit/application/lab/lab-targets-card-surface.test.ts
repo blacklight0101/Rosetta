@@ -52,7 +52,7 @@ async function run(id: string, answer: Answer, data: unknown = input) {
 }
 
 describe('the card surface targets', () => {
-  it('RF-1409 has one reader target for each of the three prompts', () => {
+  it('RF-1406 has one reader target for each of the three prompts', () => {
     expect([...targets.keys()]).toEqual(['cards/continue', 'cards/flows', 'cards/screens']);
     expect(cardSurfaceTargets(prompts).every((each) => each.role === 'reader')).toBe(true);
   });
@@ -69,7 +69,7 @@ describe('the surface fragments', () => {
     ['cards/flows', 'flows', { flows: true, screens: false }, 'Screens: pages'],
     ['cards/screens', 'screens', { flows: false, screens: true }, 'Flows: journeys'],
   ] as const)(
-    'RF-1409 adds the %s file under test to the card format of the system prompt, alone',
+    'RF-1406 adds the %s file under test to the card format of the system prompt, alone',
     async (id, part, marks, other) => {
       const { outcome, request } = await run(id, { text: validCards });
 
@@ -82,7 +82,7 @@ describe('the surface fragments', () => {
     },
   );
 
-  it('RF-1409 sends the task, the replay of the reads and the turns-left message', async () => {
+  it('RF-1406 sends the task, the replay of the reads and the turns-left message', async () => {
     const { request } = await run('cards/flows', { text: validCards });
 
     expect(request?.messages.map((each) => each.role)).toEqual([
@@ -93,7 +93,7 @@ describe('the surface fragments', () => {
     ]);
   });
 
-  it('RF-1409 reads a surface answer with the run card parser', async () => {
+  it('RF-1406 reads a surface answer with the run card parser', async () => {
     const partial = JSON.stringify({ cards: [card, { type: 'BR' }] });
     const call = { id: 'c', name: 'read_file', arguments: { path: 'a', startLine: 1, endLine: 2 } };
 
@@ -113,7 +113,7 @@ describe('the surface fragments', () => {
 });
 
 describe('the continue target', () => {
-  it('RF-1409 continues a fixed cut answer with the continue file as the last message', async () => {
+  it('RF-1406 continues a fixed cut answer with the continue file as the last message', async () => {
     const { outcome, request } = await run('cards/continue', { text: rest });
 
     expect(outcome).toEqual({ usable: true, detail: 'Valid' });
@@ -125,7 +125,7 @@ describe('the continue target', () => {
     expect(request?.system).toBe(readerSystemPrompt(prompts));
   });
 
-  it('RF-1409 joins the fragment the way the run does, so a fence is stripped', async () => {
+  it('RF-1406 joins the fragment the way the run does, so a fence is stripped', async () => {
     const fenced = `\`\`\`json\n${rest}\n\`\`\``;
 
     expect((await run('cards/continue', { text: fenced })).outcome.usable).toBe(true);
@@ -137,7 +137,7 @@ describe('the continue target', () => {
 });
 
 describe('the cases of the card surface targets', () => {
-  it('RF-1409 refuses a case without reads, as every case replays them', () => {
+  it('RF-1406 refuses a case without reads, as every case replays them', () => {
     const bare = { area: input.area, files: input.files, turns: input.turns };
 
     for (const target of targets.values()) {
@@ -146,7 +146,7 @@ describe('the cases of the card surface targets', () => {
     }
   });
 
-  it('RF-1409 reads one raw answer: a fragment for continue, cards for the others', () => {
+  it('RF-1406 reads one raw answer: a fragment for continue, cards for the others', () => {
     expect(targets.get('cards/continue')?.readsAnswer(rest)).toBe(true);
     expect(targets.get('cards/continue')?.readsAnswer('x')).toBe(false);
     expect(targets.get('cards/flows')?.readsAnswer(validCards)).toBe(true);

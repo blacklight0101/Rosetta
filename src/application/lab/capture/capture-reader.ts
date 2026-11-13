@@ -7,12 +7,22 @@ import { capturePartInput, readerPartIds } from './capture-reader-parts.js';
 // reader read. What the model wrote (tool calls, answers) is never kept: a read is replayed from the
 // path and the lines it names, which the tool gave back.
 
+/** RF-1406: the continuation and the two fragments, captured like the card format (area and reads). */
+const surfacePromptIds: readonly string[] = ['cards/continue', 'cards/flows', 'cards/screens'];
+
+/** The heading each fragment of the system prompt starts with: all the capture reads of that prompt. */
+const fragmentHeadings: Readonly<Record<string, RegExp>> = {
+  'cards/flows': /^## Flows:/mu,
+  'cards/screens': /^## Screens:/mu,
+};
+
 export const readerPromptIds: readonly string[] = [
   'reader/task',
   'reader/area',
   'reader/read-first',
   'cards/card-format',
   ...readerPartIds,
+  ...surfacePromptIds,
 ];
 
 /** Small on purpose: the committed excerpts of public code stay short. */
@@ -74,6 +84,13 @@ function readsOf(task: TranscriptTask): Read[] {
   return reads.flatMap((read) => read ?? []).slice(0, MAX_READS);
 }
 
+/** Whether the system prompt of the task held the fragment the prompt id is (every other id: yes). */
+function hadFragment(promptId: string, task: TranscriptTask): boolean {
+  const heading = fragmentHeadings[promptId];
+  const system = task.messages.find((message) => message.role === 'system')?.content ?? '';
+  return heading === undefined || heading.test(system);
+}
+
 // RF-1404
 export function captureReaderInput(
   promptId: string,
@@ -89,7 +106,12 @@ export function captureReaderInput(
   if (readerPartIds.includes(promptId)) {
     return capturePartInput(promptId, task, { base, workbook, reads: readsOf(task) });
   }
-  if (promptId !== 'cards/card-format') return base;
+  return withReads(promptId, task, base);
+}
+
+/** The card format and the surface prompts: the case replays the reads, so it needs some. */
+function withReads(promptId: string, task: TranscriptTask, base: object): unknown {
+  if (promptId !== 'cards/card-format' && !surfacePromptIds.includes(promptId)) return base;
   const reads = readsOf(task);
-  return reads.length === 0 ? undefined : { ...base, reads };
+  return reads.length === 0 || !hadFragment(promptId, task) ? undefined : { ...base, reads };
 }

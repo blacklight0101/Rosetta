@@ -5,7 +5,7 @@ import {
 } from '../../../../../src/application/lab/capture/capture-rules.js';
 import { block, message, taskOf } from '../../../../support/capture-fixtures.js';
 
-// RF-1404, RF-1409, DEC-57: what the capture keeps for the flows, screens and continue prompts: the
+// RF-1404, RF-1406, DEC-57: what the capture keeps for the flows, screens and continue prompts: the
 // area and two reads, as for the card format. Which fragments an area had is read from the headings
 // of the system prompt; no text of it and no answer of a model is kept.
 
@@ -40,13 +40,13 @@ const expected = {
 };
 
 describe('the capture rules for the flows, screens and continue prompts', () => {
-  it('RF-1409 lists the three ids among those it can capture', () => {
+  it('RF-1406 lists the three ids among those it can capture', () => {
     expect(capturablePromptIds).toEqual(
       expect.arrayContaining(['cards/continue', 'cards/flows', 'cards/screens']),
     );
   });
 
-  it('RF-1409 captures a flows case only from a task whose system prompt had the flows fragment', () => {
+  it('RF-1406 captures a flows case only from a task whose system prompt had the flows fragment', () => {
     const capture = (sys: ReturnType<typeof system>) =>
       captureInput('cards/flows', taskWith('reader-001', sys), context);
 
@@ -55,7 +55,7 @@ describe('the capture rules for the flows, screens and continue prompts', () => 
     expect(capture(system())).toBeUndefined();
   });
 
-  it('RF-1409 captures a screens case only from a task whose system prompt had the screens fragment', () => {
+  it('RF-1406 captures a screens case only from a task whose system prompt had the screens fragment', () => {
     const capture = (sys: ReturnType<typeof system>) =>
       captureInput('cards/screens', taskWith('reader-002', sys), context);
 
@@ -63,7 +63,7 @@ describe('the capture rules for the flows, screens and continue prompts', () => 
     expect(capture(system(FLOWS))).toBeUndefined();
   });
 
-  it('RF-1409 captures a continue case from any reader task that read a file', () => {
+  it('RF-1406 captures a continue case from any reader task that read a file', () => {
     const capture = (withRead: boolean) =>
       captureInput('cards/continue', taskWith('reader-003', system(), withRead), context);
 
@@ -71,7 +71,7 @@ describe('the capture rules for the flows, screens and continue prompts', () => 
     expect(capture(false)).toBeUndefined();
   });
 
-  it('RF-1409 keeps no prompt text and no answer, and reads reader tasks only', () => {
+  it('RF-1406 keeps no prompt text and no answer, and reads reader tasks only', () => {
     const flows = (name: string) =>
       captureInput('cards/flows', taskWith(name, system(FLOWS)), context);
 
