@@ -9952,7 +9952,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: M
 - **Depends on**: P10-01
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Done (2026-11-13)
+- **Status**: Done (2026-11-13, PR #1399)
 - **Evidence** (2026-11-13, owner): quality beyond the deterministic checks needs a judge; the owner chose Claude Opus 5.5 with an owner review of a sample.
 - **Reads**: `eval/calibration/`, `run-calibration.ts`, the prompt families (reader, verifier, summariser, planner, cards, shared), RF-305, P10-01.
 - **Do**: a written rubric per family (`lab/rubrics/`: what a good answer does, scored 1-5 per criterion, with grounding in the given source as a criterion everywhere), the lab's `--judge provider:model` option, judge calls counted in the same ledger, and a judge check: the judge scores the hand-labelled calibration claims and a small hand-scored sample per family, and its agreement is reported. A sample of judge scores per family is written for the owner's review (`docs/evaluation/prompt-lab/judge-sample.md`).
