@@ -201,7 +201,7 @@ export function PlanSetupBody(props: BodyProps): JSX.Element {
         <Actions session={session} />
       </section>
       <Consents session={session} />
-      <PlanEstimateCard load={session.estimate} blockers={session.blockers} />
+      <PlanEstimateCard projectId={projectId} load={session.estimate} blockers={session.blockers} />
       <StartBar
         {...{ session, projectId, sourceRunId }}
         sourceRefused={sourceError !== undefined}

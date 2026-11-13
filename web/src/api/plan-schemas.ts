@@ -202,6 +202,13 @@ export const planEstimateSchema = z.object({
   caps: z.array(planCap),
   /** RF-435, P8-01: the run's own line: the journey's remainder (it pauses) or the project run caps. */
   runLine: z.enum(['journey', 'project']).default('project'),
+  /** RF-435, P9-02: the one approved amount of the journey and whether it is used up. */
+  journey: z
+    .object({
+      approved: z.object({ tokens: bigIntText, costMicros: bigIntText }),
+      usedUp: z.boolean(),
+    })
+    .optional(),
   withinCaps: byScenario(z.boolean()),
 });
 
