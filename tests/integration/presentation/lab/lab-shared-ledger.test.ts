@@ -75,3 +75,32 @@ describe('two invocations from different checkouts', () => {
     expect(parseLedgerText(await readFile(shared, 'utf8')).length).toBeGreaterThan(0);
   });
 });
+
+describe('a real provider and the shared ledger', () => {
+  const real = { ...verifierArgs, model: { provider: 'anthropic', model: 'claude-haiku-5-5' } };
+
+  it('RF-1402 refuses to start a real model without ROSETTA_LAB_LEDGER, with or without --yes', async () => {
+    const router = new ModelRouter({ 'claude-haiku-5-5': answers });
+    const parts = labParts({ outputDir: join(temp.path, 'real'), router });
+
+    const sent = await runLab(parts, real);
+    const planned = await runLab(parts, { ...real, yes: false });
+
+    expect([sent.code, planned.code]).toEqual([1, 1]);
+    expect(sent.lines.join('\n')).toContain('RST-1000');
+    expect(sent.lines.join('\n')).toContain('set ROSETTA_LAB_LEDGER to the shared Phase 10 ledger');
+    expect(router.requests).toHaveLength(0);
+  });
+
+  it('RF-1402 lets the fake provider keep the ledger of the checkout', async () => {
+    const router = new ModelRouter({ 'model-a': answers });
+
+    const { code } = await runLab(
+      labParts({ outputDir: join(temp.path, 'fake'), router }),
+      verifierArgs,
+    );
+
+    expect(code).toBe(0);
+    expect(router.requests.length).toBeGreaterThan(0);
+  });
+});
