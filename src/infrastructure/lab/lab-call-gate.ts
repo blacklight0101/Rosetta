@@ -89,8 +89,8 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
 
   /**
    * A call that failed. One a guard refused before sending is released: nothing was billed. Any
-   * other may have been billed, so it is booked at the cost the budget guard knows, else at the
-   * worst case that was held (RF-1402).
+   * other may have been billed, so it is booked at the larger of the cost the budget guard knows
+   * and the worst case that was held (RF-1402).
    */
   private async afterFailure(ticket: HoldTicket, worst: number, error: unknown): Promise<void> {
     const code = codeOf(error);
@@ -129,7 +129,14 @@ export class LabCallGate implements LlmProvider, LabCallMeter {
   private async reserve(request: LlmRequest): Promise<{ ticket: HoldTicket; worst: number }> {
     if (this.stopReason !== undefined) return this.refuse(this.stopReason);
     const worst = this.options.worstCaseMicros(request);
-    const held = await this.options.ledger.hold(worst);
+    let held: Awaited<ReturnType<SpendLedger['hold']>>;
+    try {
+      held = await this.options.ledger.hold(worst);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.stopReason = `The ledger could not be written (${reason}), so the invocation stops: nothing is sent without a hold.`;
+      return this.refuse(this.stopReason);
+    }
     if (held.ok) return { ticket: held.value, worst };
     this.stopReason = held.error.message;
     return this.refuse(held.error.message);

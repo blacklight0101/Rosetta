@@ -53,7 +53,8 @@ never pass a cap together, and a hold older than thirty minutes stops counting. 
 
 - A target must be written per prompt id; agent-loop prompts (the reader) need their own targets and are not wired by P10-01.
 - The ledger holds worst-case amounts while calls are in flight, so two processes can refuse a call the real cost would have allowed; a crashed process leaves a hold for thirty minutes.
-- A call that failed after being sent is booked at the cost the budget guard knows, else at the larger of that and its held worst case, so the ledger may over-count it; only a call refused before sending is released.
+- A call that failed after being sent is booked at the larger of the cost the budget guard knows and its held worst case, so the ledger may over-count it; only a call refused before sending is released.
+- A hold is not renewed while a call runs: the lab refuses to start when the provider settings could keep one call longer than a hold lasts (30 minutes, counted as the budget guard counts its own reservation), and when a hold or a settle cannot be written the invocation stops, so nothing is sent without a hold.
 
 ## References
 

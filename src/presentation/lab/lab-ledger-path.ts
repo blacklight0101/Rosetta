@@ -1,5 +1,7 @@
 import { isAbsolute } from 'node:path';
+import { reservationLifetimeMs } from '../../infrastructure/providers/reservation-lifetime.js';
 import { HOLD_TTL_MS } from '../../application/lab/spend-ledger.js';
+import type { ProviderKind } from '../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 
@@ -38,16 +40,23 @@ export function sharedLedgerProblem(
 }
 
 /**
- * RF-1402: a hold must outlive the longest call the provider settings allow (its timeout, once per
- * attempt). The message when one could outlive it, else undefined.
+ * RF-1402: a hold must outlive the longest call the provider settings allow, counted as the budget
+ * guard counts the lifetime of its own reservation (every attempt's timeout, the longest wait
+ * between attempts, Ollama's extra requests and a margin). The message when one could outlive it.
  */
 export function holdLifetimeProblem(
   provider: string,
-  settings: { readonly timeoutSeconds: number; readonly maxRetries: number } | undefined,
+  settings:
+    | {
+        readonly kind: ProviderKind;
+        readonly timeoutSeconds: number;
+        readonly maxRetries: number;
+      }
+    | undefined,
 ): string | undefined {
   if (settings === undefined) return undefined;
-  const seconds = settings.timeoutSeconds * (settings.maxRetries + 1);
-  if (seconds * 1000 <= HOLD_TTL_MS) return undefined;
+  const longest = reservationLifetimeMs(settings);
+  if (longest <= HOLD_TTL_MS) return undefined;
   const minutes = String(HOLD_TTL_MS / 60_000);
-  return `${ERROR_CODES.configurationInvalid}: the provider ${provider} may keep one call for up to ${String(Math.ceil(seconds / 60))} minutes (timeout ${String(settings.timeoutSeconds)} s, ${String(settings.maxRetries)} retries), longer than the ${minutes} minutes the ledger holds a call. Lower timeoutSeconds or maxRetries in the settings.`;
+  return `${ERROR_CODES.configurationInvalid}: the provider ${provider} may keep one call for up to ${String(Math.ceil(longest / 60_000))} minutes (timeout ${String(settings.timeoutSeconds)} s, ${String(settings.maxRetries)} retries, the waits between them and a margin), longer than the ${minutes} minutes the ledger holds a call. Lower timeoutSeconds or maxRetries in the settings.`;
 }

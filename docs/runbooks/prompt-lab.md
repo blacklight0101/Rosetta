@@ -36,8 +36,8 @@ Every call first holds its worst case (its prompt estimated, plus the output lim
 `lab-out/ledger.jsonl`, and is sent only when the invocation, the total and the stop line stay within their caps. The
 cost the budget guard priced then replaces the hold. A refused call fails with RST-1600 and the reason, the cases left
 are skipped and the results say `Refused`. The ledger is append-only and each command decides on the lines up to its own
-hold, so two commands at once never pass a cap together; a hold from a command that crashed stops counting after ten
-minutes. A call that failed after it was sent may have been billed, so it is booked at the larger of the cost the budget guard knows and the worst case held; only a call refused before sending releases its hold. If the ledger cannot be written, the invocation stops. The lab also refuses to start when the provider settings (timeout times attempts) could keep one call longer than the hold of 30 minutes.
+hold, so two commands at once never pass a cap together; a hold from a command that crashed stops counting after thirty
+minutes. A call that failed after it was sent may have been billed, so it is booked at the larger of the cost the budget guard knows and the worst case held; only a call refused before sending releases its hold. If the ledger cannot be written, the invocation stops. The lab also refuses to start when the provider settings (the timeouts, the waits between attempts and a margin, as the budget guard counts the lifetime of its own reservation) could keep one call longer than the hold of 30 minutes. If a hold cannot be written, nothing is sent and the invocation stops.
 
 At the stop line every call is refused with the words "stop line". Only the owner lifts it, by raising `stopMicros`
 in `lab/config.json` (never above `totalCapMicros`) and committing that change. Spend a card has not used returns to

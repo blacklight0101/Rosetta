@@ -60,14 +60,15 @@ export interface SpendLedger {
   hold(micros: number): Promise<Result<HoldTicket, HoldRefusal>>;
   /** Replaces the hold by what the call really cost. */
   settle(ticket: HoldTicket, micros: number): Promise<void>;
-  /** Gives the hold back (the call failed, so its cost is unknown and not booked). */
+  /** Gives the hold back: only for a call refused before it was sent, which cost nothing. */
   release(ticket: HoldTicket): Promise<void>;
   totals(): Promise<LedgerTotals>;
 }
 
 /**
- * How long a hold that is never settled keeps counting: longer than the longest call can run (the
- * reservation of the budget guard lasts about 24 minutes), so a call in flight is never forgotten.
+ * How long a hold that is never settled keeps counting. It is not renewed while a call runs, so the
+ * lab refuses to start when the provider settings could keep a call longer (the reservation
+ * lifetime of the budget guard: attempts, waits between them and a margin).
  */
 export const HOLD_TTL_MS = 1_800_000;
 
