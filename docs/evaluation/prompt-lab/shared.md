@@ -1,19 +1,18 @@
 # Round log of the shared prompts (P10-10)
 
-Status 2026-11-13: **a measure was fixed and one version was kept.** The masked-value target now
+Status 2026-11-13: **a measure was fixed and no version was kept.** The masked-value target now
 ends on the answer (RF-1406). Both wired prompts went through at least three Haiku 5.5 rounds.
 `shared/secret-risk` is `no call` and was left alone.
 
-- `shared/masked-value` **v2 is kept** under the relaxed rule DEC-235 (section 2b): the judge rises
-  0.6 on the held-back cases and every cost figure stays inside 15 percent over three repetitions.
-  Under the first rule (DEC-231, no regression on any check) it was not kept (section 2).
+- `shared/masked-value`: the candidate v2 (section 2b) is **not kept**. It raises the judge mean by
+  0.6, but on the pooled held-back calls its output is +23%, latency +26% and cost +19% per call,
+  over the 15% of DEC-235 (c). `v1` stays current; v2 stays here as a measured candidate.
 - `shared/text-tool-protocol`: no version kept; the best candidate does not beat `v1` on the
   held-back cases (section 3).
 
-The card spent about **$1.5 of its $1.50 slice**: target calls $0.2, Opus judge $1.3 (five judged
-held-back runs of the candidate comparison, two of them repeated by mistake, one of which wrote a
-broken `results.json`), a few cents for two runs a shell time-out cut. The ledger moves with the
-other builders, so no ledger total is stated here.
+The card spent about **$1.5 of its $1.50 slice** (target calls $0.2, Opus judge $1.3) and $0.014 of
+the reserve for the pooled re-measure of section 2b. The ledger moves with the other builders, so no
+ledger total is stated here.
 
 Run ids are folders of `lab-out/` (git-ignored). Every run is Haiku 5.5 with the split stated. No
 `Leaked` outcome appeared in any run, so the missed-secret veto holds for every version tried.
@@ -84,62 +83,87 @@ stored text) and the split rule hashes that stored text, so a new note moves no 
 captured again. A re-capture would move the inputs that hold a note (`cards-*`, `reader-*`); it was
 not done, because another builder is tuning sets at the same time.
 
-## 2b. `shared/masked-value` v2 under DEC-235 (Haiku, held-back, 3 repetitions)
+## 2b. `shared/masked-value` v2 under DEC-235 (Haiku, held-back, pooled)
 
 DEC-235 keeps a version when, on the held-back cases, there is no regression on validity, repairs,
 unusable answers, refusals, RST codes, label agreement or any veto, the judge mean overall rises by
 at least 0.3, and input tokens, output tokens, latency and cost per call each rise by at most 15%.
-The 4-case, 1-run comparison above had latency +17% on too few calls, so it was repeated with
-`--repetitions 3` (12 calls a version, judged by Opus 5.5): `--compare 20261113-214755-lab
-20261113-214938-lab`.
 
-| Check                   | `v1`    | candidate | Change | Rule          |
-| ----------------------- | ------- | --------- | ------ | ------------- |
-| usable / `Leaked`       | 12 / 0  | 12 / 0    | equal  | no regression |
-| agreement with labels   | 100%    | 100%      | equal  | no regression |
-| refusals, RST codes     | 0, none | 0, none   | equal  | no regression |
-| judge overall           | 4.0     | 4.6       | +0.6   | at least +0.3 |
-| secret-handling         | 2.5     | 4.8       | +2.3   | gain          |
-| secret-detection (veto) | 5.0     | 5.0       | equal  | no veto       |
-| input tokens per call   | 5684.6  | 5733.6    | +0.9%  | at most +15%  |
-| output tokens per call  | 774.2   | 762.3     | -1.5%  | at most +15%  |
-| latency per call        | 3467 ms | 3540 ms   | +2.1%  | at most +15%  |
-| cost of target calls    | $0.0069 | $0.0063   | -9%    | at most +15%  |
+**Runs.** Every run is the 4 held-back cases of `shared-masked-value`, Haiku 5.5, repetitions as
+stated. The numbers are per call (target calls only, no judge cost). "Pre-fix" is the candidate text
+`masked-value.v2r1.md` (sha e7990e56); "landed" is the text with `;` and `:` replaced (the masker test
+refuses those characters in the note), which is the text of `prompts/shared/masked-value.v2.md` in
+commit 1d591365.
 
-A second candidate run (20261113-215112-lab, same 12 calls) gave judge 4.72, 5735 input, 761 output
-tokens and 3581 ms per call, the same picture. Its `v1` twin (20261113-214927-lab) wrote a broken
-`results.json` (two lab processes ran at once by mistake) and is not used. The earlier latency
-(+17%) and output (+13.5%) figures were noise on 4 calls.
+| Run                 | Text    | Calls | Input  | Output | Latency | Cost     | Agreed |
+| ------------------- | ------- | ----- | ------ | ------ | ------- | -------- | ------ |
+| 20261113-214755-lab | `v1`    | 12    | 5684.6 | 774.2  | 3467 ms | 573.5 µ$ | 12/12  |
+| 20261113-214927-lab | `v1`    | 12    | 5684.5 | 642.0  | 3050 ms | 459.8 µ$ | 10/12  |
+| 20261113-223811-lab | `v1`    | 12    | 5684.6 | 575.5  | 2792 ms | 426.3 µ$ | 12/12  |
+| 20261113-214938-lab | pre-fix | 12    | 5733.6 | 762.3  | 3540 ms | 525.8 µ$ | 12/12  |
+| 20261113-215112-lab | pre-fix | 12    | 5734.7 | 760.6  | 3581 ms | 525.2 µ$ | 12/12  |
+| 20261113-220243-lab | landed  | 8     | 5733.1 | 809.4  | 3960 ms | 620.9 µ$ | 8/8    |
+| 20261113-223731-lab | landed  | 16    | 5733.1 | 821.5  | 3866 ms | 555.5 µ$ | 15/16  |
 
-**The landed text differs by two characters from the measured one.** A test of the masker (a note
-must hold none of `; " ' / < = : \``, which a secret rule reads as the end or start of a value)
-refused the candidate's `;`and`:`. The landed note replaces `;`with`,`and`: it`with`and it`, and
-was measured once more (`--repetitions 2`, held-back, judged, 8 calls: 20261113-220243-lab) against the
-`v1`run above: judge 4.6 (+0.6), secret-handling 4.8, secret-detection 4.6 (one case scored lower, no
-veto), usable 8 of 8, no`Leaked`, agreement 100%, input 5733.1 (+0.9%), output 809.4 (+4.6%), latency
-3960 ms (+14.2%, close to the limit and on 8 calls), cost $0.00063 against $0.00058 a call (+9%).
+**How the figures were read.** Run 20261113-214927-lab (a `v1` run, the twin of 214938, started at the
+same time) and 20261113-220243-lab wrote a `results.json` that does not parse. The cause is a masker
+bug, not the two processes: the bare masker runs on the text of `JSON.stringify`, and a judge
+reason that quotes `"ApiKey={secret}"` loses the backslash that escapes its quotes
+(`src/infrastructure/lab/lab-files.ts`, line 98 for 214927 and line 422 for 220243). Only the judge
+reason text is damaged. The per-call fields (tokens, latency, cost, `agreed`) were read directly
+from the files by their field names, without repairing the string, and every number is intact. The bug
+is not fixed in this card; it is for the owner of the lab files.
 
-**Decision: kept** as `prompts/shared/masked-value.v2.md`, the note of the candidate with that change. Landed as the
-gap.v6 pattern: the loader name in `masked-value-prompt.ts`, the tests that name `v1`
-(`masked-value-text`, `compose-plan-handoff`, `understand-run-records`, the manifest list), the RF-141
-Given, `docs/architecture.md` and this log; `masked-value.v1.md` stays in `prompts/` so `--version v1`
-still works. No recorded fixture embeds the note: the committed lab sets store the text as it was
-captured, with the `v1` note inside, and no test replays the note.
+**Pooled figures** (v1: 3 runs, 36 calls; landed v2: 2 runs, 24 calls):
 
-**Splits do not move.** The split rule hashes the stored text of an input, and the committed sets
-(`cards-*`, `reader-*`) keep the `v1` note in it, so nothing moves until a set is captured again.
-A re-capture would hash the `v2` note and could move inputs between the splits; it was not done, and
-the sets keep the note they were captured with.
+| Per call              | `v1`     | landed v2 | Change   | Rule          |
+| --------------------- | -------- | --------- | -------- | ------------- |
+| input tokens          | 5684.6   | 5733.1    | +0.9%    | at most +15%  |
+| output tokens         | 663.9    | 817.5     | +23.1%   | at most +15%  |
+| latency               | 3103 ms  | 3897 ms   | +25.6%   | at most +15%  |
+| cost                  | 486.5 µ$ | 577.3 µ$  | +18.7%   | at most +15%  |
+| agreement with labels | 34/36    | 23/24     | no worse | no regression |
 
-**Sonnet 5.5 and Opus 5.5** (held-back, `--sample 2`, no judge to stay in budget; `v1` then `v2`):
+The first call of each run pays the prompt-cache write (cost 320 to 1009 µ$ against 420 to 565 µ$
+warm). Dropping the first call of every run (33 against 22 calls) gives output +23.1%, latency +25.7%
+and cost +17.7%, the same result.
 
-| Model  | Runs                                     | Usable | Leaked | Agreement | Input / output per call            | Latency           | Cost             |
-| ------ | ---------------------------------------- | ------ | ------ | --------- | ---------------------------------- | ----------------- | ---------------- |
-| Sonnet | 20261113-215532-lab, 20261113-215540-lab | 2, 2   | 0, 0   | 100%      | 5687.5 / 275.5 then 5724.5 / 317.5 | 2801 then 2925 ms | $0.0220, $0.0111 |
-| Opus   | 20261113-215550-lab, 20261113-215600-lab | 2, 2   | 0, 0   | 100%      | 5689.0 / 297.0 then 5725.5 / 331.5 | 3052 then 3460 ms | $0.0449, $0.0227 |
+Other cuts, to show how far the answer depends on which runs are counted: the concurrent pair
+214927 against 214938 is output +18.7%, latency +16.1%, cost +14.4%; all `v1` runs against both
+pre-fix runs is output +14.7%, latency +14.7%, cost +8.0% (inside the limit); the earlier 214755
+against 214938 pair is output -1.5%, latency +2.1%, cost -8.3%. Latency per call of the same text
+ranges from 1.7 to 5.6 s, so a pair of 12-call runs is noisy. The pooled figures above are the larger
+sample and the one on the landed text.
 
-No `Leaked` and no regression on either model. Opus latency is +13% and its output +12% on two calls
-(inside 15%, indicative only); the cost figures differ with the calls and are not a trend.
+**Quality (b).** The judge mean overall is 4.0 for `v1` (214755) against 4.6 (214938), 4.72
+(215112) and 4.6 (220243) for the candidate texts, +0.6 to +0.7; secret-handling goes from 2.5 to
+4.8. No veto, no `Leaked` in any run. This part is met. One landed call (223731, repetition 4 of
+`billing-config-connection`) read `Partial` where `Valid` was expected, so agreement is 23/24 against
+34/36 for `v1`; it is not a regression on the pooled counts.
+
+**Decision: not kept.** Condition (c) of DEC-235 fails on the pooled figures: output +23.1%,
+latency +25.6% and cost +18.7% per call, each over 15%. A version that fails the rule is not kept,
+however close it comes. `v1` stays current. The landing commit is reverted by a new commit; the
+candidate stays as a measured candidate, in this log only:
+
+```
+[MASKED:{{kind}}] (a secret value is written here in plain text in the code, Rosetta masked it before sending, report it at this line, never ask for or repeat the value, and say that it is exposed and must move to a secret store and be replaced)
+```
+
+If it is tried again, a shorter wording that keeps the "report it, never repeat it, exposed and must
+move to a secret store" advice but adds fewer output tokens is the way to pass (c): the output
+tokens carry the latency and the cost.
+
+**Sonnet 5.5 and Opus 5.5** (held-back, `--sample 2`, no judge; `v1` then the pre-fix candidate, sha
+e7990e56, not the landed text; not re-run on the landed text because it is not kept):
+
+| Model  | Runs                                     | Usable | Leaked | Agreement | Input / output per call            | Latency           |
+| ------ | ---------------------------------------- | ------ | ------ | --------- | ---------------------------------- | ----------------- |
+| Sonnet | 20261113-215532-lab, 20261113-215540-lab | 2, 2   | 0, 0   | 100%      | 5687.5 / 275.5 then 5724.5 / 317.5 | 2801 then 2925 ms |
+| Opus   | 20261113-215550-lab, 20261113-215600-lab | 2, 2   | 0, 0   | 100%      | 5689.0 / 297.0 then 5725.5 / 331.5 | 3052 then 3460 ms |
+
+No `Leaked`. On two calls each, Sonnet output rose 15.2% and Opus output 11.6% and latency 13.4%,
+indicative only. These two models do not change the decision.
 
 ## 3. `shared/text-tool-protocol` (Haiku)
 
@@ -148,8 +172,9 @@ The baseline breaks were single runs. With repetitions on `v1`, the bare-JSON br
 tune first-turn cases 2 of 12 (20261113-211913-lab) and 5 of 20 (20261113-212151-lab).
 
 The three `after-reads` cases answer `ReadsMore` on almost every call of every version (9 of 9 in
-20261113-211913-lab, 14 of 15 with one `Unusable` in 20261113-212151-lab, 15 of 15 in the other runs
-below, 10 of 10 on the held-back cases of 20261113-213207-lab): the model uses the protocol correctly and reads more, so their `Valid` label
+20261113-211913-lab and in 20261113-212000-lab, 14 of 15 with one `Unusable` in 20261113-212151-lab,
+15 of 15 in 20261113-212252-lab, 20261113-212345-lab and 20261113-212437-lab, 10 of 10 on the
+held-back cases of 20261113-213207-lab): the model uses the protocol correctly and reads more, so their `Valid` label
 has the same measurement problem as masked-value had. They are constant between versions and do not
 discriminate. This target was not changed (the card's change was the masked-value target).
 

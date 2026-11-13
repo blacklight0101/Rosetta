@@ -609,7 +609,7 @@ sequenceDiagram
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
 - **Masked values** (P5-34, RF-141): the masker's replacement is `[MASKED:<kind>]` plus the note of
-  `prompts/shared/masked-value.v2.md` (a secret value is written there in plain text, Rosetta masked it; report it, never repeat it, it is exposed); the composition
+  `prompts/shared/masked-value.v1.md` (a secret value is written there in plain text, Rosetta masked it); the composition
   root builds the one masker with it (`explainedMasker`) and the manifest records the file's version. The port
   `SecretLines` (`MaskedLineFinder`) names the lines the masker changes: the verifier uses it for the claim above, and the
   plan (`plan-secrets.ts`) lists each file of the scan that holds one among the risks, from

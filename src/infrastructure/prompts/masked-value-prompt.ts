@@ -7,7 +7,7 @@ import { loadPromptFile, loadPromptFileSync, requirePlaceholder } from './prompt
 // masked text knows) and tells the model that a secret value is written there in the code in plain
 // text and that Rosetta masked it before sending.
 
-const maskedValuePromptName = 'shared/masked-value.v2.md';
+const maskedValuePromptName = 'shared/masked-value.v1.md';
 
 /** The kind's place in the file; it must hold it exactly once. */
 export const maskedKindPlaceholder = '{{kind}}';

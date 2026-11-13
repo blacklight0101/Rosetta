@@ -83,8 +83,8 @@ the run sent, read back from the data blocks of the task's first user message: t
 assistant message. The planner and summariser inputs (cards, plan titles) were written by models earlier in the run; they
 are inputs here, not truth, and no `expected` is written. Add an `expected` by hand, from the code, only where a check
 needs one (DEC-57). A task whose input holds an e-mail address, a drive path, a home folder or a key-like string is left
-out and named in the output. Every text of a kept input is masked again by the run's secret masker, with the note of
-`prompts/shared/masked-value.v1.md`, so a secret shape learnt after the run was saved is masked in the case too. A task
+out and named in the output. Every text of a kept input is masked again by the run's secret masker, with the note that is
+current when the capture runs (today `prompts/shared/masked-value.v1.md`; the sets already committed keep the note they were captured with, DEC-236), so a secret shape learnt after the run was saved is masked in the case too. A task
 whose input equals an earlier case's input (the same area, files and reads from another run) is dropped and named. `--max-per-run` cases are taken per run in the order of a hash of the task name, never by
 content. Prompt ids it can capture: `planner/gap`, `summariser/merge`, `summariser/overview`, `reader/task`,
 `reader/area`, `reader/read-first`, `cards/card-format`, `cards/continue`, `cards/flows`, `cards/screens`.
@@ -100,8 +100,9 @@ third of it is held back, not exactly: a small set may have no case on one side,
 `Warning:` line. No version can be kept on a set with no held-back case (DEC-231) until more runs are captured. The
 rule reads no answer and no prompt version, so the split exists before any version is tried; tuning never looks at
 the held-back cases, and a version is kept only when it beats the current one on them. The hash reads the masked
-text, so changing `prompts/shared/masked-value.v1.md` or the masker's rules moves the inputs that hold a masked value:
-re-capture after such a change. Do not move a case between splits: `tests/integration/lab/committed-case-sets.test.ts`
+text, so changing the note of `prompts/shared/masked-value.v1.md` or the masker's rules would move the inputs that hold a masked value
+if a set were captured again. A committed set keeps the note text it was captured with and is not re-captured for a note change (DEC-236):
+the masked-value target puts the note under test in, and a set is re-captured with the current note only when it is re-captured for another reason, or at the end of Phase 10. Do not move a case between splits: `tests/integration/lab/committed-case-sets.test.ts`
 recomputes the rule for every committed set, checks that one input has one side across the sets, holds the list of
 one-sided sets, and refuses an input held twice or a text the run's masker would mask; `tests/integration/lab/repair-case-sets.test.ts`
 checks the side of every repair case (ADR-029, amendments of the P10 lab fixes).
