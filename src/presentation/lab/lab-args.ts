@@ -1,4 +1,5 @@
-import { err, ok, type Result } from '../../domain/errors/result.js';
+﻿import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { LabSplit } from '../../application/lab/lab-selection.js';
 
 // RF-1400, RF-1403: the options of `npm run lab -- [options]`. A run needs the prompt id, its
 // version (`v5` or the path of a draft file), the model (`provider:model`) and the case set; the
@@ -17,6 +18,9 @@ export type LabArgs =
       readonly yes: boolean;
       /** RF-1407: the model that scores each answer against the family rubric. */
       readonly judge?: { readonly provider: string; readonly model: string };
+      /** RF-1409: run only the cases of one side, and only a sample of them. */
+      readonly split?: LabSplit;
+      readonly sample?: number;
     }
   | {
       readonly kind: 'judge-check';

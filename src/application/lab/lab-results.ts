@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
@@ -56,6 +56,13 @@ const resultsSchema = z.strictObject({
   endState: z.enum(['Completed', 'Refused']),
   refusal: z.string().nullable(),
   cases: z.array(caseSchema),
+  /** RF-1409: which cases of the set were sent; a run without it sent every case. */
+  selection: z
+    .strictObject({
+      split: z.enum(['tune', 'held-back', 'all']),
+      sample: z.number().int().min(1).nullable(),
+    })
+    .optional(),
   judge: judgeInfoSchema.optional(),
 });
 
