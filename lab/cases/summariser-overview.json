@@ -23,7 +23,7 @@
     {
       "id": "eshop-20261109-054942-understand-summariser-overview",
       "from": "eshop",
-      "split": "tune",
+      "split": "held-back",
       "input": {
         "cards": [
           {

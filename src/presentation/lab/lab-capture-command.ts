@@ -111,12 +111,14 @@ async function requestOf(
   });
 }
 
-/** The capture's lines after the set is written: the cases left out and why. */
+/** The capture's lines after the set is written: its warnings, the cases left out and why. */
 function leftOutLines(built: {
   leftOut: readonly string[];
   repeated: readonly string[];
+  warnings: readonly string[];
 }): string[] {
   return [
+    ...built.warnings.map((warning) => `Warning: ${warning}`),
     ...(built.leftOut.length > 0
       ? [`Left out for personal data: ${built.leftOut.join('; ')}`]
       : []),

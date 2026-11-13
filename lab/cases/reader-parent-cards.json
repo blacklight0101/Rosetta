@@ -101,7 +101,7 @@
     {
       "id": "eshop-20261102-012533-understand-reader-191",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
         "files": [
@@ -369,7 +369,7 @@
     {
       "id": "eshop-20261029-150101-understand-reader-093",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "Kubernetes/eShopModernizedMVC-K8s/ServiceDeployments/.kube/schema/v1.6.6#1",
         "files": [

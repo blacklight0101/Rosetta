@@ -443,7 +443,7 @@
     {
       "id": "eshop-20261102-203736-plan-planner-prd",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "cards": [
           {
@@ -793,7 +793,7 @@
     {
       "id": "eshop-20261102-030541-plan-planner-prd",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "cards": [
           {

@@ -153,7 +153,7 @@
     {
       "id": "eshop-20261109-054942-understand-summariser-feat-3",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "type": "FEAT",
         "cards": [

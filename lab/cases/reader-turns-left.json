@@ -770,7 +770,7 @@
     {
       "id": "eshop-20261102-185338-understand-reader-093",
       "from": "eshop",
-      "split": "held-back",
+      "split": "tune",
       "input": {
         "area": "Kubernetes/eShopModernizedWebForms-K8s",
         "files": [
