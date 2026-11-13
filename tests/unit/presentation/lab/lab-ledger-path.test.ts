@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { PriceTable } from '../../../../src/domain/budget/price-table.js';
 import {
   holdLifetimeProblem,
