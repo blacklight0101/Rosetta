@@ -209,3 +209,25 @@ describe('GetRun and the manifest options', () => {
     expect(detail).toMatchObject({ cloudConsent: false, sourceRunId: null });
   });
 });
+
+describe('GetRun: no run is waited for', () => {
+  it('RF-1108 EV-106 gives a run that is not queued no holder, even with a running run of its user', async () => {
+    const holder = runningRun({ userId: userAmy.userId, stage: 'understand' });
+    const run = sampleRun({ userId: userAmy.userId, stage: 'plan', queueState: 'Ended' });
+    const getRun = await setup(run, new ReportFolders(), new FakeQueue(), [holder]);
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
+
+    expect(outcome).toMatchObject({ ok: true, value: { waitsFor: null } });
+  });
+
+  it('RF-1108 EV-106 gives a queued scan no holder, since a scan is outside the one-run rule', async () => {
+    const holder = runningRun({ userId: userAmy.userId, stage: 'understand' });
+    const scan = sampleRun({ userId: userAmy.userId, stage: 'scan' });
+    const getRun = await setup(scan, new ReportFolders(), new FakeQueue(), [holder]);
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: scan.id });
+
+    expect(outcome).toMatchObject({ ok: true, value: { waitsFor: null } });
+  });
+});
