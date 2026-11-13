@@ -1,0 +1,1461 @@
+{
+  "schemaVersion": 1,
+  "version": "summariser-merge-1",
+  "prompt": "summariser/merge",
+  "description": "Inputs of summariser/merge captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "asset-manager",
+      "name": "Asset Manager (Excel workbook, uploaded as asset-manager.zip)",
+      "snapshot": "sha256:344b952e5ed95fda7f9f0e8b3ffa49d3c0dd224bf63632958df1f808cd8306f1",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-054045-understand", "20261109-054346-understand"]
+    },
+    {
+      "key": "invoice-generator",
+      "name": "Invoice Generator (Excel workbook, uploaded as invoice-generator.zip)",
+      "snapshot": "sha256:8b41b5ba11769d9b8d63c5463d14e1e9ca9e066b099136f75af305a5420e28bf",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-052032-understand", "20261109-052223-understand"]
+    },
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": ["20261109-054942-understand", "20261109-063857-understand"]
+    }
+  ],
+  "cases": [
+    {
+      "id": "asset-manager-20261109-054045-understand-summariser-ent",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "type": "ENT",
+        "cards": [
+          {
+            "id": "ENT-001",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock In-Out sheet (movement log)",
+            "summary": "One row per stock movement or opening stock: product, direction, quantities by state, and the calculated price and value.",
+            "claims": [
+              "Column A holds the product name; B holds IN, OUT or Opening Stock; C holds the date text from TextBox4; D holds the quantity.",
+              "Columns I and J hold Usable In and Usable Out; K and L hold Damaged In and Damaged Out; M and N hold Repair In and Repair Out.",
+              "Column E takes the Product Master's column 10 for the product and F is E's unit price times quantity; G takes column 11 and H is G times quantity.",
+              "Column B accepts only the list IN, OUT or Opening Stock, and column C accepts only dates between two fixed serial dates."
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "area": "Asset Manager.xlsm",
+            "title": "Inventory sheet (stock balance per product)",
+            "summary": "One row per product with the opening, in and out totals, net quantity, values and the balance per state.",
+            "claims": [
+              "Columns B, C and D sum Stock In-Out column D for the product where column B is Opening Stock, In and Out.",
+              "Column E is the net quantity: B plus C minus D.",
+              "Columns F and G value the rows at the Product Master's columns 10 and 11 times the quantity.",
+              "Column K gives the store room from Product Master column 7, and column L gives the state text from Product Master column 3."
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "area": "Asset Manager.xlsm",
+            "title": "Product Master sheet (product catalogue)",
+            "summary": "One row per product with its code, category, quantities by state, store location, prices and a computed state.",
+            "claims": [
+              "Column D holds the product name, which must be unique on save; column E the asset quantity; G, H and I the usable, damaged and repair quantities; M and N the purchase price and current value.",
+              "Column F is the computed state (USABLE, DAMAGED or REPAIR), derived from the largest of the three state quantities.",
+              "A cell comment on D21 asks that every laptop is separated and given its own code."
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "area": "(root)",
+            "title": "Asset Manager workbook sheets and their formula links",
+            "summary": "The Asset Manager.xlsm workbook holds five sheets. Inventory, Stock In-Out and Product Master feed each other through about 6,600 formulas, and Support feeds the other sheets.",
+            "claims": [
+              "The workbook has 5 sheets and 6075 formula cells in total.",
+              "Inventory draws on Stock_In-Out with 2994 formulas and on Product_Master with 3395 formulas.",
+              "Stock_In-Out draws on Product_Master with 198 formulas.",
+              "Support draws on Inventory with 3 formulas and on Product_Master with 3 formulas."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054045-understand-summariser-br",
+      "from": "asset-manager",
+      "split": "held-back",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-001",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when recording a stock movement",
+            "summary": "The Update Inventory form refuses a movement without a product, a numeric quantity or any state quantity, and refuses any state quantity above the asset quantity.",
+            "claims": [
+              "A movement needs a product name; an empty Txt_AssetName stops the save with 'Please add a product into product box'.",
+              "The asset quantity must be numeric.",
+              "At least one of the Damaged, Usable or Repair quantities must be filled in.",
+              "The Damaged, Repair and Usable quantities may not exceed the asset quantity; each case shows a message and stops."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "area": "Asset Manager.xlsm",
+            "title": "Movement columns by direction and state",
+            "summary": "An IN movement fills the In columns of Usable, Damaged and Repair; an OUT movement fills the Out columns.",
+            "claims": [
+              "For IN, the Usable, Damaged and Repair quantities go to columns I, K and M of the Stock In-Out sheet.",
+              "For OUT, the same three quantities go to columns J, L and N.",
+              "The direction is written to column B as IN when OptionButton1 is set, and as OUT otherwise."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when adding a product",
+            "summary": "A new product needs a unique name, a numeric quantity, numeric prices, a location, and state quantities that do not exceed the total.",
+            "claims": [
+              "The product name is required and must not already exist in the Product Master name column D; otherwise the save stops with 'Product already available'.",
+              "The quantity is required and must be numeric.",
+              "The purchase price and current value must be filled in and numeric; the location is required.",
+              "The sum of the Repair, Usable and Damaged quantities must not exceed the asset quantity; on failure the three state boxes are cleared."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "area": "Asset Manager.xlsm",
+            "title": "Asset codes are sequential row numbers",
+            "summary": "Product codes are built from the row number, not stored as a separate sequence.",
+            "claims": [
+              "On save, a loop rewrites column A of the Product Master from row 2 to the last row as 'ASI000' followed by the row number minus one.",
+              "Refresh loops over the Product Master rows and assigns txt_AssetCode as 'ASI00' followed by the row number, keeping only the last value."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock balance formulas per state",
+            "summary": "Each state balance starts from the Product Master's opening quantity and adds In movements and subtracts Out movements from Stock In-Out.",
+            "claims": [
+              "Column H (usable balance) is the Product Master's column G plus Usable In (I) minus Usable Out (J) from Stock In-Out.",
+              "Column I (damaged balance) is the Product Master's column H plus Damaged In (K) minus Damaged Out (L).",
+              "Column J (repair balance) is the Product Master's column I plus Repair In (M) minus Repair Out (N).",
+              "The state lookup in column L uses VLOOKUP ranges that start and end on different rows in different cells (D1:F19998 in L2, D37:F20035 in L39), so the range drifts row by row."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "area": "Asset Manager.xlsm",
+            "title": "Product state is the largest of the three state quantities",
+            "summary": "The Product Master's state text is USABLE, DAMAGED or REPAIR, whichever state quantity is largest.",
+            "claims": [
+              "F returns a blank when any of G, H or I is empty, otherwise USABLE, DAMAGED or REPAIR when that quantity is the maximum, checked in that order."
+            ]
+          },
+          {
+            "id": "BR-007",
+            "area": "(root)",
+            "title": "Named ranges that size lists by counting entries",
+            "summary": "Several defined names size their lists dynamically with OFFSET and COUNTA. Four of them are not used by any formula, and one points to a broken reference.",
+            "claims": [
+              "AssetCategory, StoredBy and StoreRoom on the Support sheet each use OFFSET with COUNTA to size a list from its column, minus the header row.",
+              "AssetCategory, StoredBy and StoreRoom are reported as not used by any formula.",
+              "The workbook-level name Product_ID refers to OFFSET(#REF!,,,COUNTA(#REF!)-1,1), a broken reference, and is not used by any formula.",
+              "A second name Product_ID, local to the Product Master sheet, sizes its list from column C and is not used by any formula."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-summariser-br",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-001",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when recording a stock movement",
+            "summary": "The Update Inventory form refuses a movement without a product, a numeric quantity or any state quantity, and refuses any state quantity above the asset quantity.",
+            "claims": [
+              "A movement needs a product name; an empty Txt_AssetName stops the save with 'Please add a product into product box'.",
+              "The asset quantity must be numeric.",
+              "At least one of the Damaged, Usable or Repair quantities must be filled in.",
+              "The Damaged, Repair and Usable quantities may not exceed the asset quantity; each case shows a message and stops."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "area": "Asset Manager.xlsm",
+            "title": "Movement columns by direction and state",
+            "summary": "An IN movement fills the In columns of Usable, Damaged and Repair; an OUT movement fills the Out columns.",
+            "claims": [
+              "For IN, the Usable, Damaged and Repair quantities go to columns I, K and M of the Stock In-Out sheet.",
+              "For OUT, the same three quantities go to columns J, L and N.",
+              "The direction is written to column B as IN when OptionButton1 is set, and as OUT otherwise."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when adding a product",
+            "summary": "A new product needs a unique name, a numeric quantity, numeric prices, a location, and state quantities that do not exceed the total.",
+            "claims": [
+              "The product name is required and must not already exist in the Product Master name column D; otherwise the save stops with 'Product already available'.",
+              "The quantity is required and must be numeric.",
+              "The purchase price and current value must be filled in and numeric; the location is required.",
+              "The sum of the Repair, Usable and Damaged quantities must not exceed the asset quantity; on failure the three state boxes are cleared."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "area": "Asset Manager.xlsm",
+            "title": "Asset codes are sequential row numbers",
+            "summary": "Product codes are built from the row number, not stored as a separate sequence.",
+            "claims": [
+              "On save, a loop rewrites column A of the Product Master from row 2 to the last row as 'ASI000' followed by the row number minus one.",
+              "Refresh loops over the Product Master rows and assigns txt_AssetCode as 'ASI00' followed by the row number, keeping only the last value.",
+              "When a product is added, CommandButton2 runs a loop that writes 'ASI000' followed by the row number minus one into column A of Product Master, for every row from 2 to the count of used rows in column A plus one.",
+              "The loop's upper bound is the count of used rows in column A plus one, so it runs one row past the last used row. Because the string concatenation binds the subtraction first, the code written is 'ASI000' & (x - 1)."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock balance formulas per state",
+            "summary": "Each state balance starts from the Product Master's opening quantity and adds In movements and subtracts Out movements from Stock In-Out.",
+            "claims": [
+              "Column H (usable balance) is the Product Master's column G plus Usable In (I) minus Usable Out (J) from Stock In-Out.",
+              "Column I (damaged balance) is the Product Master's column H plus Damaged In (K) minus Damaged Out (L).",
+              "Column J (repair balance) is the Product Master's column I plus Repair In (M) minus Repair Out (N).",
+              "The state lookup in column L uses VLOOKUP ranges that start and end on different rows in different cells (D1:F19998 in L2, D37:F20035 in L39), so the range drifts row by row."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "area": "Asset Manager.xlsm",
+            "title": "Product state is the largest of the three state quantities",
+            "summary": "The Product Master's state text is USABLE, DAMAGED or REPAIR, whichever state quantity is largest.",
+            "claims": [
+              "F returns a blank when any of G, H or I is empty, otherwise USABLE, DAMAGED or REPAIR when that quantity is the maximum, checked in that order."
+            ]
+          },
+          {
+            "id": "BR-007",
+            "area": "(root)",
+            "title": "Named ranges that size lists by counting entries",
+            "summary": "Several defined names size their lists dynamically with OFFSET and COUNTA. Four of them are not used by any formula, and one points to a broken reference.",
+            "claims": [
+              "AssetCategory, StoredBy and StoreRoom on the Support sheet each use OFFSET with COUNTA to size a list from its column, minus the header row.",
+              "AssetCategory, StoredBy and StoreRoom are reported as not used by any formula.",
+              "The workbook-level name Product_ID refers to OFFSET(#REF!,,,COUNTA(#REF!)-1,1), a broken reference, and is not used by any formula.",
+              "A second name Product_ID, local to the Product Master sheet, sizes its list from column C and is not used by any formula."
+            ]
+          },
+          {
+            "id": "BR-008",
+            "area": "Asset Manager.xlsm",
+            "title": "Form clears a Usable quantity error by setting it to a colour value",
+            "summary": "When the Usable quantity equals the total quantity the Usable check on save writes a colour code into the field instead of clearing it.",
+            "claims": [
+              "The Usable-quantity check on save sets the Usable field to vbRed (a colour number) rather than an empty value when the Usable quantity exceeds the total quantity.",
+              "The Damaged and Repair checks on save set their fields to a red background colour, which is the intended effect."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-summariser-feat",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "area": "Asset Manager.xlsm",
+            "title": "Record stock in or out through the Update Inventory form",
+            "summary": "A user picks a product, enters a quantity and a state split, chooses In or Out, and the form appends one row to the Stock In-Out sheet.",
+            "claims": [
+              "Show_Update_Inventory_Frm opens the frm_Update_Inventory form.",
+              "CommandButton1 copies the product selected in ListBox1 into Txt_AssetName, and shows 'Please select a product' when nothing is selected.",
+              "CommandButton2 validates the entry, then writes one row to the Stock In-Out sheet at the first row after the last used one: product name, IN or OUT, the text from TextBox4, and the asset quantity.",
+              "After writing, the form fills E2:H down to the new last row, shows 'Updated!!!' and calls Refresh."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "area": "Asset Manager.xlsm",
+            "title": "Add a new product through the Search Product form",
+            "summary": "A second tab of the search form adds a product to the Product Master sheet, with its opening quantities, price estimates and location, and writes an opening-stock row.",
+            "claims": [
+              "The form opens on its search tab; Btn_AddAsset switches to the add tab and Btn_Back returns to the search tab.",
+              "CommandButton2 writes the new product to the Product Master sheet: name in column D, category in C, quantity in E, usable, damaged and repair in G, H and I, location in J, date in K, stored-by in L, purchase price in M, current value in N and notes in O.",
+              "The same routine then writes a row to the Stock In-Out sheet with the product name, the text from TextBox4, and the quantity, and a row to the Inventory sheet with the product name.",
+              "The routine shows 'Updated!!!' and then calls Refresh."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "area": "Asset Manager.xlsm",
+            "title": "Search and look up products",
+            "summary": "The search form lists products from the Product Master by name text, shows stock figures for the chosen product, and filters the Inventory sheet into the Report sheet.",
+            "claims": [
+              "Typing in TextBox1 refills ListBox1 with product names from the Product Master column D that contain the text, case-insensitively.",
+              "Choosing a product shows its current stock, reorder value and drawer number from the Inventory sheet by VLOOKUP on columns 5, 12 and 11.",
+              "Search_Product filters the Inventory sheet on column 1 to the chosen product, copies the rows to the Report sheet from A7 and hides the form."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock reports on the Report sheet",
+            "summary": "Four macros copy the Inventory sheet into the Report sheet, either all rows or one state's filtered rows.",
+            "claims": [
+              "Current_Stock clears the Report rows from row 8 down, turns off the filter on Inventory, copies the used range to Report A7 as values and formats, and activates Report.",
+              "Damaged filters Inventory on column 9 greater than 0 before the copy.",
+              "Repairable filters Inventory on column 10 greater than 0 before the copy.",
+              "Usable filters Inventory on column 8 greater than 0 before the copy."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "area": "Asset Manager.xlsm",
+            "title": "Product picker calendar",
+            "summary": "A calendar form lets the user pick a date, month and year, and writes the chosen date text into the target box.",
+            "claims": [
+              "The form fills its month and year lists (20 years either side of the current year) and shows the current month; changing month or year redraws the day buttons.",
+              "The previous and next image buttons step the month back and forward across year boundaries.",
+              "Each day button calls ButtonClick, which writes the day caption, the first three letters of the month and the year into TextBox1 and closes the form when the caption is not empty.",
+              "Day buttons with no caption are disabled and greyed; the weekday of the 1st places the first day, and the rest follow in order up to the last day of the month."
+            ]
+          },
+          {
+            "id": "FEAT-006",
+            "area": "Asset Manager.xlsm",
+            "title": "Support totals",
+            "summary": "A Support sheet shows totals of the Inventory and Product Master figures.",
+            "claims": [
+              "B1 shows the Inventory item count as text ('n item(s)'); B2 and B3 sum the Inventory value columns F and G.",
+              "B4, B5 and B6 sum Product Master columns H, I and G.",
+              "B1 sums column E of the Inventory sheet and appends the text ' item(s)'; B2 sums column F and B3 sums column G of the Inventory sheet.",
+              "The Support sheet shows the Current Asset count, the Tot. Asset Value, the Est. Asset Worth, and the Damaged, Repairable and Usable Asset counts, each as a formula."
+            ]
+          },
+          {
+            "id": "FEAT-007",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock report rows with no product match",
+            "summary": "The Report sheet holds four rows of typed entries below the stock list that have quantities but no value, state or location.",
+            "claims": [
+              "Rows 43 to 46 of Report hold typed names with quantity values in columns B and E, while columns F, G, K and L are blank, and the names do not match the product list: 'Laptop Battery', 'FIngernails', 'Januay' and 'sutures'.",
+              "Rows 29 to 42 of Report hold the stocked products with a formula-driven state in column L, a store room in column K and values in columns F and G; rows 47 to 200 hold zeros and blanks.",
+              "Rows 43 to 46 hold typed names in column A ('Laptop Battery', 'FIngernails', 'Januay', 'sutures') with quantities of 3, 3, 4 and 3 in columns B and E.",
+              "In rows 43 to 46 columns F, G, K and L are blank text."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052032-understand-summariser-ent",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "type": "ENT",
+        "cards": [
+          {
+            "id": "ENT-001",
+            "area": "Invoice_Generator.xlsm",
+            "title": "InvoiceTable (Invoice sheet)",
+            "summary": "One row per invoice, with customer data, three service lines, totals, invoice number, dates and status.",
+            "claims": [
+              "The table has 27 columns: Customer, Company, Address Line 1 to 3, UID, VAT, Services and Date and Amount for Lines 1 to 3, Agreed Amount Total, Additional Expenses, Net Amount, Final Invoiced Amount, Invoice number, Invoice Date, Due by, Status, Date Paid, VAT to Pay and Transfer Savings.",
+              "The table occupies B7:AB57.",
+              "Status has a dropdown of Paid, Created and Sent."
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "area": "Invoice_Generator.xlsm",
+            "title": "CustomerTable (Masterdata sheet)",
+            "summary": "A customer master list with company, address, tax identifiers and email.",
+            "claims": [
+              "The table has 8 columns: Customer, Company, Address Line 1 to 3, UID, VAT and Email.",
+              "VAT is stored as a fraction (the input form divides the entered percentage by 100)."
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "area": "(root)",
+            "title": "Invoice workbook sheets and input and output cells",
+            "summary": "The workbook has seven sheets; the Invoice sheet holds the input cells and the calculated output cells of an invoice.",
+            "claims": [
+              "The workbook has one workbook and seven sheets with 335 formula cells.",
+              "Input cells on the Invoice sheet include H8:H44, K8:K56, S8:S27, W8:W56 and Y8:Y56.",
+              "Output cells on the Invoice sheet include U8:U57, X8:X57 and AB8:AB57, and Dashboard E5, I5 and M5 are outputs."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052032-understand-summariser-br",
+      "from": "invoice-generator",
+      "split": "held-back",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-001",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice amount, net, VAT and final totals",
+            "summary": "Each invoice adds its three line amounts, then net amount and final invoiced amount, using the VAT rate of the customer.",
+            "claims": [
+              "Agreed Amount Total is the sum of Amount Line 1, Amount Line 2 and Amount Line 3.",
+              "Net Amount is Agreed Amount Total plus Additional Expenses.",
+              "VAT to Pay is Net Amount multiplied by the VAT column.",
+              "Final Invoiced Amount is Net Amount plus VAT to Pay."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Due date is 14 working days after the invoice date",
+            "summary": "The Due by date is the invoice date plus 14 working days, blank without an invoice date.",
+            "claims": [
+              "Due by is blank when Invoice Date is empty; otherwise it is WORKDAY of the invoice date plus 14 days."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Transfer Savings is half of the row amount",
+            "summary": "The Transfer Savings column is set to 50% of the R column in each row.",
+            "claims": ["Transfer Savings is R multiplied by 0.5 in the rows of the table."]
+          },
+          {
+            "id": "BR-004",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Monthly paid totals on the Calculation sheet",
+            "summary": "For each month, the Calculation sheet sums the Net Amount of paid invoices dated in that month, up to the date on the Dashboard.",
+            "claims": [
+              "Each month sums InvoiceTable Net Amount where the invoice date is in that month and Status is paid; it is blank for months after the date in E3.",
+              "E3 takes its value from Dashboard!C1, which is the fixed date 23 October 2022."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Dashboard yearly totals",
+            "summary": "The Dashboard totals the Net Amount of paid and unpaid invoices and counts invoices for a chosen year.",
+            "claims": [
+              "Dashboard C2 is the year of C1; E5 sums Net Amount of invoices in that year with Status Paid; I5 sums those with Status not paid; M5 counts invoices dated in that year."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Template totals with VAT",
+            "summary": "The Template sheet sums four lines and adds VAT at a rate that applies only to filled lines.",
+            "claims": [
+              "D25 sums D21:D24; D26 sums the products of D21:D24 and E21:E24; D27 is D25 plus D26.",
+              "Each E22:E24 is the rate in E21 when the matching D cell is filled, otherwise 0."
+            ]
+          },
+          {
+            "id": "BR-007",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Paid rows can be hidden on the Invoice sheet",
+            "summary": "A checkbox hides every row whose Status is Paid.",
+            "claims": [
+              "When the axHide checkbox is checked, rows with Status Paid are hidden; when unchecked, all rows are unhidden."
+            ]
+          },
+          {
+            "id": "BR-008",
+            "area": "(root)",
+            "title": "Only open invoices with a blank status are offered for creation",
+            "summary": "The invoice creation form lists only invoices whose status is blank.",
+            "claims": [
+              "The README says the Create Invoices form shows a list of open invoices that have a blank status.",
+              "The form's Userform_Initialize populates that list before the form is shown."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-summariser-br",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-001",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice amount, net, VAT and final totals",
+            "summary": "Each invoice adds its three line amounts, then net amount and final invoiced amount, using the VAT rate of the customer.",
+            "claims": [
+              "Agreed Amount Total is the sum of Amount Line 1, Amount Line 2 and Amount Line 3.",
+              "Net Amount is Agreed Amount Total plus Additional Expenses.",
+              "VAT to Pay is Net Amount multiplied by the VAT column.",
+              "Final Invoiced Amount is Net Amount plus VAT to Pay."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Due date is 14 working days after the invoice date",
+            "summary": "The Due by date is the invoice date plus 14 working days, blank without an invoice date.",
+            "claims": [
+              "Due by is blank when Invoice Date is empty; otherwise it is WORKDAY of the invoice date plus 14 days."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Transfer Savings is half of the row amount",
+            "summary": "The Transfer Savings column is set to 50% of the R column in each row.",
+            "claims": [
+              "Transfer Savings is R multiplied by 0.5 in the rows of the table.",
+              "The Invoice sheet has a column headed Transfer Savings (AB), placed after the Agreed Amount Total (R) and the Status column.",
+              "On the sample invoice rows the Transfer Savings cell holds a value that is shown as a formula result, for example 1750 on the row whose Agreed Amount Total is 3500.",
+              "Transfer Savings in each row is column R of that row multiplied by 0.5, across the regions AB8 to AB57."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Monthly paid totals on the Calculation sheet",
+            "summary": "For each month, the Calculation sheet sums the Net Amount of paid invoices dated in that month, up to the date on the Dashboard.",
+            "claims": [
+              "Each month sums InvoiceTable Net Amount where the invoice date is in that month and Status is paid; it is blank for months after the date in E3.",
+              "E3 takes its value from Dashboard!C1, which is the fixed date 23 October 2022."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Dashboard yearly totals",
+            "summary": "The Dashboard totals the Net Amount of paid and unpaid invoices and counts invoices for a chosen year.",
+            "claims": [
+              "Dashboard C2 is the year of C1; E5 sums Net Amount of invoices in that year with Status Paid; I5 sums those with Status not paid; M5 counts invoices dated in that year."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Template totals with VAT",
+            "summary": "The Template sheet sums four lines and adds VAT at a rate that applies only to filled lines.",
+            "claims": [
+              "D25 sums D21:D24; D26 sums the products of D21:D24 and E21:E24; D27 is D25 plus D26.",
+              "Each E22:E24 is the rate in E21 when the matching D cell is filled, otherwise 0.",
+              "The VAT rate of each service line in column E is a formula that returns 0.2 for the Programming and Consulting lines, and the VAT rate of the Training line is typed as 0.2.",
+              "The subtotal is a formula over the service amounts (13594), the VAT is a formula (2718.8, which is 20% of the subtotal), and the total is a formula (16312.8, the subtotal plus the VAT)."
+            ]
+          },
+          {
+            "id": "BR-007",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Paid rows can be hidden on the Invoice sheet",
+            "summary": "A checkbox hides every row whose Status is Paid.",
+            "claims": [
+              "When the axHide checkbox is checked, rows with Status Paid are hidden; when unchecked, all rows are unhidden."
+            ]
+          },
+          {
+            "id": "BR-008",
+            "area": "(root)",
+            "title": "Only open invoices with a blank status are offered for creation",
+            "summary": "The invoice creation form lists only invoices whose status is blank.",
+            "claims": [
+              "The README says the Create Invoices form shows a list of open invoices that have a blank status.",
+              "The form's Userform_Initialize populates that list before the form is shown."
+            ]
+          },
+          {
+            "id": "BR-011",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice number and date are assigned when an invoice is created",
+            "summary": "A new invoice takes the next number after the largest existing one and the date of today.",
+            "claims": [
+              "The invoice number is the largest value in the Invoice Number column plus one.",
+              "The invoice date is the TODAY value of the Dash sheet, written to the Invoice Date column of the selected row.",
+              "Creating an invoice stops with a warning when the Agreed Amount Total of the selected row is 0.",
+              "The new invoice number is the largest existing Invoice Number plus 1, and the invoice date is the TODAY value of the dashboard."
+            ]
+          },
+          {
+            "id": "BR-013",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice amount, net, VAT and final totals on the Invoice sheet",
+            "summary": "Each invoice row computes an agreed total from three amount lines, then a net amount, a VAT amount and a final amount.",
+            "claims": [
+              "The agreed amount total of each row is the sum of Amount Line 1, Amount Line 2 and Amount Line 3.",
+              "The net amount of each row is the agreed amount total plus Additional Expenses.",
+              "VAT to Pay is the net amount multiplied by the row's VAT rate, and the final invoiced amount is the net amount plus VAT to Pay."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-summariser-feat",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "area": "(root)",
+            "title": "Customer master data management",
+            "summary": "Users add, edit and delete customer records in the Masterdata tab or through dashboard forms.",
+            "claims": [
+              "The README says customer information is input and updated in the Masterdata tab.",
+              "The README says the Add Customer button on the Dashboard adds a customer, and the Edit Master Data button edits or deletes customer information."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "area": "(root)",
+            "title": "Invoice creation and export to PDF and Excel",
+            "summary": "Users enter invoice data in the Invoice tab and export each open invoice as a PDF and an Excel file in separate folders.",
+            "claims": [
+              "The README says invoice information is entered in the Invoice tab, starting with the customer name in an orange cell.",
+              "The README says the Create Invoices button lists open invoices, fills the Template tab with the chosen invoice, and exports it as PDF and Excel to two folders.",
+              "The workbook holds named ranges PDFfolder at Dashboard!M17 and Excelfolder at Dashboard!M19, but no formula uses either name."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "area": "(root)",
+            "title": "Draft customer email with PDF invoice attached",
+            "summary": "A Create Email action drafts an email to the customer with the PDF invoice attached.",
+            "claims": [
+              "The README says the Create Email button creates a draft email to the customer with the PDF invoice attached."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "area": "(root)",
+            "title": "Dashboard revenue chart fed by the Calculations tab",
+            "summary": "The Calculations tab prepares the data for the monthly revenue chart on the Dashboard tab.",
+            "claims": [
+              "The README says the Calculations tab holds the data preparation table for the Dashboard chart, which monitors monthly revenue.",
+              "The Calculation sheet feeds the Dashboard and reads 24 formulas from the Invoice sheet.",
+              "The defined names Date_Chart (Calculation!B6:B29) and Value_Chart (Calculation!C6:C29) refer to #REF! and are not used by any formula.",
+              "The defined name Date_Chart refers to Calculation!B6:B29 through an INDEX range whose reference is broken (#REF!), and no formula uses it."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Dashboard menu of tasks",
+            "summary": "The Dashboard sheet lists the tasks a user can start from it: view and update invoices, add or edit customers, and save invoices into folders.",
+            "claims": [
+              "The Dashboard offers three task headings: View / Update Invoice Information, Add / Edit Customer in Master Data, and Save Invoices in Folders, each with its bullet list of what it does.",
+              "The folder task asks for two folders in the current directory, labelled PDF Invoices and Excel Invoices, for the PDF and Excel copies of invoices.",
+              "The Dashboard shows the net amount (85932.5) and the outstanding amount (40200), both formulas, and the number of jobs done (29).",
+              "The Add Customer button on the Dashboard runs add_data_to_master(), which opens the FormInputMaster form."
+            ]
+          },
+          {
+            "id": "FEAT-006",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Template invoice layout with services and totals",
+            "summary": "The Template sheet lays out one invoice: header, customer address, bank details, a services table with VAT, and the subtotal, VAT and total rows.",
+            "claims": [
+              "The Template sheet shows the invoice number, invoice date and the payment terms (14 days net) in the header block.",
+              "The services table has the columns Services, Time Period, Price in EUR and VAT in %, with three service rows.",
+              "Below the services table the sheet has the labels Subtotal, VAT and Total, with the values 13594, 2718.8 and 16312.8 on the sample invoice.",
+              "The sheet carries the bank name, IBAN and BIC in the footer block."
+            ]
+          },
+          {
+            "id": "FEAT-007",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Add or edit a customer in the master data",
+            "summary": "The ADD/UPDATE path writes customer fields to the master table, and the VAT value is stored as a fraction.",
+            "claims": [
+              "The VAT entered on the form is divided by 100 before it is stored in the master table, and an empty VAT is stored as an empty value.",
+              "On the UPDATE path, the row index i is not set in btADD_Click, which only sets it when the caption is ADD."
+            ]
+          },
+          {
+            "id": "FEAT-008",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Sheets of the invoice workbook carry no data validation or conditional formatting",
+            "summary": "The six sheets of the workbook have no dropdowns, validation rules or conditional formatting rules.",
+            "claims": [
+              "The Dashboard sheet has no data validation rules and no conditional formatting rules.",
+              "The Instructions sheet has no data validation rules and no conditional formatting rules.",
+              "The Masterdata sheet has no data validation rules and no conditional formatting rules.",
+              "The Template sheet has no data validation rules and no conditional formatting rules."
+            ]
+          },
+          {
+            "id": "FEAT-009",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Cell comments on the Dashboard and the other sheets",
+            "summary": "The Dashboard sheet holds one cell comment; the Instructions, Invoice, Masterdata and VBA Code Glossary sheets hold none.",
+            "claims": [
+              "The Dashboard sheet has one comment, in cell C1, with the text 'Author:' followed by a line reading 'Today's date'.",
+              "The Instructions, Invoice, Masterdata and VBA Code Glossary sheets have no comments."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-summariser-scrn",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "SCRN",
+        "cards": [
+          {
+            "id": "SCRN-001",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "title": "Home page (Catalog Manager product list)",
+            "summary": "The default page lists catalog products in a table with Edit, Details and Delete links per row, a Create New link, and Previous and Next pager links.",
+            "claims": [
+              "The page uses the Site.Master layout, places its content in the MainContent region, and has the title Home Page.",
+              "A Create New link points to the CreateProductRoute.",
+              "A list view of CatalogItem rows shows the picture, name, description, brand, type, price, picture file name, stock, restock threshold and max stock. It shows 'No data was returned.' when empty.",
+              "Each row has Edit, Details and Delete links built from EditProductRoute, ProductDetailsRoute and DeleteProductRoute with the item id."
+            ]
+          },
+          {
+            "id": "SCRN-002",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Create catalog item page",
+            "summary": "Form for adding a new catalog product with name, description, brand, type, price, stock levels and an optional image.",
+            "claims": [
+              "The page is served at /Catalog/Create.aspx, uses the site master and its content shows a Create heading and a form.",
+              "The page shows the product image placeholder and an Upload image control backed by a hidden TempImageName field; the default image URL comes from the image service.",
+              "The upload control is hidden when the configuration does not use Azure storage.",
+              "Name is required through a required-field validator with the message 'The Name field is required.'"
+            ]
+          },
+          {
+            "id": "SCRN-003",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Edit catalog item page",
+            "summary": "Form for changing an existing catalog product; the picture file name is shown read-only.",
+            "claims": [
+              "The page is served at /Catalog/Edit.aspx and shows the picture, the current values and a Save button.",
+              "The picture file name is read-only and marked 'Not allowed for edition'.",
+              "Name is required; Price is a currency between 0 and 1,000,000; Stock, Restock and Max stock are integers between 0 and 10,000,000.",
+              "The Cancel link points to the site root and the Save button raises Save_Click."
+            ]
+          },
+          {
+            "id": "SCRN-004",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Delete catalog item confirmation page",
+            "summary": "Asks for confirmation and shows the product before it is removed.",
+            "claims": [
+              "The page is served at /Catalog/Delete.aspx and shows the question 'Are you sure you want to delete this?' with the product picture, name, description, brand, type, price, picture name, stock, restock and max stock.",
+              "The Delete button raises Delete_Click and the Cancel link points to the site root.",
+              "[ Delete ] starts Delete_Click.",
+              "Action [ Cancel ] starts the handler Cancel link to the site root (no server handler)."
+            ]
+          },
+          {
+            "id": "SCRN-005",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Catalog item details page",
+            "summary": "Read-only view of one catalog product with a link to edit it.",
+            "claims": [
+              "The page is served at /Catalog/Details.aspx and shows the picture, name, description, brand, type, price, picture name, stock, restock and max stock of the product.",
+              "The page links back to the site root and to the edit page through the route named EditProductRoute.",
+              "Action [ Back to list ] starts the handler Link to the site root (no server handler).",
+              "Action [ Edit ] starts the handler Link to the EditProductRoute route (no server handler)."
+            ]
+          },
+          {
+            "id": "SCRN-006",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Catalog item details",
+            "summary": "A read-only view of one catalog item with links to edit it or go back to the list.",
+            "claims": [
+              "The page loads the item by route id and shows its picture, name, description, brand, type, price, picture name, stock, restock and max stock as read-only labels.",
+              "The Edit link points to the route named EditProductRoute with the item id. The Back to list link points to the root.",
+              "The screen leads to EditProductRoute.",
+              "Back to list links to ~."
+            ]
+          },
+          {
+            "id": "SCRN-007",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Create catalog item",
+            "summary": "A form to add a new catalog item with name, description, brand, type, price and stock fields.",
+            "claims": [
+              "The page shows a Create heading and form fields for Name, Description, Brand, Type, Price, Stock, Restock and Max stock. The picture name is shown as a note that uploads are not allowed in this version.",
+              "Brand and Type are dropdowns filled by the GetBrands and GetTypes methods, which read the catalog service.",
+              "The Create button calls Create_Click, and the Cancel link points to the root.",
+              "Field Name (text, required) validation: The Name field is required."
+            ]
+          },
+          {
+            "id": "SCRN-008",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Edit catalog item",
+            "summary": "A form that loads an existing item into editable fields and saves the changes; the picture name is read-only.",
+            "claims": [
+              "On the first load (not a postback) the item is found by route id, and its brand and type dropdowns are filled and set to the item's current values.",
+              "The page shows the item picture and the fields Name, Description, Brand, Type, Price, Picture name, Stock, Restock and Max stock, each bound to the item. The picture name box is read-only and marked 'Not allowed for edition'.",
+              "The Save button calls Save_Click, which updates the item through the catalog service and redirects to the root.",
+              "Field Name (text, required) validation: The Name field is required."
+            ]
+          },
+          {
+            "id": "SCRN-009",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+            "title": "Delete catalog item",
+            "summary": "A confirmation page that shows an item's details and deletes it when the user confirms.",
+            "claims": [
+              "The page asks 'Are you sure you want to delete this?' and shows the picture, name, description, brand, type, price, picture name, stock, restock and max stock of the item as read-only labels.",
+              "The Delete button calls Delete_Click, which removes the item through the catalog service and redirects to the root. The Cancel link points to the root.",
+              "[ Delete ] starts Delete_Click.",
+              "Action [ Cancel ] starts the handler none (plain link to ~)."
+            ]
+          },
+          {
+            "id": "SCRN-010",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+            "title": "Catalog list",
+            "summary": "Lists catalog items one page at a time, with links to create, edit, view and delete each item.",
+            "claims": [
+              "The page shows a Create New link, the catalog table and a pager that reads 'Showing N of T products - Page P - TotalPages'.",
+              "The table is rendered by the CatalogTable partial. It shows one row per item with a thumbnail, Name, Description, Brand, Type, Price, PictureFileName, AvailableStock, RestockThreshold and MaxStockThreshold.",
+              "Each row has Edit, Details and Delete links that carry the item Id.",
+              "The Previous and Next links both call the Index action with pageSize and pageIndex values derived from the current page."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-091",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Content#7",
+            "title": "Storefront visual styling of header, footer, tables, buttons and pager",
+            "summary": "The two stylesheets set the visual look of the shop pages: a hero banner, a dark header and footer, teal section titles, product tables, green and red buttons, and a numbered pager that adapts to screen width.",
+            "claims": [
+              "The hero banner uses main_banner.png as a cover background with a height of 12.5vw, and its height becomes 20vw at widths up to 1024px.",
+              "The header title is white Montserrat text sized at 4vw, and it becomes 4rem at widths of 1800px and above.",
+              "The footer has a black background, a top border, a width of 100% and a brand logo sized 230px by 50px.",
+              "Section titles (.esh-body-title) use a teal background, white text and 3rem font size."
+            ]
+          },
+          {
+            "id": "FEAT-092",
+            "area": "ACI",
+            "title": "Deploy the eShop web applications as Azure container groups",
+            "summary": "An Azure Resource Manager template deploys one Windows container group per application image (MVC, WCF, WebForms), each exposing port 80 on a public IP.",
+            "claims": [
+              "The template creates a Microsoft.ContainerInstance/containerGroups resource named from the groupname parameter, located in the resource group's location, with Windows as the OS type.",
+              "The single container takes its image from the appimage parameter and is named mainapp.",
+              "The container group is requested with 1 CPU and 1.5 GB of memory, and exposes container port 80.",
+              "The container group has a public IP address with TCP port 80 opened."
+            ]
+          },
+          {
+            "id": "FEAT-093",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Page routes for the product catalog and home page",
+            "summary": "Six URL routes map friendly addresses to the Web Forms pages for the home page and the catalog create, edit, details and delete screens.",
+            "claims": [
+              "The route with an empty name and the URL 'Default' maps to ~/Default.aspx, which is the home page.",
+              "The route 'Default/index/{index}/size/{size}' (ProductsByPageRoute) maps to ~/Default.aspx, so the home page can take a page index and a page size from the URL.",
+              "'Catalog/Create' maps to ~/Catalog/Create.aspx (CreateProductRoute).",
+              "'Catalog/Edit/{id}' maps to ~/Catalog/Edit.aspx (EditProductRoute), and 'Catalog/Details/{id}' maps to ~/Catalog/Details.aspx (ProductDetailsRoute), each taking a product id from the URL."
+            ]
+          },
+          {
+            "id": "FEAT-094",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Shared script and style bundles for the pages",
+            "summary": "Startup code groups the Web Forms, Microsoft Ajax, Modernizr and respond scripts, plus the main stylesheets, into named bundles that pages load.",
+            "claims": [
+              "The bundle '~/bundles/WebFormsJs' combines eight Web Forms scripts, including WebForms.js, WebUIValidation.js, GridView.js and TreeView.js.",
+              "The bundle '~/bundles/MsAjaxJs' combines four Microsoft Ajax scripts, and the code states that their order matters because they depend on each other.",
+              "The bundle '~/bundles/modernizr' includes every file matching ~/Scripts/modernizr-*.",
+              "The style bundle '~/Content/css' combines bootstrap.css, custom.css, base.css and site.css, in that order."
+            ]
+          },
+          {
+            "id": "FEAT-095",
+            "area": "Setup",
+            "title": "Provision the workshop Azure environment",
+            "summary": "A set of PowerShell scripts creates an App Service plan, a web app, a SQL logical server and an empty SQL database in Azure, named from a user alias.",
+            "claims": [
+              "The environment script stops with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+              "Names are derived from the alias: the plan is alias-webappplan, the web app is alias-webapp, the SQL server is alias-workshop-server, and the database is eShop. The location is fixed to eastus.",
+              "The setup script creates the App Service plan, then the web app on that plan, then enables a managed identity on the web app, then the SQL server, the firewall rule and the database, and prints 'Setup complete'.",
+              "The verify script checks that the plan, web app, SQL server and database exist and prints a created or not-created message for each."
+            ]
+          },
+          {
+            "id": "FEAT-096",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Default MVC route to the Catalog home page",
+            "summary": "A request with no controller or action is sent to the Catalog controller's Index action, and the URL pattern {controller}/{action}/{id} maps other requests.",
+            "claims": [
+              "The default route pattern is {controller}/{action}/{id}, with id optional.",
+              "When no controller or action is given, the route defaults to controller Catalog and action Index."
+            ]
+          },
+          {
+            "id": "FEAT-097",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Web API routes under api/{controller}/{id}",
+            "summary": "Web API requests under the api path are routed to controllers by name, with an optional id.",
+            "claims": [
+              "The DefaultApi route template is api/{controller}/{id}, with id optional.",
+              "Web API attribute routing is enabled through MapHttpAttributeRoutes."
+            ]
+          },
+          {
+            "id": "FEAT-098",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/App_Start",
+            "title": "Static script and style bundles for the storefront pages",
+            "summary": "Client scripts and the main stylesheet are grouped into named bundles that pages reference.",
+            "claims": [
+              "Script bundles are defined for jQuery, jQuery validation, Modernizr and Bootstrap (with respond.js).",
+              "The style bundle ~/Content/css combines bootstrap.css, custom.css, base.css and site.css in that order."
+            ]
+          },
+          {
+            "id": "FEAT-099",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Modules",
+            "title": "Shared catalog database context and HiLo id generator registration",
+            "summary": "The module registers the catalog database context and its initializer per lifetime scope, and the catalog item HiLo id generator as a single instance, with no flag involved.",
+            "claims": [
+              "CatalogDBContext and CatalogDBInitializer are registered without an interface, each instance per lifetime scope.",
+              "CatalogItemHiLoGenerator is registered as a single instance shared across the application."
+            ]
+          },
+          {
+            "id": "FEAT-100",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Modules",
+            "title": "Dependency wiring of the catalog and image services by configuration flags",
+            "summary": "The application module chooses which catalog, image and SQL connection implementations the application uses, based on three boolean flags passed to its constructor.",
+            "claims": [
+              "When useMockData is true, ICatalogService is registered as CatalogServiceMock as a single instance; otherwise it is registered as CatalogService per lifetime scope.",
+              "When useAzureStorage is true, IImageService is registered as ImageAzureStorage; otherwise it is registered as ImageMockStorage, both per lifetime scope.",
+              "When useManagedIdentity is true, ISqlConnectionFactory is registered as ManagedIdentitySqlConnectionFactory; otherwise it is registered as AppSettingsSqlConnectionFactory, both as single instances.",
+              "The three flags are stored from the constructor parameters and are read only in Load."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-summariser-ent",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "ENT",
+        "cards": [
+          {
+            "id": "ENT-001",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog data entities",
+            "summary": "The EF model maps catalog brands, items, types, stock and discounts to tables.",
+            "claims": [
+              "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+              "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+              "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+              "The brand and type names are stored as non-Unicode strings."
+            ]
+          },
+          {
+            "id": "ENT-002",
+            "area": "eShopModernizedNTier",
+            "title": "CatalogItem",
+            "summary": "A catalog item with its name, description, price, picture file and links to a brand and a type.",
+            "claims": [
+              "Column CatalogItem.Id: int, NOT NULL, primary key (not database generated).",
+              "Column CatalogItem.Price: money, NOT NULL, precision 19 and scale 4 in the model.",
+              "Columns CatalogItem.Description, CatalogItem.Name and CatalogItem.Picturefilename are text fields, and CatalogItem.CatalogBrandId and CatalogItem.CatalogTypeId are integers."
+            ]
+          },
+          {
+            "id": "ENT-003",
+            "area": "eShopModernizedNTier",
+            "title": "CatalogBrand",
+            "summary": "A brand of catalog item, with an id and a name of up to 50 characters.",
+            "claims": [
+              "Column CatalogBrand.Id: int, NOT NULL, primary key (not database generated).",
+              "Column CatalogBrand.Brand: string of at most 50 characters, stored as non-unicode text."
+            ]
+          },
+          {
+            "id": "ENT-004",
+            "area": "eShopModernizedNTier",
+            "title": "CatalogType",
+            "summary": "A type of catalog item such as Mug, T-Shirt, Sheet or USB Memory Stick.",
+            "claims": [
+              "Column CatalogType.Id: int, NOT NULL, primary key (not database generated).",
+              "Column CatalogType.Type: string of at most 50 characters, stored as non-unicode text.",
+              "The preconfigured types are Mug, T-Shirt, Sheet and USB Memory Stick."
+            ]
+          },
+          {
+            "id": "ENT-005",
+            "area": "eShopModernizedNTier",
+            "title": "CatalogItemsStock",
+            "summary": "Quantity of an item available on a date, kept in table CatalogItemsStock.",
+            "claims": [
+              "Column CatalogItemsStock.StockId: int, NOT NULL, primary key (not database generated).",
+              "Column CatalogItemsStock.Date: date, NOT NULL.",
+              "Columns CatalogItemsStock.CatalogItemId and CatalogItemsStock.AvailableStock are integers."
+            ]
+          },
+          {
+            "id": "ENT-006",
+            "area": "eShopModernizedNTier",
+            "title": "DiscountItem",
+            "summary": "A discount with a size and a start and end date, applied to the catalog on the days it covers.",
+            "claims": [
+              "Column DiscountItem.Id: int, NOT NULL, primary key.",
+              "Column DiscountItem.Size: double (a fraction such as 0.2 for 20 percent), NOT NULL.",
+              "Columns DiscountItem.Start and DiscountItem.End: date, NOT NULL."
+            ]
+          },
+          {
+            "id": "ENT-007",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "CatalogDBContext database connection",
+            "summary": "The catalog data is reached through the CatalogDBContext SQL Server connection, which defaults to LocalDB. The table columns are declared in model classes outside this area.",
+            "claims": [
+              "The CatalogDBContext connection string points to a LocalDB database named Microsoft.eShopOnContainers.Services.CatalogDb using the System.Data.SqlClient provider.",
+              "The Entity Framework default connection factory is LocalDbConnectionFactory with mssqllocaldb.",
+              "CatalogDBContext is the context that the database initializer is set for when mock data is off."
+            ]
+          },
+          {
+            "id": "ENT-008",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+            "title": "Catalogue database connection",
+            "summary": "The application's catalogue database is named CatalogDBContext, a SQL Server LocalDB catalogue.",
+            "claims": [
+              "The CatalogDBContext connection uses SQL Server with Integrated Security to the LocalDB instance, with initial catalog Microsoft.eShopOnContainers.Services.CatalogDb.",
+              "The Entity Framework default connection factory is LocalDB with the mssqllocaldb instance, and the provider is System.Data.SqlClient."
+            ]
+          },
+          {
+            "id": "ENT-009",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "title": "Catalog database connection",
+            "summary": "The Entity Framework context CatalogDBContext points at a SQL Server LocalDB catalog database.",
+            "claims": [
+              "The CatalogDBContext connection string names the database Microsoft.eShopOnContainers.Services.CatalogDb on (localdb)\\MSSQLLocalDB with Integrated Security and MultipleActiveResultSets enabled.",
+              "Entity Framework uses the System.Data.SqlClient provider and the LocalDB connection factory by default."
+            ]
+          },
+          {
+            "id": "ENT-010",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Migrations",
+            "title": "CatalogBrand table",
+            "summary": "The CatalogBrand table holds the brand names that catalog items refer to. It is created by the Initial migration and seeded with five brands.",
+            "claims": [
+              "Column CatalogBrand.Id: int, NOT NULL, identity (SqlServer:ValueGenerationStrategy IdentityColumn), primary key.",
+              "Column CatalogBrand.Brand: nvarchar(100) as string with maxLength 100, NOT NULL.",
+              "The table is seeded with five rows: 1 Azure, 2 .NET, 3 Visual Studio, 4 SQL Server, 5 Other.",
+              "The snapshot records the same Brand length limit of 100 and the same five seeded brands."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-feat-3",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "FEAT",
+        "cards": [
+          {
+            "id": "FEAT-076",
+            "area": "VM",
+            "title": "Docker Compose run of the eShop MVC storefront with SQL Server",
+            "summary": "Compose files start the MVC web app on host port 5115 (container port 80) with a SQL Server container on host port 5433 (container port 1433). The web app waits for the database container, and the override can run it on mock data. The WebForms site on port 5114 is also described in the VM card.",
+            "claims": [
+              "The MVC service is published on host port 5115 and mapped to container port 80.",
+              "The WebForms service is published on host port 5114 and mapped to container port 80.",
+              "The MVC service depends on the sql.data container. The WebForms service depends on the sqlwf.data container.",
+              "The SQL containers are published on host ports 5433 (sql.data) and 5435 (sqlwf.data), mapped to container port 1433."
+            ]
+          },
+          {
+            "id": "FEAT-082",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+            "title": "Find, list types and brands, and maintain catalog items",
+            "summary": "The catalog service finds one item by id, lists catalog types and brands, and creates, updates and removes items through the database context.",
+            "claims": [
+              "FindCatalogItem returns the first item with the given Id, including its brand and type, or null when none matches.",
+              "GetCatalogTypes and GetCatalogBrands return the CatalogTypes and CatalogBrands sets of the database context.",
+              "CreateCatalogItem assigns a new Id from the hi-lo index generator, adds the item and saves changes.",
+              "UpdateCatalogItem marks the given entity as Modified and saves changes; RemoveCatalogItem removes the entity and saves changes. Neither checks that the item exists first."
+            ]
+          },
+          {
+            "id": "FEAT-083",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Services",
+            "title": "Catalog service contract",
+            "summary": "ICatalogService defines the operations the application uses for catalog items, types and brands; the database and mock implementations both implement it.",
+            "claims": [
+              "ICatalogService declares FindCatalogItem, GetCatalogBrands, GetCatalogItemsPaginated, GetCatalogTypes, CreateCatalogItem, UpdateCatalogItem and RemoveCatalogItem, and extends IDisposable."
+            ]
+          },
+          {
+            "id": "FEAT-086",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Services",
+            "title": "In-memory catalog service for testing",
+            "summary": "CatalogServiceMock implements the same catalog operations over an in-memory list seeded from PreconfiguredData, with no database.",
+            "claims": [
+              "The constructor loads the catalog items from PreconfiguredData.GetPreconfiguredCatalogItems into a list.",
+              "GetCatalogItemsPaginated attaches brand and type to every item by matching the foreign-key ids against the preconfigured brands and types, then pages the list by Id with the same skip and take arithmetic as the database version.",
+              "CreateCatalogItem assigns the new item an Id one above the current maximum and appends it to the list; changes are not persisted beyond the object's lifetime.",
+              "UpdateCatalogItem replaces the stored item with the same Id when one exists and does nothing otherwise; RemoveCatalogItem removes the given object from the list."
+            ]
+          },
+          {
+            "id": "FEAT-087",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Content#1",
+            "title": "Storefront page styling",
+            "summary": "Shared stylesheets give the storefront its look: the Montserrat font, a full-width hero banner, a header, a black footer, a teal body title, tables and links with green hover, uppercase buttons (green primary, red secondary), and a pager with hidden and navigable item states.",
+            "claims": [
+              "The hero banner .esh-app-hero shows main_banner.png as a cover background at 12.5vw height, which becomes 20vw at widths up to 1024px.",
+              "The header .esh-header-title uses Montserrat at 4vw, weight 600, in white, with a lighter span inside it.",
+              "The footer .esh-app-footer has a black background, a light top border and 2.5rem padding, and its brand logo is 230px by 50px.",
+              "The page title .esh-body-title has a teal (#00A69C) background, white 3rem text and left padding."
+            ]
+          },
+          {
+            "id": "FEAT-091",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Content#7",
+            "title": "Storefront visual styling of header, footer, tables, buttons and pager",
+            "summary": "The two stylesheets set the visual look of the shop pages: a hero banner, a dark header and footer, teal section titles, product tables, green and red buttons, and a numbered pager that adapts to screen width.",
+            "claims": [
+              "The hero banner uses main_banner.png as a cover background with a height of 12.5vw, and its height becomes 20vw at widths up to 1024px.",
+              "The header title is white Montserrat text sized at 4vw, and it becomes 4rem at widths of 1800px and above.",
+              "The footer has a black background, a top border, a width of 100% and a brand logo sized 230px by 50px.",
+              "Section titles (.esh-body-title) use a teal background, white text and 3rem font size."
+            ]
+          },
+          {
+            "id": "FEAT-092",
+            "area": "ACI",
+            "title": "Deploy the eShop web applications as Azure container groups",
+            "summary": "An Azure Resource Manager template deploys one Windows container group per application image (MVC, WCF, WebForms), each exposing port 80 on a public IP.",
+            "claims": [
+              "The template creates a Microsoft.ContainerInstance/containerGroups resource named from the groupname parameter, located in the resource group's location, with Windows as the OS type.",
+              "The single container takes its image from the appimage parameter and is named mainapp.",
+              "The container group is requested with 1 CPU and 1.5 GB of memory, and exposes container port 80.",
+              "The container group has a public IP address with TCP port 80 opened."
+            ]
+          },
+          {
+            "id": "FEAT-093",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Page routes for the product catalog and home page",
+            "summary": "Six URL routes map friendly addresses to the Web Forms pages for the home page and the catalog create, edit, details and delete screens.",
+            "claims": [
+              "The route with an empty name and the URL 'Default' maps to ~/Default.aspx, which is the home page.",
+              "The route 'Default/index/{index}/size/{size}' (ProductsByPageRoute) maps to ~/Default.aspx, so the home page can take a page index and a page size from the URL.",
+              "'Catalog/Create' maps to ~/Catalog/Create.aspx (CreateProductRoute).",
+              "'Catalog/Edit/{id}' maps to ~/Catalog/Edit.aspx (EditProductRoute), and 'Catalog/Details/{id}' maps to ~/Catalog/Details.aspx (ProductDetailsRoute), each taking a product id from the URL."
+            ]
+          },
+          {
+            "id": "FEAT-094",
+            "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start",
+            "title": "Shared script and style bundles for the pages",
+            "summary": "Startup code groups the Web Forms, Microsoft Ajax, Modernizr and respond scripts, plus the main stylesheets, into named bundles that pages load.",
+            "claims": [
+              "The bundle '~/bundles/WebFormsJs' combines eight Web Forms scripts, including WebForms.js, WebUIValidation.js, GridView.js and TreeView.js.",
+              "The bundle '~/bundles/MsAjaxJs' combines four Microsoft Ajax scripts, and the code states that their order matters because they depend on each other.",
+              "The bundle '~/bundles/modernizr' includes every file matching ~/Scripts/modernizr-*.",
+              "The style bundle '~/Content/css' combines bootstrap.css, custom.css, base.css and site.css, in that order."
+            ]
+          },
+          {
+            "id": "FEAT-095",
+            "area": "Setup",
+            "title": "Provision the workshop Azure environment",
+            "summary": "A set of PowerShell scripts creates an App Service plan, a web app, a SQL logical server and an empty SQL database in Azure, named from a user alias.",
+            "claims": [
+              "The environment script stops with a message when useralias, serveradminpassword or resourcegroupname is not set.",
+              "Names are derived from the alias: the plan is alias-webappplan, the web app is alias-webapp, the SQL server is alias-workshop-server, and the database is eShop. The location is fixed to eastus.",
+              "The setup script creates the App Service plan, then the web app on that plan, then enables a managed identity on the web app, then the SQL server, the firewall rule and the database, and prints 'Setup complete'.",
+              "The verify script checks that the plan, web app, SQL server and database exist and prints a created or not-created message for each."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-br-3",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-100",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Session state is not set in the active configuration",
+            "summary": "The only sessionState element in this Web.config is commented out. The active system.web section therefore sets no session store, and the framework default applies. The owner has named the Redis provider as the production choice; that choice is not written in this file.",
+            "claims": [
+              "The Redis session state provider (mode Custom, RedisSessionStateProvider with a host and access key) is written inside an XML comment, so it is not active.",
+              "The system.web section holds only customErrors, compilation, httpRuntime, httpModules and globalization elements, and no active sessionState element, so this file sets no session store."
+            ]
+          },
+          {
+            "id": "BR-101",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Session module is registered for the integrated pipeline",
+            "summary": "The IIS system.webServer section removes the default Session module and adds the async session state module, active only in integrated mode.",
+            "claims": [
+              "The Session module is removed and re-added as SessionStateModuleAsync with preCondition integratedMode."
+            ]
+          },
+          {
+            "id": "BR-102",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Log4net root logger sends all messages to Application Insights",
+            "summary": "The log4net root logger is set to level ALL and its only appender is the Application Insights appender, which writes the bare message text.",
+            "claims": [
+              "The root logger level is ALL and its only appender reference is aiAppender.",
+              "The aiAppender uses the Application Insights log4net appender with the layout pattern %message%newline."
+            ]
+          },
+          {
+            "id": "BR-103",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+            "title": "Catalog item creation reads the form and saves only when the page is valid",
+            "summary": "Create_Click builds a catalog item from the form, attaches a temporary image when one was uploaded, and saves it only when the page validation passes.",
+            "claims": [
+              "Create_Click does nothing unless the page model state is valid.",
+              "The new item takes its name and description from the text boxes, its brand and type from the selected dropdown values parsed as integers, and its price as a decimal and its stock, restock and max stock as integers parsed from the text boxes.",
+              "The parse calls have no error handling in the handler, so a value that does not parse as a number is not caught here.",
+              "When a temporary image name is present, only its file name part is stored as the picture file name."
+            ]
+          },
+          {
+            "id": "BR-104",
+            "area": "eShopLegacyMVCSolution/eShopPorted/Models",
+            "title": "Catalog item required fields and key",
+            "summary": "A catalog item needs a name of at most 50 characters and a price, and the picture file name defaults to a dummy image.",
+            "claims": [
+              "Name is required and limited to 50 characters, and Price and PictureFileName are required in the mapping.",
+              "The picture file name defaults to dummy.png when a new item is created."
+            ]
+          },
+          {
+            "id": "BR-105",
+            "area": "Kubernetes-DockerForWindows/eShopModernizedMVC-K8s",
+            "title": "Feature flags set by the container deployment",
+            "summary": "The Deployment sets the application's feature switches through environment variables: mock data on, customization data, Azure storage and Azure Active Directory off.",
+            "claims": [
+              "UseMockData is set to True, UseCustomizationData, UseAzureStorage and UseAzureActiveDirectory are set to False.",
+              "StorageConnectionString, AppInsightsInstrumentationKey, AzureActiveDirectoryClientId, AzureActiveDirectoryTenant and PostLogoutRedirectUri are set to empty strings."
+            ]
+          },
+          {
+            "id": "BR-106",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms",
+            "title": "Redis session state provider is referenced by the WebForms project",
+            "summary": "The owner states that the Redis session provider is the production session store, and the project references the Redis session state provider and StackExchange.Redis packages.",
+            "claims": [
+              "The project file references Microsoft.Web.RedisSessionStateProvider, so the Redis session provider is part of this project's build.",
+              "The packages file pins Microsoft.Web.RedisSessionStateProvider 4.0.1 and StackExchange.Redis 2.0.601, the client library the provider uses to connect to Redis.",
+              "The StackExchange.Redis reference is also present in the project file.",
+              "The WebForms project references Microsoft.Web.RedisSessionStateProvider version 4.0.1.0 from a packages folder assembly."
+            ]
+          },
+          {
+            "id": "BR-107",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC",
+            "title": "Redis session state provider is referenced by the project",
+            "summary": "Owner fact OQ-005 says the Redis session provider should be used in production. The project file references the Redis session state provider and its Redis client library, so the code can use Redis for session state. The active session mode is set in configuration files I have not read.",
+            "claims": [
+              "The project references Microsoft.Web.RedisSessionStateProvider version 4.0.1.0 from the packages folder.",
+              "The project references StackExchange.Redis version 2.0.0.0, the client library that the Redis session provider uses.",
+              "The project also references the ASP.NET SessionState module, which is the in-process session store used by default.",
+              "The project references the StackExchange.Redis assembly, version 2.0.0.0, loaded from a packages folder path."
+            ]
+          },
+          {
+            "id": "BR-108",
+            "area": "eShopModernizedNTier",
+            "title": "Brand and type data sources are generic object bindings for the WinForms client",
+            "summary": "The brand and type lookups are declared as generic object data sources for the client's combo boxes.",
+            "claims": [
+              "The CatalogBrand data source is a generic object data source typed to eShopServiceLibrary.CatalogBrand.",
+              "The CatalogType data source is a generic object data source typed to eShopServiceLibrary.CatalogType.",
+              "The CatalogItem data source binds its AvailableStock property to a ComboBox control.",
+              "The CatalogType datasource file states that Visual Studio generated it as a generic object data source configuration and that editing it may make it unrecognisable."
+            ]
+          },
+          {
+            "id": "BR-109",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+            "title": "Legacy project targets .NET Framework 4.7.2 and builds as a library",
+            "summary": "This is a build fact about the project, not a user-facing rule; recorded here only as context for the other cards in this area.",
+            "claims": ["The project targets .NET Framework v4.7.2 and has OutputType Library."]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-br-2",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "type": "BR",
+        "cards": [
+          {
+            "id": "BR-051",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+            "title": "Database seeding on first creation",
+            "summary": "The initializer creates the database if it does not exist and then seeds it with sequences, types, brands, items and pictures.",
+            "claims": [
+              "The initializer derives from CreateDatabaseIfNotExists, and its Seed method runs the three sequence scripts, then adds catalog types, brands and items, and then extracts pictures.",
+              "The UseCustomizationData application setting, read with bool.Parse, selects between the CSV files in the Setup folder and the built-in PreconfiguredData lists.",
+              "When customization is on, the initializer deletes every file in the Pics folder and then extracts the CatalogItems.zip archive into it.",
+              "Each CSV loader falls back to the built-in PreconfiguredData list when its file is missing."
+            ]
+          },
+          {
+            "id": "BR-052",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+            "title": "CSV import validation for catalog data",
+            "summary": "The CSV importers require specific headers and reject rows with unknown references, empty names or invalid numbers.",
+            "claims": [
+              "CatalogTypes.csv must contain a catalogtype header, and CatalogBrands.csv must contain a catalogbrand header. An empty value raises an exception.",
+              "CatalogItems.csv requires the headers catalogtypename, catalogbrandname, description, name, price and pictureFileName, and it accepts the optional headers availablestock, restockthreshold, maxstockthreshold and onreorder.",
+              "An item row is rejected when its type or brand name is not in the loaded lookups, its price is not a decimal, or a stock, threshold or reorder value is not a valid integer or boolean.",
+              "The item CSV rows are split on commas outside quotes, and the first row is skipped as the header."
+            ]
+          },
+          {
+            "id": "BR-053",
+            "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Models",
+            "title": "Built-in preconfigured catalog data",
+            "summary": "When customization data is off, the application seeds 12 items, 5 brands and 4 types from hard-coded lists.",
+            "claims": [
+              "The preconfigured types are Mug, T-Shirt, Sheet and USB Memory Stick, with Ids 1 to 4.",
+              "The preconfigured brands are Azure, .NET, Visual Studio, SQL Server and Other, with Ids 1 to 5.",
+              "The preconfigured items have Ids 1 to 12, each with 100 units of AvailableStock and a picture named after its Id (for example 1.png).",
+              "Prices are set per item, ranging from 8.5 to 19.5."
+            ]
+          },
+          {
+            "id": "BR-055",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+            "title": "Modernized catalog item ids come from a hi-lo sequence in blocks of ten",
+            "summary": "New catalog item ids are reserved in blocks of ten from the catalog_hilo database sequence and handed out in memory. The sequences are created with start 1 and increment 10, and types and brands use their own sequences.",
+            "claims": [
+              "The generator sets HiLoIncrement to 10. When no ids are left in its block, it reads NEXT VALUE FOR catalog_hilo and then uses the next nine values in memory.",
+              "The generator is guarded by a lock, so a single instance hands out ids in order from one thread at a time.",
+              "The sequences catalog_hilo, catalog_brand_hilo and catalog_type_hilo are each created with START WITH 1 and INCREMENT BY 10, bigint, with the default minimum and maximum.",
+              "The sequence scripts run on the database named Microsoft.eShopOnContainers.Services.CatalogDb."
+            ]
+          },
+          {
+            "id": "BR-056",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+            "title": "CSV catalog item import rules",
+            "summary": "The CSV import of catalog items needs specific headers and checks each row. A bad row stops the seed with an exception.",
+            "claims": [
+              "Required headers are catalogtypename, catalogbrandname, description, name, price and pictureFileName. Optional headers are availablestock, restockthreshold, maxstockthreshold and onreorder. Headers are compared in lower case.",
+              "Each row is split on commas that are outside double quotes. A row whose column count differs from the header count throws an exception.",
+              "The type name and brand name must exist in the imported types and brands; otherwise an exception is thrown.",
+              "The price must parse as a decimal with the invariant culture. The stock, restock, max-stock and reorder values are optional, and an invalid value throws."
+            ]
+          },
+          {
+            "id": "BR-057",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Models",
+            "title": "Picture files are replaced from a zip during import",
+            "summary": "When the customization data is used, the Pics folder is emptied and refilled from CatalogItems.zip.",
+            "claims": [
+              "When UseCustomizationData is true, every file in the Pics folder is deleted, and then Setup/CatalogItems.zip is extracted into that folder.",
+              "When UseCustomizationData is false, the picture step does nothing."
+            ]
+          },
+          {
+            "id": "BR-058",
+            "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Models",
+            "title": "Catalog item name, price and stock validation",
+            "summary": "A catalog item needs a name, and its price must be a non-negative number with at most two decimals and no more than 1,000,000. Available, restock and maximum stock values must each lie between 0 and 10,000,000.",
+            "claims": [
+              "The price must match a pattern of digits with at most two decimals and must be between 0 and 1,000,000; the error message says it must be a positive number with at most two decimals.",
+              "The name is required and the item must have a type and a brand.",
+              "AvailableStock, RestockThreshold and MaxStockThreshold must each be between 0 and 10,000,000.",
+              "Name is required on the model."
+            ]
+          },
+          {
+            "id": "BR-060",
+            "area": "(root)",
+            "title": "Each web app chooses between mock data and the real SQL Server database by setting",
+            "summary": "The MVC and WebForms apps can run on mock data or on the SQL Server catalog; the container override file sets the real database mode.",
+            "claims": [
+              "The README says the MVC and WebForms apps can use either the real database or mock data, configured in docker-compose.override.yml for containers or in Web.config otherwise.",
+              "The MVC app is set to UseMockData=False, so it reads the real database in the container setup.",
+              "The WebForms app is set to UseMockData=False in the container setup."
+            ]
+          },
+          {
+            "id": "BR-061",
+            "area": "(root)",
+            "title": "Plain-text database credentials in the web and container configuration",
+            "summary": "The MVC, WebForms and WCF connection strings, the sql.data SA_PASSWORD setting and the sql.data health check command all hold the sa password in plain text.",
+            "claims": [
+              "A plain-text connection-string secret is written for the MVC app's CatalogDBContext setting, which targets the sql.data host.",
+              "A plain-text connection-string secret is written for the WebForms app's CatalogDBContext setting, which targets the sql.data host.",
+              "A plain-text connection-string secret is written for the WCF service's CatalogDBContext setting, which targets the database eShopDatabase on sql.data.",
+              "A plain-text password is written for the sql.data container's SA_PASSWORD setting."
+            ]
+          },
+          {
+            "id": "BR-062",
+            "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Services",
+            "title": "Default picture when no image is set",
+            "summary": "Catalog items without a picture file name fall back to a default image URL in both the Azure and local image services.",
+            "claims": [
+              "In the Azure storage service, BuildUrlImage returns the default image URL when PictureFileName is empty; otherwise it builds the blob URL from the storage base URI, 'pics', the item id and the file name.",
+              "In the mock storage, BuildUrlImage substitutes 'default.png' when PictureFileName is empty and prefixes the result with '/Pics/'.",
+              "In the mock storage, BuildUrlImage uses 'default.png' when PictureFileName is null or empty, and otherwise uses the stored file name.",
+              "The base for every mock image URL is GetBaseUrlImages(), which returns the literal '/Pics/', so the default picture resolves to '/Pics/default.png'."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

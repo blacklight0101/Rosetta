@@ -63,9 +63,22 @@ export function mergeBatches(
   return batches.filter((batch) => batch.length >= 2);
 }
 
+/** What the merge message shows of a card (the lab holds just these fields). */
+export interface MergeListed {
+  readonly id: string;
+  readonly area: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly claims: readonly string[];
+}
+
 /** The user message: the cards of one type as one data block with its own tag. */
 export function mergeMessage(cards: readonly Card[], type: CardType, tag: string): string {
-  const listed = cards.filter((card) => card.type === type).map(listedOf);
+  return mergeListMessage(cards.filter((card) => card.type === type).map(listedOf), tag);
+}
+
+/** The same message over cards already listed (P10-02: a lab case holds them so). */
+export function mergeListMessage(listed: readonly MergeListed[], tag: string): string {
   return renderDataBlock(
     { source: 'cards', excerpts: [], text: JSON.stringify(listed, null, 2) },
     tag,

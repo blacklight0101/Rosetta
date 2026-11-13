@@ -1,0 +1,824 @@
+{
+  "schemaVersion": 1,
+  "version": "summariser-overview-1",
+  "prompt": "summariser/overview",
+  "description": "Inputs of summariser/overview captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "asset-manager",
+      "name": "Asset Manager (Excel workbook, uploaded as asset-manager.zip)",
+      "snapshot": "sha256:344b952e5ed95fda7f9f0e8b3ffa49d3c0dd224bf63632958df1f808cd8306f1",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-054045-understand", "20261109-054346-understand"]
+    },
+    {
+      "key": "invoice-generator",
+      "name": "Invoice Generator (Excel workbook, uploaded as invoice-generator.zip)",
+      "snapshot": "sha256:8b41b5ba11769d9b8d63c5463d14e1e9ca9e066b099136f75af305a5420e28bf",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-052032-understand", "20261109-052223-understand"]
+    },
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": ["20261109-054942-understand", "20261109-063857-understand"]
+    }
+  ],
+  "cases": [
+    {
+      "id": "asset-manager-20261109-054045-understand-summariser-overview",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Record stock in or out through the Update Inventory form",
+            "summary": "A user picks a product, enters a quantity and a state split, chooses In or Out, and the form appends one row to the Stock In-Out sheet.",
+            "claims": [
+              "Show_Update_Inventory_Frm opens the frm_Update_Inventory form.",
+              "CommandButton1 copies the product selected in ListBox1 into Txt_AssetName, and shows 'Please select a product' when nothing is selected.",
+              "CommandButton2 validates the entry, then writes one row to the Stock In-Out sheet at the first row after the last used one: product name, IN or OUT, the text from TextBox4, and the asset quantity.",
+              "After writing, the form fills E2:H down to the new last row, shows 'Updated!!!' and calls Refresh."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when recording a stock movement",
+            "summary": "The Update Inventory form refuses a movement without a product, a numeric quantity or any state quantity, and refuses any state quantity above the asset quantity.",
+            "claims": [
+              "A movement needs a product name; an empty Txt_AssetName stops the save with 'Please add a product into product box'.",
+              "The asset quantity must be numeric.",
+              "At least one of the Damaged, Usable or Repair quantities must be filled in.",
+              "The Damaged, Repair and Usable quantities may not exceed the asset quantity; each case shows a message and stops."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Movement columns by direction and state",
+            "summary": "An IN movement fills the In columns of Usable, Damaged and Repair; an OUT movement fills the Out columns.",
+            "claims": [
+              "For IN, the Usable, Damaged and Repair quantities go to columns I, K and M of the Stock In-Out sheet.",
+              "For OUT, the same three quantities go to columns J, L and N.",
+              "The direction is written to column B as IN when OptionButton1 is set, and as OUT otherwise."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Add a new product through the Search Product form",
+            "summary": "A second tab of the search form adds a product to the Product Master sheet, with its opening quantities, price estimates and location, and writes an opening-stock row.",
+            "claims": [
+              "The same routine then writes a row to the Stock In-Out sheet with the product name, the text from TextBox4, and the quantity, and a row to the Inventory sheet with the product name.",
+              "The routine shows 'Updated!!!' and then calls Refresh."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when adding a product",
+            "summary": "A new product needs a unique name, a numeric quantity, numeric prices, a location, and state quantities that do not exceed the total.",
+            "claims": [
+              "The product name is required and must not already exist in the Product Master name column D; otherwise the save stops with 'Product already available'.",
+              "The quantity is required and must be numeric.",
+              "The purchase price and current value must be filled in and numeric; the location is required.",
+              "The sum of the Repair, Usable and Damaged quantities must not exceed the asset quantity; on failure the three state boxes are cleared."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Asset codes are sequential row numbers",
+            "summary": "Product codes are built from the row number, not stored as a separate sequence.",
+            "claims": [
+              "Refresh loops over the Product Master rows and assigns txt_AssetCode as 'ASI00' followed by the row number, keeping only the last value."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Search and look up products",
+            "summary": "The search form lists products from the Product Master by name text, shows stock figures for the chosen product, and filters the Inventory sheet into the Report sheet.",
+            "claims": [
+              "Typing in TextBox1 refills ListBox1 with product names from the Product Master column D that contain the text, case-insensitively.",
+              "Choosing a product shows its current stock, reorder value and drawer number from the Inventory sheet by VLOOKUP on columns 5, 12 and 11.",
+              "Search_Product filters the Inventory sheet on column 1 to the chosen product, copies the rows to the Report sheet from A7 and hides the form."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock reports on the Report sheet",
+            "summary": "Four macros copy the Inventory sheet into the Report sheet, either all rows or one state's filtered rows.",
+            "claims": [
+              "Current_Stock clears the Report rows from row 8 down, turns off the filter on Inventory, copies the used range to Report A7 as values and formats, and activates Report.",
+              "Damaged filters Inventory on column 9 greater than 0 before the copy.",
+              "Repairable filters Inventory on column 10 greater than 0 before the copy.",
+              "Usable filters Inventory on column 8 greater than 0 before the copy."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Product picker calendar",
+            "summary": "A calendar form lets the user pick a date, month and year, and writes the chosen date text into the target box.",
+            "claims": [
+              "The form fills its month and year lists (20 years either side of the current year) and shows the current month; changing month or year redraws the day buttons.",
+              "The previous and next image buttons step the month back and forward across year boundaries.",
+              "Each day button calls ButtonClick, which writes the day caption, the first three letters of the month and the year into TextBox1 and closes the form when the caption is not empty.",
+              "Day buttons with no caption are disabled and greyed; the weekday of the 1st places the first day, and the rest follow in order up to the last day of the month."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock In-Out sheet (movement log)",
+            "summary": "One row per stock movement or opening stock: product, direction, quantities by state, and the calculated price and value.",
+            "claims": [
+              "Columns I and J hold Usable In and Usable Out; K and L hold Damaged In and Damaged Out; M and N hold Repair In and Repair Out.",
+              "Column E takes the Product Master's column 10 for the product and F is E's unit price times quantity; G takes column 11 and H is G times quantity.",
+              "Column B accepts only the list IN, OUT or Opening Stock, and column C accepts only dates between two fixed serial dates."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-summariser-overview",
+      "from": "asset-manager",
+      "split": "held-back",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Record stock in or out through the Update Inventory form",
+            "summary": "A user picks a product, enters a quantity and a state split, chooses In or Out, and the form appends one row to the Stock In-Out sheet.",
+            "claims": [
+              "Show_Update_Inventory_Frm opens the frm_Update_Inventory form.",
+              "CommandButton1 copies the product selected in ListBox1 into Txt_AssetName, and shows 'Please select a product' when nothing is selected.",
+              "CommandButton2 validates the entry, then writes one row to the Stock In-Out sheet at the first row after the last used one: product name, IN or OUT, the text from TextBox4, and the asset quantity.",
+              "After writing, the form fills E2:H down to the new last row, shows 'Updated!!!' and calls Refresh."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when recording a stock movement",
+            "summary": "The Update Inventory form refuses a movement without a product, a numeric quantity or any state quantity, and refuses any state quantity above the asset quantity. The Usable check on save writes a colour value (vbRed) into the Usable field instead of its BackColor or an empty value, while the Damaged and Repair checks correctly colour their boxes red. The quantity is also compared with the closing stock in the Inventory sheet on entry, without regard to movement direction.",
+            "claims": [
+              "A movement needs a product name; an empty Txt_AssetName stops the save with 'Please add a product into product box'.",
+              "The asset quantity must be numeric.",
+              "At least one of the Damaged, Usable or Repair quantities must be filled in.",
+              "The Damaged, Repair and Usable quantities may not exceed the asset quantity; each case shows a message and stops."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Movement columns by direction and state",
+            "summary": "An IN movement fills the In columns of Usable, Damaged and Repair; an OUT movement fills the Out columns.",
+            "claims": [
+              "For IN, the Usable, Damaged and Repair quantities go to columns I, K and M of the Stock In-Out sheet.",
+              "For OUT, the same three quantities go to columns J, L and N.",
+              "The direction is written to column B as IN when OptionButton1 is set, and as OUT otherwise."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Add a new product through the Search Product form",
+            "summary": "A second tab of the search form adds a product to the Product Master sheet, with its opening quantities, price estimates and location, and writes an opening-stock row.",
+            "claims": [
+              "The same routine then writes a row to the Stock In-Out sheet with the product name, the text from TextBox4, and the quantity, and a row to the Inventory sheet with the product name.",
+              "The routine shows 'Updated!!!' and then calls Refresh.",
+              "Btn_AddAsset sets the form's MultiPage to tab 1 (the add tab) and Btn_Back sets it back to tab 0. When the form activates it sets the MultiPage to tab 0 and then calls Show_Product, so the form opens on the search tab.",
+              "CommandButton2 sets sh to the sheet named Product Master and writes the new product there: name in D, category in C, quantity in E, usable, damaged and repair quantities in G, H and I (0 when blank), location in J, date in K, stored-by in L, purchase price in M, current value in N and notes in O."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Validation rules when adding a product",
+            "summary": "A new product needs a unique name, a numeric quantity, numeric prices, a location, and state quantities that do not exceed the total.",
+            "claims": [
+              "The product name is required and must not already exist in the Product Master name column D; otherwise the save stops with 'Product already available'.",
+              "The quantity is required and must be numeric.",
+              "The purchase price and current value must be filled in and numeric; the location is required.",
+              "The sum of the Repair, Usable and Damaged quantities must not exceed the asset quantity; on failure the three state boxes are cleared."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "type": "BR",
+            "area": "Asset Manager.xlsm",
+            "title": "Asset codes are sequential row numbers",
+            "summary": "Product codes are built from the row number, not stored as a separate sequence.",
+            "claims": [
+              "Refresh loops over the Product Master rows and assigns txt_AssetCode as 'ASI00' followed by the row number, keeping only the last value.",
+              "When a product is added, CommandButton2 runs a loop that writes 'ASI000' followed by the row number minus one into column A of Product Master, for every row from 2 to the count of used rows in column A plus one.",
+              "The loop's upper bound is the count of used rows in column A plus one, so it runs one row past the last used row. Because the string concatenation binds the subtraction first, the code written is 'ASI000' & (x - 1).",
+              "The Refresh routine writes 'ASI00' followed by the loop counter into the asset code text box for each row from 2 to the used row count, so the code shown on the form is also the row number."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Search and look up products",
+            "summary": "The search form lists products from the Product Master by name text, shows stock figures for the chosen product, and filters the Inventory sheet into the Report sheet.",
+            "claims": [
+              "Typing in TextBox1 refills ListBox1 with product names from the Product Master column D that contain the text, case-insensitively.",
+              "Choosing a product shows its current stock, reorder value and drawer number from the Inventory sheet by VLOOKUP on columns 5, 12 and 11.",
+              "Search_Product filters the Inventory sheet on column 1 to the chosen product, copies the rows to the Report sheet from A7 and hides the form."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock reports on the Report sheet",
+            "summary": "Four macros copy the Inventory sheet into the Report sheet, either all rows or one state's filtered rows. The Report sheet has a title, a header row at row 7, product rows from row 8, conditional formatting on names and blank rows, and hidden column L. Rows 29 to 42 hold stocked products, while rows 43 to 46 hold four typed names with quantities but no value, state or location, and do not match the product list. Rows 47 to 506 hold zeros, blanks and formula cells.",
+            "claims": [
+              "Current_Stock clears the Report rows from row 8 down, turns off the filter on Inventory, copies the used range to Report A7 as values and formats, and activates Report.",
+              "Damaged filters Inventory on column 9 greater than 0 before the copy.",
+              "Repairable filters Inventory on column 10 greater than 0 before the copy.",
+              "Usable filters Inventory on column 8 greater than 0 before the copy."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "Asset Manager.xlsm",
+            "title": "Product picker calendar",
+            "summary": "A calendar form lets the user pick a date, month and year, and writes the chosen date text into the target box.",
+            "claims": [
+              "The form fills its month and year lists (20 years either side of the current year) and shows the current month; changing month or year redraws the day buttons.",
+              "The previous and next image buttons step the month back and forward across year boundaries.",
+              "Each day button calls ButtonClick, which writes the day caption, the first three letters of the month and the year into TextBox1 and closes the form when the caption is not empty.",
+              "Day buttons with no caption are disabled and greyed; the weekday of the 1st places the first day, and the rest follow in order up to the last day of the month."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "Asset Manager.xlsm",
+            "title": "Stock In-Out sheet (movement log)",
+            "summary": "One row per stock movement or opening stock: product, direction, quantities by state, and the calculated price and value.",
+            "claims": [
+              "Columns I and J hold Usable In and Usable Out; K and L hold Damaged In and Damaged Out; M and N hold Repair In and Repair Out.",
+              "Column E takes the Product Master's column 10 for the product and F is E's unit price times quantity; G takes column 11 and H is G times quantity.",
+              "Column B accepts only the list IN, OUT or Opening Stock, and column C accepts only dates between two fixed serial dates.",
+              "The date box is filled with the current date formatted as DD-MMM-YYYY when the Search Product form activates, and a calendar picker can set it."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052032-understand-summariser-overview",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FLOW-001",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Create an invoice from an open invoice row",
+            "summary": "The user picks an open invoice, the workbook numbers it, writes the template and saves it as PDF and Excel.",
+            "claims": [
+              "Pressing CREATE INVOICE stops with a message if no open invoice is selected.",
+              "The PDF and Excel output folders named on the Dashboard are resolved next to the workbook and created if missing.",
+              "If Agreed Amount Total of the selected row is 0, the procedure shows a message and exits without creating anything.",
+              "The next invoice number is the largest Invoice number plus 1, and the invoice date is set to the Dashboard TODAY name."
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Email an invoice PDF to the customer",
+            "summary": "After creation, the form drafts an Outlook email with the PDF attached.",
+            "claims": [
+              "The procedure finds the customer's email in CustomerTable by matching Customer and Company names, removing spaces.",
+              "An Outlook mail is created with the subject 'Your Invoice From Maxine', an HTML body addressed to the customer, and the PDF attached, then saved to Drafts.",
+              "Sending is commented out, so the mail is only saved as a draft; Outlook is then quit and the form closes."
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Add or edit a customer in the master data",
+            "summary": "Users add a customer or edit one from a list; the form validates required fields and the VAT format.",
+            "claims": [
+              "The ADD button checks every control tagged required; an empty one shows a message and sets focus.",
+              "A VAT entry that is not numeric is refused with a message.",
+              "Name, company, address, UID and email are written to the row; VAT is written divided by 100, or blank when empty.",
+              "The EDIT button on the view form loads the selected customer into the input form, with caption UPDATE, and shows VAT multiplied by 100."
+            ]
+          },
+          {
+            "id": "FLOW-004",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Search the customer master and add the customer to an invoice",
+            "summary": "Typing a name in the orange cell opens a search form, and selecting a result adds a row to the invoice table.",
+            "claims": [
+              "The search form lists CustomerTable rows whose Customer name, Company name, or both contain the typed text (case-insensitive).",
+              "Select appends a row to InvoiceTable and copies Customer, Company, three address lines, UID and VAT from the matching master row.",
+              "On the Invoice sheet, the typed value opens the search form, then the orange cell is reset to its prompt text and orange colour."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice amount, net, VAT and final totals",
+            "summary": "Each invoice adds its three line amounts, then net amount and final invoiced amount, using the VAT rate of the customer.",
+            "claims": [
+              "Agreed Amount Total is the sum of Amount Line 1, Amount Line 2 and Amount Line 3.",
+              "Net Amount is Agreed Amount Total plus Additional Expenses.",
+              "VAT to Pay is Net Amount multiplied by the VAT column."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Due date is 14 working days after the invoice date",
+            "summary": "The Due by date is the invoice date plus 14 working days, blank without an invoice date.",
+            "claims": [
+              "Due by is blank when Invoice Date is empty; otherwise it is WORKDAY of the invoice date plus 14 days."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Transfer Savings is half of the row amount",
+            "summary": "The Transfer Savings column is set to 50% of the R column in each row.",
+            "claims": ["Transfer Savings is R multiplied by 0.5 in the rows of the table."]
+          },
+          {
+            "id": "BR-004",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Monthly paid totals on the Calculation sheet",
+            "summary": "For each month, the Calculation sheet sums the Net Amount of paid invoices dated in that month, up to the date on the Dashboard.",
+            "claims": [
+              "Each month sums InvoiceTable Net Amount where the invoice date is in that month and Status is paid; it is blank for months after the date in E3.",
+              "E3 takes its value from Dashboard!C1, which is the fixed date 23 October 2022."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Dashboard yearly totals",
+            "summary": "The Dashboard totals the Net Amount of paid and unpaid invoices and counts invoices for a chosen year.",
+            "claims": [
+              "Dashboard C2 is the year of C1; E5 sums Net Amount of invoices in that year with Status Paid; I5 sums those with Status not paid; M5 counts invoices dated in that year."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Template totals with VAT",
+            "summary": "The Template sheet sums four lines and adds VAT at a rate that applies only to filled lines.",
+            "claims": [
+              "D25 sums D21:D24; D26 sums the products of D21:D24 and E21:E24; D27 is D25 plus D26.",
+              "Each E22:E24 is the rate in E21 when the matching D cell is filled, otherwise 0."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-summariser-overview",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FLOW-001",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Create an invoice from an open invoice row",
+            "summary": "The user picks an open invoice, the workbook numbers it, writes the template and saves it as PDF and Excel.",
+            "claims": [
+              "Pressing CREATE INVOICE stops with a message if no open invoice is selected.",
+              "The PDF and Excel output folders named on the Dashboard are resolved next to the workbook and created if missing.",
+              "If Agreed Amount Total of the selected row is 0, the procedure shows a message and exits without creating anything.",
+              "The next invoice number is the largest Invoice number plus 1, and the invoice date is set to the Dashboard TODAY name."
+            ]
+          },
+          {
+            "id": "FLOW-002",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Email an invoice PDF to the customer",
+            "summary": "After creation, the form drafts an Outlook email with the PDF attached.",
+            "claims": [
+              "The procedure finds the customer's email in CustomerTable by matching Customer and Company names, removing spaces.",
+              "An Outlook mail is created with the subject 'Your Invoice From Maxine', an HTML body addressed to the customer, and the PDF attached, then saved to Drafts.",
+              "Sending is commented out, so the mail is only saved as a draft; Outlook is then quit and the form closes."
+            ]
+          },
+          {
+            "id": "FLOW-003",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Add or edit a customer in the master data",
+            "summary": "Users add a customer or edit one from a list; the form validates required fields and the VAT format.",
+            "claims": [
+              "The ADD button checks every control tagged required; an empty one shows a message and sets focus.",
+              "A VAT entry that is not numeric is refused with a message.",
+              "Name, company, address, UID and email are written to the row; VAT is written divided by 100, or blank when empty.",
+              "The EDIT button on the view form loads the selected customer into the input form, with caption UPDATE, and shows VAT multiplied by 100."
+            ]
+          },
+          {
+            "id": "FLOW-004",
+            "type": "FLOW",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Search the customer master and add the customer to an invoice",
+            "summary": "Typing a name in the orange cell opens a search form, and selecting a result adds a row to the invoice table.",
+            "claims": [
+              "The search form lists CustomerTable rows whose Customer name, Company name, or both contain the typed text (case-insensitive).",
+              "Select appends a row to InvoiceTable and copies Customer, Company, three address lines, UID and VAT from the matching master row.",
+              "On the Invoice sheet, the typed value opens the search form, then the orange cell is reset to its prompt text and orange colour."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Invoice amount, net, VAT and final totals",
+            "summary": "Each invoice adds its three line amounts, then net amount and final invoiced amount, using the VAT rate of the customer.",
+            "claims": [
+              "Agreed Amount Total is the sum of Amount Line 1, Amount Line 2 and Amount Line 3.",
+              "Net Amount is Agreed Amount Total plus Additional Expenses.",
+              "VAT to Pay is Net Amount multiplied by the VAT column.",
+              "Agreed Amount Total is the sum of Amount Line 1, Amount Line 2 and Amount Line 3 of the row."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Due date is 14 working days after the invoice date",
+            "summary": "The Due by date is the invoice date plus 14 working days, blank without an invoice date.",
+            "claims": [
+              "Due by is blank when Invoice Date is empty; otherwise it is WORKDAY of the invoice date plus 14 days."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Transfer Savings is half of the row amount",
+            "summary": "The Transfer Savings column is set to 50% of the R column in each row.",
+            "claims": [
+              "Transfer Savings is R multiplied by 0.5 in the rows of the table.",
+              "The Invoice sheet has a column headed Transfer Savings (AB), placed after the Agreed Amount Total (R) and the Status column.",
+              "On the sample invoice rows the Transfer Savings cell holds a value that is shown as a formula result, for example 1750 on the row whose Agreed Amount Total is 3500.",
+              "Each row's Transfer Savings cell is column R of the same row multiplied by 0.5, in the rows covered by the AB regions."
+            ]
+          },
+          {
+            "id": "BR-004",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Monthly paid totals on the Calculation sheet",
+            "summary": "For each month, the Calculation sheet sums the Net Amount of paid invoices dated in that month, up to the date on the Dashboard.",
+            "claims": [
+              "Each month sums InvoiceTable Net Amount where the invoice date is in that month and Status is paid; it is blank for months after the date in E3.",
+              "E3 takes its value from Dashboard!C1, which is the fixed date 23 October 2022."
+            ]
+          },
+          {
+            "id": "BR-005",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Dashboard yearly totals",
+            "summary": "The Dashboard totals the Net Amount of paid and unpaid invoices and counts invoices for a chosen year.",
+            "claims": [
+              "Dashboard C2 is the year of C1; E5 sums Net Amount of invoices in that year with Status Paid; I5 sums those with Status not paid; M5 counts invoices dated in that year."
+            ]
+          },
+          {
+            "id": "BR-006",
+            "type": "BR",
+            "area": "Invoice_Generator.xlsm",
+            "title": "Template totals with VAT",
+            "summary": "The Template sheet sums four lines and adds VAT at a rate that applies only to filled lines.",
+            "claims": [
+              "D25 sums D21:D24; D26 sums the products of D21:D24 and E21:E24; D27 is D25 plus D26.",
+              "Each E22:E24 is the rate in E21 when the matching D cell is filled, otherwise 0.",
+              "The VAT rate of each service line in column E is a formula that returns 0.2 for the Programming and Consulting lines, and the VAT rate of the Training line is typed as 0.2.",
+              "The Template sheet has a Subtotal, a VAT and a Total cell, each holding a formula, with the values 13594, 2718.8 and 16312.8 stored for them."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-summariser-overview",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Browse the catalog with brand and type filters",
+            "summary": "The catalog screen lists items with thumbnails, names, descriptions and prices, and filters them by brand and type. Changing either filter reloads the grid, with 0 meaning All. Thumbnails are read from the Assets/Images/Catalog folder.",
+            "claims": [
+              "On load, the controller shows the discount banner, loads all items, loads the brand and type filter lists and loads the shipment view.",
+              "The brand and type dropdowns each raise a filter change with the selected ids, and the controller reloads the grid for that filter. Id 0 means All.",
+              "The dropdown change handlers are wired in the designer for the brand and type combo boxes.",
+              "Each row shows a 384x216 thumbnail loaded from the Assets/Images/Catalog folder under the current directory, the item id, name and description, and the price prefixed with $."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Add a stock shipment for an item (WinForms)",
+            "summary": "A user records an arrival of stock for a catalog item on a date.",
+            "claims": [
+              "The Add Shipment button does nothing unless a product, a quantity and an arrival date are all filled in.",
+              "After saving, a message box says the shipment was added and the input fields are cleared."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Check available stock for an item on a date (WinForms)",
+            "summary": "A user selects an item and a calendar date to see its available stock.",
+            "claims": [
+              "The item id is read from the selected list entry text and the date from the month calendar, and the controller asks the service for the stock.",
+              "The Search button calls the search handler.",
+              "The result is added as a row in the stock list with the date, item id and quantity.",
+              "The mock service variant does not handle a missing record: it dereferences the first match and fails when none exists."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Daily discount applied to prices and shown as a banner",
+            "summary": "A discount whose inclusive date range covers today reduces the displayed price by its size, formatted to two decimals, and shows a banner with the rounded percentage and end date. Six seeded discounts from September to December 2017 range from 10% to 50%.",
+            "claims": [
+              "The service returns the first discount whose start and end dates (compared by day) include the requested day.",
+              "The displayed price is the price multiplied by (1 minus the discount size), formatted with two decimals.",
+              "The banner reads '<percent>% sale endson <end date>!', with the percent rounded to a whole number.",
+              "The seeded discounts are six fixed date ranges in September, October, November and December 2017, with sizes from 10% to 50%."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Stock record is one row per item and date",
+            "summary": "Saving stock for an item and date overwrites the existing quantity for that day, or inserts a new row with the next id when none exists. The live service reports zero stock for a day with no row, while the mock service's GetAvailableStock fails when no row matches.",
+            "claims": [
+              "If a stock record exists for the same item and date, its AvailableStock is replaced by the new value and saved.",
+              "Otherwise a new stock record is inserted with the next StockId (maximum plus one).",
+              "Stock is matched by item id and calendar date, ignoring the time part.",
+              "When a row for that item and date exists, its quantity is replaced by the new quantity; otherwise a new row is added."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog WCF service operations",
+            "summary": "A WCF catalog service exposes find item, list brands, list items and types, get and create stock, create, update and remove item, and get discount. Create assigns the next id, update marks the entity modified, and remove deletes it. The mock and client wrapper throw NotImplementedException for some operations.",
+            "claims": [
+              "The service contract exposes find item, list brands, list items with brand and type filters, list types, get and create stock, create, update, remove item, and get discount.",
+              "Creating an item assigns the id as the maximum existing id plus one and saves; update marks the entity modified and saves; remove deletes it and saves.",
+              "Item lookup fills in the brand and type of the item.",
+              "The service is published on a basic HTTP endpoint, with metadata exposed over HTTP and HTTPS and directory browsing enabled."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog data entities",
+            "summary": "The EF model maps catalog brands, items, types, stock and discounts to tables.",
+            "claims": [
+              "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+              "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+              "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+              "The brand and type names are stored as non-Unicode strings."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Database is created and seeded with preconfigured catalog data",
+            "summary": "On first use the database is created if missing and filled with sample types, brands, items, stock and discounts.",
+            "claims": [
+              "The context uses an initializer that creates the database only if it does not exist.",
+              "The seed adds catalog types, brands, items, stock and discount items, saving after each group.",
+              "The seed contains twelve catalog items, five brands, four types and six stock records.",
+              "The connection string comes from the ConnectionString environment variable when set, otherwise from the EntityModel connection string name."
+            ]
+          },
+          {
+            "id": "INT-001",
+            "type": "INT",
+            "area": "eShopLegacyNTier/src",
+            "title": "WinForms client calls the catalog WCF service over HTTP",
+            "summary": "The desktop client reaches the catalog service at a fixed localhost address.",
+            "claims": [
+              "The client endpoint is http://localhost:62314/CatalogService.svc using basic HTTP.",
+              "The service's database connection points at the LocalDB instance and the eShopDatabase catalog."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Plain-text secrets in configuration files",
+            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "claims": [
+              "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
+              "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
+              "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
+              "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-summariser-overview",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "cards": [
+          {
+            "id": "FEAT-001",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Browse the catalog with brand and type filters",
+            "summary": "The catalog screen lists items with thumbnails, names, descriptions and prices, and filters them by brand and type. Changing either filter reloads the grid, with 0 meaning All. Thumbnails are read from the Assets/Images/Catalog folder.",
+            "claims": [
+              "On load, the controller shows the discount banner, loads all items, loads the brand and type filter lists and loads the shipment view.",
+              "The brand and type dropdowns each raise a filter change with the selected ids, and the controller reloads the grid for that filter. Id 0 means All.",
+              "The dropdown change handlers are wired in the designer for the brand and type combo boxes.",
+              "Each row shows a 384x216 thumbnail loaded from the Assets/Images/Catalog folder under the current directory, the item id, name and description, and the price prefixed with $."
+            ]
+          },
+          {
+            "id": "FEAT-002",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Add a stock shipment for an item (WinForms)",
+            "summary": "A user records an arrival of stock for a catalog item on a date.",
+            "claims": [
+              "The Add Shipment button does nothing unless a product, a quantity and an arrival date are all filled in.",
+              "After saving, a message box says the shipment was added and the input fields are cleared.",
+              "The add-shipment button reads the selected item id, parses the quantity with int.Parse and the arrival date with Convert.ToDateTime, then raises the availability event.",
+              "The controller builds a CatalogItemsStock from the event arguments and calls the service's CreateAvailableStock, then tells the view that the availability was updated."
+            ]
+          },
+          {
+            "id": "FEAT-003",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Check available stock for an item on a date (WinForms)",
+            "summary": "A user selects an item and a calendar date to see its available stock.",
+            "claims": [
+              "The item id is read from the selected list entry text and the date from the month calendar, and the controller asks the service for the stock.",
+              "The Search button calls the search handler.",
+              "The result is added as a row in the stock list with the date, item id and quantity.",
+              "The mock service variant does not handle a missing record: it dereferences the first match and fails when none exists."
+            ]
+          },
+          {
+            "id": "BR-001",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Daily discount applied to prices and shown as a banner",
+            "summary": "A discount whose inclusive date range covers today reduces the displayed price by its size, formatted to two decimals, and shows a banner with the rounded percentage and end date. Six seeded discounts from September to December 2017 range from 10% to 50%.",
+            "claims": [
+              "The service returns the first discount whose start and end dates (compared by day) include the requested day.",
+              "The displayed price is the price multiplied by (1 minus the discount size), formatted with two decimals.",
+              "The banner reads '<percent>% sale endson <end date>!', with the percent rounded to a whole number.",
+              "The seeded discounts are six fixed date ranges in September, October, November and December 2017, with sizes from 10% to 50%."
+            ]
+          },
+          {
+            "id": "BR-002",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Stock record is one row per item and date",
+            "summary": "Saving stock for an item and date overwrites the existing quantity for that day, or inserts a new row with the next id when none exists. The live service reports zero stock for a day with no row, while the mock service's GetAvailableStock fails when no row matches.",
+            "claims": [
+              "If a stock record exists for the same item and date, its AvailableStock is replaced by the new value and saved.",
+              "Otherwise a new stock record is inserted with the next StockId (maximum plus one).",
+              "The CatalogItemsStock record holds AvailableStock, CatalogItemId, Date and StockId fields.",
+              "Stock is matched by item id and calendar date, ignoring the time part."
+            ]
+          },
+          {
+            "id": "FEAT-004",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Catalog WCF service operations",
+            "summary": "A WCF catalog service exposes find item, list brands, list items and types, get and create stock, create, update and remove item, and get discount. Create assigns the next id, update marks the entity modified, and remove deletes it. The mock and client wrapper throw NotImplementedException for some operations.",
+            "claims": [
+              "The service contract exposes find item, list brands, list items with brand and type filters, list types, get and create stock, create, update, remove item, and get discount.",
+              "Creating an item assigns the id as the maximum existing id plus one and saves; update marks the entity modified and saves; remove deletes it and saves.",
+              "Item lookup fills in the brand and type of the item.",
+              "The service is published on a basic HTTP endpoint, with metadata exposed over HTTP and HTTPS and directory browsing enabled."
+            ]
+          },
+          {
+            "id": "ENT-001",
+            "type": "ENT",
+            "area": "eShopLegacyNTier/src",
+            "title": "CatalogItem (product entity, legacy and modernized)",
+            "summary": "A sellable catalog product with an id, a name (max 50), an optional description, a price (decimal, money), a picture file name (default dummy.png), required links to one brand and one type, and stock figures (available stock, restock threshold, max stock threshold) plus an on-reorder flag. In the legacy EF model it is the CatalogItems set; in the modernized model it is the Catalog table. PictureUri and TempImageName are not stored. Ids are assigned by the application (hi-lo or sequence) or by the seed, and the foreign keys cascade deletes by EF default in some versions.",
+            "claims": [
+              "The context exposes five sets: CatalogBrands, CatalogItems, CatalogItemsStocks, CatalogTypes and DiscountItems.",
+              "CatalogItem.Id is not database generated; Price is money with precision 19,4 and Picturefilename holds the image file name.",
+              "DiscountItem has Size as double, Start and End as date columns, and Id as the key.",
+              "The brand and type names are stored as non-Unicode strings."
+            ]
+          },
+          {
+            "id": "FEAT-005",
+            "type": "FEAT",
+            "area": "eShopLegacyNTier/src",
+            "title": "Database is created and seeded with preconfigured catalog data",
+            "summary": "On first use the database is created if missing and filled with sample types, brands, items, stock and discounts.",
+            "claims": [
+              "The context uses an initializer that creates the database only if it does not exist.",
+              "The seed adds catalog types, brands, items, stock and discount items, saving after each group.",
+              "The seed contains twelve catalog items, five brands, four types and six stock records.",
+              "The connection string comes from the ConnectionString environment variable when set, otherwise from the EntityModel connection string name."
+            ]
+          },
+          {
+            "id": "INT-001",
+            "type": "INT",
+            "area": "eShopLegacyNTier/src",
+            "title": "WinForms client calls the catalog WCF service over HTTP",
+            "summary": "The desktop client reaches the catalog service at a fixed localhost address.",
+            "claims": [
+              "The client endpoint is http://localhost:62314/CatalogService.svc using basic HTTP.",
+              "The service's database connection points at the LocalDB instance and the eShopDatabase catalog.",
+              "The service reference metadata source is an HTTP address on localhost port 62314 serving CatalogService.svc.",
+              "The CatalogItem schema fields are CatalogBrand, CatalogBrandId, CatalogType, CatalogTypeId, Description, Id, Name, Picturefilename and Price."
+            ]
+          },
+          {
+            "id": "BR-003",
+            "type": "BR",
+            "area": "eShopLegacyNTier/src",
+            "title": "Plain-text secrets in configuration files",
+            "summary": "Configuration files hold a plain-text bearer-token in several sections, including the Entity Framework declaration and multiple assembly bindings in Web.config.",
+            "claims": [
+              "A plain-text bearer-token is written in the entityFramework configuration section declaration.",
+              "A plain-text bearer-token is written in the Entity Framework section declaration in Web.config.",
+              "A plain-text bearer-token is written in the Newtonsoft.Json assembly binding in Web.config.",
+              "A plain-text bearer-token is written in the System.Web.Optimization assembly binding in Web.config."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -11,6 +11,8 @@ const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/u, 'must be lower-case wo
 
 const caseSchema = z.strictObject({
   id,
+  /** The key of the set's `sources` entry the input comes from. */
+  from: z.string().min(1).max(40).optional(),
   expected: z.string().min(1).max(100).optional(),
   split: z.enum(['tune', 'held-back']).default('tune'),
   input: z.unknown(),
@@ -34,7 +36,6 @@ export const labSourceFields = z.strictObject({
   runs: z.array(z.string().min(1).max(100)).max(50),
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- stub of the test commit (DEC-191)
 const sourceSchema = labSourceFields.refine(
   (source) => source.commit !== undefined || source.snapshot !== undefined,
   {
@@ -47,10 +48,11 @@ const setSchema = z.strictObject({
   version: z.string().trim().min(1).max(60),
   prompt: z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/u, 'must be <folder>/<name>'),
   description: z.string().max(2000),
+  sources: z.array(sourceSchema).max(20).optional(),
   cases: z.array(caseSchema).min(1).max(500),
 });
 
-export type LabCaseSource = z.infer<typeof labSourceFields>;
+export type LabCaseSource = z.infer<typeof sourceSchema>;
 
 interface LabCase {
   readonly id: string;
@@ -100,9 +102,14 @@ export function parseLabCaseSet(data: unknown): Result<LabCaseSet, string[]> {
     return err([...issues, ...twice]);
   }
   if (twice.length > 0) return err(twice);
+  const keys = new Set((parsed.data.sources ?? []).map((source) => source.key));
+  const unknown = parsed.data.cases
+    .filter((each) => each.from !== undefined && !keys.has(each.from))
+    .map((each) => `cases.${each.id}: the source ${each.from ?? ''} is not in sources`);
+  if (unknown.length > 0) return err(unknown);
   const cases = parsed.data.cases.map((each) => ({
     id: each.id,
-    from: undefined,
+    from: each.from,
     expected: each.expected,
     split: each.split,
     input: each.input,

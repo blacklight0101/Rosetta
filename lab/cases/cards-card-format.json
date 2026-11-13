@@ -1,0 +1,2345 @@
+{
+  "schemaVersion": 1,
+  "version": "cards-card-format-1",
+  "prompt": "cards/card-format",
+  "description": "Inputs of cards/card-format captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "asset-manager",
+      "name": "Asset Manager (Excel workbook, uploaded as asset-manager.zip)",
+      "snapshot": "sha256:344b952e5ed95fda7f9f0e8b3ffa49d3c0dd224bf63632958df1f808cd8306f1",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-054045-understand", "20261109-054346-understand"]
+    },
+    {
+      "key": "invoice-generator",
+      "name": "Invoice Generator (Excel workbook, uploaded as invoice-generator.zip)",
+      "snapshot": "sha256:8b41b5ba11769d9b8d63c5463d14e1e9ca9e066b099136f75af305a5420e28bf",
+      "licence": "UNCONFIRMED: the licence is not recorded in the evaluation runs; the owner names it before the set is used outside this repository",
+      "runs": ["20261109-052032-understand", "20261109-052223-understand"]
+    },
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": ["20261109-054942-understand", "20261109-063857-understand"]
+    }
+  ],
+  "cases": [
+    {
+      "id": "asset-manager-20261109-054045-understand-reader-001",
+      "from": "asset-manager",
+      "split": "held-back",
+      "input": {
+        "area": "Asset Manager.xlsm",
+        "files": [
+          {
+            "path": "Asset Manager.xlsm/Inventory/formulas.md",
+            "language": "markdown",
+            "lines": 89
+          },
+          {
+            "path": "Asset Manager.xlsm/Inventory/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Inventory/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Inventory/values.md",
+            "language": "markdown",
+            "lines": 505
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/formulas.md",
+            "language": "markdown",
+            "lines": 20
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/values.md",
+            "language": "markdown",
+            "lines": 288
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/values.md",
+            "language": "markdown",
+            "lines": 508
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/formulas.md",
+            "language": "markdown",
+            "lines": 37
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
+            "language": "markdown",
+            "lines": 105
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/formulas.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/values.md",
+            "language": "markdown",
+            "lines": 12
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Calendar.cls",
+            "language": "unknown",
+            "lines": 340
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Module1.bas",
+            "language": "vb6",
+            "lines": 116
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Sheet1.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Sheet2.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Sheet3.cls",
+            "language": "unknown",
+            "lines": 9
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Sheet4.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Sheet6.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/ThisWorkbook.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Search_Product.cls",
+            "language": "unknown",
+            "lines": 317
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "language": "unknown",
+            "lines": 527
+          },
+          {
+            "path": "Asset Manager.xlsm/workbook.md",
+            "language": "markdown",
+            "lines": 91
+          }
+        ],
+        "workbook": true,
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Asset Manager.xlsm/workbook.md",
+            "startLine": 1,
+            "lines": [
+              "# Workbook \"Asset Manager.xlsm\"",
+              "",
+              "- Renderer version: 3",
+              "- Sheets: 5",
+              "- Non-empty cells: 12247",
+              "- Formula cells: 6075",
+              "- Date system: 1900",
+              "",
+              "## Names",
+              "",
+              "| Segment | Kind | Real name |",
+              "|---|---|---|",
+              "| Asset Manager.xlsm | workbook | \"Asset Manager.xlsm\" |",
+              "| Report | sheet | \"Report\" |",
+              "| Inventory | sheet | \"Inventory\" |",
+              "| Stock_In-Out | sheet | \"Stock In-Out\" |",
+              "| Product_Master | sheet | \"Product Master\" |",
+              "| Support | sheet | \"Support\" |",
+              "| macros/ThisWorkbook.cls | macro | \"ThisWorkbook\" |",
+              "| macros/Sheet1.cls | macro | \"Sheet1\" |",
+              "| macros/Sheet6.cls | macro | \"Sheet6\" |",
+              "| macros/Sheet2.cls | macro | \"Sheet2\" |",
+              "| macros/Module1.bas | macro | \"Module1\" |",
+              "| macros/Calendar.cls | macro | \"Calendar\" |",
+              "| macros/Sheet4.cls | macro | \"Sheet4\" |",
+              "| macros/frm_Update_Inventory.cls | macro | \"frm_Update_Inventory\" |",
+              "| macros/frm_Search_Product.cls | macro | \"frm_Search_Product\" |",
+              "| macros/Sheet3.cls | macro | \"Sheet3\" |",
+              "",
+              "## Sheets",
+              "",
+              "| Segment | State | Used range | Cells | Formulas | Comments | Merged ranges |",
+              "|---|---|---|---|---|---|---|",
+              "| Report | visible | \"A1:R506\" | 5443 | 0 | 0 | 2 |",
+              "| Inventory | visible | \"A1:L500\" | 5438 | 5391 | 0 | 0 |",
+              "| Stock_In-Out | visible | \"A1:N100\" | 550 | 396 | 0 | 0 |",
+              "| Product_Master | visible | \"A1:O498\" | 787 | 282 | 1 | 0 |",
+              "| Support | visible | \"A1:L7\" | 29 | 6 | 0 | 0 |",
+              "",
+              "## Defined names"
+            ]
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/Module1.bas",
+            "startLine": 1,
+            "lines": [
+              "L1 | Attribute VB_Name = \"Module1\"",
+              "L2 | Sub Show_Search_Frm()",
+              "L3 | ",
+              "L4 | frm_Search_Product.Show False",
+              "L5 | ",
+              "L6 | End Sub",
+              "L7 | ",
+              "L8 | Sub Show_Update_Inventory_Frm()",
+              "L9 | ",
+              "L10 | frm_Update_Inventory.Show False",
+              "L11 |  ",
+              "L12 | End Sub",
+              "L13 | ",
+              "L14 | Sub Current_Stock()",
+              "L15 | ",
+              "L16 | Dim sh As Worksheet",
+              "L17 | Dim rsh As Worksheet",
+              "L18 | ",
+              "L19 | Set sh = ThisWorkbook.Sheets(\"Inventory\")",
+              "L20 | Set rsh = ThisWorkbook.Sheets(\"Report\")",
+              "L21 | ",
+              "L22 | rsh.Range(\"8:\" & Application.Rows.Count).EntireRow.Clear",
+              "L23 | ",
+              "L24 | sh.AutoFilterMode = False",
+              "L25 | ",
+              "L26 | sh.UsedRange.Copy",
+              "L27 | rsh.Range(\"A7\").PasteSpecial xlPasteValues",
+              "L28 | rsh.Range(\"A7\").PasteSpecial xlPasteFormats",
+              "L29 | Application.CutCopyMode = False",
+              "L30 | Application.CutCopyMode = xlCopy",
+              "L31 | sh.AutoFilterMode = False",
+              "L32 | rsh.Activate",
+              "L33 | rsh.Range(\"A1\").Activate",
+              "L34 | ",
+              "L35 | End Sub",
+              "L36 | ",
+              "L37 | Sub Damaged()",
+              "L38 | ",
+              "L39 | Dim sh As Worksheet",
+              "L40 | Dim rsh As Worksheet"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054045-understand-reader-002",
+      "from": "asset-manager",
+      "split": "held-back",
+      "input": {
+        "area": "(root)",
+        "files": [
+          {
+            "path": "dependencies.md",
+            "language": "markdown",
+            "lines": 61
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "dependencies.md",
+            "startLine": 1,
+            "lines": [
+              "# Dependencies of the project",
+              "",
+              "- Workbooks: 1",
+              "- Sheets: 5",
+              "- Formula cells: 6075",
+              "",
+              "## Workbooks",
+              "None.",
+              "",
+              "## Sheets",
+              "Asset Manager.xlsm/Inventory -> Asset Manager.xlsm/Stock_In-Out: 2994 formulas",
+              "Asset Manager.xlsm/Inventory -> Asset Manager.xlsm/Product_Master: 3395 formulas",
+              "Asset Manager.xlsm/Stock_In-Out -> Asset Manager.xlsm/Product_Master: 198 formulas",
+              "Asset Manager.xlsm/Support -> Asset Manager.xlsm/Inventory: 3 formulas",
+              "Asset Manager.xlsm/Support -> Asset Manager.xlsm/Product_Master: 3 formulas",
+              "",
+              "## Input cells",
+              "Asset Manager.xlsm/Inventory!A2:A36",
+              "Asset Manager.xlsm/Inventory!E1:G1",
+              "Asset Manager.xlsm/Stock_In-Out!A1:B36",
+              "Asset Manager.xlsm/Stock_In-Out!D1:D36",
+              "Asset Manager.xlsm/Stock_In-Out!I1:N1",
+              "Asset Manager.xlsm/Product_Master!D1:E36",
+              "Asset Manager.xlsm/Product_Master!F1",
+              "Asset Manager.xlsm/Product_Master!G1:N36",
+              "",
+              "## Output cells",
+              "Asset Manager.xlsm/Inventory!H2:K500",
+              "Asset Manager.xlsm/Inventory!L2:L402",
+              "Asset Manager.xlsm/Stock_In-Out!F2:F100",
+              "Asset Manager.xlsm/Stock_In-Out!H2:H100",
+              "Asset Manager.xlsm/Support!B1:B6",
+              "",
+              "## Defined names",
+              "Asset Manager.xlsm/Support!H2 name \"AssetCategory\" refers to \"OFFSET(Support!$H$2,,,COUNTA(Support!$H:$H)-1,1)\"",
+              "Asset Manager.xlsm/Support!H2 name \"AssetCategory\" is not used by any formula",
+              "Asset Manager.xlsm name \"Product_ID\" refers to \"OFFSET(#REF!,,,COUNTA(#REF!)-1,1)\"",
+              "Asset Manager.xlsm name \"Product_ID\" is not used by any formula",
+              "Asset Manager.xlsm/Support!L2 name \"StoredBy\" refers to \"OFFSET(Support!$L$2,,,COUNTA(Support!$L:$L)-1,1)\"",
+              "Asset Manager.xlsm/Support!L2 name \"StoredBy\" is not used by any formula"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-reader-005",
+      "from": "asset-manager",
+      "split": "held-back",
+      "input": {
+        "area": "Asset Manager.xlsm",
+        "files": [
+          {
+            "path": "Asset Manager.xlsm/Inventory/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Inventory/values.md",
+            "language": "markdown",
+            "lines": 505
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/values.md",
+            "language": "markdown",
+            "lines": 288
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/values.md",
+            "language": "markdown",
+            "lines": 508
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
+            "language": "markdown",
+            "lines": 105
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Asset Manager.xlsm/Support/values.md",
+            "language": "markdown",
+            "lines": 12
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "language": "unknown",
+            "lines": 527
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "startLine": 1,
+            "lines": [
+              "L1 | Attribute VB_Name = \"frm_Update_Inventory\"",
+              "L2 | Attribute VB_Base = \"0{500662C1-2C3D-4611-8A3F-2A94FD409DF6}{9188734E-F8F8-4994-A210-6BE230628441}\"",
+              "L3 | Attribute VB_GlobalNameSpace = False",
+              "L4 | Attribute VB_Creatable = False",
+              "L5 | Attribute VB_PredeclaredId = True",
+              "L6 | Attribute VB_Exposed = False",
+              "L7 | Attribute VB_TemplateDerived = False",
+              "L8 | Attribute VB_Customizable = False",
+              "L9 | Option Explicit",
+              "L10 | ",
+              "L11 | Private Sub CommandButton1_Click()",
+              "L12 | If Me.ListBox1.ListIndex < 0 Then",
+              "L13 |     MsgBox \"Please select a product\"",
+              "L14 |     Exit Sub",
+              "L15 | End If",
+              "L16 | ",
+              "L17 | ",
+              "L18 | Me.Txt_AssetName.Value = Me.ListBox1.Value",
+              "L19 | ",
+              "L20 | End Sub",
+              "L21 | ",
+              "L22 | Private Sub CommandButton2_Click()",
+              "L23 | ",
+              "L24 |     If Me.Txt_AssetName.Value = \"\" Then",
+              "L25 |        MsgBox \"Please add a product into product box\"",
+              "L26 |        Exit Sub",
+              "L27 |     End If",
+              "L28 |     ",
+              "L29 |      If IsNumeric(Me.Txt_AssetQty.Value) = False Then",
+              "L30 |        MsgBox \"Invalid Qty\"",
+              "L31 |        Exit Sub",
+              "L32 |     End If",
+              "L33 |     ",
+              "L34 |     ",
+              "L35 |     If Me.Txt_QtyDamaged.Value = \"\" And Me.Txt_QtyUsable.Value = \"\" And Me.Txt_QtyRepair.Value = \"\" Then",
+              "L36 |        MsgBox \"Please provide asset state (Qty)\"",
+              "L37 |        Exit Sub",
+              "L38 |     End If",
+              "L39 |     ",
+              "L40 |     "
+            ]
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "startLine": 261,
+            "lines": [
+              "L261 | ",
+              "L262 | '''hide Usable if theres nothing to add, else show the usable textbox if theres something to add (<=)",
+              "L263 | If CellValue.Offset(0, 7).Value <= 0 Then",
+              "L264 |     Me.Txt_QtyUsable.Visible = False",
+              "L265 |     Me.lbl_Usable.Visible = False",
+              "L266 | Else",
+              "L267 |     Me.Txt_QtyUsable.Visible = True",
+              "L268 |     Me.lbl_Usable.Visible = True",
+              "L269 | End If",
+              "L270 | ",
+              "L271 | '''hide repair if theres nothing to add, else show the repair textbox if theres something to add (<=)",
+              "L272 | If CellValue.Offset(0, 9).Value <= 0 Then",
+              "L273 |     Me.Txt_QtyRepair.Visible = False",
+              "L274 |     Me.lbl_Repair.Visible = False",
+              "L275 | Else",
+              "L276 |     Me.Txt_QtyRepair.Visible = True",
+              "L277 |     Me.lbl_Repair.Visible = True",
+              "L278 | End If",
+              "L279 | ",
+              "L280 | ",
+              "L281 | End Sub",
+              "L282 | ",
+              "L283 | ",
+              "L284 | Private Sub Txt_QtyDamaged_Exit(ByVal Cancel As MSForms.ReturnBoolean)",
+              "L285 | ",
+              "L286 | '''if QtyDamaged is greater than the remaining Damaged item in spreadsheet then error",
+              "L287 | '''the first and condition is to make sure quantity has a value before it pops the message",
+              "L288 | '''because it pops out the message going into the textbox",
+              "L289 | '''the or condition is to make sure quantity damanged is not more than Overall quantity",
+              "L290 | ",
+              "L291 | Dim CellValue As Variant",
+              "L292 | Dim sh As Worksheet",
+              "L293 | Dim AssetQ As Integer",
+              "L294 | ",
+              "L295 | Set sh = ThisWorkbook.Sheets(\"Inventory\")",
+              "L296 | ",
+              "L297 | Set CellValue = sh.Range(\"A2:A10000\").Find(What:=Me.Txt_AssetName.Value, LookIn:=xlValues)",
+              "L298 | ",
+              "L299 | AssetQ = CellValue.Offset(0, 8).Value",
+              "L300 | "
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-reader-006",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "area": "Asset Manager.xlsm",
+        "files": [
+          {
+            "path": "Asset Manager.xlsm/Report/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/values.md",
+            "language": "markdown",
+            "lines": 508
+          },
+          {
+            "path": "Asset Manager.xlsm/Stock_In-Out/values.md",
+            "language": "markdown",
+            "lines": 105
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "language": "unknown",
+            "lines": 527
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "startLine": 1,
+            "lines": [
+              "L1 | Attribute VB_Name = \"frm_Update_Inventory\"",
+              "L2 | Attribute VB_Base = \"0{500662C1-2C3D-4611-8A3F-2A94FD409DF6}{9188734E-F8F8-4994-A210-6BE230628441}\"",
+              "L3 | Attribute VB_GlobalNameSpace = False",
+              "L4 | Attribute VB_Creatable = False",
+              "L5 | Attribute VB_PredeclaredId = True",
+              "L6 | Attribute VB_Exposed = False",
+              "L7 | Attribute VB_TemplateDerived = False",
+              "L8 | Attribute VB_Customizable = False",
+              "L9 | Option Explicit",
+              "L10 | ",
+              "L11 | Private Sub CommandButton1_Click()",
+              "L12 | If Me.ListBox1.ListIndex < 0 Then",
+              "L13 |     MsgBox \"Please select a product\"",
+              "L14 |     Exit Sub",
+              "L15 | End If",
+              "L16 | ",
+              "L17 | ",
+              "L18 | Me.Txt_AssetName.Value = Me.ListBox1.Value",
+              "L19 | ",
+              "L20 | End Sub",
+              "L21 | ",
+              "L22 | Private Sub CommandButton2_Click()",
+              "L23 | ",
+              "L24 |     If Me.Txt_AssetName.Value = \"\" Then",
+              "L25 |        MsgBox \"Please add a product into product box\"",
+              "L26 |        Exit Sub",
+              "L27 |     End If",
+              "L28 |     ",
+              "L29 |      If IsNumeric(Me.Txt_AssetQty.Value) = False Then",
+              "L30 |        MsgBox \"Invalid Qty\"",
+              "L31 |        Exit Sub",
+              "L32 |     End If",
+              "L33 |     ",
+              "L34 |     ",
+              "L35 |     If Me.Txt_QtyDamaged.Value = \"\" And Me.Txt_QtyUsable.Value = \"\" And Me.Txt_QtyRepair.Value = \"\" Then",
+              "L36 |        MsgBox \"Please provide asset state (Qty)\"",
+              "L37 |        Exit Sub",
+              "L38 |     End If",
+              "L39 |     ",
+              "L40 |     "
+            ]
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/validation.md",
+            "startLine": 1,
+            "lines": [
+              "# Validation of sheet \"Report\"",
+              "- Data validation rules: 0",
+              "- Conditional formatting rules: 2",
+              "",
+              "## Data validation",
+              "None.",
+              "",
+              "## Conditional formatting",
+              "A8:A506 conditional duplicateValues",
+              "B8:L506 conditional expression: $A8=\"\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-manager-20261109-054346-understand-reader-008",
+      "from": "asset-manager",
+      "split": "tune",
+      "input": {
+        "area": "Asset Manager.xlsm",
+        "files": [
+          {
+            "path": "Asset Manager.xlsm/Inventory/values.md",
+            "language": "markdown",
+            "lines": 505
+          },
+          {
+            "path": "Asset Manager.xlsm/Product_Master/values.md",
+            "language": "markdown",
+            "lines": 288
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/values.md",
+            "language": "markdown",
+            "lines": 508
+          },
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "language": "unknown",
+            "lines": 527
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Asset Manager.xlsm/macros/frm_Update_Inventory.cls",
+            "startLine": 150,
+            "lines": [
+              "L150 | ",
+              "L151 | Private Sub OptionButton1_Click()",
+              "L152 |     Me.Txt_QtyUsable.Visible = True",
+              "L153 |     Me.lbl_Usable.Visible = True",
+              "L154 |     Me.Txt_QtyDamaged.Visible = True",
+              "L155 |     Me.lbl_Damaged.Visible = True",
+              "L156 |     Me.Txt_QtyRepair.Visible = True",
+              "L157 |     Me.lbl_Repair.Visible = True",
+              "L158 | End Sub",
+              "L159 | ",
+              "L160 | Private Sub OptionButton2_Click()",
+              "L161 | ",
+              "L162 | Dim CellValue As Variant",
+              "L163 | ",
+              "L164 | Dim sh As Worksheet",
+              "L165 | ",
+              "L166 | Set sh = ThisWorkbook.Sheets(\"Inventory\")",
+              "L167 | ",
+              "L168 | Set CellValue = sh.Range(\"A2:A10000\").Find(What:=Me.Txt_AssetName.Value, LookIn:=xlValues)",
+              "L169 | ",
+              "L170 | ",
+              "L171 | '''Usable",
+              "L172 | If CellValue.Offset(0, 7).Value <= 0 Then",
+              "L173 |     Me.Txt_QtyUsable.Visible = False",
+              "L174 |     Me.lbl_Usable.Visible = False",
+              "L175 | Else",
+              "L176 |     Me.Txt_QtyUsable.Visible = True",
+              "L177 |     Me.lbl_Usable.Visible = True",
+              "L178 | End If",
+              "L179 | ",
+              "L180 | ''Damaged",
+              "L181 | If CellValue.Offset(0, 8).Value <= 0 Then",
+              "L182 |     Me.Txt_QtyDamaged.Visible = False",
+              "L183 |     Me.lbl_Damaged.Visible = False",
+              "L184 | Else",
+              "L185 |     Me.Txt_QtyDamaged.Visible = True",
+              "L186 |     Me.lbl_Damaged.Visible = True",
+              "L187 | End If",
+              "L188 | ",
+              "L189 | ''Repair"
+            ]
+          },
+          {
+            "path": "Asset Manager.xlsm/Report/values.md",
+            "startLine": 25,
+            "lines": [
+              "R23 | A23 \"PROJECTOR (SONY)\" | B23 1 | C23 0 | D23 0 | E23 1 | F23 90000 | G23 10000 | H23 0 | I23 0 | J23 1 | K23 \"STORE ROOM 3\" | L23 \"REPAIR\"",
+              "R24 | A24 \"MINI - DESKTOP SCREENS \" | B24 3 | C24 0 | D24 0 | E24 3 | F24 15000 | G24 1500 | H24 0 | I24 3 | J24 0 | K24 \"STORE ROOM 3\" | L24 \"DAMAGED\"",
+              "R25 | A25 \"LAND LINE PHONES\" | B25 18 | C25 0 | D25 0 | E25 18 | F25 54000 | G25 9000 | H25 2 | I25 3 | J25 13 | K25 \"STORE ROOM 3\" | L25 \"REPAIR\"",
+              "R26 | A26 \"BINDING MACHINE\" | B26 1 | C26 0 | D26 0 | E26 1 | F26 12000 | G26 15000 | H26 1 | I26 0 | J26 0 | K26 \"STORE ROOM 3\" | L26 \"USABLE\"",
+              "R27 | A27 \"ASUS LAPTOPS\" | B27 3 | C27 0 | D27 0 | E27 3 | F27 195000 | G27 105000 | H27 0 | I27 2 | J27 0 | K27 \"STORE ROOM 3\" | L27 \"DAMAGED\"",
+              "R28 | A28 \"LAPTOP CHARGER POWER CABLE\" | B28 19 | C28 0 | D28 0 | E28 19 | F28 190000 | G28 95000 | H28 0 | I28 19 | J28 0 | K28 \"STORE ROOM 3\" | L28 \"DAMAGED\"",
+              "R29 | A29 \"LAPTOP CHARGER ADAPTOR\" | B29 33 | C29 0 | D29 0 | E29 33 | F29 660000 | G29 231000 | H29 5 | I29 28 | J29 0 | K29 \"STORE ROOM 3\" | L29 \"DAMAGED\"",
+              "R30 | A30 \"LAPTOP MOUSE\" | B30 4 | C30 0 | D30 0 | E30 4 | F30 10000 | G30 400 | H30 0 | I30 4 | J30 0 | K30 \"STORE ROOM 3\" | L30 \"DAMAGED\"",
+              "R31 | A31 \"HDMI CABLES (2 serial cable, 2vga, 1dvi)\" | B31 6 | C31 0 | D31 0 | E31 6 | F31 24000 | G31 9000 | H31 2 | I31 4 | J31 0 | K31 \"STORE ROOM 3\" | L31 \"DAMAGED\"",
+              "R32 | A32 \"PRINTER CABLE (CONNECTORS)\" | B32 10 | C32 0 | D32 0 | E32 10 | F32 35000 | G32 5000 | H32 7 | I32 4 | J32 0 | K32 \"STORE ROOM 3\" | L32 \"USABLE\"",
+              "R33 | A33 \"ETHERNET WIRES (CAT.6)\" | B33 152 | C33 0 | D33 0 | E33 152 | F33 76000 | G33 45600 | H33 152 | I33 0 | J33 0 | K33 \"STORE ROOM 3\" | L33 \"USABLE\"",
+              "R34 | A34 \"GADGET BLOWER\" | B34 1 | C34 0 | D34 0 | E34 1 | F34 3000 | G34 500 | H34 0 | I34 0 | J34 1 | K34 \"STORE ROOM 3\" | L34 \"REPAIR\"",
+              "R35 | A35 \"LAPTOP CAMERA\" | B35 1 | C35 0 | D35 0 | E35 1 | F35 1500 | G35 100 | H35 0 | I35 1 | J35 0 | K35 \"STORE ROOM 3\" | L35 \"DAMAGED\"",
+              "R36 | A36 \"KEYBOARDS\" | B36 2 | C36 0 | D36 0 | E36 2 | F36 4000 | G36 1400 | H36 1 | I36 1 | J36 0 | K36 \"STORE ROOM 3\" | L36 \"USABLE\"",
+              "R37 | A37 \"WIRELESS ROUTERS\" | B37 6 | C37 0 | D37 0 | E37 6 | F37 90000 | G37 96000 | H37 1 | I37 5 | J37 0 | K37 \"STORE ROOM 3\" | L37 \"DAMAGED\"",
+              "R38 | A38 \"INVERTER BATTERY\" | B38 7 | C38 0 | D38 0 | E38 7 | F38 10500 | G38 2100 | H38 0 | I38 7 | J38 0 | K38 \"STORE ROOM 3\" | L38 \"DAMAGED\"",
+              "R39 | A39 \"SWITCHES\" | B39 3 | C39 0 | D39 0 | E39 3 | F39 45000 | G39 22500 | H39 3 | I39 0 | J39 0 | K39 \"STORE ROOM 3\" | L39 \"USABLE\"",
+              "R40 | A40 \"LAPTOP BATTERIES\" | B40 6 | C40 0 | D40 0 | E40 6 | F40 24000 | G40 600 | H40 6 | I40 0 | J40 0 | K40 \"STORE ROOM 3\" | L40 \"USABLE\"",
+              "R41 | A41 \"HP LAPTOPS\" | B41 4 | C41 0 | D41 0 | E41 4 | F41 260000 | G41 140000 | H41 1 | I41 4 | J41 0 | K41 \"STORE ROOM 3\" | L41 \"DAMAGED\"",
+              "R42 | A42 \"DELL LAPTOPS\" | B42 2 | C42 0 | D42 0 | E42 2 | F42 130000 | G42 70000 | H42 0 | I42 0 | J42 2 | K42 \"STORE ROOM 3\" | L42 \"REPAIR\"",
+              "R43 | A43 \"Laptop Battery\" | B43 3 | C43 0 | D43 0 | E43 3 | F43 \"\" | G43 \"\" | H43 0 | I43 0 | J43 0 | K43 \"\" | L43 \"\"",
+              "R44 | A44 \"FIngernails\" | B44 3 | C44 0 | D44 0 | E44 3 | F44 \"\" | G44 \"\" | H44 0 | I44 0 | J44 0 | K44 \"\" | L44 \"\"",
+              "R45 | A45 \"Januay\" | B45 4 | C45 0 | D45 0 | E45 4 | F45 \"\" | G45 \"\" | H45 0 | I45 0 | J45 0 | K45 \"\" | L45 \"\"",
+              "R46 | A46 \"sutures\" | B46 3 | C46 0 | D46 0 | E46 3 | F46 \"\" | G46 \"\" | H46 0 | I46 0 | J46 0 | K46 \"\" | L46 \"\"",
+              "R47 | B47 0 | C47 0 | D47 0 | E47 0 | F47 \"\" | G47 \"\" | H47 0 | I47 0 | J47 0 | K47 \"\" | L47 \"\"",
+              "R48 | B48 0 | C48 0 | D48 0 | E48 0 | F48 \"\" | G48 \"\" | H48 0 | I48 0 | J48 0 | K48 \"\" | L48 \"\"",
+              "R49 | B49 0 | C49 0 | D49 0 | E49 0 | F49 \"\" | G49 \"\" | H49 0 | I49 0 | J49 0 | K49 \"\" | L49 \"\"",
+              "R50 | B50 0 | C50 0 | D50 0 | E50 0 | F50 \"\" | G50 \"\" | H50 0 | I50 0 | J50 0 | K50 \"\" | L50 \"\"",
+              "R51 | B51 0 | C51 0 | D51 0 | E51 0 | F51 \"\" | G51 \"\" | H51 0 | I51 0 | J51 0 | K51 \"\" | L51 \"\"",
+              "R52 | B52 0 | C52 0 | D52 0 | E52 0 | F52 \"\" | G52 \"\" | H52 0 | I52 0 | J52 0 | K52 \"\" | L52 \"\"",
+              "R53 | B53 0 | C53 0 | D53 0 | E53 0 | F53 \"\" | G53 \"\" | H53 0 | I53 0 | J53 0 | K53 \"\" | L53 \"\"",
+              "R54 | B54 0 | C54 0 | D54 0 | E54 0 | F54 \"\" | G54 \"\" | H54 0 | I54 0 | J54 0 | K54 \"\" | L54 \"\"",
+              "R55 | B55 0 | C55 0 | D55 0 | E55 0 | F55 \"\" | G55 \"\" | H55 0 | I55 0 | J55 0 | K55 \"\" | L55 \"\"",
+              "R56 | B56 0 | C56 0 | D56 0 | E56 0 | F56 \"\" | G56 \"\" | H56 0 | I56 0 | J56 0 | K56 \"\" | L56 \"\"",
+              "R57 | B57 0 | C57 0 | D57 0 | E57 0 | F57 \"\" | G57 \"\" | H57 0 | I57 0 | J57 0 | K57 \"\" | L57 \"\"",
+              "R58 | B58 0 | C58 0 | D58 0 | E58 0 | F58 \"\" | G58 \"\" | H58 0 | I58 0 | J58 0 | K58 \"\" | L58 \"\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052032-understand-reader-001",
+      "from": "invoice-generator",
+      "split": "held-back",
+      "input": {
+        "area": "Invoice_Generator.xlsm",
+        "files": [
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/formulas.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/values.md",
+            "language": "markdown",
+            "lines": 32
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/formulas.md",
+            "language": "markdown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/values.md",
+            "language": "markdown",
+            "lines": 19
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/values.md",
+            "language": "markdown",
+            "lines": 40
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
+            "language": "markdown",
+            "lines": 55
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/validation.md",
+            "language": "markdown",
+            "lines": 10
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/values.md",
+            "language": "markdown",
+            "lines": 57
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/values.md",
+            "language": "markdown",
+            "lines": 37
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/formulas.md",
+            "language": "markdown",
+            "lines": 12
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/notes.md",
+            "language": "markdown",
+            "lines": 20
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/values.md",
+            "language": "markdown",
+            "lines": 29
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md",
+            "language": "markdown",
+            "lines": 30
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormInputMaster.cls",
+            "language": "unknown",
+            "lines": 100
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormOpenInvoice.cls",
+            "language": "unknown",
+            "lines": 257
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormSearch.cls",
+            "language": "unknown",
+            "lines": 185
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormViewMaster.cls",
+            "language": "unknown",
+            "lines": 99
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/MainInvoiceGenerator.bas",
+            "language": "vb6",
+            "lines": 43
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/Sheet1.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/Sheet3.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/ThisWorkbook.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shCalc.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shDash.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shInvoice.cls",
+            "language": "unknown",
+            "lines": 105
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shMaster.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shTemp.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/workbook.md",
+            "language": "markdown",
+            "lines": 110
+          }
+        ],
+        "workbook": true,
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Invoice_Generator.xlsm/workbook.md",
+            "startLine": 1,
+            "lines": [
+              "# Workbook \"Invoice_Generator.xlsm\"",
+              "",
+              "- Renderer version: 3",
+              "- Sheets: 7",
+              "- Non-empty cells: 1560",
+              "- Formula cells: 335",
+              "- Date system: 1900",
+              "",
+              "## Names",
+              "",
+              "| Segment | Kind | Real name |",
+              "|---|---|---|",
+              "| Invoice_Generator.xlsm | workbook | \"Invoice_Generator.xlsm\" |",
+              "| Instructions | sheet | \"Instructions\" |",
+              "| Dashboard | sheet | \"Dashboard\" |",
+              "| Invoice | sheet | \"Invoice\" |",
+              "| Masterdata | sheet | \"Masterdata\" |",
+              "| Template | sheet | \"Template\" |",
+              "| Calculation | sheet | \"Calculation\" |",
+              "| VBA_Code_Glossary | sheet | \"VBA Code Glossary\" |",
+              "| macros/MainInvoiceGenerator.bas | macro | \"MainInvoiceGenerator\" |",
+              "| macros/ThisWorkbook.cls | macro | \"ThisWorkbook\" |",
+              "| macros/shDash.cls | macro | \"shDash\" |",
+              "| macros/shInvoice.cls | macro | \"shInvoice\" |",
+              "| macros/Sheet3.cls | macro | \"Sheet3\" |",
+              "| macros/shMaster.cls | macro | \"shMaster\" |",
+              "| macros/shTemp.cls | macro | \"shTemp\" |",
+              "| macros/shCalc.cls | macro | \"shCalc\" |",
+              "| macros/FormInputMaster.cls | macro | \"FormInputMaster\" |",
+              "| macros/FormViewMaster.cls | macro | \"FormViewMaster\" |",
+              "| macros/FormSearch.cls | macro | \"FormSearch\" |",
+              "| macros/FormOpenInvoice.cls | macro | \"FormOpenInvoice\" |",
+              "| macros/Sheet1.cls | macro | \"Sheet1\" |",
+              "",
+              "## Sheets",
+              "",
+              "| Segment | State | Used range | Cells | Formulas | Comments | Merged ranges |",
+              "|---|---|---|---|---|---|---|",
+              "| Instructions | visible | \"A1:P56\" | 34 | 0 | 0 | 0 |",
+              "| Dashboard | visible | \"A1:V59\" | 22 | 5 | 1 | 2 |"
+            ]
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
+            "startLine": 1,
+            "lines": [
+              "# Formulas of sheet \"Invoice\"",
+              "- Formula cells: 299",
+              "",
+              "## Region R8:R57 (50 formulas), InvoiceTable column \"Agreed Amount Total\"",
+              "R8 = InvoiceTable[[#This Row],[Amount Line 1]]+InvoiceTable[[#This Row],[Amount Line 2]]+InvoiceTable[[#This Row],[Amount Line 3]]    [50 cells: R8:R57; cached R8: 3500]",
+              "R9 (example) 3500",
+              "R10 (example) 43090",
+              "",
+              "## Region T8:T57 (50 formulas), InvoiceTable column \"Net Amount\"",
+              "T8 = InvoiceTable[[#This Row],[Agreed Amount Total]]+InvoiceTable[[#This Row],[Additional Expenses]]    [50 cells: T8:T57; cached T8: 3781.8]",
+              "T9 (example) 3761.25",
+              "T10 (example) 43090",
+              "",
+              "## Region U8:U57 (50 formulas), InvoiceTable column \"Final Invoiced Amount\"",
+              "U8 = InvoiceTable[[#This Row],[Net Amount]]+InvoiceTable[[#This Row],[VAT to Pay]]    [50 cells: U8:U57; cached U8: 4538.16]",
+              "U9 (example) 3761.25",
+              "U10 (example) 43090",
+              "",
+              "## Region X8:X57 (50 formulas), InvoiceTable column \"Due by\"",
+              "X8 = IF(InvoiceTable[[#This Row],[Invoice Date]]=\"\",\"\",WORKDAY(InvoiceTable[[#This Row],[Invoice Date]],14))    [50 cells: X8:X57; cached X8: 2021-03-30]",
+              "X9 (example) 2021-03-30",
+              "X10 (example) 2021-04-12",
+              "",
+              "## Region AA8:AA57 (50 formulas), InvoiceTable column \"VAT to Pay\"",
+              "AA8 = InvoiceTable[[#This Row],[Net Amount]]*InvoiceTable[[#This Row],[VAT]]    [50 cells: AA8:AA57; cached AA8: 756.3600000000001]",
+              "AA9 (example) 0",
+              "AA10 (example) 0",
+              "",
+              "## Region AB19:AB21 (3 formulas), InvoiceTable column \"Transfer Savings\"",
+              "AB19 = R19*0.5    [cached: 840]",
+              "AB20 = R20*0.5    [cached: 2000]",
+              "AB21 = R21*0.5    [cached: 1500]",
+              "",
+              "## Region AB26:AB28 (3 formulas), InvoiceTable column \"Transfer Savings\"",
+              "AB26 = R26*0.5    [cached: 420]",
+              "AB27 = R27*0.5    [cached: 1800]",
+              "AB28 = R28*0.5    [cached: 1800]",
+              "",
+              "## Region AB8:AB12 (shared formula, 5 cells), InvoiceTable column \"Transfer Savings\"",
+              "AB8:AB12 = R8*0.5    [written for AB8; cached AB8: 1750]"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052032-understand-reader-002",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "area": "(root)",
+        "files": [
+          {
+            "path": "LICENSE",
+            "language": "unknown",
+            "lines": 21
+          },
+          {
+            "path": "README.md",
+            "language": "markdown",
+            "lines": 123
+          },
+          {
+            "path": "dependencies.md",
+            "language": "markdown",
+            "lines": 61
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "README.md",
+            "startLine": 1,
+            "lines": [
+              "# Invoice Generator with VBA",
+              "[![GitHub](https://badgen.net/badge/icon/GitHub?icon=github&color=black&label)](https://github.com/MaxineXiong)",
+              "[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)",
+              "",
+              "The Invoice Generator is an Excel template with a range of VBA programs designed to automate the process of generating invoices and provide a centralized overview of invoice status. This tool simplifies the administrative tasks involved in invoice management, reducing the time and effort required fo",
+              "",
+              "<br/>",
+              "",
+              "## Table of Contents",
+              "- [Purpose](#purpose)",
+              "- [Features](#features)",
+              "- [Repository Structure](#repository-structure)",
+              "- [Requirements](#requirements)",
+              "- [How It Works](#how-it-works)",
+              "- [Customize VBA Code](#customize-vba-code)",
+              "- [Contributing](#Contributing)",
+              "- [License](#license)",
+              "",
+              "<br/>",
+              "",
+              "## Purpose",
+              "",
+              "The purpose of this tool is to streamline the invoicing procedure and provide a comprehensive view of invoice-related information. It aims to make the invoice creation process efficient, taking only a few clicks and 2-3 minutes per invoice, instead of 20-30 minutes. By consolidating invoice data in ",
+              "",
+              "<br/>",
+              "",
+              "## Features",
+              "",
+              "- **Easy customer data management**: Input and update customer information in the *Masterdata* tab.",
+              "- **Simple invoice management and creation**: Update invoice information in the *Invoice* tab and generate invoices in both PDF and Excel formats with a single click.",
+              "- **Email integration**: Generate a draft email with an attached PDF invoice for efficient customer communication.",
+              "- **Dashboard insights**: Utilize the *Calculations* tab to prepare data for informative charts on the *Dashboard* tab, allowing you to monitor monthly revenue effectively.",
+              "- **Customizable template**: Personalize the invoicing template by adding your logo, modify the workbook, or edit the VBA code according to your company's specific requirements.",
+              "",
+              "<br/>",
+              "",
+              "## Repository Structure",
+              "",
+              "The Invoice Generator repository is structured as follows:",
+              ""
+            ]
+          },
+          {
+            "path": "dependencies.md",
+            "startLine": 1,
+            "lines": [
+              "# Dependencies of the project",
+              "",
+              "- Workbooks: 1",
+              "- Sheets: 7",
+              "- Formula cells: 335",
+              "",
+              "## Workbooks",
+              "None.",
+              "",
+              "## Sheets",
+              "Invoice_Generator.xlsm/Dashboard -> Invoice_Generator.xlsm/Invoice: 3 formulas",
+              "Invoice_Generator.xlsm/Calculation -> Invoice_Generator.xlsm/Dashboard: 1 formula",
+              "Invoice_Generator.xlsm/Calculation -> Invoice_Generator.xlsm/Invoice: 24 formulas",
+              "",
+              "## Input cells",
+              "Invoice_Generator.xlsm/Invoice!H8:H44",
+              "Invoice_Generator.xlsm/Invoice!H50",
+              "Invoice_Generator.xlsm/Invoice!H53:H56",
+              "Invoice_Generator.xlsm/Invoice!K8:K56",
+              "Invoice_Generator.xlsm/Invoice!N56",
+              "Invoice_Generator.xlsm/Invoice!Q56",
+              "Invoice_Generator.xlsm/Invoice!S8:S27",
+              "Invoice_Generator.xlsm/Invoice!W8:W56",
+              "Invoice_Generator.xlsm/Invoice!Y8:Y56",
+              "Invoice_Generator.xlsm/Template!D21:D23",
+              "Invoice_Generator.xlsm/Template!E21",
+              "Invoice_Generator.xlsm/Calculation!B6:B29",
+              "",
+              "## Output cells",
+              "Invoice_Generator.xlsm/Dashboard!E5",
+              "Invoice_Generator.xlsm/Dashboard!I5",
+              "Invoice_Generator.xlsm/Dashboard!M5",
+              "Invoice_Generator.xlsm/Invoice!U8:U57",
+              "Invoice_Generator.xlsm/Invoice!X8:X57",
+              "Invoice_Generator.xlsm/Invoice!AB8:AB13",
+              "Invoice_Generator.xlsm/Invoice!AB15:AB57",
+              "Invoice_Generator.xlsm/Template!D27",
+              "Invoice_Generator.xlsm/Calculation!C6:C29",
+              "",
+              "## Defined names"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-reader-005",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "area": "Invoice_Generator.xlsm",
+        "files": [
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/values.md",
+            "language": "markdown",
+            "lines": 32
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/values.md",
+            "language": "markdown",
+            "lines": 19
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/values.md",
+            "language": "markdown",
+            "lines": 40
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/values.md",
+            "language": "markdown",
+            "lines": 57
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/values.md",
+            "language": "markdown",
+            "lines": 37
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/notes.md",
+            "language": "markdown",
+            "lines": 20
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/values.md",
+            "language": "markdown",
+            "lines": 29
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/formulas.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/values.md",
+            "language": "markdown",
+            "lines": 30
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/Sheet1.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/Sheet3.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/ThisWorkbook.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shCalc.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shDash.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shMaster.cls",
+            "language": "unknown",
+            "lines": 11
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/shTemp.cls",
+            "language": "unknown",
+            "lines": 11
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Invoice_Generator.xlsm/macros/shCalc.cls",
+            "startLine": 1,
+            "lines": [
+              "L1 | Attribute VB_Name = \"shCalc\"",
+              "L2 | Attribute VB_Base = \"0{00020820-0000-0000-C000-000000000046}\"",
+              "L3 | Attribute VB_GlobalNameSpace = False",
+              "L4 | Attribute VB_Creatable = False",
+              "L5 | Attribute VB_PredeclaredId = True",
+              "L6 | Attribute VB_Exposed = True",
+              "L7 | Attribute VB_TemplateDerived = False",
+              "L8 | Attribute VB_Customizable = True",
+              "L9 | Option Explicit",
+              "L10 | ",
+              "L11 | "
+            ]
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Calculation/values.md",
+            "startLine": 1,
+            "lines": [
+              "# Values of sheet \"Calculation\"",
+              "- State: visible",
+              "- Used range: A1:K29",
+              "- Non-empty cells: 55",
+              "",
+              "R1 | A1 \"Dashboard Calculations\"",
+              "R3 | A3 \"For Overview Chart\" | D3 \"Current date:\" | E3 2022-10-23 (f) | K3 \"Inspiration:\"",
+              "R5 | B5 \"Date\" | C5 \"Income Received\"",
+              "R6 | B6 2021-01-01 | C6 0 (f)",
+              "R7 | B7 2021-02-01 | C7 0 (f)",
+              "R8 | B8 2021-03-01 | C8 57233.05 (f)",
+              "R9 | B9 2021-04-01 | C9 19697.277707547168 (f)",
+              "R10 | B10 2021-05-01 | C10 3360 (f)",
+              "R11 | B11 2021-06-01 | C11 7000 (f)",
+              "R12 | B12 2021-07-01 | C12 0 (f)",
+              "R13 | B13 2021-08-01 | C13 5460 (f)",
+              "R14 | B14 2021-09-01 | C14 1375 (f)",
+              "R15 | B15 2021-10-01 | C15 4000 (f)",
+              "R16 | B16 2021-11-01 | C16 840 (f)",
+              "R17 | B17 2021-12-01 | C17 3600 (f)",
+              "R18 | B18 2022-01-01 | C18 12600 (f)",
+              "R19 | B19 2022-02-01 | C19 17630 (f)",
+              "R20 | B20 2022-03-01 | C20 8430 (f)",
+              "R21 | B21 2022-04-01 | C21 10362.5 (f)",
+              "R22 | B22 2022-05-01 | C22 6261 (f)",
+              "R23 | B23 2022-06-01 | C23 15480 (f)",
+              "R24 | B24 2022-07-01 | C24 0 (f)",
+              "R25 | B25 2022-08-01 | C25 7549 (f)",
+              "R26 | B26 2022-09-01 | C26 5948 (f)",
+              "R27 | B27 2022-10-01 | C27 1672 (f)",
+              "R28 | B28 2022-11-01 | C28 \"\" (f)",
+              "R29 | B29 2022-12-01 | C29 \"\" (f)"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-reader-011",
+      "from": "invoice-generator",
+      "split": "tune",
+      "input": {
+        "area": "Invoice_Generator.xlsm",
+        "files": [
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Instructions/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Masterdata/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/validation.md",
+            "language": "markdown",
+            "lines": 9
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/notes.md",
+            "language": "markdown",
+            "lines": 4
+          },
+          {
+            "path": "Invoice_Generator.xlsm/VBA_Code_Glossary/validation.md",
+            "language": "markdown",
+            "lines": 9
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/validation.md",
+            "startLine": 1,
+            "lines": [
+              "# Validation of sheet \"Dashboard\"",
+              "- Data validation rules: 0",
+              "- Conditional formatting rules: 0",
+              "",
+              "## Data validation",
+              "None.",
+              "",
+              "## Conditional formatting",
+              "None."
+            ]
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Dashboard/notes.md",
+            "startLine": 1,
+            "lines": [
+              "# Notes of sheet \"Dashboard\"",
+              "- Comments: 1",
+              "",
+              "C1 \"Author:\\nToday's date\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invoice-generator-20261109-052223-understand-reader-006",
+      "from": "invoice-generator",
+      "split": "held-back",
+      "input": {
+        "area": "Invoice_Generator.xlsm",
+        "files": [
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
+            "language": "markdown",
+            "lines": 55
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/values.md",
+            "language": "markdown",
+            "lines": 29
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormInputMaster.cls",
+            "language": "unknown",
+            "lines": 100
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormOpenInvoice.cls",
+            "language": "unknown",
+            "lines": 257
+          },
+          {
+            "path": "Invoice_Generator.xlsm/macros/FormSearch.cls",
+            "language": "unknown",
+            "lines": 185
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Invoice_Generator.xlsm/Invoice/formulas.md",
+            "startLine": 1,
+            "lines": [
+              "# Formulas of sheet \"Invoice\"",
+              "- Formula cells: 299",
+              "",
+              "## Region R8:R57 (50 formulas), InvoiceTable column \"Agreed Amount Total\"",
+              "R8 = InvoiceTable[[#This Row],[Amount Line 1]]+InvoiceTable[[#This Row],[Amount Line 2]]+InvoiceTable[[#This Row],[Amount Line 3]]    [50 cells: R8:R57; cached R8: 3500]",
+              "R9 (example) 3500",
+              "R10 (example) 43090",
+              "",
+              "## Region T8:T57 (50 formulas), InvoiceTable column \"Net Amount\"",
+              "T8 = InvoiceTable[[#This Row],[Agreed Amount Total]]+InvoiceTable[[#This Row],[Additional Expenses]]    [50 cells: T8:T57; cached T8: 3781.8]",
+              "T9 (example) 3761.25",
+              "T10 (example) 43090",
+              "",
+              "## Region U8:U57 (50 formulas), InvoiceTable column \"Final Invoiced Amount\"",
+              "U8 = InvoiceTable[[#This Row],[Net Amount]]+InvoiceTable[[#This Row],[VAT to Pay]]    [50 cells: U8:U57; cached U8: 4538.16]",
+              "U9 (example) 3761.25",
+              "U10 (example) 43090",
+              "",
+              "## Region X8:X57 (50 formulas), InvoiceTable column \"Due by\"",
+              "X8 = IF(InvoiceTable[[#This Row],[Invoice Date]]=\"\",\"\",WORKDAY(InvoiceTable[[#This Row],[Invoice Date]],14))    [50 cells: X8:X57; cached X8: 2021-03-30]",
+              "X9 (example) 2021-03-30",
+              "X10 (example) 2021-04-12",
+              "",
+              "## Region AA8:AA57 (50 formulas), InvoiceTable column \"VAT to Pay\"",
+              "AA8 = InvoiceTable[[#This Row],[Net Amount]]*InvoiceTable[[#This Row],[VAT]]    [50 cells: AA8:AA57; cached AA8: 756.3600000000001]",
+              "AA9 (example) 0",
+              "AA10 (example) 0",
+              "",
+              "## Region AB19:AB21 (3 formulas), InvoiceTable column \"Transfer Savings\"",
+              "AB19 = R19*0.5    [cached: 840]",
+              "AB20 = R20*0.5    [cached: 2000]",
+              "AB21 = R21*0.5    [cached: 1500]",
+              "",
+              "## Region AB26:AB28 (3 formulas), InvoiceTable column \"Transfer Savings\"",
+              "AB26 = R26*0.5    [cached: 420]",
+              "AB27 = R27*0.5    [cached: 1800]",
+              "AB28 = R28*0.5    [cached: 1800]",
+              "",
+              "## Region AB8:AB12 (shared formula, 5 cells), InvoiceTable column \"Transfer Savings\"",
+              "AB8:AB12 = R8*0.5    [written for AB8; cached AB8: 1750]"
+            ]
+          },
+          {
+            "path": "Invoice_Generator.xlsm/Template/values.md",
+            "startLine": 1,
+            "lines": [
+              "# Values of sheet \"Template\"",
+              "- State: visible",
+              "- Used range: B1:H34",
+              "- Non-empty cells: 42",
+              "",
+              "R2 | B2 \"Maxine Xiong\"",
+              "R3 | B3 \"Unit 837, 6 Etherden Walk\"",
+              "R4 | B4 \"Mascot 2020\"",
+              "R5 | B5 \"ABN: 58618450120\"",
+              "R7 | C7 \"Invoice\" | D7 15088",
+              "R8 | C8 \"Date\" | D8 2022-10-23",
+              "R9 | C9 \"Payment terms\" | D9 \"14 days net\"",
+              "R12 | B12 \"Twistrr Kids\"",
+              "R13 | B13 \"Maria Tot\"",
+              "R15 | B15 \"Floridusgasse 16\"",
+              "R16 | B16 \"2600 Vienna\"",
+              "R17 | B17 \"Austria\"",
+              "R20 | B20 \"Services\" | C20 \"Time Period\" | D20 \"Price in EUR\" | E20 \"VAT in %\"",
+              "R21 | B21 \"Training\" | C21 2022-07-26 | D21 4794 | E21 0.2",
+              "R22 | B22 \"Programming\" | C22 2022-08-26 | D22 4300 | E22 0.2 (f)",
+              "R23 | B23 \"Consulting\" | C23 2022-09-26 | D23 4500 | E23 0.2 (f)",
+              "R24 | E24 0 (f)",
+              "R25 | C25 \"Subtotal\" | D25 13594 (f)",
+              "R26 | C26 \"VAT\" | D26 2718.8 (f)",
+              "R27 | C27 \"Total\" | D27 16312.8 (f)",
+              "R31 | B31 \"Bank Info\"",
+              "R32 | B32 \"Bank Name\"",
+              "R33 | B33 \"IBAN: 2342456435\"",
+              "R34 | B34 \"BIC: GIBARESCXX\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-036",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopModernizedMVCSolution",
+        "files": [
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.dcproj",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.nobuild.nosql.yml",
+            "language": "yaml",
+            "lines": 5
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.nobuild.yml",
+            "language": "yaml",
+            "lines": 10
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.override.nosql.yml",
+            "language": "yaml",
+            "lines": 22
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.override.yml",
+            "language": "yaml",
+            "lines": 33
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.yml",
+            "language": "yaml",
+            "lines": 13
+          },
+          {
+            "path": "eShopModernizedMVCSolution/eShopModernizedMVC.sln",
+            "language": "unknown",
+            "lines": 41
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.override.yml",
+            "startLine": 1,
+            "lines": [
+              "version: '3.4'",
+              "",
+              "services:",
+              "  eshop.modernized.mvc:",
+              "    environment:",
+              "      - ConnectionString=Server=sql.data;Database=Microsoft.eShopOnContainers.Services.CatalogDb;User Id=sa;Password=[MASKED:connection-string] (a secret value is written here in plain text in the code, Rosetta masked it before sending)",
+              "      - UseMockData=True",
+              "      - UseCustomizationData=False",
+              "      - UseAzureStorage=False",
+              "      - StorageConnectionString=${ESHOP_AZURE_STORAGE_CONNECTION_STRING}",
+              "      - AppInsightsInstrumentationKey=${APP_INSIGHTS_INSTRUMENTATION_KEY}",
+              "      - UseAzureActiveDirectory=false",
+              "      - AzureActiveDirectoryClientId=${AZURE_ACTIVE_DIRECTORY_CLIENT_ID}",
+              "      - AzureActiveDirectoryTenant=${AZURE_ACTIVE_DIRECTORY_TENANT}",
+              "      - PostLogoutRedirectUri=http://${ESHOP_EXTERNAL_DNS_NAME_OR_IP:-10.0.75.1}:5115/",
+              "    ports:",
+              "      - \"5115:80\"",
+              "",
+              "  sql.data:",
+              "    environment:",
+              "      - SA_PASSWORD=[MASKED:password] (a secret value is written here in plain text in the code, Rosetta masked it before sending)",
+              "      - ACCEPT_EULA=Y",
+              "    ports:",
+              "      - \"5433:1433\"",
+              "    healthcheck:",
+              "      test: [ \"CMD\", \"sqlcmd\", \"-U\", \"sa\", \"-P\", \"Pass@word\", \"-Q\", \"select 1\" ]",
+              "      interval: 1s",
+              "      retries: 20",
+              "",
+              "networks:",
+              "  default:",
+              "    external:",
+              "      name: nat"
+            ]
+          },
+          {
+            "path": "eShopModernizedMVCSolution/docker-compose.yml",
+            "startLine": 1,
+            "lines": [
+              "version: '3.4'",
+              "",
+              "services:",
+              "  eshop.modernized.mvc:",
+              "    image: eshop/modernizedmvc",
+              "    build:",
+              "      context: .\\src\\eShopModernizedMVC",
+              "      dockerfile: Dockerfile",
+              "    depends_on:",
+              "      - sql.data",
+              "",
+              "  sql.data:",
+              "    image: microsoft/mssql-server-windows-developer"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx",
+            "language": "aspnet",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Bundle.config",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx",
+            "language": "aspnet",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx",
+            "language": "aspnet",
+            "lines": 137
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "language": "csharp",
+            "lines": 59
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "language": "csharp",
+            "lines": 100
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+            "language": "aspnet",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs",
+            "language": "csharp",
+            "lines": 20
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.designer.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master",
+            "language": "aspnet",
+            "lines": 23
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.designer.cs",
+            "language": "csharp",
+            "lines": 51
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx",
+            "language": "aspnet",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config",
+            "language": "xml",
+            "lines": 99
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using eShopLegacyWebForms.ViewModel;",
+              "using System;",
+              "using System.Linq;",
+              "using System.Web.UI;",
+              "using log4net;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public partial class _Default : Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public const int DefaultPageIndex = 0;",
+              "        public const int DefaultPageSize = 10;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected PaginatedItemsViewModel<CatalogItem> Model { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            if (PaginationParamsAreSet())",
+              "            {",
+              "                var size = Convert.ToInt32(Page.RouteData.Values[\"size\"]);",
+              "                var index = Convert.ToInt32(Page.RouteData.Values[\"index\"]);",
+              "                Model = CatalogService.GetCatalogItemsPaginated(size, index);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={size}&index={index}\");",
+              "            }",
+              "            else",
+              "            {",
+              "                Model = CatalogService.GetCatalogItemsPaginated(DefaultPageSize, DefaultPageIndex);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={DefaultPageSize}&index={DefaultPageIndex}\");",
+              "            }",
+              "",
+              "            productList.DataSource = Model.Data;",
+              "            productList.DataBind();",
+              "            ConfigurePagination();",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Web;",
+              "using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Models.Infrastructure;",
+              "using eShopLegacyWebForms.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Web;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public class Global : HttpApplication, IContainerProviderAccessor",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        static IContainerProvider _containerProvider;",
+              "        IContainer container;",
+              "",
+              "        public IContainerProvider ContainerProvider",
+              "        {",
+              "            get { return _containerProvider; }",
+              "        }",
+              "",
+              "        protected void Application_Start(object sender, EventArgs e)",
+              "        {",
+              "            // Code that runs on application startup",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigureContainer();",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-093",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "Kubernetes/eShopModernizedWebForms-K8s",
+        "files": [
+          {
+            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-CD-deployment.yml",
+            "language": "yaml",
+            "lines": 59
+          },
+          {
+            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-deployment.yml",
+            "language": "yaml",
+            "lines": 59
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-deployment.yml",
+            "startLine": 1,
+            "lines": [
+              "apiVersion: apps/v1beta1",
+              "kind: Deployment",
+              "metadata:",
+              "  name: eshop-modernized-webforms",
+              "spec:",
+              "  replicas: 1",
+              "  strategy:",
+              "    rollingUpdate:",
+              "      maxSurge: 1",
+              "      maxUnavailable: 1",
+              "  minReadySeconds: 5 ",
+              "  template:",
+              "    metadata:",
+              "      labels:",
+              "        app: eshop-modernized-webforms",
+              "    spec:",
+              "      containers:",
+              "      - name: eshop-modernized-webforms",
+              "        image: eshop/modernizedwebforms",
+              "        ports:",
+              "        - containerPort: 80",
+              "        imagePullPolicy: Always",
+              "        env:",
+              "        - name: UseMockData",
+              "          value: \"False\"",
+              "        - name: UseCustomizationData",
+              "          value: \"False\"",
+              "        - name: ConnectionString",
+              "          value: \"Server=sql-data;Database=Microsoft.eShopOnContainers.Services.CatalogDb;User Id=sa;Password=[MASKED:connection-string] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\"",
+              "        - name: UseAzureStorage",
+              "          value: \"False\"",
+              "        - name: StorageConnectionString",
+              "          value: \"\"",
+              "        - name: AppInsightsInstrumentationKey",
+              "          value: \"\"",
+              "        - name: UseAzureActiveDirectory",
+              "          value: \"False\"",
+              "        - name: AzureActiveDirectoryClientId",
+              "          value: \"\"",
+              "        - name: AzureActiveDirectoryTenant"
+            ]
+          },
+          {
+            "path": "Kubernetes/eShopModernizedWebForms-K8s/eshop-modernized-webforms-k8s-services-CD-deployment.yml",
+            "startLine": 1,
+            "lines": [
+              "apiVersion: apps/v1beta1",
+              "kind: Deployment",
+              "metadata:",
+              "  name: eshop-modernized-webforms",
+              "spec:",
+              "  replicas: 1",
+              "  strategy:",
+              "    rollingUpdate:",
+              "      maxSurge: 1",
+              "      maxUnavailable: 1",
+              "  minReadySeconds: 5 ",
+              "  template:",
+              "    metadata:",
+              "      labels:",
+              "        app: eshop-modernized-webforms",
+              "    spec:",
+              "      containers:",
+              "      - name: eshop-modernized-webforms",
+              "        image: eshop/modernizedwebforms",
+              "        ports:",
+              "        - containerPort: 80",
+              "        imagePullPolicy: Always",
+              "        env:",
+              "        - name: ConnectionString",
+              "          value: \"Server=sql-data;Database=Microsoft.eShopOnContainers.Services.CatalogDb;User Id=sa;Password=[MASKED:connection-string] (a secret value is written here in plain text in the code, Rosetta masked it before sending)\"",
+              "        - name: UseMockData",
+              "          value: \"False\"",
+              "        - name: UseCustomizationData",
+              "          value: \"False\"",
+              "        - name: UseAzureStorage",
+              "          value: \"#{use_azure_storage}#\"",
+              "        - name: StorageConnectionString",
+              "          value: \"#{your_storage_connection_string}#\"",
+              "        - name: AppInsightsInstrumentationKey",
+              "          value: \"#{your_app_insights_instrument_key}#\"",
+              "        - name: UseAzureActiveDirectory",
+              "          value: \"#{use_azure_active_directory}#\"",
+              "        - name: AzureActiveDirectoryClientId",
+              "          value: \"#{your_aad_client_id}#\"",
+              "        - name: AzureActiveDirectoryTenant"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-191",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "language": "xml",
+            "lines": 573
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "startLine": 66,
+            "lines": [
+              "      <Version>6.2.0</Version>",
+              "    </PackageReference>",
+              "    <Reference Include=\"EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">",
+              "      <HintPath>..\\..\\packages\\EntityFramework.6.2.0\\lib\\net45\\EntityFramework.SqlServer.dll</HintPath>",
+              "    </Reference>",
+              "    <Reference Include=\"Microsoft.AI.Agent.Intercept, Version=2.4.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">",
+              "      <HintPath>..\\..\\packages\\Microsoft.ApplicationInsights.Agent.Intercept.2.4.0\\lib\\net45\\Microsoft.AI.Agent.Intercept.dll</HintPath>",
+              "    </Reference>",
+              "    <Reference Include=\"Microsoft.AI.DependencyCollector, Version=2.9.1.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/eShopLegacyMVC.csproj",
+            "startLine": 200,
+            "lines": [
+              "    <Reference Include=\"System.Web.Abstractions\" />",
+              "    <Reference Include=\"System.Web.Extensions\" />",
+              "    <Reference Include=\"System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">",
+              "      <HintPath>..\\..\\packages\\Microsoft.AspNet.WebPages.3.2.7\\lib\\net45\\System.Web.Helpers.dll</HintPath>",
+              "    </Reference>",
+              "    <Reference Include=\"System.Web.Mvc, Version=5.2.7.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">",
+              "      <HintPath>..\\..\\packages\\Microsoft.AspNet.Mvc.5.2.7\\lib\\net45\\System.Web.Mvc.dll</HintPath>",
+              "    </Reference>",
+              "    <Reference Include=\"System.Web.Optimization, Version=1.1.0.0, Culture=neutral, PublicKeyToken=[MASKED:bearer-token] (a secret value is written here in plain text in the code, Rosetta masked it before sending), processorArchitecture=MSIL\">",
+              "      <HintPath>..\\..\\packages\\Microsoft.AspNet.Web.Optimization.1.1.3\\lib\\net40\\System.Web.Optimization.dll</HintPath>",
+              "    </Reference>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-104",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "language": "csharp",
+            "lines": 115
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Mvc;",
+              "using Autofac.Integration.WebApi;",
+              "using eShopLegacyMVC.Models;",
+              "using eShopLegacyMVC.Models.Infrastructure;",
+              "using eShopLegacyMVC.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Reflection;",
+              "using System.Web;",
+              "using System.Web.Http;",
+              "using System.Web.Mvc;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyMVC",
+              "{",
+              "    public class MvcApplication : HttpApplication",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        IContainer container;",
+              "",
+              "        protected void Application_Start()",
+              "        {",
+              "            container = RegisterContainer();",
+              "            GlobalConfiguration.Configure(WebApiConfig.Register);",
+              "            AreaRegistration.RegisterAllAreas();",
+              "            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/ApplicationInsights.config",
+            "startLine": 100,
+            "lines": [
+              "        ",
+              "        NOTE: handler configuration will be lost upon NuGet upgrade.",
+              "        -->",
+              "\t\t\t\t<Add>Microsoft.VisualStudio.Web.PageInspector.Runtime.Tracing.RequestDataHttpHandler</Add>",
+              "\t\t\t\t<Add>System.Web.StaticFileHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Handlers.AssemblyResourceLoader</Add>",
+              "\t\t\t\t<Add>System.Web.Optimization.BundleHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Script.Services.ScriptHandlerFactory</Add>",
+              "\t\t\t\t<Add>System.Web.Handlers.TraceHandler</Add>",
+              "\t\t\t\t<Add>System.Web.Services.Discovery.DiscoveryRequestHandler</Add>",
+              "\t\t\t\t<Add>System.Web.HttpDebugHandler</Add>",
+              "\t\t\t</Handlers>",
+              "\t\t</Add>",
+              "\t\t<Add Type=\"Microsoft.ApplicationInsights.Web.ExceptionTrackingTelemetryModule, Microsoft.AI.Web\"/>",
+              "\t\t<Add Type=\"Microsoft.ApplicationInsights.Web.AspNetDiagnosticTelemetryModule, Microsoft.AI.Web\"/>",
+              "\t</TelemetryModules>",
+              "\t<ApplicationIdProvider Type=\"Microsoft.ApplicationInsights.Extensibility.Implementation.ApplicationId.ApplicationInsightsApplicationIdProvider, Microsoft.ApplicationInsights\"/>",
+              "\t<TelemetrySinks>",
+              "\t\t<Add Name=\"default\">",
+              "\t\t\t<TelemetryProcessors>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse.QuickPulseTelemetryProcessor, Microsoft.AI.PerfCounterCollector\"/>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.Extensibility.AutocollectedMetricsExtractor, Microsoft.ApplicationInsights\"/>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.AdaptiveSamplingTelemetryProcessor, Microsoft.AI.ServerTelemetryChannel\">",
+              "\t\t\t\t\t<MaxTelemetryItemsPerSecond>5</MaxTelemetryItemsPerSecond>",
+              "\t\t\t\t\t<ExcludedTypes>Event</ExcludedTypes>",
+              "\t\t\t\t</Add>",
+              "\t\t\t\t<Add Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.AdaptiveSamplingTelemetryProcessor, Microsoft.AI.ServerTelemetryChannel\">",
+              "\t\t\t\t\t<MaxTelemetryItemsPerSecond>5</MaxTelemetryItemsPerSecond>",
+              "\t\t\t\t\t<IncludedTypes>Event</IncludedTypes>",
+              "\t\t\t\t</Add>",
+              "\t\t\t</TelemetryProcessors>",
+              "\t\t\t<TelemetryChannel Type=\"Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel.ServerTelemetryChannel, Microsoft.AI.ServerTelemetryChannel\"/>",
+              "\t\t</Add>",
+              "\t</TelemetrySinks>",
+              "<!-- ",
+              "    Learn more about Application Insights configuration with ApplicationInsights.config here: ",
+              "    http://go.microsoft.com/fwlink/?LinkID=513840",
+              "    ",
+              "    Note: If not present, please add <InstrumentationKey>Your Key</InstrumentationKey> to the top of this file.",
+              "  --></ApplicationInsights>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-196",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Create\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Create</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "",
+              "    <div class=\"form-horizontal\">",
+              "        @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.CatalogBrandId, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Edit\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Edit</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "            <img class=\"col-md-6 esh-picture\" src=\"@Model.PictureUri\" />",
+              "            <div class=\"col-md-6 form-horizontal\">",
+              "                @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "                @Html.HiddenFor(model => model.Id)",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.CatalogBrandId, \"CatalogBrandId\", htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                        @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
