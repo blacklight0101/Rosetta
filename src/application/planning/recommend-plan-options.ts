@@ -1,5 +1,6 @@
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
+import { CapReachedError } from '../../domain/errors/cap-reached-error.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
@@ -48,6 +49,8 @@ export interface PlanOptionsInput {
 export interface PlanOptionsProblem {
   readonly code: ErrorCode;
   readonly message: string;
+  /** P9-02: the call was refused at the journey's approved line (not at another cap). */
+  readonly approvedLine?: boolean;
 }
 
 const PLANNER = 'planner';
@@ -91,7 +94,8 @@ async function ask(
   } catch (error) {
     const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
     if (!signal.aborted) await warn(parts, 'The planner could not give the options.', code);
-    return problem(code, NO_ANSWER);
+    const approvedLine = error instanceof CapReachedError && error.approvedLine;
+    return err({ code, message: NO_ANSWER, ...(approvedLine ? { approvedLine } : {}) });
   }
   // A failure to record a billed answer is a fault of the run, not an unanswered call.
   await parts.onAnswer(answered);
