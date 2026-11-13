@@ -22,6 +22,9 @@ const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url
 const SAMPLES = new Set(['overview-sample', 'verifier-claim-sample']);
 const CAPTURED = [
   'cards-card-format',
+  'cards-continue',
+  'cards-flows',
+  'cards-screens',
   'planner-gap',
   'reader-answers',
   'reader-area',

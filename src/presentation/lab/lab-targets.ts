@@ -1,4 +1,5 @@
 import type { LabTarget } from '../../application/lab/lab-target.js';
+import { cardSurfaceTargets } from '../../application/lab/targets/card-surface-targets.js';
 import { cardsRepairTarget } from '../../application/lab/targets/cards-repair-target.js';
 import { gapTarget } from '../../application/lab/targets/gap-target.js';
 import { mergeTarget } from '../../application/lab/targets/merge-target.js';
@@ -39,6 +40,7 @@ export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]
     mergeTarget(),
     ...readerTargets(reader),
     ...readerPartTargets(reader),
+    ...cardSurfaceTargets(reader),
     cardsRepairTarget(reader),
   ];
 }

@@ -1,0 +1,1659 @@
+{
+  "schemaVersion": 1,
+  "version": "cards-screens-1",
+  "prompt": "cards/screens",
+  "description": "Inputs of cards/screens captured from saved runs of public code; no model answer is stored and no expected label is written. The held-back cases follow the fixed rule of the lab (docs/runbooks/prompt-lab.md section 4).",
+  "sources": [
+    {
+      "key": "eshop",
+      "name": "dotnet-architecture/eShopModernizing",
+      "url": "https://github.com/dotnet-architecture/eShopModernizing",
+      "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+      "licence": "MIT (Copyright (c) .NET Foundation and Contributors)",
+      "runs": [
+        "20261109-054942-understand",
+        "20261109-063857-understand",
+        "20261101-235310-understand",
+        "20261102-185338-understand",
+        "20261029-152308-understand"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "eshop-20261109-054942-understand-reader-005",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx",
+            "language": "aspnet",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/About.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ApplicationInsights.config",
+            "language": "xml",
+            "lines": 139
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Bundle.config",
+            "language": "xml",
+            "lines": 7
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx",
+            "language": "aspnet",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.cs",
+            "language": "csharp",
+            "lines": 16
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Contact.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx",
+            "language": "aspnet",
+            "lines": 137
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "language": "csharp",
+            "lines": 59
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 42
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "language": "csharp",
+            "lines": 100
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master",
+            "language": "aspnet",
+            "lines": 78
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.cs",
+            "language": "csharp",
+            "lines": 20
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Master.designer.cs",
+            "language": "csharp",
+            "lines": 33
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master",
+            "language": "aspnet",
+            "lines": 23
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Site.Mobile.Master.designer.cs",
+            "language": "csharp",
+            "lines": 51
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx",
+            "language": "aspnet",
+            "lines": 4
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.cs",
+            "language": "csharp",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewSwitcher.ascx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Debug.config",
+            "language": "xml",
+            "lines": 30
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.Release.config",
+            "language": "xml",
+            "lines": 31
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config",
+            "language": "xml",
+            "lines": 99
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/eShopLegacyWebForms.csproj",
+            "language": "xml",
+            "lines": 491
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/log4Net.xml",
+            "language": "xml",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/packages.config",
+            "language": "xml",
+            "lines": 47
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using eShopLegacyWebForms.ViewModel;",
+              "using System;",
+              "using System.Linq;",
+              "using System.Web.UI;",
+              "using log4net;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public partial class _Default : Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public const int DefaultPageIndex = 0;",
+              "        public const int DefaultPageSize = 10;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected PaginatedItemsViewModel<CatalogItem> Model { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            if (PaginationParamsAreSet())",
+              "            {",
+              "                var size = Convert.ToInt32(Page.RouteData.Values[\"size\"]);",
+              "                var index = Convert.ToInt32(Page.RouteData.Values[\"index\"]);",
+              "                Model = CatalogService.GetCatalogItemsPaginated(size, index);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={size}&index={index}\");",
+              "            }",
+              "            else",
+              "            {",
+              "                Model = CatalogService.GetCatalogItemsPaginated(DefaultPageSize, DefaultPageIndex);",
+              "                _log.Info($\"Now loading... /Default.aspx?size={DefaultPageSize}&index={DefaultPageIndex}\");",
+              "            }",
+              "",
+              "            productList.DataSource = Model.Data;",
+              "            productList.DataBind();",
+              "            ConfigurePagination();",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using Autofac;",
+              "using Autofac.Integration.Web;",
+              "using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Models.Infrastructure;",
+              "using eShopLegacyWebForms.Modules;",
+              "using log4net;",
+              "using System;",
+              "using System.Configuration;",
+              "using System.Data.Entity;",
+              "using System.Diagnostics;",
+              "using System.Web;",
+              "using System.Web.Optimization;",
+              "using System.Web.Routing;",
+              "",
+              "namespace eShopLegacyWebForms",
+              "{",
+              "    public class Global : HttpApplication, IContainerProviderAccessor",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        static IContainerProvider _containerProvider;",
+              "        IContainer container;",
+              "",
+              "        public IContainerProvider ContainerProvider",
+              "        {",
+              "            get { return _containerProvider; }",
+              "        }",
+              "",
+              "        protected void Application_Start(object sender, EventArgs e)",
+              "        {",
+              "            // Code that runs on application startup",
+              "            RouteConfig.RegisterRoutes(RouteTable.Routes);",
+              "            BundleConfig.RegisterBundles(BundleTable.Bundles);",
+              "            ConfigureContainer();",
+              "            ConfigDataBase();",
+              "        }",
+              "",
+              "        /// <summary>",
+              "        /// Track the machine name and the start time for the session inside the current session",
+              "        /// </summary>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-054942-understand-reader-011",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "language": "razor",
+            "lines": 81
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Delete.cshtml",
+            "language": "razor",
+            "lines": 101
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "language": "razor",
+            "lines": 46
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml",
+            "language": "razor",
+            "lines": 13
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/_Layout.cshtml",
+            "language": "razor",
+            "lines": 47
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Web.config",
+            "language": "xml",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/_ViewStart.cshtml",
+            "language": "razor",
+            "lines": 3
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopLegacyMVC.ViewModel.PaginatedItemsViewModel<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Index\";",
+              "}",
+              "",
+              "<div class=\"esh-table\">",
+              "    <p class=\"esh-link-wrapper\">",
+              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
+              "    </p>",
+              "",
+              "    @Html.Partial(\"CatalogTable\", Model.Data)",
+              "",
+              "    <div class=\"esh-pager\">",
+              "        <div class=\"container\">",
+              "            <article class=\"esh-pager-wrapper row\">",
+              "                <nav>",
+              "",
+              "                    @if (Model.ActualPage > 0)",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              "",
+              "                    <span class=\"esh-pager-item\">",
+              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
+              "                    </span>",
+              "",
+              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model IEnumerable<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "<table class=\"table\">",
+              "    <thead>",
+              "        <tr class=\"esh-table-header\">",
+              "            <th>",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Name)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Description)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Price)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.PictureFileName)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.AvailableStock)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
+              "            </th>",
+              "            <th></th>",
+              "        </tr>",
+              "    </thead>",
+              "    <tbody>",
+              "        @foreach (var item in Model)",
+              "            {"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-196",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/eShopPorted/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Create.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Create\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Create</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "",
+              "    <div class=\"form-horizontal\">",
+              "        @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">",
+              "            @Html.LabelFor(model => model.CatalogBrandId, htmlAttributes: new { @class = \"control-label col-md-2\" })",
+              "            <div class=\"col-md-3\">",
+              "                @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })",
+              "            </div>",
+              "        </div>",
+              "",
+              "        <div class=\"form-group\">"
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/eShopPorted/Views/Catalog/Edit.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopPorted.Models.CatalogItem",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Edit\";",
+              "}",
+              "",
+              "<h2 class=\"esh-body-title\">Edit</h2>",
+              "",
+              "",
+              "@using (Html.BeginForm())",
+              "{",
+              "    @Html.AntiForgeryToken()",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "            <img class=\"col-md-6 esh-picture\" src=\"@Model.PictureUri\" />",
+              "            <div class=\"col-md-6 form-horizontal\">",
+              "                @Html.ValidationSummary(true, \"\", new { @class = \"text-danger\" })",
+              "                @Html.HiddenFor(model => model.Id)",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Name, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = \"form-control\" } })",
+              "                        @Html.ValidationMessageFor(model => model.Description, \"\", new { @class = \"text-danger\" })",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    @Html.LabelFor(model => model.CatalogBrandId, \"CatalogBrandId\", htmlAttributes: new { @class = \"control-label col-md-4\" })",
+              "                    <div class=\"col-md-8\">",
+              "                        @Html.DropDownList(\"CatalogBrandId\", null, htmlAttributes: new { @class = \"form-control\" })",
+              "                        @Html.ValidationMessageFor(model => model.CatalogBrandId, \"\", new { @class = \"text-danger\" })"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261109-063857-understand-reader-106",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 34
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 107
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 70
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx",
+            "startLine": 1,
+            "lines": [
+              "﻿<%@ Page Title=\"Edit\" Language=\"C#\" Debug=\"true\" MasterPageFile=\"~/Site.Master\" AutoEventWireup=\"true\" ValidateRequest=\"false\" CodeBehind=\"Edit.aspx.cs\" Inherits=\"eShopLegacyWebForms.Catalog.Edit\" %>",
+              "",
+              "<asp:Content ID=\"Edit\" ContentPlaceHolderID=\"MainContent\" runat=\"server\">",
+              "",
+              "    <h2 class=\"esh-body-title\">Edit</h2>",
+              "",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "            <asp:Image runat=\"server\" CssClass=\"col-md-6 esh-picture\" ImageUrl='<%#\"/Pics/\" + product.PictureFileName%>' />",
+              "            <div class=\"col-md-6 form-horizontal\">",
+              "",
+              "                <div class=\"form-group\">",
+              "                    <label class=\"control-label col-md-4\">Name</label>",
+              "                    <div class=\"col-md-8\">",
+              "                        <asp:TextBox ID=\"Name\" runat=\"server\" CssClass=\"form-control\" Text='<%#product.Name%>'></asp:TextBox>",
+              "                        <asp:RequiredFieldValidator runat=\"server\" ControlToValidate=\"Name\" Display=\"Dynamic\"",
+              "                            CssClass=\"field-validation-valid text-danger\" ErrorMessage=\"The Name field is required.\" />",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    <label class=\"control-label col-md-4\">Description</label>",
+              "                    <div class=\"col-md-8\">",
+              "                        <asp:TextBox ID=\"Description\" runat=\"server\" CssClass=\"form-control\" Text='<%#product.Description%>'></asp:TextBox>",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">",
+              "                    <label class=\"control-label col-md-4\">Brand</label>",
+              "                    <div class=\"col-md-8\">",
+              "                        <asp:DropDownList ID=\"BrandDropDownList\" runat=\"server\"",
+              "                            ItemType=\"eShopLegacyWebForms.Models.CatalogBrand\"",
+              "                            DataTextField=\"Brand\"",
+              "                            DataValueField=\"Id\"",
+              "                            CssClass=\"form-control\">",
+              "                        </asp:DropDownList>",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">"
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using log4net;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.Web.UI;",
+              "",
+              "namespace eShopLegacyWebForms.Catalog",
+              "{",
+              "    public partial class Edit : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        protected CatalogItem product;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            if (!Page.IsPostBack)",
+              "            {",
+              "",
+              "                var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);",
+              "                _log.Info($\"Now loading... /Catalog/Edit.aspx?id={productId}\");",
+              "                product = CatalogService.FindCatalogItem(productId);",
+              "",
+              "                BrandDropDownList.DataSource = CatalogService.GetCatalogBrands();",
+              "                BrandDropDownList.SelectedValue = product.CatalogBrandId.ToString();",
+              "",
+              "                TypeDropDownList.DataSource = CatalogService.GetCatalogTypes();",
+              "                TypeDropDownList.SelectedValue = product.CatalogTypeId.ToString();",
+              "",
+              "                this.DataBind();",
+              "            }",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()",
+              "        {",
+              "            return CatalogService.GetCatalogBrands();",
+              "        }"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-073",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 120
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 84
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 105
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 124
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 94
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 114
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs",
+            "language": "csharp",
+            "lines": 82
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "        protected string pictureUri;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "",
+              "            // Send an OpenID Connect sign-in request.",
+              "            if (!Request.IsAuthenticated)",
+              "            {",
+              "                Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "            }",
+              "",
+              "            if (!CatalogConfiguration.UseAzureStorage)",
+              "            {",
+              "                UploadButton.Visible = false;",
+              "            }",
+              "",
+              "            pictureUri = ImageService.UrlDefaultImage();",
+              "            this.DataBind();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()"
+            ]
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "using System.Web.UI;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Edit : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        protected CatalogItem product;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Edit.aspx\");",
+              "",
+              "            if (!Page.IsPostBack)",
+              "            {",
+              "                // Send an OpenID Connect sign-in request.",
+              "                if (!Request.IsAuthenticated)",
+              "                {",
+              "                    Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "                }",
+              "                if (!CatalogConfiguration.UseAzureStorage)",
+              "                {",
+              "                    UploadButton.Visible = false;",
+              "                }",
+              "",
+              "                var productId = Convert.ToInt32(Page.RouteData.Values[\"id\"]);"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261101-235310-understand-reader-034",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "language": "razor",
+            "lines": 81
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Delete.cshtml",
+            "language": "razor",
+            "lines": 101
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "language": "razor",
+            "lines": 46
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml",
+            "language": "razor",
+            "lines": 13
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/_Layout.cshtml",
+            "language": "razor",
+            "lines": 47
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Web.config",
+            "language": "xml",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/_ViewStart.cshtml",
+            "language": "razor",
+            "lines": 3
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopLegacyMVC.ViewModel.PaginatedItemsViewModel<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Index\";",
+              "}",
+              "",
+              "<div class=\"esh-table\">",
+              "    <p class=\"esh-link-wrapper\">",
+              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
+              "    </p>",
+              "",
+              "    @Html.Partial(\"CatalogTable\", Model.Data)",
+              "",
+              "    <div class=\"esh-pager\">",
+              "        <div class=\"container\">",
+              "            <article class=\"esh-pager-wrapper row\">",
+              "                <nav>",
+              "",
+              "                    @if (Model.ActualPage > 0)",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              "",
+              "                    <span class=\"esh-pager-item\">",
+              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
+              "                    </span>",
+              "",
+              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model IEnumerable<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "<table class=\"table\">",
+              "    <thead>",
+              "        <tr class=\"esh-table-header\">",
+              "            <th>",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Name)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Description)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Price)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.PictureFileName)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.AvailableStock)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
+              "            </th>",
+              "            <th></th>",
+              "        </tr>",
+              "    </thead>",
+              "    <tbody>",
+              "        @foreach (var item in Model)",
+              "            {"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-073",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 120
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 84
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 105
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 41
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 89
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 124
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 94
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 114
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx",
+            "language": "aspnet",
+            "lines": 1
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/PicUploader.asmx.cs",
+            "language": "csharp",
+            "lines": 82
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopModernizedWebForms.Models;",
+              "using eShopModernizedWebForms.Services;",
+              "using log4net;",
+              "using Microsoft.Owin.Security;",
+              "using Microsoft.Owin.Security.OpenIdConnect;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "using System.IO;",
+              "using System.Web;",
+              "",
+              "namespace eShopModernizedWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "        protected string pictureUri;",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "        public IImageService ImageService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "",
+              "            // Send an OpenID Connect sign-in request.",
+              "            if (!Request.IsAuthenticated)",
+              "            {",
+              "                Context.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = \"/\" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);",
+              "            }",
+              "",
+              "            if (!CatalogConfiguration.UseAzureStorage)",
+              "            {",
+              "                UploadButton.Visible = false;",
+              "            }",
+              "",
+              "            pictureUri = ImageService.UrlDefaultImage();",
+              "            this.DataBind();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()"
+            ]
+          },
+          {
+            "path": "eShopModernizedWebFormsSolution/src/eShopModernizedWebForms/Catalog/Create.aspx",
+            "startLine": 1,
+            "lines": [
+              "﻿<%@ Page Title=\"Create\" Language=\"C#\" MasterPageFile=\"~/Site.Master\" AutoEventWireup=\"true\" ValidateRequest=\"false\" CodeBehind=\"Create.aspx.cs\" Inherits=\"eShopModernizedWebForms.Catalog.Create\" %>",
+              "",
+              "<asp:Content ID=\"Create\" ContentPlaceHolderID=\"MainContent\" runat=\"server\">",
+              "",
+              "    <h2 class=\"esh-body-title\">Create</h2>",
+              "    <div class=\"container\">",
+              "        <div class=\"row\">",
+              "",
+              "            <div class=\"col-md-4\">",
+              "                <div class=\"row\">",
+              "                    <asp:Image runat=\"server\" CssClass=\"esh-picture\" ImageUrl='<%#pictureUri%>' />",
+              "                </div>",
+              "",
+              "                <div runat=\"server\" id=\"UploadButton\" class=\"row\">",
+              "                    <div class=\"col-md-6\">",
+              "                        <label class=\"btn btn-default esh-button-upload\">",
+              "                            Upload image",
+              "                            <input type=\"file\" id=\"uploadEditorImage\" accept=\"image/*\" class=\"hidden\" />",
+              "                        </label>",
+              "                        <asp:HiddenField ID=\"TempImageName\" runat=\"server\" Value=\"\" ClientIDMode=\"Static\"/>",
+              "                    </div>",
+              "",
+              "                    <div class=\"esh-loader col-md-3 hidden\"></div>",
+              "                    <div class=\"col-md-6\">",
+              "                        <span class=\"text-danger field-validation-error\" id=\"img-validation-error\"></span>",
+              "                    </div>",
+              "                </div>",
+              "            </div>",
+              "",
+              "            <div class=\"col-md-8 form-horizontal\">",
+              "                <div class=\"form-group\">",
+              "                    <label class=\"control-label col-md-2\">Name</label>",
+              "                    <div class=\"col-md-8\">",
+              "                        <asp:TextBox ID=\"Name\" runat=\"server\" CssClass=\"form-control\"></asp:TextBox>",
+              "                        <asp:RequiredFieldValidator runat=\"server\" ControlToValidate=\"Name\" Display=\"Dynamic\"",
+              "                            CssClass=\"field-validation-valid text-danger\" ErrorMessage=\"The Name field is required.\" />",
+              "                    </div>",
+              "                </div>",
+              "",
+              "                <div class=\"form-group\">"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261102-185338-understand-reader-034",
+      "from": "eshop",
+      "split": "tune",
+      "input": {
+        "area": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views",
+        "files": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "language": "razor",
+            "lines": 81
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Delete.cshtml",
+            "language": "razor",
+            "lines": 101
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 105
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "language": "razor",
+            "lines": 46
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/Error.cshtml",
+            "language": "razor",
+            "lines": 13
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Shared/_Layout.cshtml",
+            "language": "razor",
+            "lines": 47
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Web.config",
+            "language": "xml",
+            "lines": 43
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/_ViewStart.cshtml",
+            "language": "razor",
+            "lines": 3
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/Index.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopLegacyMVC.ViewModel.PaginatedItemsViewModel<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Index\";",
+              "}",
+              "",
+              "<div class=\"esh-table\">",
+              "    <p class=\"esh-link-wrapper\">",
+              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
+              "    </p>",
+              "",
+              "    @Html.Partial(\"CatalogTable\", Model.Data)",
+              "",
+              "    <div class=\"esh-pager\">",
+              "        <div class=\"container\">",
+              "            <article class=\"esh-pager-wrapper row\">",
+              "                <nav>",
+              "",
+              "                    @if (Model.ActualPage > 0)",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              "",
+              "                    <span class=\"esh-pager-item\">",
+              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
+              "                    </span>",
+              "",
+              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              ""
+            ]
+          },
+          {
+            "path": "eShopLegacyMVCSolution/src/eShopLegacyMVC/Views/Catalog/CatalogTable.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model IEnumerable<eShopLegacyMVC.Models.CatalogItem>",
+              "",
+              "<table class=\"table\">",
+              "    <thead>",
+              "        <tr class=\"esh-table-header\">",
+              "            <th>",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Name)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Description)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Price)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.PictureFileName)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.AvailableStock)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
+              "            </th>",
+              "            <th></th>",
+              "        </tr>",
+              "    </thead>",
+              "    <tbody>",
+              "        @foreach (var item in Model)",
+              "            {"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-091",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views",
+        "files": [
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml",
+            "language": "razor",
+            "lines": 81
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Create.cshtml",
+            "language": "razor",
+            "lines": 125
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Delete.cshtml",
+            "language": "razor",
+            "lines": 99
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Details.cshtml",
+            "language": "razor",
+            "lines": 88
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Edit.cshtml",
+            "language": "razor",
+            "lines": 127
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml",
+            "language": "razor",
+            "lines": 46
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/Error.cshtml",
+            "language": "razor",
+            "lines": 13
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/_Layout.cshtml",
+            "language": "razor",
+            "lines": 50
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Shared/_LoginPartial.cshtml",
+            "language": "razor",
+            "lines": 22
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Web.config",
+            "language": "xml",
+            "lines": 43
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/_ViewStart.cshtml",
+            "language": "razor",
+            "lines": 3
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/Index.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model eShopModernizedMVC.ViewModel.PaginatedItemsViewModel<eShopModernizedMVC.Models.CatalogItem>",
+              "",
+              "@{",
+              "    ViewBag.Title = \"Index\";",
+              "}",
+              "",
+              "<div class=\"esh-table\">",
+              "    <p class=\"esh-link-wrapper\">",
+              "        @Html.ActionLink(\"Create New\", \"Create\", null, new { @class = \"btn esh-button esh-button-primary\" })",
+              "    </p>",
+              "",
+              "    @Html.Partial(\"CatalogTable\", Model.Data)",
+              "",
+              "    <div class=\"esh-pager\">",
+              "        <div class=\"container\">",
+              "            <article class=\"esh-pager-wrapper row\">",
+              "                <nav>",
+              "",
+              "                    @if (Model.ActualPage > 0)",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Previous\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage - 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              "",
+              "                    <span class=\"esh-pager-item\">",
+              "                        Showing @Model.ItemsPerPage of @Model.TotalItems products - Page @(Model.ActualPage + 1) - @Model.TotalPages",
+              "                    </span>",
+              "",
+              "                    @if (Model.ActualPage < Model.TotalPages - 1)",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable\" })",
+              "                    }",
+              "                    else",
+              "                    {",
+              "                        @Html.ActionLink(\"Next\", \"Index\", new { pageSize = Model.ItemsPerPage, pageIndex = Model.ActualPage + 1 }, new { @class = \"esh-pager-item esh-pager-item--navigable esh-pager-item--hidden\" })",
+              "                    }",
+              ""
+            ]
+          },
+          {
+            "path": "eShopModernizedMVCSolution/src/eShopModernizedMVC/Views/Catalog/CatalogTable.cshtml",
+            "startLine": 1,
+            "lines": [
+              "﻿@model IEnumerable<eShopModernizedMVC.Models.CatalogItem>",
+              "",
+              "<table class=\"table\">",
+              "    <thead>",
+              "        <tr class=\"esh-table-header\">",
+              "            <th>",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Name)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Description)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogBrand.Brand)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.CatalogType.Type)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.Price)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.PictureFileName)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.AvailableStock)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.RestockThreshold)",
+              "            </th>",
+              "            <th>",
+              "                @Html.DisplayNameFor(model => model.MaxStockThreshold)",
+              "            </th>",
+              "            <th></th>",
+              "        </tr>",
+              "    </thead>",
+              "    <tbody>",
+              "        @foreach (var item in Model)",
+              "            {"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "eshop-20261029-152308-understand-reader-063",
+      "from": "eshop",
+      "split": "held-back",
+      "input": {
+        "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog",
+        "files": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+            "language": "aspnet",
+            "lines": 104
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs",
+            "language": "csharp",
+            "lines": 52
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 87
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx",
+            "language": "aspnet",
+            "lines": 91
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.cs",
+            "language": "csharp",
+            "lines": 34
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 15
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx",
+            "language": "aspnet",
+            "lines": 84
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.cs",
+            "language": "csharp",
+            "lines": 26
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 17
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx",
+            "language": "aspnet",
+            "lines": 107
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs",
+            "language": "csharp",
+            "lines": 70
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.designer.cs",
+            "language": "csharp",
+            "lines": 96
+          }
+        ],
+        "turns": 12,
+        "reads": [
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs",
+            "startLine": 1,
+            "lines": [
+              "﻿using eShopLegacyWebForms.Models;",
+              "using eShopLegacyWebForms.Services;",
+              "using log4net;",
+              "using System;",
+              "using System.Collections.Generic;",
+              "",
+              "namespace eShopLegacyWebForms.Catalog",
+              "{",
+              "    public partial class Create : System.Web.UI.Page",
+              "    {",
+              "        private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);",
+              "",
+              "        public ICatalogService CatalogService { get; set; }",
+              "",
+              "        protected void Page_Load(object sender, EventArgs e)",
+              "        {",
+              "            _log.Info($\"Now loading... /Catalog/Create.aspx\");",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogBrand> GetBrands()",
+              "        {",
+              "            return CatalogService.GetCatalogBrands();",
+              "        }",
+              "",
+              "        public IEnumerable<CatalogType> GetTypes()",
+              "        {",
+              "            return CatalogService.GetCatalogTypes();",
+              "        }",
+              "",
+              "        protected void Create_Click(object sender, EventArgs e)",
+              "        {",
+              "            if (this.ModelState.IsValid)",
+              "            {",
+              "                var catalogItem = new CatalogItem",
+              "                {",
+              "                    Name = Name.Text,",
+              "                    Description = Description.Text,",
+              "                    CatalogBrandId = int.Parse(Brand.SelectedValue),",
+              "                    CatalogTypeId = int.Parse(Type.SelectedValue),",
+              "                    Price = decimal.Parse(Price.Text),"
+            ]
+          },
+          {
+            "path": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+            "startLine": 1,
+            "lines": [
+              "﻿<%@ Page Title=\"Create\" Language=\"C#\" MasterPageFile=\"~/Site.Master\" AutoEventWireup=\"true\" ValidateRequest=\"false\" CodeBehind=\"Create.aspx.cs\" Inherits=\"eShopLegacyWebForms.Catalog.Create\" %>",
+              "",
+              "<asp:Content ID=\"Create\" ContentPlaceHolderID=\"MainContent\" runat=\"server\">",
+              "",
+              "    <h2 class=\"esh-body-title\">Create</h2>",
+              "",
+              "    <div>",
+              "        <div class=\"form-horizontal\">",
+              "            <div class=\"form-group\">",
+              "                <label class=\"control-label col-md-2\">Name</label>",
+              "                <div class=\"col-md-3\">",
+              "                    <asp:TextBox ID=\"Name\" runat=\"server\" CssClass=\"form-control\"></asp:TextBox>",
+              "                    <asp:RequiredFieldValidator runat=\"server\" ControlToValidate=\"Name\" Display=\"Dynamic\"",
+              "                        CssClass=\"field-validation-valid text-danger\" ErrorMessage=\"The Name field is required.\" />",
+              "                </div>",
+              "            </div>",
+              "",
+              "            <div class=\"form-group\">",
+              "                <label class=\"control-label col-md-2\">Description</label>",
+              "                <div class=\"col-md-3\">",
+              "                    <asp:TextBox ID=\"Description\" runat=\"server\" CssClass=\"form-control\"></asp:TextBox>",
+              "                </div>",
+              "            </div>",
+              "",
+              "            <div class=\"form-group\">",
+              "                <label class=\"control-label col-md-2\">Brand</label>",
+              "                <div class=\"col-md-3\">",
+              "                    <asp:DropDownList ID=\"Brand\" runat=\"server\"",
+              "                        SelectMethod=\"GetBrands\"",
+              "                        ItemType=\"eShopLegacyWebForms.Models.CatalogBrand\"",
+              "                        DataTextField=\"Brand\"",
+              "                        DataValueField=\"Id\"",
+              "                        CssClass=\"form-control\">",
+              "                    </asp:DropDownList>",
+              "                </div>",
+              "            </div>",
+              "",
+              "            <div class=\"form-group\">",
+              "                <label class=\"control-label col-md-2\">Type</label>",
+              "                <div class=\"col-md-3\">"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

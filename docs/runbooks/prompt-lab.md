@@ -13,7 +13,7 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   --cases verifier-claim-sample --repetitions 3 --yes
 ```
 
-- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (26 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format and its repair).
+- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (29 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts).
 - `--version v5` is the file `prompts/verifier/claim.v5.md`; any other value is the path of a draft file, so a new
   wording is tried before it is added to `prompts/` (its name, version `file` and SHA-256 go to the results).
 - `--model provider:model` is any model the provider factory serves; the server key comes from the environment
@@ -76,13 +76,13 @@ npm run lab -- --capture --prompt planner/gap --name planner-gap --sources lab/s
 
 The capture reads `manifest.json` and `transcripts/` of each run folder (the run folder, or the folder that holds exactly
 one) and writes `lab/cases/<name>.json`. It sends nothing and writes nothing into the run folder. It keeps the **inputs**
-the run sent, read back from the data blocks of the task's first user message: never the system prompt, never an
+the run sent, read back from the data blocks of the task's first user message: the system prompt only to find which fragment heading it held (no prompt text is stored), never an
 assistant message. The planner and summariser inputs (cards, plan titles) were written by models earlier in the run; they
 are inputs here, not truth, and no `expected` is written. Add an `expected` by hand, from the code, only where a check
 needs one (DEC-57). A task whose input holds an e-mail address, a drive path, a home folder or a key-like string is left
 out and named in the output. `--max-per-run` cases are taken per run in the order of a hash of the task name, never by
 content. Prompt ids it can capture: `planner/gap`, `summariser/merge`, `summariser/overview`, `reader/task`,
-`reader/area`, `reader/read-first`, `cards/card-format`.
+`reader/area`, `reader/read-first`, `cards/card-format`, `cards/continue`, `cards/flows`, `cards/screens`.
 
 `lab/sources.json` names each source by key: name, address, the commit (or the SHA-256 of an uploaded archive) and the
 licence. The set copies the entry and the run ids into `sources`; each case says which source it is from (`from`).
@@ -111,6 +111,8 @@ card may use them for tuning on that machine; a result on them is not published 
 **The plan documents (P10-08).** `planner/data-model`, `planner/prd`, `planner/api-contract`, `planner/ux`, `planner/flows`, `planner/coverage`, `planner/package` (the plan call itself), `planner/workbook` and `planner/adr-model` are wired with `--prompt planner/<stem>` over the saved `planner-<stem>` tasks of the plan runs (`planner-package` for both package and workbook). Committed sets `planner-<stem>` come from the eShopModernizing plan runs (`p8w3-haiku-eshop-plan`, `p8-haiku-eshop-plan`, `p7-haiku-eshop-plan`, `p6-haiku-eshop-plan`, `h-eshop2-plan`, an older run whose cards have no claim ids is not read); a case keeps at most 8 cards of 4 claims and the owner block as the run sent it. The local sets `planner-<stem>-workbooks` come from the Asset Manager and Invoice Generator plan runs with `--local`. `planner/workbook` has a local set only: the guidance is appended to the package prompt of a workbook plan, so its set is the package message of the workbook runs (capture it from those runs only) and the target sends the run's package prompt followed by the file under test. `planner/adr-model` has a target and a capture rule but no set yet, since no saved run holds its call. The lab replays the one call, not the domain checks, the repair or the continuation of the run.
 
 **The repairs (P10-07).** `planner/gap-repair`, `planner/plan-repair` and `cards/repair` are wired; the capture has no rule for them. A planner repair is the call it repairs sent again with the file under test and one line per problem after the data; it is logged under the same task, and the transcript of a task adds only the messages it does not hold yet, so the repair message is not saved, and its problem lines come from the refused answer, which no capture may read (DEC-57). The card repair follows an answer of the reader, which no case may hold. Their committed sets are therefore built by hand on the committed eShopModernizing sets of the call they repair: `planner-gap-repair` (5 cases) is each `planner-gap` input with problem lines in the run's own words (position, field, fixed reason), `planner-plan-repair` (4) each `planner-package` input with failing paths (list, position, field, and the reason of an item the check left out), and `cards-repair` (5) five `cards-card-format` inputs with an earlier answer written for the case from its reads, with a fault the card parser finds. A gap repair is sent under the run's gap prompt and a plan repair under the run's package prompt, which the lab does not vary; the answer is read like the gap (`Cards`, `NoCards`, `Unusable`) or the package (`Tasks`, `NoTasks`, `Unusable`). A card repair replays the reads, the earlier answer and the repair request the run builds from the problems the card parser finds in it, and is read like the card format; a draft without `{{problems}}` is `BadPrompt`. The lab makes the one repair call, not the second card repair, the workbook rule hints or the checks after a planner repair. The repair rate of a run is not a lab number: the lab measures how well a repair prompt fixes a fixed fault.
+
+**The card prompts (P10-09).** `cards/flows`, `cards/screens` and `cards/continue` are wired with `--prompt cards/<stem>`; a case is the one of `cards/card-format` (the area's file list and two reads, replayed). `cards/flows` and `cards/screens` are the fragments the run adds after the card format for an area its code map marks; the capture takes a task only when its system prompt held that fragment (found by the heading) and the target sends the file under test alone, so a result is the effect of that file; the answer is read by the card parser (`Valid`, `Partial`, `Unusable`, `ReadsMore`). `cards/continue` is the turn after an answer cut at the output limit: the capture never stores a model's answer, so the cut answer is fixed text (`{"cards": [{"type": "BR", "title": "`) and the file under test is the next user message; the fragment sent back is joined to the cut text as the run joins it. Committed sets `cards-continue`, `cards-flows` and `cards-screens` (10 cases each, 4 held back) come from the eShopModernizing runs `p6-haiku-eshop-v2-understand`, `p7-haiku-eshop-understand`, `p8-haiku-eshop-understand`, `p8w3-haiku-eshop-understand` and `p8w3-haiku-eshop-deepen`, two cases per run. Known limits: the targets ignore `input.workbook`, so a local workbook case is sent with one fragment and no workbook guidance; `cards/continue` always uses the unmarked system prompt; tool calls in a continue answer count as `ReadsMore`, whereas a run ignores them and joins the text. The tuning rounds wait for an API key.
 
 **Agent-loop prompts (the reader).** The lab does not run a reader loop. A reader case measures one turn: the area's
 file list, the turns of the task, and for the card format two small reads that are replayed as a `read_file` turn. The
@@ -151,10 +153,10 @@ targets the lab has, so a row cannot be forgotten. Data files of `prompts/catalo
 | Prompt id                   | State   | Case set                                           |
 | --------------------------- | ------- | -------------------------------------------------- |
 | `cards/card-format`         | wired   | cards-card-format (after a replay of two reads)    |
-| `cards/continue`            | not yet |                                                    |
-| `cards/flows`               | not yet |                                                    |
+| `cards/continue`            | wired   | cards-continue (after a fixed cut answer)          |
+| `cards/flows`               | wired   | cards-flows (areas marked for flows)               |
 | `cards/repair`              | wired   | cards-repair (an earlier answer written by hand)   |
-| `cards/screens`             | not yet |                                                    |
+| `cards/screens`             | wired   | cards-screens (areas marked for screens)           |
 | `planner/adr-model`         | wired   | none yet (no saved run holds this call)            |
 | `planner/api-contract`      | wired   | planner-api-contract (+ local set)                 |
 | `planner/continue`          | not yet |                                                    |
