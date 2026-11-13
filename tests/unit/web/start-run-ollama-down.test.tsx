@@ -91,10 +91,25 @@ it('RF-434 Analyse is not held back when the answer on Ollama could not be had',
   expect(start().disabled).toBe(false);
 });
 
-it('RF-434 Analyse stays available when only some roles use a provider that cannot answer', async () => {
+it('RF-434 P9-14 Analyse is disabled when the roles an understand run calls cannot answer, whatever the planner uses', async () => {
   renderStart(
     answers(unreachable, {
       [`GET ${projectPath}`]: withOpenAiRoles(['planner']),
+      'GET /api/account/key-access': keys(true),
+    }),
+  );
+  await ready();
+
+  await waitFor(() => {
+    expect(start().disabled).toBe(true);
+  });
+  expect(start().title).toBe(reasonText);
+});
+
+it('RF-434 P9-14 Analyse stays available when one role an understand run calls can answer', async () => {
+  renderStart(
+    answers(unreachable, {
+      [`GET ${projectPath}`]: withOpenAiRoles(['reader']),
       'GET /api/account/key-access': keys(true),
     }),
   );

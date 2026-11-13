@@ -114,3 +114,23 @@ it('RF-434 P9-11 a later read on the same page does not replace the figure witho
   view.rerender(<EstimateSection {...props} estimate={{ status: 'ready', estimate: first }} />);
   expect(screen.queryByTestId('journey-moved')).toBeNull();
 });
+
+it('RF-434 P9-14 the moved-figure note is a status the screen reader announces', () => {
+  const view = render(
+    <EstimateSection {...props} estimate={{ status: 'ready', estimate: first }} />,
+  );
+  view.rerender(<EstimateSection {...props} estimate={{ status: 'ready', estimate: later }} />);
+
+  expect(screen.getByTestId('journey-moved').getAttribute('role')).toBe('status');
+});
+
+it('RF-434 P9-14 a read in between (the areas changed) does not reset the first read', () => {
+  const view = render(
+    <EstimateSection {...props} estimate={{ status: 'ready', estimate: first }} />,
+  );
+
+  view.rerender(<EstimateSection {...props} estimate={{ status: 'loading' }} />);
+  view.rerender(<EstimateSection {...props} estimate={{ status: 'ready', estimate: later }} />);
+
+  expect(screen.getByTestId('journey-moved').textContent).toContain('moved from $1.32 to $0.3140');
+});

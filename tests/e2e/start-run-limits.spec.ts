@@ -39,8 +39,8 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   await second.getByLabel('Parallel readers', { exact: true }).fill('3');
   await second.getByRole('button', { name: 'Save settings' }).click();
 
-  // RF-436, P8-74: the roles use Ollama, which the test server cannot reach, so the page also
-  // shows the warning on roles that cannot be used; the refusal is its own alert.
+  // RF-436, P8-74, P9-14: the roles use Ollama, which the test server cannot reach, so the settings
+  // page also shows its roles warning (an alert); the refusal is another alert, found by its code.
   await expect(second.getByRole('alert').filter({ hasText: 'RST-1007' })).toBeVisible();
   await expect(second.getByText('Settings saved.')).toHaveCount(0);
   await expectNoSeriousViolations(second);
