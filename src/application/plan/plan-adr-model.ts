@@ -1,4 +1,6 @@
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { keptPlannerIds } from '../../domain/planning/brief-restated.js';
 import {
   adrModelFindings,
   decisionsNeedingData,
@@ -17,6 +19,9 @@ import type { HandoffPackage } from './handoff-package.js';
 // strategy or a stored structure are sent; with none, or with no table in the model, no call is
 // made. The check never fails the plan: an answer that cannot be read, or a call that is refused or
 // fails, gives a check that could not run, with a fixed reason or the error code, never answer text.
+// A cap that refuses the call keeps the package too: a run cap has stopped the run, which then ends
+// as RF-422 and RF-432 say (the queue reads the stopped signal); the planner's role cap ends only
+// the check (P2-35, P7-26). Any other stop of the run (the owner's Stop, a shutdown) rethrows.
 
 export interface AdrModelInput {
   readonly decisions: readonly PlanDecision[];
@@ -37,7 +42,9 @@ export async function planAdrModelCheck(
   try {
     output = await askPlannerWith(call, adrModelMessage({ decisions, tables }, call.tags));
   } catch (error) {
-    if (call.signal.aborted || !(error instanceof RosettaError)) throw error;
+    // RF-422, RF-432: a cap that stopped the run aborts its signal too; only another stop rethrows.
+    const stopped = call.signal.aborted && !isCapStop(call.signal.reason);
+    if (stopped || !(error instanceof RosettaError)) throw error;
     return { kind: 'not-run', reason: `the call failed or was refused (${error.code})` };
   }
   const draft = parseAdrModelAnswer(output);
@@ -53,7 +60,7 @@ interface AdrModelRun {
   readonly warn: (message: string) => Promise<void>;
   readonly refused: unknown;
   /** The decisions of the plan answer; the records Rosetta writes from the brief are not checked. */
-  readonly records: readonly Pick<PlanDecision, 'title'>[];
+  readonly records: readonly unknown[];
 }
 
 /**
@@ -67,8 +74,8 @@ export async function withAdrModelCheck(
   run: AdrModelRun,
 ): Promise<HandoffPackage> {
   if (run.refused !== undefined) return handoff;
-  const titles = new Set(run.records.map((record) => record.title));
-  const decisions = handoff.content.decisions.filter((record) => titles.has(record.title));
+  const ids = new Set(keptPlannerIds(run.records.length, handoff.restated.length));
+  const decisions = handoff.content.decisions.filter((record) => ids.has(record.id));
   const input = { decisions, dataModel: handoff.dataModel };
   const check = await planAdrModelCheck({ ...call, agentTaskId: AGENT_TASK }, input);
   if (check === undefined) return handoff;
