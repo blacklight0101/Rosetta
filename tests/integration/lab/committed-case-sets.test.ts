@@ -69,7 +69,24 @@ function splitProblems({ name, set }: Loaded): string[] {
   ];
 }
 
+/** Only code of a known public licence is committed (DEC-03): eShopModernizing, MIT. */
+const PUBLISHED_SOURCES = ['eshop'];
+
+function publishedProblems({ name, set, text }: Loaded): string[] {
+  const other = (set.sources ?? []).filter((source) => !PUBLISHED_SOURCES.includes(source.key));
+  const named = /Asset Manager|Invoice Generator|asset-manager|invoice-generator/iu.test(text);
+  return [
+    ...other.map((source) => `${name}: source ${source.key} may not be published`),
+    ...(named ? [`${name}: names a workbook that may not be published`] : []),
+    ...(set.cases.length < 3 ? [`${name}: fewer than 3 cases`] : []),
+  ];
+}
+
 describe('the committed case sets', () => {
+  it('RF-1405 holds only published sources, and at least three cases per captured set', async () => {
+    expect((await captured()).flatMap(publishedProblems)).toEqual([]);
+  });
+
   it('RF-1405 has a captured set for each prompt the capture covers', async () => {
     const names = (await loadAll()).map((each) => each.name);
 

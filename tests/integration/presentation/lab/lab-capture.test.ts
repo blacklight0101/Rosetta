@@ -51,6 +51,33 @@ describe('the capture command', () => {
   });
 });
 
+describe('the capture command for sets that are not published', () => {
+  it('RF-1404 writes into lab/local-cases with --local, and nothing into lab/cases', async () => {
+    const { lab, run, file } = await arrange();
+
+    const code = await runLabCapture(
+      [
+        '--local',
+        '--prompt',
+        'planner/gap',
+        '--name',
+        'gap-local',
+        '--sources',
+        file,
+        '--run',
+        `shop=${run}`,
+      ],
+      lab,
+      () => undefined,
+    );
+
+    expect(code).toBe(0);
+    const text = await readFile(join(lab, 'local-cases', 'gap-local.json'), 'utf8');
+    expect(parseLabCaseSet(JSON.parse(text)).ok).toBe(true);
+    await expect(readFile(join(lab, 'cases', 'gap-local.json'), 'utf8')).rejects.toThrow();
+  });
+});
+
 describe('the capture command refuses', () => {
   it('RF-1404 stops with the ids it can capture for a prompt it has no rule for, and writes nothing', async () => {
     const { lab, run, file } = await arrange();
