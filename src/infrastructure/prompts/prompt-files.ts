@@ -190,10 +190,13 @@ export async function loadPlannerSecretRiskPrompt(promptsFolder: string): Promis
   return requirePlaceholders(file, [secretRiskPlaceholders.path, secretRiskPlaceholders.lines]);
 }
 
-/** The planner's prompt for the one repair attempt of the plan answer (P3-126; v3 since P10-07), checked and hashed. */
+/**
+ * The planner's prompt for the one repair attempt of the plan answer (P3-126), checked and hashed.
+ * P10-07's `plan-repair.v3.md` is a recorded candidate that a run does not load.
+ */
 // RNF-004
 export function loadPlanRepairPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/plan-repair.v3.md');
+  return loadPromptFile(promptsFolder, 'planner/plan-repair.v2.md');
 }
 
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
