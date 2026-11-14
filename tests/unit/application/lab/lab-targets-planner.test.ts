@@ -47,7 +47,7 @@ describe('the planner gap target', () => {
     const empty = await run(gapTarget(), gapInput, ['{"tasks":[]}']);
     const bad = await run(gapTarget(), gapInput, ['No idea.']);
 
-    expect(empty.outcome).toEqual({ usable: true, detail: 'NoCards' });
+    expect(empty.outcome).toEqual({ usable: true, detail: 'Open' });
     expect(bad.outcome).toEqual({ usable: false, detail: 'Unusable' });
     expect(gapTarget().readsAnswer('{"tasks":[]}')).toBe(true);
     expect(gapTarget().readsAnswer('No idea.')).toBe(false);
