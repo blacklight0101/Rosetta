@@ -1,6 +1,6 @@
 # Round log: the plan gap and repair prompts (P10-07)
 
-Status 2026-11-14 (after the verifier's third fix round): **no version kept.** `planner/gap.v6`, `planner/gap-repair.v4`, `planner/plan-repair.v2` and `cards/repair.v6` stay current. The second fix round kept `plan-repair.v3`; on the third round's check its matched Sonnet run raised output by 35.5% and latency by 37.9%, so the keep was reverted (section 4) and `prompts/planner/plan-repair.v3.md` stays only as a recorded candidate that no run loads. **Each of the four prompts has had at least three Haiku rounds**, which is the done-when of P10-05 that P10-07 shares, so no round is owed.
+Status 2026-11-14 (after the verifier's third fix round): **no version kept.** `planner/gap.v6`, `planner/gap-repair.v4`, `planner/plan-repair.v2` and `cards/repair.v6` stay current. The second fix round kept `plan-repair.v3`; on the third round's check its matched Sonnet run raised output by 35.5% and latency by 37.9%, so the keep was reverted (section 4) and the file `prompts/planner/plan-repair.v3.md` was removed: the newest version of a prompt family is the one a run loads (`runbook-prompt-list.test.ts`). Its text is v2 with the bullets of plan-repair rounds 4 and 5 (section 3) added after the bullet that lists the JSON arrays. **Each of the four prompts has had at least three Haiku rounds**, which is the done-when of P10-05 that P10-07 shares, so no round is owed.
 
 - The lab now gives what a run does after a gap or repair answer as numbers: the count of each label and the rate of each follow-up (section 1).
 - The second and third fix rounds changed the plan repair check: a repair that loses a card, merges its requirements, pads its counts with copies, or leaves a requirement no task lists no longer reads `Fixed`. Under it the current `plan-repair.v2` is **not** at a repair rate of 0 (section 2).
@@ -200,7 +200,7 @@ Only the best candidate of each prompt was taken to the held-back cases. The fig
 
 Counts per case: in every answer the count of requirements equals the count of distinct ones, so neither version merged or padded. v2 kept 5 to 10 requirements, 2 to 5 tasks and 2 to 3 phases; v3 kept 5 to 9 requirements, 3 to 8 tasks and 2 to 4 phases; every answer cites the 3 feature and rule cards. v2's `Shrunk` answers cite 7 of the 8 cards (a card that is not an open question is in no `sources` list), and so does v3's one `Shrunk` answer. The figures per case are in each run's `results.json` (`counts`).
 
-**Not kept (keep reverted).** On Sonnet the matched run raised output by 35.5% and latency by 37.9%, past the 15% of DEC-235 (c). Under DEC-237 a regression on one model stops the keep, and matched runs are not pooled with the second check's Sonnet run (+1.0%). The loader names `plan-repair.v2` again (a red test first, then the `fix(plan)` commit); `prompts/planner/plan-repair.v3.md` stays as a recorded candidate that no run loads, pinned by `plan-repair-prompt-file.test.ts`. On Opus v3 showed no quality gain this time. No second Sonnet run was made: running again until a figure passes is not a matched comparison, and the spend was near the card's $3.50.
+**Not kept (keep reverted).** On Sonnet the matched run raised output by 35.5% and latency by 37.9%, past the 15% of DEC-235 (c). Under DEC-237 a regression on one model stops the keep, and matched runs are not pooled with the second check's Sonnet run (+1.0%). The loader names `plan-repair.v2` again (a red test first, then the `fix(plan)` commit); the file `plan-repair.v3.md` was removed, because the newest version of a prompt family must be the one a run loads; its text is recorded in this log (v2 plus the bullets of rounds 4 and 5). On Opus v3 showed no quality gain this time. No second Sonnet run was made: running again until a figure passes is not a matched comparison, and the spend was near the card's $3.50.
 
 **Second check (fix round 2), superseded.** The same layout:
 
@@ -259,7 +259,7 @@ On tune (`032642` against `032711`) both read Fixed 9, with output -38%.
 
 - **gap round 3.** The full change is in section 3.
 - **gap-repair round 2.** Grouping module copies saves output on tune but drops or mis-names an id about once in six held-back answers.
-- **plan-repair round 5 (`plan-repair.v3.md`, recorded).** Fewer unusable answers and gap rounds on Haiku and Sonnet, and no merge, but its output rises with what it keeps, past 15% on Sonnet in the third check. A next step would ask for the two rules without a longer answer, or measure Sonnet with more repetitions on both sides.
+- **plan-repair round 5 (the reverted `plan-repair.v3`, text in section 3).** Fewer unusable answers and gap rounds on Haiku and Sonnet, and no merge, but its output rises with what it keeps, past 15% on Sonnet in the third check. A next step would ask for the two rules without a longer answer, or measure Sonnet with more repetitions on both sides.
 - **plan-repair round 2.** It is noise-level: a trim that does not move the output, and worse on the second check.
 - **card repair round 1.** It cuts the output by a quarter to a half on every model, but on Haiku it writes no card after an earlier answer that is not JSON. The full text of the draft is v6 with that one sentence replaced. A next round would keep "Keep the cards that were correct." for an answer with no readable card and try the shorter request only where some card was read; it was not run.
 
@@ -267,18 +267,18 @@ On tune (`032642` against `032711`) both read Fixed 9, with output -38%.
 
 **Three Haiku rounds per prompt (the done-when that P10-07 shares with P10-05):**
 
-| Prompt      | Rounds                                              | Kept                                                                |
-| ----------- | --------------------------------------------------- | ------------------------------------------------------------------- |
-| gap         | 3 (rounds 2 and 3 with two edits each)              | none                                                                |
-| gap-repair  | 3                                                   | none                                                                |
-| plan-repair | 6 (1 to 3 on the first check, 4 to 6 on the second) | none (round 5 kept, then reverted; recorded as `plan-repair.v3.md`) |
-| card repair | 3 (round 1 measured again on the new set)           | none                                                                |
+| Prompt      | Rounds                                              | Kept                                     |
+| ----------- | --------------------------------------------------- | ---------------------------------------- |
+| gap         | 3 (rounds 2 and 3 with two edits each)              | none                                     |
+| gap-repair  | 3                                                   | none                                     |
+| plan-repair | 6 (1 to 3 on the first check, 4 to 6 on the second) | none (round 5 kept as v3, then reverted) |
+| card repair | 3 (round 1 measured again on the new set)           | none                                     |
 
 Every prompt met the rule, and no version is kept, so no further round is owed.
 
 **Not done:**
 
-- No version is kept: `gap.v6`, `gap-repair.v4`, `plan-repair.v2` and `cards/repair.v6` stay current. The only new prompt file is the recorded candidate `plan-repair.v3.md`, which no run loads.
+- No version is kept: `gap.v6`, `gap-repair.v4`, `plan-repair.v2` and `cards/repair.v6` stay current. No new prompt file stays: the reverted `plan-repair.v3.md` was removed and its text is in section 3.
 - The four `-nojson` cases are the only cases added; none was re-captured (DEC-236).
 - No judge call was made, and no card scope was judged; the plan repair check is a floor on counts.
 - The plan repair round 5 was not run on the tune side of Sonnet or Opus (only the matched held-back runs), and Sonnet held-back was not run again after the third check.
