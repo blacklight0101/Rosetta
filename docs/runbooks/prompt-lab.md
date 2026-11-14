@@ -29,6 +29,8 @@ The command prints the rates of first-try validity, repairs and unusable answers
 agreement with the cases' `expected` labels, tokens and latency per call and the cost, and writes
 `lab-out/<id>/results.json` (git-ignored). Exit code 0 means every case ran; 1 means it did not start, or a cap stopped it.
 
+**What the merge and overview labels cannot tell (P10-06).** `NoMerge` is a valid answer, and the merge cases have no hand labels, so the lab cannot tell a right merge from a wrong one: `Merges`, the merged ids in `counts` and the `Unrelated` guard are a floor, and more merges are never a quality gain under DEC-238 until the cases have hand labels. The overview labels are guards only: an overview that copies the card titles, or writes one statement per section, reads `Written`; the judge is the only check behind them.
+
 ## 2. The caps and the owner's stop line
 
 `lab/config.json` holds `totalCapMicros` (50 000 000 = $50), `stopMicros` (40 000 000 = $40, the owner's stop line)

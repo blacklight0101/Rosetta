@@ -1009,7 +1009,7 @@ was written from an earlier brief); a project with no such run is never out of d
 
 ### 3.21 Prompt lab and judge files: `lab/`, `eval/judge-check/` and `lab-out/` (added 2026-11-13, P10-01; extended by P10-02 and P10-03)
 
-Files of `npm run lab` (RF-1400..RF-1412, ADR-029), inside the Rosetta repository; none is in a user's project.
+Files of `npm run lab` (RF-1400..RF-1413, ADR-029), inside the Rosetta repository; none is in a user's project.
 
 - `lab/config.json` (committed): `{ schemaVersion: 1, totalCapMicros, stopMicros, invocationCapMicros }` in
   micro-dollars, whole numbers, with `invocationCapMicros <= stopMicros <= totalCapMicros` (DEC-231: 50 000 000 and 40 000 000).
