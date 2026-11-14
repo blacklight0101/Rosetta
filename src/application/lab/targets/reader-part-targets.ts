@@ -81,7 +81,7 @@ function afterShortRead(
   if (facts === undefined) return [];
   const filesBlock = blockOf('list_area_files', facts.unread.join('\n'), env.ids.dataBlockTag());
   const turns = Math.max(1, input.turns - 1);
-  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns });
+  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns, lines: 0 });
   return [
     ...replayedTurn(input, prompts, env),
     { role: 'assistant', content: PREMATURE_ANSWER },

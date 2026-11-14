@@ -24,6 +24,8 @@ export const toolTurnSchema = z.strictObject({
   stale: count,
   /** Lines of readable files read for the first time. */
   newLines: count,
+  /** RF-1414: lines the reads asked for past the line cap of the turn (absent in older results). */
+  cutLines: count.optional(),
   /** The new lines that lie in generated or descriptor files. */
   generatedLines: count,
   /** The share of the area read before the turn (read-more: the refusal's); null otherwise. */

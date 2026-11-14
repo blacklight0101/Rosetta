@@ -129,6 +129,8 @@ export interface ReadMoreFacts {
   readonly tokens: number;
   readonly filesBlock: string;
   readonly turns: number;
+  /** RF-1414: the lines the reader may read before its next answer. */
+  readonly lines: number;
 }
 
 /** Q-50: the refusal of an answer given after reading little of the area. */

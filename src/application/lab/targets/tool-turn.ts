@@ -29,6 +29,8 @@ export interface TurnScope {
   readonly aim: { readonly kind: 'unread' | 'cited'; readonly paths: ReadonlySet<string> } | null;
   /** The share of the area read before the turn (read-more: the refusal's), or null. */
   readonly shareBefore: number | null;
+  /** RF-1414: the lines `read_file` may serve in the turn (read-more), or null for no cap. */
+  readonly lineCap?: number | null;
 }
 
 const MAX_SEEN = 40;
