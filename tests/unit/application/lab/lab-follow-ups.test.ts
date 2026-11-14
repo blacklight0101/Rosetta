@@ -82,3 +82,13 @@ describe('the label counts and follow-ups of a lab run', () => {
     expect(both).toContain('  Follow-ups a run would make: repair call 0%, second round 100%');
   });
 });
+
+describe('the counts a target records per case', () => {
+  it('RF-1403 keeps the counts of a case in the results, and never averages them', () => {
+    const counted = run('v3', [caseResult('a', { detail: 'Fixed', ...{ counts: { tasks: 4 } } })]);
+    const parsed = parseLabResults(counted);
+
+    expect(parsed.ok && parsed.value.cases[0]).toMatchObject({ counts: { tasks: 4 } });
+    expect(summaryLines(counted, 'lab-out/x').join(' ')).not.toContain('tasks 4');
+  });
+});

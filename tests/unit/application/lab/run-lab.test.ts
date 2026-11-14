@@ -110,3 +110,35 @@ describe('a run of a target with no first-try check', () => {
     expect(written[0]?.cases[0]).toMatchObject({ validFirstTry: null, repaired: false });
   });
 });
+
+describe('a run of a target that records the counts of its check', () => {
+  it('RF-1403 keeps the counts of each case in its result', async () => {
+    const written: LabResults[] = [];
+    const outcome = { usable: true, detail: 'Fixed', counts: { requirements: 3, tasks: 2 } };
+    const counting: LabTarget = {
+      ...target,
+      parseInput: () => ok({ run: () => Promise.resolve(outcome) }),
+    };
+    const lab = new RunLab({
+      output: { write: (results) => Promise.resolve(written.push(results) > 0 ? 'folder' : '') },
+      meter: { ...meter, stopped: () => undefined },
+      role: {
+        provider: { complete: () => Promise.reject(new Error('unused')) },
+        ...{ model: 'm', maxOutputTokens: 10 },
+      },
+      ...{ clock: new FixedClock('2026-11-13T09:00:00Z'), ids: new SequenceIdGenerator() },
+      rosettaVersion: 'test',
+    });
+
+    await lab.execute({
+      ...{ target: counting, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [{ id: 'only', expected: undefined, split: 'tune', input: {} }],
+      },
+      ...{ setSha256: '1'.repeat(64), repetitions: 1 },
+    });
+
+    expect(written[0]?.cases[0]).toMatchObject({ counts: { requirements: 3, tasks: 2 } });
+  });
+});

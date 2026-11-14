@@ -46,7 +46,7 @@ describe('the plan repair check of the lab: the cards and the coverage', () => {
   it('RF-1406 reads a whole repair as Fixed, an open question uncited included', async () => {
     const whole = plan([order, store], [task('Orders', [1]), task('Storage', [2])]);
 
-    expect(await read(whole)).toEqual({
+    expect(await read(whole)).toMatchObject({
       ...{ usable: true, detail: 'Fixed' },
       followUps: { 'gap round': false },
     });
@@ -55,9 +55,10 @@ describe('the plan repair check of the lab: the cards and the coverage', () => {
   it('RF-1406 (a) reads every requirement kept with one task card as Open, a gap round', async () => {
     const fewTasks = plan([order, store], [task('Orders', [1])]);
 
-    expect(await read(fewTasks)).toEqual({
+    expect(await read(fewTasks)).toMatchObject({
       ...{ usable: true, detail: 'Open' },
       followUps: { 'gap round': true },
+      counts: { requirements: 2, tasks: 1, 'uncovered requirements': 1, 'requirement floor': 1 },
     });
   });
 
