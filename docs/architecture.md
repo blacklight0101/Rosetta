@@ -657,7 +657,7 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/domain/sources/rendered-workbook-files.ts` and only count a file as rendered when it lies inside a rendered workbook folder of
   the snapshot record (`workbookFolders`, ADR-004), so a code project's own `docs/notes.md` or `docs/values.md` is never touched.
   `judgeClaim` rejects without a model call a claim that names a rendered file and cites one (`renderedFileReason`, with
-  `verifier/claim.v5.md` saying the same to the model). The answer collector (`answer-collector.ts`, `valuesOnlyRuleProblems` in
+  `verifier/claim.v6.md` saying the same to the model). The answer collector (`answer-collector.ts`, `valuesOnlyRuleProblems` in
   `rule-citations.ts`) adds, once per task, a question to the next repair for each `BR` or `FLOW` claim that cites only `values.md`
   lines (`cards/repair.v3.md` explains it). The question is a hint, not a fault, and the repair limit of RF-208 (two) is not
   exceeded. The hinted claim is not removed or marked: if the repair answer holds the card again, that answer replaces the hinted
@@ -679,11 +679,11 @@ screens` section that says "no flows found" or "no screens found" for an area wi
   `src/application/verifier/judge-claim.ts` for one claim); a re-run with answers (RF-241) judges the claims of its
   new cards the same way. The verifier's guarded provider comes from the same provider factory call as the reader's
   and the summariser's (`UNDERSTAND_ROLES` is `reader`, `verifier` and `summariser`, so consent, keys, prices and
-  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v5.md` and one user
+  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v6.md` (P10-06: v6 asks for a reason of at most 150 characters that quotes no code, and to read a claim the way a developer would; v5 stays loadable) and one user
   message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
   denied files are refused) in a block of source `cited_lines`; nothing else of the file. The margin lines start with
-  `[context] ` (`markedLines`, P3-124, HB-04) and `claim.v5.md` tells the model not to reject a claim only because a
+  `[context] ` (`markedLines`, P3-124, HB-04) and `claim.v6.md` tells the model not to reject a claim only because a
   label sits outside the cited lines, and, when it rejects a claim because a code value, constant or name the claim states is not in the lines, to add the third answer line `Kind: defined elsewhere` (`verdict-answer.ts` reads it after `Rejected` only; the verdict stores `reasonKind: definedElsewhere`, P5-35); a claim that a value Rosetta masked "is masked in the source" is rejected by code without a call (`masked-source-claim.ts`, P5-34, RF-301); a `Rejected` whose reason says the lines match the claim is asked again once
   and left `Unverified` if it still contradicts itself (`verdict-consistency.ts`, HB-05). Evidence above
   `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made, and
