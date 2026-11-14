@@ -10,6 +10,7 @@ import { readerPartTargets } from '../../application/lab/targets/reader-part-tar
 import { readerTargets } from '../../application/lab/targets/reader-targets.js';
 import { sharedTargets, type SharedKit } from '../../application/lab/targets/shared-targets.js';
 import { verifierClaimTarget } from '../../application/lab/targets/verifier-claim-target.js';
+import { verifierRetryTarget } from '../../application/lab/targets/verifier-retry-target.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
 import {
@@ -64,6 +65,7 @@ export async function listLabTargets(promptsFolder: string): Promise<LabTarget[]
   const gap = await loadGapPrompt(promptsFolder);
   return [
     verifierClaimTarget(verifier.retry),
+    verifierRetryTarget(verifier.system),
     overviewTarget(),
     gapTarget(),
     ...planDocTargets(planner),

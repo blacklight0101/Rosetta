@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
+import { disagreementsOf } from './lab-disagreements.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
 import { summariseTurns, toolTurnSchema, type TurnSummary } from './lab-turns.js';
 
@@ -118,6 +119,8 @@ export interface LabSummary {
   readonly followUpRates: Readonly<Record<string, number>>;
   /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
   readonly turns: TurnSummary | null;
+  /** RF-1411: the cases that differ from their expected label, by `expected -> label`. */
+  readonly disagreements: Readonly<Record<string, number>>;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -190,6 +193,7 @@ export function summariseLab(results: LabResults): LabSummary {
     detailCounts: detailCountsOf(cases),
     followUpRates: followUpRatesOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
+    disagreements: disagreementsOf(cases),
   };
 }
 

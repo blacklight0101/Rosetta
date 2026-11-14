@@ -13,7 +13,7 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   --cases verifier-claim-sample --repetitions 3 --yes
 ```
 
-- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (31 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts, the masked-value note and the text tool protocol; `shared/secret-risk` has no call to measure).
+- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (32 are wired: the verifier's claim and retry, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts, the masked-value note and the text tool protocol; `shared/secret-risk` has no call to measure).
 - `--version v5` is the file `prompts/verifier/claim.v5.md`; any other value is the path of a draft file, so a new
   wording is tried before it is added to `prompts/` (its name, version `file` and SHA-256 go to the results).
 - `--model provider:model` is any model the provider factory serves; the server key comes from the environment
@@ -28,6 +28,8 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
 The command prints the rates of first-try validity, repairs and unusable answers, the refusals and RST codes, the
 agreement with the cases' `expected` labels, tokens and latency per call and the cost, and writes
 `lab-out/<id>/results.json` (git-ignored). Exit code 0 means every case ran; 1 means it did not start, or a cap stopped it.
+
+**What the merge and overview labels cannot tell (P10-06).** `NoMerge` is a valid answer, and the merge cases have no hand labels, so the lab cannot tell a right merge from a wrong one: `Merges`, the merged ids in `counts` and the `Unrelated` guard are a floor, and more merges are never a quality gain under DEC-238 until the cases have hand labels. The overview labels are guards only: an overview that copies the card titles, or writes one statement per section, reads `Written`; the judge is the only check behind them.
 
 ## 2. The caps and the owner's stop line
 
@@ -188,43 +190,43 @@ A prompt id is live when the newest version of its family in `prompts/` is the o
 to `wired`. `tests/integration/lab/runbook-prompt-list.test.ts` keeps this table equal to the live families and to the
 targets the lab has, so a row cannot be forgotten. `no call` marks a live prompt that no model is ever sent (`shared/secret-risk`), so the lab has nothing to run. Data files of `prompts/catalogue/` are not prompts.
 
-| Prompt id                   | State   | Case set                                              |
-| --------------------------- | ------- | ----------------------------------------------------- |
-| `cards/card-format`         | wired   | cards-card-format (after a replay of two reads)       |
-| `cards/continue`            | wired   | cards-continue (after a cut made from the first read) |
-| `cards/flows`               | wired   | cards-flows (areas marked for flows)                  |
-| `cards/repair`              | wired   | cards-repair (an earlier answer written by hand)      |
-| `cards/screens`             | wired   | cards-screens (areas marked for screens)              |
-| `planner/adr-model`         | wired   | none yet (no saved run holds this call)               |
-| `planner/api-contract`      | wired   | planner-api-contract (+ local set)                    |
-| `planner/continue`          | not yet |                                                       |
-| `planner/coverage`          | wired   | planner-coverage (+ local set)                        |
-| `planner/data-model`        | wired   | planner-data-model (+ local set)                      |
-| `planner/flows`             | wired   | planner-flows (+ local set)                           |
-| `planner/gap`               | wired   | planner-gap                                           |
-| `planner/gap-repair`        | wired   | planner-gap-repair (problems written by hand)         |
-| `planner/options`           | not yet |                                                       |
-| `planner/package`           | wired   | planner-package (+ local set)                         |
-| `planner/plan-repair`       | wired   | planner-plan-repair (problems written by hand)        |
-| `planner/prd`               | wired   | planner-prd (+ local set)                             |
-| `planner/ux`                | wired   | planner-ux (+ local set)                              |
-| `planner/workbook`          | wired   | local only: planner-workbook-workbooks                |
-| `reader/answers`            | wired   | reader-answers (first turn, with answers)             |
-| `reader/area`               | wired   | reader-area (first turn)                              |
-| `reader/parent-cards`       | wired   | reader-parent-cards (first turn, parent cards)        |
-| `reader/read-first`         | wired   | reader-read-first (after a fixed premature answer)    |
-| `reader/read-more`          | wired   | reader-read-more (after the refusal)                  |
-| `reader/reread`             | wired   | reader-reread (first turn, rejected claims)           |
-| `reader/task`               | wired   | reader-task (first turn)                              |
-| `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)        |
-| `reader/workbook`           | wired   | reader-workbook-workbooks (local only)                |
-| `shared/masked-value`       | wired   | shared-masked-value (invented, by hand)               |
-| `shared/secret-risk`        | no call | none (the domain fills it, no model reads it)         |
-| `shared/text-tool-protocol` | wired   | shared-text-tool-protocol (invented, by hand)         |
-| `summariser/merge`          | wired   | summariser-merge                                      |
-| `summariser/overview`       | wired   | summariser-overview, overview-sample                  |
-| `verifier/claim`            | wired   | verifier-claim-sample (invented)                      |
-| `verifier/retry`            | not yet |                                                       |
+| Prompt id                   | State   | Case set                                                                               |
+| --------------------------- | ------- | -------------------------------------------------------------------------------------- |
+| `cards/card-format`         | wired   | cards-card-format (after a replay of two reads)                                        |
+| `cards/continue`            | wired   | cards-continue (after a cut made from the first read)                                  |
+| `cards/flows`               | wired   | cards-flows (areas marked for flows)                                                   |
+| `cards/repair`              | wired   | cards-repair (an earlier answer written by hand)                                       |
+| `cards/screens`             | wired   | cards-screens (areas marked for screens)                                               |
+| `planner/adr-model`         | wired   | none yet (no saved run holds this call)                                                |
+| `planner/api-contract`      | wired   | planner-api-contract (+ local set)                                                     |
+| `planner/continue`          | not yet |                                                                                        |
+| `planner/coverage`          | wired   | planner-coverage (+ local set)                                                         |
+| `planner/data-model`        | wired   | planner-data-model (+ local set)                                                       |
+| `planner/flows`             | wired   | planner-flows (+ local set)                                                            |
+| `planner/gap`               | wired   | planner-gap                                                                            |
+| `planner/gap-repair`        | wired   | planner-gap-repair (problems written by hand)                                          |
+| `planner/options`           | not yet |                                                                                        |
+| `planner/package`           | wired   | planner-package (+ local set)                                                          |
+| `planner/plan-repair`       | wired   | planner-plan-repair (problems written by hand)                                         |
+| `planner/prd`               | wired   | planner-prd (+ local set)                                                              |
+| `planner/ux`                | wired   | planner-ux (+ local set)                                                               |
+| `planner/workbook`          | wired   | local only: planner-workbook-workbooks                                                 |
+| `reader/answers`            | wired   | reader-answers (first turn, with answers)                                              |
+| `reader/area`               | wired   | reader-area (first turn)                                                               |
+| `reader/parent-cards`       | wired   | reader-parent-cards (first turn, parent cards)                                         |
+| `reader/read-first`         | wired   | reader-read-first (after a fixed premature answer)                                     |
+| `reader/read-more`          | wired   | reader-read-more (after the refusal)                                                   |
+| `reader/reread`             | wired   | reader-reread (first turn, rejected claims)                                            |
+| `reader/task`               | wired   | reader-task (first turn)                                                               |
+| `reader/turns-left`         | wired   | reader-turns-left (last turn, after two reads)                                         |
+| `reader/workbook`           | wired   | reader-workbook-workbooks (local only)                                                 |
+| `shared/masked-value`       | wired   | shared-masked-value (invented, by hand)                                                |
+| `shared/secret-risk`        | no call | none (the domain fills it, no model reads it)                                          |
+| `shared/text-tool-protocol` | wired   | shared-text-tool-protocol (invented, by hand)                                          |
+| `summariser/merge`          | wired   | summariser-merge                                                                       |
+| `summariser/overview`       | wired   | summariser-overview, overview-sample                                                   |
+| `verifier/claim`            | wired   | verifier-claim-calibration (30 hand-labelled claims), verifier-claim-sample (invented) |
+| `verifier/retry`            | wired   | verifier-retry-calibration (fixed unreadable first answer)                             |
 
 ## 8. The judge (`--judge`) and the judge check (`--judge-check`)
 

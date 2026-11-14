@@ -66,7 +66,7 @@ describe('an understand run: prompts', () => {
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'shared/masked-value.v1.md',
-      'verifier/claim.v5.md',
+      'verifier/claim.v6.md',
       'verifier/retry.v1.md',
     ]);
     expect(manifest.promptVersions['reader/area.v12.md']?.version).toBe('v12');
