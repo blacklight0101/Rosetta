@@ -129,7 +129,17 @@ function resultOf(
     outputTokens: total(metered, (call) => call.outputTokens),
     latencyMs: total(metered, (call) => call.latencyMs),
     costMicros: total(metered, (call) => call.costMicros) + metered.unansweredCostMicros,
-    ...(outcome.turn === undefined ? {} : { turn: outcome.turn }),
+    ...recordsOf(outcome),
+  };
+}
+
+/** RF-1403, RF-1410: what the target recorded beside the label, each kept only when present. */
+function recordsOf(outcome: TargetOutcome): Partial<LabCaseResult> {
+  const { followUps, counts, turn } = outcome;
+  return {
+    ...(followUps === undefined ? {} : { followUps: { ...followUps } }),
+    ...(counts === undefined ? {} : { counts: { ...counts } }),
+    ...(turn === undefined ? {} : { turn }),
   };
 }
 

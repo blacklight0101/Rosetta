@@ -22,6 +22,22 @@ function errorsOf(summary: LabSummary): string {
     : entries.map(([code, count]) => `${code} x${String(count)}`).join(', ');
 }
 
+/**
+ * RF-1403 (P10-07), RF-1410: the count of each label, the one label line of a report, so a label
+ * that rises between two versions is seen, and the rate of each follow-up a run would make.
+ */
+function labelLines(summary: LabSummary): string[] {
+  const counts = Object.entries(summary.detailCounts)
+    .map(([label, count]) => `${label} ${String(count)}`)
+    .join(', ');
+  const rates = Object.entries(summary.followUpRates);
+  const follow = rates.map(([name, rate]) => `${name} ${pct(rate)}`).join(', ');
+  return [
+    `Results by label: ${counts === '' ? 'none' : counts}`,
+    ...(rates.length === 0 ? [] : [`Follow-ups a run would make: ${follow}`]),
+  ];
+}
+
 function judgeLines(summary: LabSummary): string[] {
   const { judge } = summary;
   if (judge === null) return [];
@@ -31,14 +47,6 @@ function judgeLines(summary: LabSummary): string[] {
   return [
     `Judge scores: ${String(judge.scored)} scored, ${String(judge.unscored)} not scored, mean overall ${mean(judge.meanOverall)} (${criteria}); vetoed: ${String(judge.vetoed)}; judge cost: ${money(judge.costMicros)}`,
   ];
-}
-
-/** RF-1410: the count of each label, so a label that rises between two versions is seen. */
-function labelsOf(summary: LabSummary): string {
-  const entries = Object.entries(summary.details);
-  return entries.length === 0
-    ? 'none'
-    : entries.map(([label, count]) => `${label} ${String(count)}`).join(', ');
 }
 
 /** RF-1410: the counts per tool turn of a reader turn that a run answers with tool calls. */
@@ -66,9 +74,9 @@ function metricLines(summary: LabSummary): string[] {
     `Valid on the first try: ${pct(summary.firstTryRate)}; repaired: ${pct(summary.repairedRate)}; not usable: ${pct(summary.invalidRate)}`,
     `Refused: ${String(summary.refusedCount)}; errors by RST code: ${errorsOf(summary)}`,
     `Agreement with the expected labels: ${pct(summary.agreementRate)}`,
+    ...labelLines(summary),
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
-    `Labels: ${labelsOf(summary)}`,
     ...turnLines(summary),
     ...judgeLines(summary),
   ];

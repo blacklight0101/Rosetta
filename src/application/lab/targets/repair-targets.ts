@@ -6,6 +6,7 @@ import type { LabTarget } from '../lab-target.js';
 import { docTarget } from './doc-target.js';
 import { gapInputSchema, gapOutcome } from './gap-target.js';
 import { planInput, planMessageOf, readPlan } from './plan-doc-targets.js';
+import { planRepairOutcome } from './plan-repair-check.js';
 
 // RF-1406, RF-202, Q-54, P3-126, ADR-029: the lab targets of the planner's two repair prompts. A
 // repair is the call it repairs sent again: the same user message, then the file under test and one
@@ -45,7 +46,8 @@ function gapRepair(gapPrompt: PromptFile): LabTarget {
         { prompt, problems: problems.map((each) => ({ ...each, builds: [] })) },
         tags,
       ),
-    read: (answer, input) => gapOutcome(answer, { items: input?.items ?? [] }),
+    read: (answer, input) =>
+      gapOutcome(answer, input ?? { items: [], phases: [], tasks: [] }, 'repair'),
   });
 }
 
@@ -63,7 +65,9 @@ function planRepair(packagePrompt: PromptFile): LabTarget {
       }));
       return planRepairMessage(planMessageOf(input, tags), prompt, problems);
     },
-    read: readPlan,
+    // RF-1403: with no case (first-try validity) the answer is read by the run's parser alone.
+    read: (answer, input) =>
+      input === undefined ? readPlan(answer) : planRepairOutcome(answer, input),
   });
 }
 

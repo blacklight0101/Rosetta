@@ -10008,12 +10008,12 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: M
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Todo
+- **Status**: In review (2026-11-14, after the verifier's third fix round: the lab counts every label and the follow-ups a run would make after a gap or repair answer (repair call, second round, gap round, second repair) in the summary and `--compare`, and keeps per case the counts a check used (RF-1403); a plan repair that loses a card that is not an open question, merges its requirements (fewer distinct requirements than the feature and rule cards they cite) or keeps fewer requirements or task cards than the problem lines show the earlier answer held is `Shrunk`, one that drops an item is `LeftOut`, both not usable, and one that leaves a requirement no task lists is `Open` with a gap round; a card repair is merged as the run does, and four `-nojson` cases test an earlier answer that is not JSON (RF-1406); every set has held-back cases; each of the four prompts had at least three Haiku rounds; **no version kept**: `plan-repair.v3`, kept in the second fix round, raised Sonnet's output by 35% on the third round's matched run and was reverted, its file removed and its text kept in the round log; the gap, gap repair and card repair drafts regressed on held-back cases; figures in `docs/evaluation/prompt-lab/plan-gap.md`)
 - **Evidence**: the gap rounds decide whether every requirement gets a card (RST-1806, P9-06) and the repairs cost extra calls.
 - **Reads**: `prompts/planner/gap*`, `gap-repair*`, `plan-repair*`, `prompts/cards/repair*`, P9-06, P10-04.
 - **Do**: as P10-05, with the repair rate as a first-class metric. Round log in `docs/evaluation/prompt-lab/plan-gap.md`.
 - **Delivers**: new prompt versions, the round log, tests and recordings.
-- **Done when**: as P10-05; CI green. Budget slice: $5.
+- **Done when**: as P10-05; CI green. Budget: the $3.00 slice of DEC-234 plus $0.50 the orchestrator released from the reserve for the third fix round's re-measure, $3.50 in all; $3.3032 spent.
 - **Refs**: RF-623, DEC-231; P9-06, P10-04; GitHub issue #1385
 
 ### P10-08 - Tune the plan document prompts
