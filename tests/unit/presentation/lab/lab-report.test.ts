@@ -84,3 +84,13 @@ describe('the report of a run with tool turns', () => {
     ]);
   });
 });
+
+describe('the report of a run with no case', () => {
+  it('RF-1403 RF-1410 prints Results by label: none, once', () => {
+    const lines = summaryLines(resultsOf([]), 'folder');
+
+    expect(lines.filter((line) => line.startsWith('Results by label:'))).toEqual([
+      'Results by label: none',
+    ]);
+  });
+});
