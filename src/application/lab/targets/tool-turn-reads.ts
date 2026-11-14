@@ -8,7 +8,7 @@ import type { ReaderCase } from './reader-case.js';
 // not third-party (`readShare`), since a case holds each file's lines and not its tokens.
 
 /** The default most lines one `read_file` call returns (`scan.excerptMaxLines`, RF-144). */
-export const MAX_READ_LINES = 400;
+const MAX_READ_LINES = 400;
 
 export interface ReadableFile {
   readonly path: string;
