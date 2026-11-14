@@ -20,8 +20,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
 | P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
 | P9 Evaluation fixes, round 3 | 19      | 4         | 13         | 2         | 0                  | 17      | 2       | 0      | 6          | 0         |
-| P10 Prompt lab               | 12      | 0         | 10         | 2         | 0                  | 3       | 7       | 2      | 0          | 0         |
-| **Total**                    | **664** | **127**   | **484**    | **53**    | **0**              | **350** | **285** | **29** | **324**    | **24**    |
+| P10 Prompt lab               | 13      | 0         | 11         | 2         | 0                  | 3       | 8       | 2      | 0          | 0         |
+| **Total**                    | **665** | **127**   | **485**    | **53**    | **0**              | **350** | **286** | **29** | **324**    | **24**    |
 
 ## Conventions for every card
 
