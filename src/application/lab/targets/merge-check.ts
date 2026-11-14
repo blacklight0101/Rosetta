@@ -42,6 +42,29 @@ function thin(cards: readonly Listed[], merge: MergeAsked): boolean {
   });
 }
 
+/**
+ * Whether the cards of a merge are one group: two cards are linked when their titles share a word of
+ * four letters or more, and a card is in the group of every card it is linked to, directly or not.
+ */
+function related(cards: readonly Listed[], merge: MergeAsked): boolean {
+  const words = merge.ids.map((id) => wordsOf(cards.find((card) => card.id === id)?.title ?? ''));
+  const reached = new Set<number>([0]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const [index, own] of words.entries()) {
+      if (reached.has(index)) continue;
+      const linked = [...reached].some((other) =>
+        [...own].some((word) => words[other]?.has(word) === true),
+      );
+      if (linked) {
+        reached.add(index);
+        grew = true;
+      }
+    }
+  }
+  return reached.size === merge.ids.length;
+}
+
 /** The first label that applies to the merges the answer asks for. */
 // RF-1412
 export function checkMerges(cards: readonly Listed[], merges: readonly MergeAsked[]): MergeLabel {
@@ -49,6 +72,7 @@ export function checkMerges(cards: readonly Listed[], merges: readonly MergeAske
   if (cards.length >= 4 && merges.some((merge) => merge.ids.length * 2 > cards.length)) {
     return 'Lumped';
   }
+  if (merges.some((merge) => !related(cards, merge))) return 'Unrelated';
   if (merges.some((merge) => thin(cards, merge))) return 'Thin';
   return merges.length > 0 ? 'Merges' : 'NoMerge';
 }
@@ -59,8 +83,9 @@ export interface MergeCounts {
   readonly cards: number;
 }
 
-/** RF-1412 (stub for the red commit). */
-export const mergeCounts: (
-  cards: readonly Listed[],
-  merges: readonly MergeAsked[],
-) => MergeCounts = () => ({ merges: 0, mergedIds: 0, cards: 0 });
+/** The merges, the ids they hold and the cards of the case: what the answer did, not how many answers. */
+// RF-1412
+export function mergeCounts(cards: readonly Listed[], merges: readonly MergeAsked[]): MergeCounts {
+  const mergedIds = merges.reduce((total, merge) => total + merge.ids.length, 0);
+  return { merges: merges.length, mergedIds, cards: cards.length };
+}

@@ -13,7 +13,7 @@ npm run lab -- --prompt verifier/claim --version v5 --model anthropic:claude-hai
   --cases verifier-claim-sample --repetitions 3 --yes
 ```
 
-- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (31 are wired: the verifier's claim, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts, the masked-value note and the text tool protocol; `shared/secret-risk` has no call to measure).
+- `--prompt` is the prompt id. Section 7 lists every live prompt id and whether the lab has a target for it (32 are wired: the verifier's claim and retry, the summariser's overview and merge, the planner's gap, its two repairs and its nine plan documents, the reader's prompts, and the card format, its repair, continue, flows and screens prompts, the masked-value note and the text tool protocol; `shared/secret-risk` has no call to measure).
 - `--version v5` is the file `prompts/verifier/claim.v5.md`; any other value is the path of a draft file, so a new
   wording is tried before it is added to `prompts/` (its name, version `file` and SHA-256 go to the results).
 - `--model provider:model` is any model the provider factory serves; the server key comes from the environment
@@ -226,7 +226,7 @@ targets the lab has, so a row cannot be forgotten. `no call` marks a live prompt
 | `summariser/merge`          | wired   | summariser-merge                                                                       |
 | `summariser/overview`       | wired   | summariser-overview, overview-sample                                                   |
 | `verifier/claim`            | wired   | verifier-claim-calibration (30 hand-labelled claims), verifier-claim-sample (invented) |
-| `verifier/retry`            | not yet |                                                                                        |
+| `verifier/retry`            | wired   | verifier-retry-calibration (fixed unreadable first answer)                             |
 
 ## 8. The judge (`--judge`) and the judge check (`--judge-check`)
 

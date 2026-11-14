@@ -17,7 +17,7 @@ import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-t
 // blocks the run builds, and an answer that cannot be read gets the run's one retry. `detail` is the
 // verdict (`Supported`, `Rejected`) or `Unverified`.
 
-const inputSchema = z.strictObject({
+export const inputSchema = z.strictObject({
   claim: z.string().trim().min(1).max(2000),
   citations: z.array(z.string().max(420)).min(1).max(20),
   files: z.record(z.string().min(1).max(400), z.string().max(100_000)),
@@ -47,7 +47,7 @@ function readerOf(files: Readonly<Record<string, string>>): Pick<RepositoryReade
   };
 }
 
-interface Claim {
+export interface Claim {
   readonly text: string;
   readonly citations: readonly Citation[];
   readonly files: Readonly<Record<string, string>>;
@@ -60,46 +60,57 @@ function outcomeOf(judgement: Awaited<ReturnType<typeof judgeClaim>>): TargetOut
   return { usable: false, detail: judgement.kind === 'capped' ? 'Capped' : 'Stopped' };
 }
 
+/** The run's own judgement of one claim, under the two prompts given. */
+export async function judgeOne(
+  env: TargetEnv,
+  claim: Claim,
+  prompts: { readonly system: PromptFile; readonly retry: PromptFile },
+): Promise<TargetOutcome> {
+  const parts: ClaimJudgeParts = {
+    ...{ role: env.role, prompts, reader: readerOf(claim.files) },
+    ...{ ids: env.ids, limits: defaultEvidenceLimits, skipReason: () => undefined },
+    call: { runId: 'lab', traceId: env.traceId, nextCallId: env.nextCallId, signal: env.signal },
+  };
+  const judged = { claimId: env.caseKey, text: claim.text, citations: claim.citations };
+  return outcomeOf(await judgeClaim(parts, judged, `${env.traceId.slice(0, 12)}f000`));
+}
+
 function preparedOf(claim: Claim, retry: PromptFile): PreparedCase {
   return {
-    run: async (env: TargetEnv, prompt: PromptFile): Promise<TargetOutcome> => {
-      const parts: ClaimJudgeParts = {
-        ...{ role: env.role, prompts: { system: prompt, retry }, reader: readerOf(claim.files) },
-        ...{ ids: env.ids, limits: defaultEvidenceLimits, skipReason: () => undefined },
-        call: {
-          runId: 'lab',
-          traceId: env.traceId,
-          nextCallId: env.nextCallId,
-          signal: env.signal,
-        },
-      };
-      const judged = { claimId: env.caseKey, text: claim.text, citations: claim.citations };
-      return outcomeOf(await judgeClaim(parts, judged, `${env.traceId.slice(0, 12)}f000`));
-    },
+    run: (env: TargetEnv, prompt: PromptFile): Promise<TargetOutcome> =>
+      judgeOne(env, claim, { system: prompt, retry }),
   };
 }
 
-function parseCase(data: unknown, retry: PromptFile): Result<PreparedCase, string> {
-  const parsed = inputSchema.safeParse(data);
-  if (!parsed.success) {
-    const where = parsed.error.issues.map(
-      (issue) => `${issue.path.map(String).join('.')}: ${issue.message}`,
-    );
-    return err(where.join('; '));
-  }
+/** The claim of a case input, with its citations read; the problems when one cannot be. */
+export function claimOf(data: z.infer<typeof inputSchema>): Result<Claim, string> {
   const citations: Citation[] = [];
-  for (const text of parsed.data.citations) {
+  for (const text of data.citations) {
     const citation = parseCitation(text);
     if (!citation.ok) return err(`the citation ${text} is not path:start-end`);
-    if (!Object.hasOwn(parsed.data.files, citation.value.path)) {
+    if (!Object.hasOwn(data.files, citation.value.path)) {
       return err(`the case cites ${citation.value.path}, which it holds no file for`);
     }
     citations.push(citation.value);
   }
-  return ok(preparedOf({ text: parsed.data.claim, citations, files: parsed.data.files }, retry));
+  return ok({ text: data.claim, citations, files: data.files });
 }
 
-const asResponse = (text: string): LlmResponse => ({
+/** The problems of a case input that does not fit the schema, as one text. */
+export function problemsOfInput(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.map(String).join('.')}: ${issue.message}`)
+    .join('; ');
+}
+
+function parseCase(data: unknown, retry: PromptFile): Result<PreparedCase, string> {
+  const parsed = inputSchema.safeParse(data);
+  if (!parsed.success) return err(problemsOfInput(parsed.error));
+  const claim = claimOf(parsed.data);
+  return claim.ok ? ok(preparedOf(claim.value, retry)) : err(claim.error);
+}
+
+export const asResponse = (text: string): LlmResponse => ({
   ...{ text, toolCalls: [], finishReason: 'stop', modelVersion: 'lab' },
   usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, usageSource: 'estimated' },
 });

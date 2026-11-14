@@ -76,8 +76,11 @@ describe('the summariser merge target', () => {
     const none = await run(mergeTarget(), mergeInput, ['{"merges":[]}']);
     const bad = await run(mergeTarget(), mergeInput, ['Both are the same.']);
 
-    expect(merged.outcome).toEqual({ usable: true, detail: 'Merges' });
-    expect(none.outcome).toEqual({ usable: true, detail: 'NoMerge' });
+    expect(merged.outcome).toEqual({
+      ...{ usable: true, detail: 'Merges' },
+      counts: { merges: 1, mergedIds: 2, cards: 2 },
+    });
+    expect(none.outcome).toMatchObject({ usable: true, detail: 'NoMerge' });
     expect(bad.outcome).toEqual({ usable: false, detail: 'Unusable' });
   });
 

@@ -75,6 +75,8 @@ describe('the relatedness of a merge', () => {
       { id: 'B', title: 'Catalog stock' },
       { id: 'C', title: 'Stock shipment' },
       { id: 'D', title: 'Unrelated thing' },
+      { id: 'E', title: 'Other matter' },
+      { id: 'F', title: 'Further matter' },
     ];
 
     expect(
