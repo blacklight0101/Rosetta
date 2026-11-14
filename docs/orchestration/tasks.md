@@ -10064,7 +10064,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: M
 - **Depends on**: P10-05, P10-06, P10-07, P10-08, P10-09, P10-10
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231; the stack needs Docker up)
-- **Status**: Todo
+- **Status**: In review (2026-11-14: Asset Manager, Invoice Generator and eShopModernizing run end to end on Haiku 5.5 on the new `rosetta-p10` stack from `develop` `cb146766a` and compared with 2026-11-09: journeys $2.35 against $2.65, coverage about the same, verifier retries far fewer, EV-100 and EV-108 fixed, judge 3.0 on each package; `read-more.v3` late calls +14% on eShop; five minor follow-ups proposed; spend $3.40 of $6; figures in `docs/evaluation/prompt-lab/end-to-end.md`)
 - **Evidence**: prompts tuned one by one must also work together in a run.
 - **Reads**: the evaluation of 2026-11-09 (method and figures), `docs/runbooks/` for the evaluation stack, P10-04..P10-10.
 - **Do**: bring up a new stack `rosetta-p10` from `develop` (never touching the stacks named above), run Asset Manager, Invoice Generator and eShopModernizing end to end on Haiku, and compare with the evaluation of 2026-11-09: spend, calls, repairs, failures, coverage, and the judge's score of the hand-off package. File any defect as a follow-up card.
