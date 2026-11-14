@@ -22,6 +22,19 @@ function errorsOf(summary: LabSummary): string {
     : entries.map(([code, count]) => `${code} x${String(count)}`).join(', ');
 }
 
+/** RF-1403 (P10-07): the count of each label and the rate of each follow-up a run would make. */
+function labelLines(summary: LabSummary): string[] {
+  const counts = Object.entries(summary.detailCounts)
+    .map(([label, count]) => `${label} ${String(count)}`)
+    .join(', ');
+  const rates = Object.entries(summary.followUpRates);
+  const follow = rates.map(([name, rate]) => `${name} ${pct(rate)}`).join(', ');
+  return [
+    ...(counts === '' ? [] : [`Results by label: ${counts}`]),
+    ...(rates.length === 0 ? [] : [`Follow-ups a run would make: ${follow}`]),
+  ];
+}
+
 function judgeLines(summary: LabSummary): string[] {
   const { judge } = summary;
   if (judge === null) return [];
@@ -39,6 +52,7 @@ function metricLines(summary: LabSummary): string[] {
     `Valid on the first try: ${pct(summary.firstTryRate)}; repaired: ${pct(summary.repairedRate)}; not usable: ${pct(summary.invalidRate)}`,
     `Refused: ${String(summary.refusedCount)}; errors by RST code: ${errorsOf(summary)}`,
     `Agreement with the expected labels: ${pct(summary.agreementRate)}`,
+    ...labelLines(summary),
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
     ...judgeLines(summary),

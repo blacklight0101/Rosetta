@@ -1,4 +1,9 @@
-import { isMigrationCard, isSourceKind } from '../../../domain/planning/plan-coverage.js';
+import { planId } from '../../../domain/planning/plan-content.js';
+import {
+  isMigrationCard,
+  isSourceKind,
+  requirementItemId,
+} from '../../../domain/planning/plan-coverage.js';
 import { draftFault } from '../../../domain/planning/left-out-card.js';
 import type { GapAnswer } from '../../plan/gap-answer.js';
 
@@ -9,11 +14,19 @@ import type { GapAnswer } from '../../plan/gap-answer.js';
 // out that names an item still open, or gives no valid builds while one is open, so a run makes its
 // one repair call; `Open`: an item that is not a part of the source is still built by no card, so a
 // run asks a second round and may end RST-1806; `ModulesOpen`: only parts of the source (modules,
-// deployment) are left, which a run lists with no further call; `Covered`: nothing is left. Not
-// replayed: the requirement check of a specification-driven plan (a case holds no sources) and the
+// deployment) are left, which a run lists with no further call; `Covered`: nothing is left. A
+// `requirement:` item is also covered by a counted card that lists the requirement (its position read
+// as the run's `REQ-` id, `coverageOf`, P9-06). The repair call and the second round are also given
+// apart from the label (RF-1403), so one answer may count for both. Not replayed: the requirement check of a specification-driven plan (a case holds no sources) and the
 // dependencies.
 
-type GapCoverage = 'Covered' | 'ModulesOpen' | 'Open' | 'LeftOut';
+interface GapCoverage {
+  readonly detail: 'Covered' | 'ModulesOpen' | 'Open' | 'LeftOut';
+  /** A run makes its one repair call after this answer (the gap call only). */
+  readonly repairCall: boolean;
+  /** An item that is not a part of the source is still open after this answer. */
+  readonly secondRound: boolean;
+}
 
 interface GapCase {
   readonly items: readonly { readonly id: string; readonly kind: string }[];
@@ -41,8 +54,11 @@ function readAnswer(answer: GapAnswer, input: GapCase) {
   for (const draft of answer.drafts) {
     const builds = inBlock(draft.builds, block);
     const fault = draftFault(draft, input.phases.length);
-    if (fault === undefined && builds.length > 0) builds.forEach((id) => built.add(id));
-    else leftOut.push({ builds: draft.builds, noBuilds: fault === undefined });
+    if (fault === undefined && builds.length > 0) {
+      // P9-06: a requirement item is built by a card that lists the requirement.
+      const listed = draft.requirements.map((at) => requirementItemId(planId('REQ', at)));
+      inBlock([...builds, ...listed], block).forEach((id) => built.add(id));
+    } else leftOut.push({ builds: draft.builds, noBuilds: fault === undefined });
   }
   const cards = new Map(input.tasks.map((task) => [task.id, task]));
   for (const link of answer.links ?? []) {
@@ -60,7 +76,9 @@ export function gapCoverage(answer: GapAnswer, input: GapCase): GapCoverage {
   const open = input.items.filter((item) => !built.has(item.id));
   const openIds = new Set(open.map((item) => item.id));
   const repair = leftOut.some((card) => card.noBuilds || card.builds.some((id) => openIds.has(id)));
-  if (open.length > 0 && repair) return 'LeftOut';
-  if (open.some((item) => !isSourceKind(item.kind))) return 'Open';
-  return open.length > 0 ? 'ModulesOpen' : 'Covered';
+  const repairCall = open.length > 0 && repair;
+  const secondRound = open.some((item) => !isSourceKind(item.kind));
+  const rest = open.length > 0 ? 'ModulesOpen' : 'Covered';
+  const detail = repairCall ? 'LeftOut' : secondRound ? 'Open' : rest;
+  return { detail, repairCall, secondRound };
 }

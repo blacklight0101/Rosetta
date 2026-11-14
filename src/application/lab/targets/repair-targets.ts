@@ -46,7 +46,8 @@ function gapRepair(gapPrompt: PromptFile): LabTarget {
         { prompt, problems: problems.map((each) => ({ ...each, builds: [] })) },
         tags,
       ),
-    read: (answer, input) => gapOutcome(answer, input ?? { items: [], phases: [], tasks: [] }),
+    read: (answer, input) =>
+      gapOutcome(answer, input ?? { items: [], phases: [], tasks: [] }, 'repair'),
   });
 }
 

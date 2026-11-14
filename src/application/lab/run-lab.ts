@@ -124,6 +124,7 @@ function resultOf(
     outputTokens: total(metered, (call) => call.outputTokens),
     latencyMs: total(metered, (call) => call.latencyMs),
     costMicros: total(metered, (call) => call.costMicros) + metered.unansweredCostMicros,
+    ...(outcome.followUps === undefined ? {} : { followUps: { ...outcome.followUps } }),
   };
 }
 

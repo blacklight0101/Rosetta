@@ -23,6 +23,11 @@ export interface TargetOutcome {
   readonly usable: boolean;
   /** A short label of the result, compared with the case's `expected`. */
   readonly detail: string;
+  /**
+   * RF-1403 (P10-07): what a run would do after this answer (a repair call, a second round), each
+   * true or false, counted apart from the label; absent for a target that names none.
+   */
+  readonly followUps?: Readonly<Record<string, boolean>>;
 }
 
 export interface PreparedCase {

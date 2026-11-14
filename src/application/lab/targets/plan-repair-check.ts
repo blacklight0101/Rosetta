@@ -7,13 +7,15 @@ import type { TargetOutcome } from '../lab-target.js';
 // RF-1406, RF-604, P8-02, P10-07: the lab's check of a plan repair answer. It is assembled as a run
 // assembles the plan after its repair round (`plan-assembly.ts`): the case's cards are the supported
 // cards, and the plan is specification-driven when the brief names the principle `sdd`, as the run
-// reads the brief (`build-plan.ts`). `NoRequirements`: none is kept (not usable); `LeftOut`: the
-// package of a run would lose a requirement, a task card or an item, and the run logs it; `Fixed`:
-// nothing is lost. The first answer is not in the case, so the run's choice of the better of the two
+// reads the brief (`build-plan.ts`). `NoRequirements`: none is kept (not usable); `Shrunk`: the plan
+// keeps no phase or no task card, or a `FEAT` card of the case is cited by no kept requirement (the
+// run's `sourceCardsWithNoRequirement`), content a run that takes this repair would not have (not
+// usable); `LeftOut`: the package of a run would lose a requirement, a task card or an item, and the
+// run logs it; `Fixed`: nothing is lost. The first answer is not in the case, so the run's choice of the better of the two
 // is not replayed.
 
 interface PlanRepairCase {
-  readonly cards: readonly { readonly id: string }[];
+  readonly cards: readonly { readonly id: string; readonly type: string }[];
   readonly owner: Readonly<Record<string, unknown>>;
 }
 
@@ -45,7 +47,12 @@ export function planRepairOutcome(text: string, input: PlanRepairCase): TargetOu
   if (assembly.content.requirements.length === 0) {
     return { usable: false, detail: 'NoRequirements' };
   }
-  const { dropped } = assembly;
+  const { content, dropped } = assembly;
+  const cited = new Set(content.requirements.flatMap((requirement) => requirement.sources));
+  const uncited = input.cards.some((card) => card.type === 'FEAT' && !cited.has(card.id));
+  if (content.phases.length === 0 || content.tasks.length === 0 || uncited) {
+    return { usable: false, detail: 'Shrunk' };
+  }
   const lost = [
     ...[assembly.leftOut.length, assembly.unreadable.length, assembly.unsourced.length],
     ...[assembly.orphaned.length, dropped.requirements, dropped.entities, dropped.tasks],

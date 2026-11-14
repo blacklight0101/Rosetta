@@ -45,11 +45,18 @@ type GapInput = z.infer<typeof gapInputSchema>;
 export function gapOutcome(
   text: string,
   input: Pick<GapInput, 'items' | 'phases' | 'tasks'>,
+  call: 'gap' | 'repair' = 'gap',
 ): TargetOutcome {
   const only = input.items.length === 1 ? input.items[0]?.id : undefined;
   const answer = parseGapAnswer(text, only);
   if (answer === undefined) return { usable: false, detail: 'Unusable' };
-  return { usable: true, detail: gapCoverage(answer, input) };
+  const { detail, repairCall, secondRound } = gapCoverage(answer, input);
+  // RF-1403: a run makes no second repair, so a repair answer names only the second round.
+  const followUps =
+    call === 'gap'
+      ? { 'repair call': repairCall, 'second round': secondRound }
+      : { 'second round': secondRound };
+  return { usable: true, detail, followUps };
 }
 
 function preparedOf(input: GapInput): PreparedCase {
