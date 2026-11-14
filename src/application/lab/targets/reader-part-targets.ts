@@ -16,7 +16,7 @@ import { areaBlock, replayOfReads } from './reader-case.js';
 import { blockOf, readerPartCaseSchema, type ReaderPartCase } from './reader-part-case.js';
 import { cardsOutcome, PREMATURE_ANSWER } from './reader-targets.js';
 import { askOnce, problemsOf } from './single-call.js';
-import { citedPaths, earlierCalls, readerFirstTurn } from './tool-turn.js';
+import { citedPaths, earlierCalls, readerFirstTurn, type TurnScope } from './tool-turn.js';
 
 // RF-1406, ADR-029: the lab targets of the reader's other prompt files. Like the first four, a case
 // measures one turn with the run's own builders and one call with the reader's tool definitions;
@@ -48,7 +48,7 @@ interface Spec {
   /** Whether the turn is read as the final answer (cards) or as the first turn of a task. */
   readonly cards: boolean;
   /** RF-1410: the files the prompt points the reads at, when it points at some. */
-  readonly aimedAt?: (input: ReaderPartCase) => ReadonlySet<string>;
+  readonly aim?: (input: ReaderPartCase) => TurnScope['aim'];
 }
 
 const missing = (what: string): string => `a case for this prompt needs ${what}`;
@@ -119,7 +119,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.readMore === undefined ? missing('readMore') : needsReads(input)),
     messages: afterShortRead,
     cards: false,
-    aimedAt: (input) => new Set(input.readMore?.unread ?? []),
+    aim: (input) => ({ kind: 'unread', paths: new Set(input.readMore?.unread ?? []) }),
   },
   {
     id: 'reader/reread',
@@ -128,7 +128,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.rejected === undefined ? missing('rejected') : undefined),
     messages: firstMessageOnly,
     cards: false,
-    aimedAt: (input) => citedPaths(input.rejected ?? ''),
+    aim: (input) => ({ kind: 'cited', paths: citedPaths(input.rejected ?? '') }),
   },
   {
     id: 'reader/turns-left',
@@ -149,13 +149,15 @@ const specs: readonly Spec[] = [
 
 /**
  * RF-1410: the last turn read as a run reads it. An empty cards list with no problem ends a run's
- * task `final-answer` with no card (agent-loop.ts `finish`), so it is `NoCards` and usable.
+ * task `final-answer` with no card (agent-loop.ts `finish`); it is `NoCards`, usable only where the
+ * case expects it, as a model that gives up on an area with code answers the same.
  */
 function lastTurnOutcome(response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
   const outcome = cardsOutcome(response, prompts);
   if (outcome.detail !== 'Unusable') return outcome;
   const parsed = parseCardsLenient(response.text, new Map());
-  return parsed.problems.length === 0 ? { usable: true, detail: 'NoCards' } : outcome;
+  const noCards = { usable: false, detail: 'NoCards', usableWhenExpected: true };
+  return parsed.problems.length === 0 ? noCards : outcome;
 }
 
 function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): PreparedCase {
@@ -175,11 +177,11 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       });
       if (!asked.ok) return asked.error;
       if (spec.cards) return lastTurnOutcome(asked.value, prompts);
-      const paths = spec.aimedAt?.(input);
-      const aim = paths === undefined ? null : { kind: 'unread' as const, paths };
+      const aim = spec.aim?.(input) ?? null;
+      const shareBefore = input.readMore === undefined ? null : input.readMore.percent / 100;
       return readerFirstTurn(asked.value, {
         ...{ files: input.files, earlier: earlierCalls(messages) },
-        ...{ aim, shareBefore: null },
+        ...{ aim, shareBefore },
       });
     },
   };

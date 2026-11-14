@@ -64,5 +64,27 @@ export interface TurnSummary {
 /** The counts per turn over the cases that record a turn; null when none does. */
 // RF-1410
 export function summariseTurns(turns: readonly (ToolTurn | undefined)[]): TurnSummary | null {
-  return turns.length < 0 ? null : null;
+  const recorded = turns.filter((turn): turn is ToolTurn => turn !== undefined);
+  if (recorded.length === 0) return null;
+  const sum = (list: readonly ToolTurn[], pick: (turn: ToolTurn) => number): number =>
+    list.reduce((total, turn) => total + pick(turn), 0);
+  const per = (pick: (turn: ToolTurn) => number): number => sum(recorded, pick) / recorded.length;
+  const aimed = recorded.filter((turn) => turn.aimed !== null);
+  const shared = recorded.filter((turn) => turn.shareBefore !== null);
+  const newLines = sum(recorded, (turn) => turn.newLines);
+  const reached = shared.filter((turn) => (turn.shareBefore ?? 0) + turn.shareGain >= HALF);
+  return {
+    ...{ turns: recorded.length, calls: per((turn) => turn.calls) },
+    ...{ areaReads: per((turn) => turn.areaReads), searches: per((turn) => turn.searches) },
+    ...{ stale: per((turn) => turn.stale), unlisted: per((turn) => turn.unlisted) },
+    ...{ repeats: per((turn) => turn.repeats), relists: per((turn) => turn.relists) },
+    ...{ newLines: per((turn) => turn.newLines), shareGain: per((turn) => turn.shareGain) },
+    generatedShare: newLines === 0 ? null : sum(recorded, (turn) => turn.generatedLines) / newLines,
+    aimed: aimed.length === 0 ? null : sum(aimed, (turn) => turn.aimed ?? 0) / aimed.length,
+    shareTurns: shared.length,
+    reachedHalf: shared.length === 0 ? null : reached.length,
+  };
 }
+
+/** Q-50: the share of the area at which a run accepts an answer as read enough. */
+const HALF = 0.5;

@@ -127,6 +127,14 @@ function errorsOf(cases: readonly LabCaseResult[]): Record<string, number> {
   return errors;
 }
 
+/** RF-1410: the count of each label of the cases, by label in code-unit order. */
+function detailsOf(cases: readonly LabCaseResult[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const labels = cases.map((each) => each.detail).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const label of labels) counts[label] = (counts[label] ?? 0) + 1;
+  return counts;
+}
+
 // RF-1403
 export function summariseLab(results: LabResults): LabSummary {
   const { cases } = results;
@@ -161,7 +169,7 @@ export function summariseLab(results: LabResults): LabSummary {
     costMicros: sum(cases, (each) => each.costMicros),
     judge: judgeSummaryOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
-    details: {},
+    details: detailsOf(cases),
   };
 }
 
