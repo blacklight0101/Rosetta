@@ -9994,7 +9994,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: M
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: In review (2026-11-14: `verifier/claim.v6` kept on the new 30-claim calibration set, matched on Haiku, Sonnet and Opus with agreement not lower and no new error of either kind; `summariser/merge` and `summariser/overview` kept as they are, three Haiku rounds each, the overview candidate lost a case to the new `Missed` check; `verifier/retry` not wired; the figures are in `docs/evaluation/prompt-lab/verifier-summariser.md`; left: hand labels for the merge cases and more overview cases)
+- **Status**: In review (2026-11-14: `verifier/claim.v6` kept on the new 30-claim calibration set, matched on Haiku, Sonnet and Opus with agreement not lower and no new error of either kind; `summariser/merge` and `summariser/overview` kept as they are, three Haiku rounds each, the overview candidate lost a case to the new `Missed` check; `verifier/retry` wired (RF-1413) and measured in three Haiku rounds, v1 stays; merge counts are a floor only until hand labels exist; the figures are in `docs/evaluation/prompt-lab/verifier-summariser.md`; left: hand labels for the merge cases and more overview cases)
 - **Evidence**: the verifier decides which claims stand (RF-305 calibration exists), the summariser writes the overview the owner reads first.
 - **Reads**: `prompts/verifier/*` (claim, retry), `prompts/summariser/*` (merge, overview), `eval/calibration/`, P10-04.
 - **Do**: as P10-05; for the verifier the calibration agreement must not drop. Round log in `docs/evaluation/prompt-lab/verifier-summariser.md`.
