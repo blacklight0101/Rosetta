@@ -5,7 +5,7 @@ import { planRepairMessage } from '../../plan/plan-repair.js';
 import type { LabTarget } from '../lab-target.js';
 import { docTarget } from './doc-target.js';
 import { gapInputSchema, gapOutcome } from './gap-target.js';
-import { planInput, planMessageOf } from './plan-doc-targets.js';
+import { planInput, planMessageOf, readPlan } from './plan-doc-targets.js';
 import { planRepairOutcome } from './plan-repair-check.js';
 
 // RF-1406, RF-202, Q-54, P3-126, ADR-029: the lab targets of the planner's two repair prompts. A
@@ -64,7 +64,9 @@ function planRepair(packagePrompt: PromptFile): LabTarget {
       }));
       return planRepairMessage(planMessageOf(input, tags), prompt, problems);
     },
-    read: (answer, input) => planRepairOutcome(answer, input ?? { cards: [], owner: {} }),
+    // RF-1403: with no case (first-try validity) the answer is read by the run's parser alone.
+    read: (answer, input) =>
+      input === undefined ? readPlan(answer) : planRepairOutcome(answer, input),
   });
 }
 
