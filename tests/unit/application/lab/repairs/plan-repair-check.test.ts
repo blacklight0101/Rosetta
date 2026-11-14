@@ -84,3 +84,18 @@ describe('the plan repair check of the lab', () => {
     expect(await read('No plan.')).toEqual({ usable: false, detail: 'Unusable' });
   });
 });
+
+describe('the plan repair check of the lab: first-try validity', () => {
+  it('RF-1403 keeps first-try validity the parser reading, whatever the check finds', () => {
+    const [, target] = repairTargets({
+      gap: draftFile('planner/gap.v6.md', 'GAP'),
+      plan: draftFile('planner/package.v12.md', 'PACKAGE'),
+    });
+
+    expect(target?.readsAnswer(plan())).toBe(true);
+    expect(
+      target?.readsAnswer(plan({ requirements: [{ ...requirement, sources: ['BR-404'] }] })),
+    ).toBe(true);
+    expect(target?.readsAnswer('No plan.')).toBe(false);
+  });
+});
