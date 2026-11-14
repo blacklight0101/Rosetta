@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PromptFile } from '../../../../src/application/agent/prompt-file.js';
 import type { LabCallMeter } from '../../../../src/application/lab/lab-meter.js';
-import type { LabResults } from '../../../../src/application/lab/lab-results.js';
+import { summariseLab, type LabResults } from '../../../../src/application/lab/lab-results.js';
 import type { LabTarget } from '../../../../src/application/lab/lab-target.js';
 import { RunLab } from '../../../../src/application/lab/run-lab.js';
 import { ok } from '../../../../src/domain/errors/result.js';
@@ -146,7 +146,10 @@ function judgedLab(written: LabResults[], judged: { calls: number }): RunLab {
 describe('a judged run of a reader turn that calls tools', () => {
   it('RF-1410 records the turn and makes no judge call, as a run reads no answer from such a turn', async () => {
     const written: LabResults[] = [];
-    const turn = { calls: 1, areaReads: 1, unlisted: 0, repeats: 0, relists: 0, aimed: null };
+    const turn = {
+      ...{ calls: 1, areaReads: 1, searches: 0, unlisted: 0, repeats: 0, relists: 0, stale: 0 },
+      ...{ newLines: 2, generatedLines: 0, shareBefore: null, shareGain: 0.1, aimed: null },
+    };
     const seen = ['read_file a.cs:1-2'];
     const toolTurn: LabTarget = {
       ...target,
@@ -172,5 +175,36 @@ describe('a judged run of a reader turn that calls tools', () => {
     expect(judged.calls).toBe(0);
     expect(written[0]?.cases[0]?.judge).toBeUndefined();
     expect(written[0]?.cases[0]?.turn).toEqual({ ...turn, seen });
+  });
+});
+
+describe('a label that is usable only where the case expects it', () => {
+  it('RF-1410 makes NoCards usable only in a case labelled NoCards, and counts every label', async () => {
+    const written: LabResults[] = [];
+    const noCards: LabTarget = {
+      ...target,
+      parseInput: () =>
+        ok({
+          run: () =>
+            Promise.resolve({ usable: false, detail: 'NoCards', usableWhenExpected: true }),
+        }),
+    };
+
+    await judgedLab(written, { calls: 0 }).execute({
+      ...{ target: noCards, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [
+          { id: 'empty-area', expected: 'NoCards', split: 'tune', input: {} },
+          { id: 'code-area', expected: undefined, split: 'tune', input: {} },
+        ],
+      },
+      setSha256: '1'.repeat(64),
+      repetitions: 1,
+    });
+
+    const results = written[0];
+    expect(results?.cases.map((each) => each.usable)).toEqual([true, false]);
+    expect(results === undefined ? null : summariseLab(results).details).toEqual({ NoCards: 2 });
   });
 });

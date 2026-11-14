@@ -26,6 +26,8 @@ export interface TargetOutcome {
   readonly detail: string;
   /** RF-1410: what a reader turn that a run answers with tool calls did; such a case is not judged. */
   readonly turn?: ToolTurn;
+  /** RF-1410: the label is usable only in a case whose `expected` label is this detail. */
+  readonly usableWhenExpected?: boolean;
 }
 
 export interface PreparedCase {

@@ -107,6 +107,8 @@ export interface LabSummary {
   readonly judge: JudgeSummary | null;
   /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
   readonly turns: TurnSummary | null;
+  /** RF-1410: the count of each label (`detail`) of the cases. */
+  readonly details: Readonly<Record<string, number>>;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -159,6 +161,7 @@ export function summariseLab(results: LabResults): LabSummary {
     costMicros: sum(cases, (each) => each.costMicros),
     judge: judgeSummaryOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
+    details: {},
   };
 }
 

@@ -5,8 +5,8 @@ import { readerPartTargets } from '../../../../src/application/lab/targets/reade
 import { loadReaderPrompts } from '../../../../src/infrastructure/prompts/prompt-files.js';
 import { draftFile, environment } from '../../../support/lab-target-env.js';
 
-// RF-1410: the last reader turn is read as a run reads it: an empty cards list with no problem is a
-// final answer a run accepts (agent-loop.ts `finish`), not a failure of the prompt.
+// RF-1410: an empty cards list with no problem is a final answer a run accepts (agent-loop.ts
+// `finish`), but also what a model that gives up writes: usable only where the case expects it.
 
 const promptsFolder = fileURLToPath(new URL('../../../../prompts/', import.meta.url));
 
@@ -33,17 +33,12 @@ async function run(id: string, text: string, draft: string) {
 }
 
 describe('an empty cards answer on the last turn', () => {
-  it('RF-1410 reads an empty cards list with no problem as NoCards and usable, as a run accepts it', async () => {
+  it('RF-1410 reads an empty cards list with no problem as NoCards, usable only where the case expects it', async () => {
     const empty = ['```json', '{"cards": []}', '```'].join('\n');
+    const noCards = { usable: false, detail: 'NoCards', usableWhenExpected: true };
 
-    expect(await run('reader/turns-left', empty, '{{turns}}')).toEqual({
-      usable: true,
-      detail: 'NoCards',
-    });
-    expect(await run('reader/workbook', '{"cards": []}', 'Guidance.')).toEqual({
-      usable: true,
-      detail: 'NoCards',
-    });
+    expect(await run('reader/turns-left', empty, '{{turns}}')).toEqual(noCards);
+    expect(await run('reader/workbook', '{"cards": []}', 'Guidance.')).toEqual(noCards);
   });
 
   it('RF-1410 keeps an answer with no card and a problem unusable', async () => {

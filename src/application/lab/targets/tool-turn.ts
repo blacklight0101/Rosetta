@@ -16,8 +16,10 @@ export interface TurnScope {
   readonly files: ReaderCase['files'];
   /** The calls the conversation made before this turn (the replayed reads). */
   readonly earlier: readonly ToolCall[];
-  /** The files the prompt points to, or null when it points to none. */
-  readonly aimedAt: ReadonlySet<string> | null;
+  /** The files the prompt points to (read-more: unread, reread: cited), or null when none. */
+  readonly aim: { readonly kind: 'unread' | 'cited'; readonly paths: ReadonlySet<string> } | null;
+  /** The share of the area read before the turn (read-more: the refusal's), or null. */
+  readonly shareBefore: number | null;
 }
 
 const MAX_SEEN = 40;
@@ -83,11 +85,13 @@ export function toolTurnOf(calls: readonly ToolCall[], scope: TurnScope): ToolTu
     if (request === undefined) continue;
     const counted = countedAs(request, repeat, readable);
     turn[counted] += 1;
-    const isAimed = request.tool === 'read_file' && scope.aimedAt?.has(request.path) === true;
+    const isAimed = request.tool === 'read_file' && scope.aim?.paths.has(request.path) === true;
     if (counted === 'areaReads' && isAimed) aimed += 1;
   }
   const seen = calls.slice(0, MAX_SEEN).map((call) => lineOf(call, requestOf(call)));
-  return { ...turn, aimed: scope.aimedAt === null ? null : aimed, seen };
+  const lines = { searches: 0, stale: 0, newLines: 0, generatedLines: 0, shareGain: 0 };
+  const aim = scope.aim === null ? null : aimed;
+  return { ...turn, ...lines, shareBefore: scope.shareBefore, aimed: aim, seen };
 }
 
 const CITED_PATH = /^(.+):\d+-\d+$/u;

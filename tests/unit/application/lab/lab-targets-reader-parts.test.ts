@@ -24,7 +24,9 @@ const input = {
   turns: 6,
   reads: [{ path: 'shop/Orders.cs', startLine: 10, lines: ['class Orders {', '}'] }],
   answers: "Question OQ-005 (Area: shop): Which store?\nOwner's answer: Redis.",
-  rejected: '{\n  "rejected": [{ "claimId": "BR-001.c1", "text": "A claim." }]\n}',
+  rejected: JSON.stringify({
+    rejected: [{ claimId: 'BR-001.c1', text: 'A claim.', citations: ['shop/Orders.cs:3-4'] }],
+  }),
   parentCards: '{\n  "cards": [{ "id": "ENT-001", "type": "ENT", "title": "Order" }]\n}',
   readMore: { percent: 12, readTokens: 2488, tokens: 20390, unread: ['shop/Pay.cs'] },
   workbook: true,
@@ -195,6 +197,7 @@ describe('the read-more turn', () => {
 
     expect(outcome).toMatchObject({ usable: true, detail: 'ReadsWithWaste' });
     expect(outcome.turn).toMatchObject({ calls: 2, areaReads: 1, repeats: 1, aimed: 1 });
+    expect(outcome.turn?.shareBefore).toBe(0.12);
   });
 });
 

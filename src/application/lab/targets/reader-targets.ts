@@ -113,7 +113,12 @@ function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): Prep
       });
       if (!asked.ok) return asked.error;
       if (part === 'cardFormat') return cardsOutcome(asked.value, prompts);
-      const scope = { files: input.files, earlier: earlierCalls(messages), aimedAt: null };
+      const scope = {
+        files: input.files,
+        earlier: earlierCalls(messages),
+        aim: null,
+        shareBefore: null,
+      };
       return readerFirstTurn(asked.value, scope);
     },
   };

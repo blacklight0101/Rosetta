@@ -175,11 +175,11 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       });
       if (!asked.ok) return asked.error;
       if (spec.cards) return lastTurnOutcome(asked.value, prompts);
-      const aimedAt = spec.aimedAt?.(input) ?? null;
+      const paths = spec.aimedAt?.(input);
+      const aim = paths === undefined ? null : { kind: 'unread' as const, paths };
       return readerFirstTurn(asked.value, {
-        files: input.files,
-        earlier: earlierCalls(messages),
-        aimedAt,
+        ...{ files: input.files, earlier: earlierCalls(messages) },
+        ...{ aim, shareBefore: null },
       });
     },
   };
