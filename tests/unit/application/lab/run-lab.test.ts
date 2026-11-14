@@ -110,3 +110,67 @@ describe('a run of a target with no first-try check', () => {
     expect(written[0]?.cases[0]).toMatchObject({ validFirstTry: null, repaired: false });
   });
 });
+
+/** A run whose judge counts the calls it gets; every one is unexpected here. */
+function judgedLab(written: LabResults[], judged: { calls: number }): RunLab {
+  return new RunLab({
+    output: {
+      write: (results) => {
+        written.push(results);
+        return Promise.resolve('folder');
+      },
+    },
+    meter: { ...meter, stopped: () => undefined },
+    role: {
+      provider: { complete: () => Promise.reject(new Error('unused')) },
+      model: 'm',
+      maxOutputTokens: 10,
+    },
+    clock: new FixedClock('2026-11-13T09:00:00Z'),
+    ids: new SequenceIdGenerator(),
+    rosettaVersion: 'test',
+    judge: {
+      score: () => {
+        judged.calls += 1;
+        return Promise.resolve({
+          ...{ state: 'unreadable' as const, criteria: [], overall: null, vetoed: false },
+          ...{ rstCode: null, calls: 1, inputTokens: 1, outputTokens: 1, costMicros: 1 },
+        });
+      },
+      stopped: () => undefined,
+      infoFor: () => undefined,
+    },
+  });
+}
+
+describe('a judged run of a reader turn that calls tools', () => {
+  it('RF-1410 records the turn and makes no judge call, as a run reads no answer from such a turn', async () => {
+    const written: LabResults[] = [];
+    const turn = { calls: 1, areaReads: 1, unlisted: 0, repeats: 0, relists: 0, aimed: null };
+    const seen = ['read_file a.cs:1-2'];
+    const toolTurn: LabTarget = {
+      ...target,
+      parseInput: () =>
+        ok({
+          run: () =>
+            Promise.resolve({ usable: true, detail: 'ReadsFiles', turn: { ...turn, seen } }),
+        }),
+      readsAnswer: () => null,
+    };
+    const judged = { calls: 0 };
+
+    await judgedLab(written, judged).execute({
+      ...{ target: toolTurn, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [{ id: 'only', expected: undefined, split: 'tune', input: {} }],
+      },
+      setSha256: '1'.repeat(64),
+      repetitions: 1,
+    });
+
+    expect(judged.calls).toBe(0);
+    expect(written[0]?.cases[0]?.judge).toBeUndefined();
+    expect(written[0]?.cases[0]?.turn).toEqual({ ...turn, seen });
+  });
+});

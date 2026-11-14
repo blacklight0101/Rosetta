@@ -3,6 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
+import { toolTurnSchema } from './lab-turns.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
@@ -31,6 +32,8 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
+  /** RF-1410: what a reader turn that a run answers with tool calls did. */
+  turn: toolTurnSchema.optional(),
   /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
   judge: judgementSchema.optional(),
 });
