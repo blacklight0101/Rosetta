@@ -28,6 +28,8 @@ export interface TargetOutcome {
    * true or false, counted apart from the label; absent for a target that names none.
    */
   readonly followUps?: Readonly<Record<string, boolean>>;
+  /** RF-1403: the counts the check used (a name and a whole number), kept per case for an audit. */
+  readonly counts?: Readonly<Record<string, number>>;
 }
 
 export interface PreparedCase {

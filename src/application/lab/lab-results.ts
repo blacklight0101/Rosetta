@@ -35,6 +35,8 @@ const caseSchema = z.strictObject({
   judge: judgementSchema.optional(),
   /** RF-1403 (P10-07): the follow-ups a run would make after the answer; absent when none is named. */
   followUps: z.record(z.string().min(1).max(60), z.boolean()).optional(),
+  /** RF-1403 (P10-07): the counts the target's check used, for an audit; never averaged. */
+  counts: z.record(z.string().min(1).max(60), count).optional(),
 });
 
 const resultsSchema = z.strictObject({
