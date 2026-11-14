@@ -3,6 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
+import { summariseTurns, toolTurnSchema, type TurnSummary } from './lab-turns.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
@@ -31,6 +32,8 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
+  /** RF-1410: what a reader turn that a run answers with tool calls did. */
+  turn: toolTurnSchema.optional(),
   /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
   judge: judgementSchema.optional(),
   /** RF-1403 (P10-07): the follow-ups a run would make after the answer; absent when none is named. */
@@ -106,10 +109,15 @@ export interface LabSummary {
   readonly costMicros: number;
   /** RF-1407: the judge's means; null for a run without a judge. */
   readonly judge: JudgeSummary | null;
-  /** RF-1403 (P10-07): how many cases ended with each `detail` label. */
+  /**
+   * RF-1403 (P10-07), RF-1410: how many cases ended with each `detail` label, by label in code-unit
+   * order; the one label count of a summary.
+   */
   readonly detailCounts: Readonly<Record<string, number>>;
   /** RF-1403 (P10-07): each follow-up's share of the cases that name it. */
   readonly followUpRates: Readonly<Record<string, number>>;
+  /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
+  readonly turns: TurnSummary | null;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -120,10 +128,11 @@ function sum(cases: readonly LabCaseResult[], pick: (each: LabCaseResult) => num
   return cases.reduce((total, each) => total + pick(each), 0);
 }
 
-/** RF-1403: the count of each label, in the order the labels first appear. */
+/** RF-1403, RF-1410: the count of each label of the cases, by label in code-unit order. */
 function detailCountsOf(cases: readonly LabCaseResult[]): Record<string, number> {
   const counts: Record<string, number> = {};
-  for (const each of cases) counts[each.detail] = (counts[each.detail] ?? 0) + 1;
+  const labels = cases.map((each) => each.detail).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const label of labels) counts[label] = (counts[label] ?? 0) + 1;
   return counts;
 }
 
@@ -180,6 +189,7 @@ export function summariseLab(results: LabResults): LabSummary {
     judge: judgeSummaryOf(cases),
     detailCounts: detailCountsOf(cases),
     followUpRates: followUpRatesOf(cases),
+    turns: summariseTurns(cases.map((each) => each.turn)),
   };
 }
 

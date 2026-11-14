@@ -24,7 +24,7 @@ const readerPromptNames = {
   repair: 'cards/repair.v6.md',
   continue: 'cards/continue.v1.md',
   readFirst: 'reader/read-first.v1.md',
-  readMore: 'reader/read-more.v2.md',
+  readMore: 'reader/read-more.v3.md',
 } as const;
 
 /** RF-155: added only to areas that hold a rendered workbook. */

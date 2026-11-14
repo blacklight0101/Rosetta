@@ -24,7 +24,9 @@ const input = {
   turns: 6,
   reads: [{ path: 'shop/Orders.cs', startLine: 10, lines: ['class Orders {', '}'] }],
   answers: "Question OQ-005 (Area: shop): Which store?\nOwner's answer: Redis.",
-  rejected: '{\n  "rejected": [{ "claimId": "BR-001.c1", "text": "A claim." }]\n}',
+  rejected: JSON.stringify({
+    rejected: [{ claimId: 'BR-001.c1', text: 'A claim.', citations: ['shop/Orders.cs:3-4'] }],
+  }),
   parentCards: '{\n  "cards": [{ "id": "ENT-001", "type": "ENT", "title": "Order" }]\n}',
   readMore: { percent: 12, readTokens: 2488, tokens: 20390, unread: ['shop/Pay.cs'] },
   workbook: true,
@@ -91,7 +93,7 @@ describe('the other reader targets', () => {
     async (id, fact, source) => {
       const { outcome, request } = await run(id, reads);
 
-      expect(outcome).toEqual({ usable: true, detail: 'ReadsFiles' });
+      expect(outcome).toMatchObject({ usable: true, detail: 'ReadsFiles' });
       expect(request?.messages).toHaveLength(1);
       const content = request?.messages[0]?.content ?? '';
       expect(content).toContain('shop/Orders.cs (csharp, 120 lines)');
@@ -153,7 +155,7 @@ describe('the read-more turn', () => {
     const draft = 'Only {{percent}}% ({{read}} of {{total}}), {{turns}} left:\n{{files}}';
     const { outcome, request } = await run('reader/read-more', reads, draft);
 
-    expect(outcome).toEqual({ usable: true, detail: 'ReadsFiles' });
+    expect(outcome).toMatchObject({ usable: true, detail: 'ReadsFiles' });
     expect(request?.messages.map((message) => message.role)).toEqual([
       'user',
       'assistant',
@@ -173,7 +175,54 @@ describe('the read-more turn', () => {
     const answered = await run('reader/read-more', { text: validCards }, '{{files}}');
 
     expect(bad.outcome.detail).toBe('BadPrompt');
-    expect(answered.outcome).toEqual({ usable: false, detail: 'Answered' });
+    expect(answered.outcome).toMatchObject({ usable: false, detail: 'Answered' });
+  });
+
+  it('RF-1410 counts a call that repeats a replayed read, and the reads aimed at the unread files', async () => {
+    const replayed = {
+      id: 'c2',
+      name: 'read_file',
+      arguments: { path: 'shop/Orders.cs', startLine: 10, endLine: 11 },
+    };
+    const unread = {
+      id: 'c3',
+      name: 'read_file',
+      arguments: { path: 'shop/Pay.cs', startLine: 1, endLine: 40 },
+    };
+    const { outcome } = await run(
+      'reader/read-more',
+      { text: '', toolCalls: [replayed, unread] },
+      '{{files}}',
+    );
+
+    expect(outcome).toMatchObject({ usable: true, detail: 'ReadsWithWaste' });
+    expect(outcome.turn).toMatchObject({ calls: 2, areaReads: 1, repeats: 1, aimed: 1 });
+    expect(outcome.turn?.shareBefore).toBe(0.12);
+  });
+});
+
+describe('the reread turn', () => {
+  it('RF-1410 counts the reads aimed at the files the rejected claims cite', async () => {
+    const rejected = JSON.stringify({
+      rejected: [{ claimId: 'BR-001.c1', citations: ['shop/Pay.cs:3-4'] }],
+    });
+    const parsed = targets.get('reader/reread')?.parseInput({ ...input, rejected });
+    if (parsed?.ok !== true) throw new Error('not parsed');
+    const pay = {
+      id: 'c4',
+      name: 'read_file',
+      arguments: { path: 'shop/Pay.cs', startLine: 1, endLine: 9 },
+    };
+    const { env } = environment([{ text: '', toolCalls: [readCall, pay] }]);
+    const outcome = await parsed.value.run(env, draftFile('x.v9.md', '{{rejected}}'));
+
+    expect(outcome.turn).toMatchObject({ calls: 2, areaReads: 2, aimed: 1 });
+  });
+
+  it('RF-1410 records no aim for the prompts that point at no file', async () => {
+    const { outcome } = await run('reader/answers', reads);
+
+    expect(outcome.turn?.aimed).toBeNull();
   });
 });
 
@@ -200,6 +249,8 @@ describe('the turns-left turn', () => {
     expect(valid.outcome).toEqual({ usable: true, detail: 'Valid' });
     expect(none.outcome).toEqual({ usable: false, detail: 'Unusable' });
     expect(more.outcome).toEqual({ usable: false, detail: 'ReadsMore' });
+    // RF-1410: the last turn keeps the tools, as a run does, so a read there is a lost task.
+    expect(more.request?.tools.map((tool) => tool.name)).toContain('read_file');
     expect(lost.outcome.detail).toBe('BadPrompt');
     expect(targets.get('reader/turns-left')?.readsAnswer(validCards)).toBe(true);
     expect(targets.get('reader/turns-left')?.readsAnswer('Sorry.')).toBe(false);

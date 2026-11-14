@@ -55,7 +55,7 @@ describe('the reader targets', () => {
   it('RF-1406 puts the task under test in the first message, with the area as a data block and the reader tools', async () => {
     const { outcome, request } = await run('reader/task', { text: '', toolCalls: [readCall] });
 
-    expect(outcome).toEqual({ usable: true, detail: 'ReadsFiles' });
+    expect(outcome).toMatchObject({ usable: true, detail: 'ReadsFiles' });
     expect(request?.messages).toHaveLength(1);
     const content = request?.messages[0]?.content ?? '';
     expect(content).toContain('Draft ');
@@ -83,6 +83,18 @@ describe('the reader first turn', () => {
     expect(await detail({ text: '', toolCalls: [readCall, bad] })).toBe('BadToolCall');
     expect(await detail({ text: '{"cards":[]}' })).toBe('Answered');
     expect(await detail({ text: '  ' })).toBe('Empty');
+  });
+
+  it('RF-1410 counts the calls of a first turn against the files the case lists, a skipped file as unlisted', async () => {
+    const skipped = {
+      ...readCall,
+      id: 'c2',
+      arguments: { path: 'shop/logo.bin', startLine: 1, endLine: 5 },
+    };
+    const { outcome } = await run('reader/area', { text: '', toolCalls: [readCall, skipped] }, 'X');
+
+    expect(outcome).toMatchObject({ usable: true, detail: 'ReadsWithWaste' });
+    expect(outcome.turn).toMatchObject({ calls: 2, areaReads: 1, unlisted: 1, aimed: null });
   });
 
   it('RF-1406 refuses a task draft that lost the area placeholder before any call', async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PromptFile } from '../../../../src/application/agent/prompt-file.js';
 import type { LabCallMeter } from '../../../../src/application/lab/lab-meter.js';
-import type { LabResults } from '../../../../src/application/lab/lab-results.js';
+import { summariseLab, type LabResults } from '../../../../src/application/lab/lab-results.js';
 import type { LabTarget } from '../../../../src/application/lab/lab-target.js';
 import { RunLab } from '../../../../src/application/lab/run-lab.js';
 import { ok } from '../../../../src/domain/errors/result.js';
@@ -111,6 +111,106 @@ describe('a run of a target with no first-try check', () => {
   });
 });
 
+/** A run whose judge counts the calls it gets; every one is unexpected here. */
+function judgedLab(written: LabResults[], judged: { calls: number }): RunLab {
+  return new RunLab({
+    output: {
+      write: (results) => {
+        written.push(results);
+        return Promise.resolve('folder');
+      },
+    },
+    meter: { ...meter, stopped: () => undefined },
+    role: {
+      provider: { complete: () => Promise.reject(new Error('unused')) },
+      model: 'm',
+      maxOutputTokens: 10,
+    },
+    clock: new FixedClock('2026-11-13T09:00:00Z'),
+    ids: new SequenceIdGenerator(),
+    rosettaVersion: 'test',
+    judge: {
+      score: () => {
+        judged.calls += 1;
+        return Promise.resolve({
+          ...{ state: 'unreadable' as const, criteria: [], overall: null, vetoed: false },
+          ...{ rstCode: null, calls: 1, inputTokens: 1, outputTokens: 1, costMicros: 1 },
+        });
+      },
+      stopped: () => undefined,
+      infoFor: () => undefined,
+    },
+  });
+}
+
+describe('a judged run of a reader turn that calls tools', () => {
+  it('RF-1410 records the turn and makes no judge call, as a run reads no answer from such a turn', async () => {
+    const written: LabResults[] = [];
+    const turn = {
+      ...{ calls: 1, areaReads: 1, searches: 0, unlisted: 0, repeats: 0, relists: 0, stale: 0 },
+      ...{ newLines: 2, generatedLines: 0, shareBefore: null, shareGain: 0.1, aimed: null },
+    };
+    const seen = ['read_file a.cs:1-2'];
+    const toolTurn: LabTarget = {
+      ...target,
+      parseInput: () =>
+        ok({
+          run: () =>
+            Promise.resolve({ usable: true, detail: 'ReadsFiles', turn: { ...turn, seen } }),
+        }),
+      readsAnswer: () => null,
+    };
+    const judged = { calls: 0 };
+
+    await judgedLab(written, judged).execute({
+      ...{ target: toolTurn, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [{ id: 'only', expected: undefined, split: 'tune', input: {} }],
+      },
+      setSha256: '1'.repeat(64),
+      repetitions: 1,
+    });
+
+    expect(judged.calls).toBe(0);
+    expect(written[0]?.cases[0]?.judge).toBeUndefined();
+    expect(written[0]?.cases[0]?.turn).toEqual({ ...turn, seen });
+  });
+});
+
+describe('a label that is usable only where the case expects it', () => {
+  it('RF-1410 makes NoCards usable only in a case labelled NoCards, and counts every label', async () => {
+    const written: LabResults[] = [];
+    const noCards: LabTarget = {
+      ...target,
+      parseInput: () =>
+        ok({
+          run: () =>
+            Promise.resolve({ usable: false, detail: 'NoCards', usableWhenExpected: true }),
+        }),
+    };
+
+    await judgedLab(written, { calls: 0 }).execute({
+      ...{ target: noCards, prompt, model: { provider: 'fake', model: 'm' } },
+      caseSet: {
+        ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },
+        cases: [
+          { id: 'empty-area', expected: 'NoCards', split: 'tune', input: {} },
+          { id: 'code-area', expected: undefined, split: 'tune', input: {} },
+        ],
+      },
+      setSha256: '1'.repeat(64),
+      repetitions: 1,
+    });
+
+    const results = written[0];
+    expect(results?.cases.map((each) => each.usable)).toEqual([true, false]);
+    expect(results === undefined ? null : summariseLab(results).detailCounts).toEqual({
+      NoCards: 2,
+    });
+  });
+});
+
 describe('a run of a target that records the counts of its check', () => {
   it('RF-1403 keeps the counts of each case in its result', async () => {
     const written: LabResults[] = [];
@@ -119,18 +219,8 @@ describe('a run of a target that records the counts of its check', () => {
       ...target,
       parseInput: () => ok({ run: () => Promise.resolve(outcome) }),
     };
-    const lab = new RunLab({
-      output: { write: (results) => Promise.resolve(written.push(results) > 0 ? 'folder' : '') },
-      meter: { ...meter, stopped: () => undefined },
-      role: {
-        provider: { complete: () => Promise.reject(new Error('unused')) },
-        ...{ model: 'm', maxOutputTokens: 10 },
-      },
-      ...{ clock: new FixedClock('2026-11-13T09:00:00Z'), ids: new SequenceIdGenerator() },
-      rosettaVersion: 'test',
-    });
 
-    await lab.execute({
+    await judgedLab(written, { calls: 0 }).execute({
       ...{ target: counting, prompt, model: { provider: 'fake', model: 'm' } },
       caseSet: {
         ...{ schemaVersion: 1, version: 's', prompt: 'x/y', description: '' },

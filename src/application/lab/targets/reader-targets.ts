@@ -23,6 +23,7 @@ import {
   type ReaderCase,
 } from './reader-case.js';
 import { askOnce, problemsOf } from './single-call.js';
+import { earlierCalls, readerFirstTurn } from './tool-turn.js';
 
 // RF-1406, ADR-029: the lab targets of the reader's prompts. The reader is a tool loop; a case
 // measures one turn of it with the run's own prompt builders and one call, with the reader's tool
@@ -34,7 +35,7 @@ import { askOnce, problemsOf } from './single-call.js';
 // `detail` of a first turn is `ReadsFiles`, `BadToolCall`, `Answered` or `Empty`; of the card format
 // `Valid`, `Partial`, `Unusable` or `ReadsMore`. A first turn has no answer parser of its own and its
 // answer may be tool calls, which the text of the answer does not show, so its first-try validity is
-// not applicable (null, RF-1403); `detail` and `usable` are the measure.
+// not applicable (null, RF-1403); `detail`, `usable` and the counts of the turn are the measure (RF-1410).
 
 type Part = 'system' | 'task' | 'readFirst' | 'cardFormat';
 
@@ -104,14 +105,21 @@ function preparedOf(part: Part, input: ReaderCase, current: ReaderPrompts): Prep
         { flows: false, screens: false },
         input.workbook ?? false,
       );
+      const messages = messagesOf(part, input, prompts, env);
       const asked = await askOnce(env, {
-        ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
-        ...{ messages: messagesOf(part, input, prompts, env) },
+        ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts), messages },
         // The card format is the answer of the last turn, so it carries no tools (P10-09).
         tools: part === 'cardFormat' ? [] : readerToolDefinitions,
       });
       if (!asked.ok) return asked.error;
-      return part === 'cardFormat' ? cardsOutcome(asked.value, prompts) : firstTurn(asked.value);
+      if (part === 'cardFormat') return cardsOutcome(asked.value, prompts);
+      const scope = {
+        files: input.files,
+        earlier: earlierCalls(messages),
+        aim: null,
+        shareBefore: null,
+      };
+      return readerFirstTurn(asked.value, scope);
     },
   };
 }

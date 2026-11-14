@@ -22,7 +22,10 @@ function errorsOf(summary: LabSummary): string {
     : entries.map(([code, count]) => `${code} x${String(count)}`).join(', ');
 }
 
-/** RF-1403 (P10-07): the count of each label and the rate of each follow-up a run would make. */
+/**
+ * RF-1403 (P10-07), RF-1410: the count of each label, the one label line of a report, so a label
+ * that rises between two versions is seen, and the rate of each follow-up a run would make.
+ */
 function labelLines(summary: LabSummary): string[] {
   const counts = Object.entries(summary.detailCounts)
     .map(([label, count]) => `${label} ${String(count)}`)
@@ -46,6 +49,25 @@ function judgeLines(summary: LabSummary): string[] {
   ];
 }
 
+/** RF-1410: the counts per tool turn of a reader turn that a run answers with tool calls. */
+function turnLines(summary: LabSummary): string[] {
+  const { turns } = summary;
+  if (turns === null) return [];
+  const two = (value: number): string => value.toFixed(2);
+  const generated =
+    turns.generatedShare === null ? '' : `, generated ${pct(turns.generatedShare)} of new lines`;
+  const aimed = turns.aimed === null ? '' : `, aimed ${two(turns.aimed)}`;
+  const half =
+    turns.reachedHalf === null
+      ? ''
+      : `, ${String(turns.reachedHalf)} of ${String(turns.shareTurns)} reach half`;
+  const calls = `${two(turns.calls)} calls, ${two(turns.areaReads)} area reads, ${two(turns.searches)} searches, ${two(turns.stale)} stale, ${two(turns.unlisted)} unlisted, ${two(turns.repeats)} repeats, ${two(turns.relists)} relists`;
+  const lines = `${turns.newLines.toFixed(1)} new lines, share gain ${(turns.shareGain * 100).toFixed(1)} points`;
+  return [
+    `Per tool turn (${String(turns.turns)} turns): ${calls}; ${lines}${generated}${aimed}${half}`,
+  ];
+}
+
 /** The metrics of one side, one line each, as the single report and the comparison show them. */
 function metricLines(summary: LabSummary): string[] {
   return [
@@ -55,6 +77,7 @@ function metricLines(summary: LabSummary): string[] {
     ...labelLines(summary),
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
+    ...turnLines(summary),
     ...judgeLines(summary),
   ];
 }
