@@ -113,6 +113,6 @@ describe('a reader that answers after reading little of its area', UNDERSTAND_TI
     const manifest = await h.manifestOf(run);
     expect(manifest.totals.calls).toBe(4);
     expect(h.providers.ledger.entries).toHaveLength(4);
-    expect(manifest.promptVersions['reader/read-more.v2.md']?.version).toBe('v2');
+    expect(manifest.promptVersions['reader/read-more.v3.md']?.version).toBe('v3');
   });
 });

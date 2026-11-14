@@ -21,7 +21,7 @@ describe('prompt files', () => {
       expect.arrayContaining([
         'reader/area.v12.md',
         'reader/read-first.v1.md',
-        'reader/read-more.v2.md',
+        'reader/read-more.v3.md',
         'reader/task.v2.md',
         'reader/turns-left.v2.md',
       ]),
