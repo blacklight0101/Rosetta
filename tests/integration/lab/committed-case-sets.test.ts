@@ -24,6 +24,7 @@ const promptsFolder = fileURLToPath(new URL('../../../prompts/', import.meta.url
 const SAMPLES = new Set([
   'overview-sample',
   'verifier-claim-sample',
+  'verifier-claim-calibration',
   'shared-masked-value',
   'shared-text-tool-protocol',
 ]);

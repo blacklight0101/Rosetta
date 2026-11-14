@@ -109,6 +109,8 @@ export interface LabSummary {
   readonly turns: TurnSummary | null;
   /** RF-1410: the count of each label (`detail`) of the cases. */
   readonly details: Readonly<Record<string, number>>;
+  /** RF-1411: the cases that differ from their expected label, by `expected -> label`. */
+  readonly disagreements: Readonly<Record<string, number>>;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -170,6 +172,7 @@ export function summariseLab(results: LabResults): LabSummary {
     judge: judgeSummaryOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
     details: detailsOf(cases),
+    disagreements: {},
   };
 }
 
