@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { splitsOf } from '../../../src/application/lab/capture/held-back.js';
 import { parseLabCaseSet } from '../../../src/application/lab/lab-case-set.js';
+import { parseVerdictAnswer } from '../../../src/application/verifier/verdict-answer.js';
+import { fakeResponse } from '../../support/fake-recordings.js';
 import { sha256Hex } from '../../../src/infrastructure/lab/run-folder.js';
 
 // RF-1411, RF-305, RF-1405: the lab's verifier set is the 30 hand-labelled claims of the
@@ -79,5 +81,53 @@ describe('the verifier calibration case set', () => {
     expect(count('held-back', 'Rejected')).toBeGreaterThanOrEqual(2);
     expect(count('tune', 'Supported')).toBeGreaterThanOrEqual(2);
     expect(count('tune', 'Rejected')).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('the verifier retry case set', () => {
+  async function loadRetry() {
+    const parsed = parseLabCaseSet(
+      JSON.parse(await readFile(`${root}lab/cases/verifier-retry-calibration.json`, 'utf8')),
+    );
+    if (!parsed.ok) throw new Error(parsed.error.join('; '));
+    return parsed.value;
+  }
+
+  const readable = (text: string): boolean =>
+    parseVerdictAnswer(
+      fakeResponse({
+        text,
+        toolCalls: [],
+        usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, usageSource: 'estimated' },
+        finishReason: 'stop',
+      }),
+    ).ok;
+
+  it('RF-1413 holds the 30 calibration cases, each with a first answer the run refuses', async () => {
+    const { set } = await load();
+    const retry = await loadRetry();
+
+    expect(retry.prompt).toBe('verifier/retry');
+    expect(retry.cases.map((each) => each.id)).toEqual(set.cases.map((each) => each.id));
+    expect(retry.cases.map((each) => each.expected)).toEqual(
+      set.cases.map((each) => each.expected),
+    );
+    for (const [index, each] of retry.cases.entries()) {
+      const { firstAnswer, ...rest } = each.input as { firstAnswer: string };
+      expect(rest).toEqual(set.cases[index]?.input);
+      expect(readable(firstAnswer)).toBe(false);
+      expect(firstAnswer).not.toMatch(/Supported|Rejected/u);
+    }
+  });
+
+  it('RF-1413 holds back the cases the fixed rule picks', async () => {
+    const retry = await loadRetry();
+    const rule = splitsOf(
+      retry.cases.map((each) => each.input),
+      sha256Hex,
+    );
+
+    expect(retry.cases.map((each) => each.split)).toEqual(rule);
+    expect(retry.cases.some((each) => each.split === 'held-back')).toBe(true);
   });
 });

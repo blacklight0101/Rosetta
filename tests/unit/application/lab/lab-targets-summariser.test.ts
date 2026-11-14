@@ -74,21 +74,35 @@ describe('the merge target labels', () => {
   it('RF-1412 keeps a sound merge and an empty list usable', async () => {
     const sound = mergeAnswer([merging(['SCRN-1', 'SCRN-2'], 'Catalog product list page')]);
 
-    expect(await run(sound)).toEqual({ usable: true, detail: 'Merges' });
-    expect(await run(mergeAnswer([]))).toEqual({ usable: true, detail: 'NoMerge' });
+    expect(await run(sound)).toMatchObject({ usable: true, detail: 'Merges' });
+    expect(await run(mergeAnswer([]))).toMatchObject({ usable: true, detail: 'NoMerge' });
+  });
+
+  it('RF-1412 records the merges, the merged ids and the cards of the case', async () => {
+    const two = mergeAnswer([
+      merging(['SCRN-1', 'SCRN-2'], 'Catalog product list page'),
+      merging(['SCRN-3', 'SCRN-4'], 'Order checkout form basket'),
+    ]);
+
+    expect((await run(two)).counts).toEqual({ merges: 2, mergedIds: 4, cards: 4 });
+    expect((await run(mergeAnswer([]))).counts).toEqual({ merges: 0, mergedIds: 0, cards: 4 });
   });
 
   it('RF-1412 refuses the cheapest wrong merges', async () => {
     const lump = mergeAnswer([merging(['SCRN-1', 'SCRN-2', 'SCRN-3', 'SCRN-4'], 'Everything')]);
     const one = mergeAnswer([merging(['SCRN-1'], 'Catalog list page')]);
     const unlisted = mergeAnswer([merging(['SCRN-1', 'SCRN-9'], 'Catalog list page')]);
-    const thin = mergeAnswer([merging(['SCRN-1', 'SCRN-3'], 'Catalog list')]);
+    const thin = mergeAnswer([merging(['SCRN-1', 'SCRN-2'], 'Page')]);
+    const unrelated = mergeAnswer([merging(['SCRN-1', 'SCRN-4'], 'Catalog totals')]);
 
-    expect(await run(lump)).toEqual({ usable: false, detail: 'Lumped' });
-    expect(await run(one)).toEqual({ usable: false, detail: 'Invalid' });
-    expect(await run(unlisted)).toEqual({ usable: false, detail: 'Invalid' });
-    expect(await run(thin)).toEqual({ usable: false, detail: 'Thin' });
-    expect(await run('Nothing to merge.')).toEqual({ usable: false, detail: 'Unusable' });
+    expect(await run(lump)).toMatchObject({ usable: false, detail: 'Lumped' });
+    expect(await run(one)).toMatchObject({ usable: false, detail: 'Invalid' });
+    expect(await run(unlisted)).toMatchObject({ usable: false, detail: 'Invalid' });
+    expect(await run(thin)).toMatchObject({ usable: false, detail: 'Thin' });
+    expect(await run(unrelated)).toEqual(
+      expect.objectContaining({ usable: false, detail: 'Unrelated' }),
+    );
+    expect(await run('Nothing to merge.')).toMatchObject({ usable: false, detail: 'Unusable' });
   });
 });
 

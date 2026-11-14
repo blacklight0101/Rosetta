@@ -9,7 +9,7 @@ export interface MergeAsked {
   readonly summary: string;
 }
 
-export type MergeLabel = 'Invalid' | 'Lumped' | 'Thin' | 'Merges' | 'NoMerge';
+export type MergeLabel = 'Invalid' | 'Lumped' | 'Unrelated' | 'Thin' | 'Merges' | 'NoMerge';
 
 interface Listed {
   readonly id: string;
@@ -52,3 +52,15 @@ export function checkMerges(cards: readonly Listed[], merges: readonly MergeAske
   if (merges.some((merge) => thin(cards, merge))) return 'Thin';
   return merges.length > 0 ? 'Merges' : 'NoMerge';
 }
+
+export interface MergeCounts {
+  readonly merges: number;
+  readonly mergedIds: number;
+  readonly cards: number;
+}
+
+/** RF-1412 (stub for the red commit). */
+export const mergeCounts: (
+  cards: readonly Listed[],
+  merges: readonly MergeAsked[],
+) => MergeCounts = () => ({ merges: 0, mergedIds: 0, cards: 0 });

@@ -42,17 +42,46 @@ describe('the labels of a merge answer', () => {
 
     expect(checkMerges(cards, [merge(all)])).toBe('Lumped');
     expect(checkMerges(cards, [merge(all.slice(0, 4))])).toBe('Lumped');
-    // Exactly half is not more than half.
+    // Exactly half is not more than half (the three cards share the word catalog).
+    const related = cards.map((card, index) =>
+      index < 3 ? { ...card, title: `Catalog ${card.title}` } : card,
+    );
     expect(
-      checkMerges(cards, [merge(all.slice(0, 3), 'Catalog order basket', 'Catalog order basket')]),
+      checkMerges(related, [
+        merge(all.slice(0, 3), 'Catalog order basket', 'Catalog order basket'),
+      ]),
     ).toBe('Merges');
   });
 
   it('RF-1412 labels a merged text that names only one of its cards Thin', () => {
-    expect(checkMerges(cards, [merge(['SCRN-1', 'SCRN-3'], 'Catalog list', 'Catalog list')])).toBe(
-      'Thin',
-    );
+    expect(checkMerges(cards, [merge(['SCRN-1', 'SCRN-2'], 'Page', 'Page')])).toBe('Thin');
     expect(checkMerges(cards, [merge(['SCRN-1', 'SCRN-2'], 'x', 'y')])).toBe('Thin');
+  });
+});
+
+describe('the relatedness of a merge', () => {
+  it('RF-1412 labels the first and the last card under a title naming one word of each Unrelated', () => {
+    const probe = merge(['SCRN-1', 'SCRN-6'], 'Catalog stock', 'Catalog list and stock shipment.');
+
+    expect(checkMerges(cards, [probe])).toBe('Unrelated');
+    expect(
+      checkMerges(cards, [merge(['SCRN-1', 'SCRN-3'], 'Catalog order', 'Catalog order')]),
+    ).toBe('Unrelated');
+  });
+
+  it('RF-1412 keeps a merge whose cards are linked through a third card', () => {
+    const chain = [
+      { id: 'A', title: 'Catalog list' },
+      { id: 'B', title: 'Catalog stock' },
+      { id: 'C', title: 'Stock shipment' },
+      { id: 'D', title: 'Unrelated thing' },
+    ];
+
+    expect(
+      checkMerges(chain, [
+        merge(['A', 'B', 'C'], 'Catalog stock list shipment', 'Catalog stock list shipment'),
+      ]),
+    ).toBe('Merges');
   });
 
   it('RF-1412 does not call a small case Lumped', () => {
