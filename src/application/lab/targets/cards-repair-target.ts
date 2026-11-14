@@ -69,7 +69,8 @@ function preparedOf(input: RepairCase, current: ReaderPrompts): PreparedCase {
         ...{ messages: messagesOf(input, prompts, env), tools: readerToolDefinitions },
       });
       if (!asked.ok) return asked.error;
-      const answers = { earlier: input.answer, repair: asked.value.text };
+      const read = (input.reads ?? []).map((each) => each.path);
+      const answers = { earlier: input.answer, repair: asked.value.text, read };
       const suggested = asksSuggestedAnswers(prompts.cardFormat) ? 'required' : 'optional';
       const options = { suggestedAnswers: suggested } as const;
       return mergedRepairOutcome(cardsOutcome(asked.value, prompts), answers, options);

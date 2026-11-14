@@ -113,9 +113,9 @@ describe('the plan repair check of the lab: content that must survive', () => {
 
   it('RF-1406 reads a repair that leaves a FEAT card of the case uncited as Shrunk', async () => {
     const second = { ...card, id: 'FEAT-002', title: 'Refunds' };
-    const rule = { ...card, id: 'BR-001', type: 'BR', title: 'Late fee' };
+    const question = { ...card, id: 'OQ-001', type: 'OQ', title: 'Late fee?' };
 
     expect((await read(plan(), ['sdd'], [card, second])).detail).toBe('Shrunk');
-    expect((await read(plan(), ['sdd'], [card, rule])).detail).toBe('Fixed');
+    expect((await read(plan(), ['sdd'], [card, question])).detail).toBe('Fixed');
   });
 });
