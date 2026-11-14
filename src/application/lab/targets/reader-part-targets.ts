@@ -14,15 +14,17 @@ import type { LlmMessage } from '../../ports/llm-provider.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
 import { areaBlock, replayOfReads } from './reader-case.js';
 import { blockOf, readerPartCaseSchema, type ReaderPartCase } from './reader-part-case.js';
-import { cardsOutcome, firstTurn, PREMATURE_ANSWER } from './reader-targets.js';
+import { cardsOutcome, PREMATURE_ANSWER } from './reader-targets.js';
 import { askOnce, problemsOf } from './single-call.js';
+import { citedPaths, earlierCalls, readerFirstTurn } from './tool-turn.js';
 
 // RF-1406, ADR-029: the lab targets of the reader's other prompt files. Like the first four, a case
 // measures one turn with the run's own builders and one call with the reader's tool definitions;
 // the file under test replaces its own part of the reader's prompts and the other parts are left
 // out, so a result is the effect of that file alone:
 //   reader/answers, reader/reread, reader/parent-cards  the part they add to the first user message
-//                     (first turn: `ReadsFiles`, `BadToolCall`, `Answered`, `Empty`)
+//                     (a tool turn, RF-1410: `ReadsFiles`, `ReadsWithWaste`, `NoAreaRead`,
+//                     `BadToolCall`, `Answered`, `Empty`, with the counts of its calls)
 //   reader/read-more  the refusal after a short read: the reads, a fixed answer, the refusal (same kinds)
 //   reader/turns-left the message after the reads, with the last turn left (`Valid`, `Partial`,
 //                     `Unusable`, `ReadsMore`, read by the card parser)
@@ -44,6 +46,8 @@ interface Spec {
   ) => LlmMessage[];
   /** Whether the turn is read as the final answer (cards) or as the first turn of a task. */
   readonly cards: boolean;
+  /** RF-1410: the files the prompt points the reads at, when it points at some. */
+  readonly aimedAt?: (input: ReaderPartCase) => ReadonlySet<string>;
 }
 
 const missing = (what: string): string => `a case for this prompt needs ${what}`;
@@ -114,6 +118,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.readMore === undefined ? missing('readMore') : needsReads(input)),
     messages: afterShortRead,
     cards: false,
+    aimedAt: (input) => new Set(input.readMore?.unread ?? []),
   },
   {
     id: 'reader/reread',
@@ -122,6 +127,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.rejected === undefined ? missing('rejected') : undefined),
     messages: firstMessageOnly,
     cards: false,
+    aimedAt: (input) => citedPaths(input.rejected ?? ''),
   },
   {
     id: 'reader/turns-left',
@@ -150,12 +156,19 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       const tested = { ...current, [spec.part]: file };
       const marks = { flows: false, screens: false };
       const prompts = readerPromptsFor(tested, marks, input.workbook ?? false);
+      const messages = spec.messages(input, prompts, env);
       const asked = await askOnce(env, {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
-        ...{ messages: spec.messages(input, prompts, env), tools: readerToolDefinitions },
+        ...{ messages, tools: readerToolDefinitions },
       });
       if (!asked.ok) return asked.error;
-      return spec.cards ? cardsOutcome(asked.value, prompts) : firstTurn(asked.value);
+      if (spec.cards) return cardsOutcome(asked.value, prompts);
+      const aimedAt = spec.aimedAt?.(input) ?? null;
+      return readerFirstTurn(asked.value, {
+        files: input.files,
+        earlier: earlierCalls(messages),
+        aimedAt,
+      });
     },
   };
 }

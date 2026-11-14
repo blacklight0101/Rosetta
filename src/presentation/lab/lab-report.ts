@@ -33,6 +33,17 @@ function judgeLines(summary: LabSummary): string[] {
   ];
 }
 
+/** RF-1410: the counts per tool turn of a reader turn that a run answers with tool calls. */
+function turnLines(summary: LabSummary): string[] {
+  const { turns } = summary;
+  if (turns === null) return [];
+  const two = (value: number): string => value.toFixed(2);
+  const aimed = turns.aimed === null ? '' : `, aimed ${two(turns.aimed)}`;
+  return [
+    `Per tool turn (${String(turns.turns)} turns): ${two(turns.calls)} calls, ${two(turns.areaReads)} on the area, ${two(turns.unlisted)} unlisted, ${two(turns.repeats)} repeats, ${two(turns.relists)} relists${aimed}`,
+  ];
+}
+
 /** The metrics of one side, one line each, as the single report and the comparison show them. */
 function metricLines(summary: LabSummary): string[] {
   return [
@@ -41,6 +52,7 @@ function metricLines(summary: LabSummary): string[] {
     `Agreement with the expected labels: ${pct(summary.agreementRate)}`,
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
+    ...turnLines(summary),
     ...judgeLines(summary),
   ];
 }

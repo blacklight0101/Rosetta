@@ -124,6 +124,7 @@ function resultOf(
     outputTokens: total(metered, (call) => call.outputTokens),
     latencyMs: total(metered, (call) => call.latencyMs),
     costMicros: total(metered, (call) => call.costMicros) + metered.unansweredCostMicros,
+    ...(outcome.turn === undefined ? {} : { turn: outcome.turn }),
   };
 }
 
@@ -174,7 +175,10 @@ export class RunLab {
     return this.write(results);
   }
 
-  /** RF-1407: the case with the judge's scores, when a judge is set and the case was answered. */
+  /**
+   * RF-1407: the case with the judge's scores, when a judge is set and the case was answered. RF-1410:
+   * a reader turn that a run answers with tool calls has no answer to judge.
+   */
   private async judged(
     result: LabCaseResult,
     one: Prepared,
@@ -183,6 +187,7 @@ export class RunLab {
   ): Promise<LabCaseResult> {
     const answer = metered.calls.at(-1)?.text;
     if (this.deps.judge === undefined || answer === undefined) return result;
+    if (result.turn !== undefined) return result;
     const judge = await this.deps.judge.score({
       ...{ family: target.id.split('/')[0] ?? target.id, caseKey: result.caseId },
       ...{ source: sourceText(one.input), answer, label: one.expected ?? null },

@@ -3,7 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
-import { toolTurnSchema } from './lab-turns.js';
+import { summariseTurns, toolTurnSchema, type TurnSummary } from './lab-turns.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
@@ -105,6 +105,8 @@ export interface LabSummary {
   readonly costMicros: number;
   /** RF-1407: the judge's means; null for a run without a judge. */
   readonly judge: JudgeSummary | null;
+  /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
+  readonly turns: TurnSummary | null;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -156,6 +158,7 @@ export function summariseLab(results: LabResults): LabSummary {
     ),
     costMicros: sum(cases, (each) => each.costMicros),
     judge: judgeSummaryOf(cases),
+    turns: summariseTurns(cases.map((each) => each.turn)),
   };
 }
 

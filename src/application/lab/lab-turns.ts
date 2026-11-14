@@ -40,5 +40,18 @@ export interface TurnSummary {
 /** The counts per turn over the cases that record a turn; null when none does. */
 // RF-1410
 export function summariseTurns(turns: readonly (ToolTurn | undefined)[]): TurnSummary | null {
-  return turns.length < 0 ? null : null;
+  const recorded = turns.filter((turn): turn is ToolTurn => turn !== undefined);
+  if (recorded.length === 0) return null;
+  const per = (pick: (turn: ToolTurn) => number): number =>
+    recorded.reduce((sum, turn) => sum + pick(turn), 0) / recorded.length;
+  const aimed = recorded.flatMap((turn) => (turn.aimed === null ? [] : [turn.aimed]));
+  return {
+    turns: recorded.length,
+    calls: per((turn) => turn.calls),
+    areaReads: per((turn) => turn.areaReads),
+    unlisted: per((turn) => turn.unlisted),
+    repeats: per((turn) => turn.repeats),
+    relists: per((turn) => turn.relists),
+    aimed: aimed.length === 0 ? null : aimed.reduce((sum, each) => sum + each, 0) / aimed.length,
+  };
 }
