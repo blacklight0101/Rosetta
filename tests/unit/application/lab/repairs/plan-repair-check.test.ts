@@ -43,7 +43,7 @@ async function read(text: string, principles = ['sdd'], cards = [card]) {
 
 describe('the plan repair check of the lab', () => {
   it('RF-1406 reads a repair the run keeps whole as Fixed', async () => {
-    expect(await read(plan())).toEqual({ usable: true, detail: 'Fixed' });
+    expect(await read(plan())).toMatchObject({ usable: true, detail: 'Fixed' });
   });
 
   it('RF-1406 reads a repair that names no card of the case as a source as LeftOut', async () => {
@@ -52,7 +52,7 @@ describe('the plan repair check of the lab', () => {
 
     const answer = plan({ requirements: [second, claimSource] });
 
-    expect(await read(answer)).toEqual({ usable: true, detail: 'LeftOut' });
+    expect(await read(answer)).toMatchObject({ usable: false, detail: 'LeftOut' });
   });
 
   it('RF-1406 reads a task left out or an item not read as LeftOut', async () => {
@@ -80,7 +80,7 @@ describe('the plan repair check of the lab', () => {
   it('RF-1406 reads a repair that keeps no requirement as NoRequirements, not usable', async () => {
     const none = plan({ requirements: [{ ...requirement, sources: ['BR-404'] }] });
 
-    expect(await read(none)).toEqual({ usable: false, detail: 'NoRequirements' });
+    expect(await read(none)).toMatchObject({ usable: false, detail: 'NoRequirements' });
     expect(await read('No plan.')).toEqual({ usable: false, detail: 'Unusable' });
   });
 });
@@ -104,7 +104,7 @@ describe('the plan repair check of the lab: content that must survive', () => {
   it('RF-1406 reads a repair that deletes the phases or the task cards as Shrunk, not usable', async () => {
     const deleted = plan({ phases: [], tasks: [] });
 
-    expect(await read(deleted)).toEqual({ usable: false, detail: 'Shrunk' });
+    expect(await read(deleted)).toMatchObject({ usable: false, detail: 'Shrunk' });
     expect((await read(plan({ tasks: [] }))).detail).toBe('Shrunk');
     expect((await read(plan({ phases: [], tasks: [{ ...task, phase: 1 }] }))).detail).toBe(
       'Shrunk',

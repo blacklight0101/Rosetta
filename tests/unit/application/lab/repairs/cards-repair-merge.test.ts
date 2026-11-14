@@ -78,3 +78,51 @@ describe('the card repair check of the lab: the merged answer', () => {
     });
   });
 });
+
+describe('the card repair check of the lab: an earlier answer that cannot be read', () => {
+  const prose = 'The page lists the orders and sums their lines; I have read both files.';
+  const twoFiles = {
+    ...input,
+    reads: [
+      { path: 'shop/Orders.cs', startLine: 10, lines: ['class Orders {', '}'] },
+      { path: 'shop/Totals.cs', startLine: 20, lines: ['class Totals {', '}'] },
+    ],
+    answer: prose,
+  };
+  const totalsClaim = claim('It sums the order lines.', 'shop/Totals.cs:20-21');
+
+  async function readProse(text: string) {
+    const parsed = target.parseInput(twoFiles);
+    if (!parsed.ok) throw new Error(parsed.error);
+    const { env } = environment([{ text }]);
+    return parsed.value.run(env, draftFile('cards/repair.v9.md', 'Fix:\n{{problems}}\n'));
+  }
+
+  it('RF-1406 reads a repair that leaves a file read with no card as Uncovered', async () => {
+    const one = answerOf(card('List orders', [lists]));
+    const both = answerOf(card('List orders', [lists]), card('Order totals', [totalsClaim]));
+
+    expect(await readProse(one)).toEqual({
+      ...{ usable: false, detail: 'Uncovered' },
+      followUps: { 'second repair': false },
+    });
+    expect((await readProse(both)).detail).toBe('Fixed');
+  });
+
+  it('RF-1406 records a second repair after a repair turn that asks to read more', async () => {
+    const parsed = target.parseInput(input);
+    if (!parsed.ok) throw new Error(parsed.error);
+    const readCall = { id: 'c1', name: 'read_file', arguments: { path: 'shop/Orders.cs' } };
+    const { env } = environment([{ text: '', toolCalls: [readCall] }]);
+
+    const outcome = await parsed.value.run(
+      env,
+      draftFile('cards/repair.v9.md', 'Fix:\n{{problems}}\n'),
+    );
+
+    expect(outcome).toEqual({
+      ...{ usable: false, detail: 'ReadsMore' },
+      followUps: { 'second repair': true },
+    });
+  });
+});
