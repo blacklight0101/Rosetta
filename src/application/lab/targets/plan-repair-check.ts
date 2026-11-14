@@ -10,7 +10,7 @@ import type { TargetOutcome } from '../lab-target.js';
 // cards, and the plan is specification-driven when the brief names the principle `sdd`, as the run
 // reads the brief (`build-plan.ts`). Not usable: `NoRequirements` (none is kept), `Shrunk` (no phase,
 // no task card, a card of the case other than an `OQ` named in no `sources` list, fewer distinct
-// requirements than the feature and rule cards they cite, which is a merge, or fewer distinct
+// requirements than the case has feature and rule cards, which is a merge, or fewer distinct
 // requirements or task cards than the problem lines' highest position, the floor of the earlier
 // answer) and `LeftOut` (the assembly drops or cannot read an item); usable: `Open` (a requirement no
 // task card lists, which a gap round of the run asks for, `coverageOf`, P9-06) and `Fixed`. The
@@ -67,7 +67,7 @@ function lostCount(assembly: PlanAssembly): number {
 
 /** A text with case and spacing aside, so that a copy counts once. */
 function plain(text: string): string {
-  return text.toLowerCase().replace(/s+/gu, ' ').trim();
+  return text.toLowerCase().replace(/\s+/gu, ' ').trim();
 }
 
 /** The highest position of a list that the case's problem lines name: what the earlier answer held. */
@@ -80,11 +80,9 @@ function floorOf(input: PlanRepairCase, list: string): number {
 function countsOf(assembly: PlanAssembly, input: PlanRepairCase, uncovered: number) {
   const { requirements, phases, tasks } = assembly.content;
   const cited = citedIds(assembly.content);
-  const fromRequirements = citedIds(requirements);
   const ofCase = input.cards.filter((card) => cited.has(card.id));
-  const behaviour = input.cards.filter(
-    (card) => behaviourKinds.has(card.type) && fromRequirements.has(card.id),
-  );
+  // RF-1406: counted from the case, so a rule card cited only by a risk still asks for its requirement.
+  const behaviour = input.cards.filter((card) => behaviourKinds.has(card.type));
   return {
     ...{ requirements: requirements.length },
     'distinct requirements': new Set(requirements.map((each) => plain(each.statement))).size,
@@ -100,7 +98,7 @@ function countsOf(assembly: PlanAssembly, input: PlanRepairCase, uncovered: numb
 
 type PlanCounts = ReturnType<typeof countsOf>;
 
-/** RF-1406: a merge (fewer requirements than the behaviours they cite) or fewer items than before. */
+/** RF-1406: a merge (fewer requirements than the case's behaviours) or fewer items than before. */
 function mergedOrFewer(counts: PlanCounts): boolean {
   const distinct = counts['distinct requirements'];
   return (

@@ -33,7 +33,7 @@ function labelLines(summary: LabSummary): string[] {
   const rates = Object.entries(summary.followUpRates);
   const follow = rates.map(([name, rate]) => `${name} ${pct(rate)}`).join(', ');
   return [
-    ...(counts === '' ? [] : [`Results by label: ${counts}`]),
+    `Results by label: ${counts === '' ? 'none' : counts}`,
     ...(rates.length === 0 ? [] : [`Follow-ups a run would make: ${follow}`]),
   ];
 }
