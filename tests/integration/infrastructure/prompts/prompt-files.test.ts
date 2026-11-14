@@ -19,7 +19,7 @@ import { useTempRoot } from '../../../support/temp-root.js';
 
 const readerPromptNames = [
   'cards/card-format.v6.md',
-  'cards/continue.v2.md',
+  'cards/continue.v1.md',
   'cards/repair.v6.md',
   'reader/area.v12.md',
   'reader/read-first.v1.md',
@@ -67,14 +67,11 @@ describe('loadReaderPrompts', () => {
 });
 
 describe('the continue prompt', () => {
-  it('RF-208 loads continue v2, which pastes the reply after the cut, and keeps v1 loadable', async () => {
+  it('RF-208 loads continue v1, the version of a run, and keeps no v2 (P10-09: not kept)', async () => {
     const prompts = await loadReaderPrompts('prompts');
-    const first = await loadPromptFile('prompts', 'cards/continue.v1.md');
 
-    expect(prompts.continue.name).toBe('cards/continue.v2.md');
-    expect(prompts.continue.text).toContain('pasted straight after the last character');
-    expect(prompts.continue.text).toContain('no new opening quote');
-    expect(first.version).toBe('v1');
+    expect(prompts.continue.name).toBe('cards/continue.v1.md');
+    await expect(loadPromptFile('prompts', 'cards/continue.v2.md')).rejects.toThrow();
   });
 });
 
