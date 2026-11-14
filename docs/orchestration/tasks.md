@@ -10036,7 +10036,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: M
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: In review (one version kept, continue.v2; card-format rounds and a flows/screens quality check are left, see docs/evaluation/prompt-lab/cards.md)
+- **Status**: In review (no version kept: continue.v2 was reversed after verification, continue.v1 stays; the lab now measures coverage; card-format rounds and a flows/screens quality check are left, see docs/evaluation/prompt-lab/cards.md)
 - **Evidence**: the task cards are what a builder agent reads.
 - **Reads**: `prompts/cards/*` (card-format, screens, flows, continue), P9-13, P10-04.
 - **Do**: as P10-05. Round log in `docs/evaluation/prompt-lab/cards.md`.

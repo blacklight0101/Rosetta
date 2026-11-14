@@ -1,6 +1,6 @@
 # Round log: the card prompts (P10-09)
 
-Status 2026-11-13: **one version kept, `cards/continue.v2`; the other three prompts sit at the ceiling of the lab's deterministic checks, and `cards/card-format` has a small first-try gap that the lab cannot read yet.** Haiku 5.5 ran every round. The judge (Opus 5.5) is advisory for cards (`judge-sample.md`) and the keep rule of DEC-235 needs a deterministic gain for them, so **no judge call was made**. Spend of this card: **$1.88 of its $4.50 slice** (sum of the `costMicros` of the 46 runs of `lab-out/`, the discarded experiments included); the shared ledger stood at about $14.1 when the last run ended. Run ids are folders of `lab-out/`, prefix `20261113-`.
+Status 2026-11-14: **no version kept; `cards/continue.v1` stays current.** The first round kept `continue.v2`; the verifier found that it dropped cards in a real run and that Sonnet regressed, and section 7 records the fix round (a coverage measure in the lab, candidates without the stop rule, none holding on Sonnet under the strict reading). The other three prompts sit at the ceiling of the lab's deterministic checks, and `cards/card-format` has a small first-try gap that the lab cannot read yet. Sections 3 and 4 are the first round as it was run; read them with section 7. Haiku 5.5 ran every round and no judge call was made (cards judge is advisory). Run ids are folders of `lab-out/`, prefix `20261113-` unless a run id starts with `2026111`. Spend: **$3.66 of the $4.50 slice**.
 
 Keep rule: DEC-231, then DEC-235. On the held-back cases a version is kept when (a) there is no regression on first-try validity, repairs, unusable answers, refusals, RST codes, label agreement or any veto; (b) a deterministic measure improves (fewer unusable or repaired answers, or higher label agreement), because the cards judge is advisory; (c) input tokens, output tokens, latency and cost per call each rise by at most 15%. Latency was measured with 3 repetitions.
 
@@ -36,7 +36,7 @@ Baseline of the settled measure, Haiku, `--split tune`, 5 cases x 2 repetitions:
 
 What the failing answers showed, round by round: round 0 restarts (`Restarted`: a fresh answer, often after "I can't continue ..." and a fence); round 1 fixed most restarts but left a stray opening quote and a bracket in the wrong place (`"]` for `",`); round 3 cut the invented extra cards (output tokens 1128 to 472); round 4 and 5 removed the bracket slips. **Sonnet** was checked with every candidate because it is where a one-line rule can hurt: on round 1 it started two answers with a line break (`225821`, 3 of 5), on round 4 it left the string open or started with a line break (held-back sample 2: `225359` 0 of 2; v1 was 2 of 2), on round 5 one answer of 9 (`230007`). Round 5 and 6 added the line-break and quote wording for that. Opus was never affected.
 
-## 4. Held-back decision for `cards/continue`
+## 4. Held-back decision for `cards/continue` (first round; superseded by section 7)
 
 Held-back cases: 3 (`eshop-20261109-054942-understand-reader-005`, `...063857-understand-reader-191`, `...20261029-152308-understand-reader-036`), Haiku with 3 repetitions (9 runs), `--compare 225236 230052`.
 
@@ -47,7 +47,7 @@ Held-back cases: 3 (`eshop-20261109-054942-understand-reader-005`, `...063857-un
 | round 5 (not kept)          | `225639` | 5 of 9          | 0        | 4        | 0 / none      | 8556         | 737           | 4.24 s        | $0.00078        |
 | **round 6 = `continue.v2`** | `230052` | **7 of 9**      | 0        | **2**    | 0 / none      | 8578 (+2.3%) | 555 (-29%)    | 3.45 s (-16%) | $0.00069 (-11%) |
 
-The repetitions of one case are not independent (the same input three times), so the 9 runs are 3 cases; the gain is on every case (`eshop-...-005`: 0 of 3 to 3 of 3; `...-036`: 1 of 3 to 2 of 3; `...-191`: 0 of 3 to 2 of 3 on round 4, 3 of 3 on round 5). Read against DEC-235: (a) first-try validity, repairs (0), refusals (0), RST codes (none) do not regress, labels and vetoes do not apply to this set; (b) **unusable answers fall from 8 of 9 to 2 of 9**, a deterministic gain; (c) input +2.3%, output -29%, latency -16%, cost -11%, all inside +15%. **Kept: `continue.v2`.**
+The repetitions of one case are not independent (the same input three times), so the 9 runs are 3 cases; the gain is on every case (`eshop-...-005`: 0 of 3 to 3 of 3; `...-036`: 1 of 3 to 2 of 3; `...-191`: 0 of 3 to 2 of 3 on round 4, 3 of 3 on round 5). Read against DEC-235: (a) first-try validity, repairs (0), refusals (0), RST codes (none) do not regress, labels and vetoes do not apply to this set; (b) **unusable answers fall from 8 of 9 to 2 of 9**, a deterministic gain; (c) input +2.3%, output -29%, latency -16%, cost -11%, all inside +15%. **Kept in the first round: `continue.v2` (reversed in section 7).**
 
 Checked on the other two models (held-back):
 
@@ -82,8 +82,57 @@ Held-back, Haiku, 2 repetitions: flows 2 of 2 (`230505`, 1 case), screens 2 of 2
 ## 6. What is left (P10-09)
 
 - `cards/card-format`: rounds on Haiku once check 1 above exists, then a held-back decision (the set has 3 held-back cases).
+- `cards/continue`: a `joinFragment` fix for a leading line break inside a cut string (its own RF and a real run) would let draft s1 of section 7 be kept; or a wording that Sonnet does not answer with a line break.
 - `cards/flows`, `cards/screens`: a deterministic quality check (2 or 3 above) before any round can be kept.
 - A step of two calls for `cards/continue` (the cut being the model's own first answer, cut at a fixed ratio) would remove the remaining synthetic part of the cut: the models still sometimes distrust an invented first card ("this card is wrong for configuration files").
 - The end-to-end check of P10-11 (`rosetta-p10`) is where `continue.v2` meets a real cut answer.
 
-Spend: this card $1.88; ledger about $14.1 of the $40 stop line.
+## 7. Fix round after verification (2026-11-14): `continue.v2` is not kept
+
+The verifier found two defects in section 4. Both were right.
+
+**Finding 1: the first v2 dropped cards in a real run and the lab could not see it.** Its line "finish the card you were writing, then the cards list, then stop" is a stop rule. In a run, one continuation is asked when an area answer is cut (`answer-collector.ts` `nextMessage`), and the run keeps only what the continuation writes, so if card 2 of 6 was cut, v2 closes after card 2 and 4 cards are lost with no code, no `Partial` and no note. The lab cut had nothing planned after the cut card, so it rewarded stopping, and much of the output saving of section 4 (-29%) was dropped cards. The verifier's examples were right: valid v1 continuations added cards (Sonnet `225944`, Haiku `225026`) and v2 added none.
+
+What changed in the lab (RF-1406 Givens first, then a red `test:` commit, then the code):
+
+- **Coverage measure.** A continuation that finishes the cut card and is read whole, but leaves a file the case read with no claim citing it, is `Uncovered` and not usable. The cut is made from the case's first read; a case with two files read stands for an answer with two cards to come. Seven of the eight cases read two ranges and six of those two different files; held-back: `...-005` two files, `...-191` one file read twice, `...-036` one file. The check compares the paths of the citations with the paths of the reads; no judge. A continuation that is cut again is not checked. Limits: it is a proxy (a model may rightly find nothing to write for a file), and first-try validity cannot see it, because that reads the fragment without the case (so an `Uncovered` run still counts as "valid on the first try"; read "not usable").
+- **Reachable turn.** The continue replay said "Turns left: 1", a state a run never reaches (a continuation is a turn like any other, Q-55). It now says two turns left.
+- On this measure the first v2 (with the stop rule) is `Uncovered` in 9 of 10 Haiku tune runs (`235811`) and the same prompt with the stop line removed and nothing in its place (`s0`, `235851`) in 6 of 10; v1 is `Uncovered` 3, `Restarted` 5, `Unusable` 1 and valid 1 of 10 (`235740`).
+
+**Candidates without the stop rule.** The stop line is replaced by "After the card you were writing, go on with the cards your answer still had to hold: one for each file you read that has no card yet. Then close the list." Every other line is as in round 6 of section 3 unless stated. Run ids have the prefix `20261113-` up to `235952` and `20261114-` after.
+
+| Draft | Change                                                                             | Haiku tune, 10 runs                                      | Haiku held-back, 18 runs                     | Sonnet held-back, 18 runs                               |
+| ----- | ---------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------- |
+| v1    | current                                                                            | 1 valid (`235740`)                                       | 3 valid, 15 not usable (`000458`)            | 17 valid, 1 Uncovered (`001042`)                        |
+| s1    | the replacement line                                                               | 7 valid (`235952`); 18 of 20 on 4 repetitions (`000908`) | 14 valid, 3 Restarted, 1 Unusable (`000612`) | 17 valid, 1 Unusable (`001142`)                         |
+| s2    | s1 and "a claim is written {"text": ..., "citations": [...]}: close the string..." | 5 and 7 valid (`000056`, `000148`)                       | 14 valid, 3 Unusable, 1 Partial (`000721`)   | 17 valid, 1 Unusable (`001238`)                         |
+| s3    | s1 without the words "no line break" and "before the JSON"                         |                                                          | 17 valid, 1 Unusable (`001503`)              | 16 valid, 2 Unusable (`001341`)                         |
+| s4    | s1 and a worked example of a reply that starts with the next characters            |                                                          | 17 valid, 1 Unusable (`001718`)              | 17 valid, 1 Unusable (`001610`); 7 of 9 more (`001752`) |
+| s5    | v1 plus only the keep-it, go-on and close rules                                    |                                                          | 14 valid, 1 Restarted, 3 Unusable (`002018`) | 15 valid, 2 Unusable, 1 Restarted (`001848`)            |
+
+**Finding 2: Sonnet, strict reading (the orchestrator's ruling): no regression on validity, unusable, repairs, refusals or RST on any model, on the same held-back cases and repetitions.**
+
+- **The 29 against 27 of section 4.** The "29 of 29" added the 2-run sample `225349` (2 cases, 1 repetition) to the 27 comparable runs (`225944` 9 and `230256` 18). The matched count was v1 27 of 27 and v2 26 of 27 (old measure).
+- **New measure, matched repetitions (9 + 18 = 27 runs each).** v1 (`000235`, `001042`): 25 usable, 2 not usable (1 `Restarted`, 1 `Uncovered`), first-try valid 26. s1 (`000305`, `001142`): 25 usable, 2 not usable (both `Unusable`), first-try valid 25.
+- **The failure differs.** Every Sonnet-failing candidate answer began with a raw line break inside the cut string (`"\n shown, ..."`), which `joinFragment` does not strip and which breaks the JSON. v1 never did (0 of 45 Sonnet runs over all measures); every candidate wording did, about 1 run in 9 to 1 in 18 (s1 2 of 27, s2 2 of 27, s3 2 of 18, s4 3 of 27, s5 2 of 18). Naming the line break, dropping the words, adding an example or shortening the prompt (s1 to s5) did not remove it.
+- **First-try validity.** s1 is one run below v1 (25 against 26). That run is partly the lab's blind spot (v1's `Uncovered` run counts as valid on the first try), but under the strict reading a lower number is a regression.
+
+**Decision: not kept.** Under the strict reading no candidate holds on Sonnet (the leading line break, and a first-try validity below v1's), and `joinFragment` and other production code may not change in this PR. **`continue.v1` stays current.** The `continue.v2.md` file and its loader, manifest and architecture changes were removed by new commits (the earlier commits stay in history). A fix of `joinFragment` (strip a leading line break when the cut ends inside a string) would be a production change with its own RF and a real run; with it s1 would be the candidate: on Haiku held-back it turns 3 valid of 18 into 14 valid (not usable 15 to 4), with input +2.4% (8388 to 8592), output -5%, latency -6%; on Sonnet output -15% and latency -24%.
+
+**Best candidate (s1), the whole text, not kept:**
+
+```text
+Your last answer stopped before its JSON was complete; it was probably cut off by the output limit.
+
+Continue exactly where it stopped: reply with only the rest of the JSON, starting at the next character, and nothing else.
+Your reply is pasted straight after the last character of the earlier text.
+Do not repeat what you already wrote and do not start again. Do not call tools.
+The earlier text is kept as it is, even if you would write it differently: do not correct it or replace it, and write no explanation and no code fence before the JSON.
+If the text stopped inside a string, your reply goes on with the next word of that string, with no new opening quote and no line break, and you close the string with a quote.
+After the card you were writing, go on with the cards your answer still had to hold: one for each file you read that has no card yet. Then close the list.
+Close every string, list and object that is still open, in the right order, so that the earlier text and your reply together are one valid JSON object.
+```
+
+**The trade-off.** A wording that stops after the cut card saves output tokens and latency by writing less, and a run pays for it in cards that are never written. A wording that goes on keeps the cards and saves about 5% of output, not 29%. On a lab with no cards to come, a stop rule looks like a gain; the coverage measure above is what makes the difference visible, and any later tuning of `cards/continue` must be scored on it.
+
+**Spend.** The fix round cost $1.78 (23 runs, `235740` to `002018`); the card total is **$3.66 of $4.50** (69 runs, no judge). The shared ledger stood at about $15.9 when the last run ended.
