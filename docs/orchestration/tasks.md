@@ -9980,7 +9980,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: L
 - **Depends on**: P10-04
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: Todo
+- **Status**: In review (2026-11-14, fix round after the verification of #1410: the reader tool-turn measure (RF-1410) now grades the new lines a turn gives the read gate, and `NoCards` is usable only where a case expects it; `reader/read-more.v3.md` is kept on matched held-back runs of Haiku, Sonnet and Opus; `read-more` had four Haiku rounds and `turns-left` three, the other six wired prompts round 0 only, so the done-when (three Haiku rounds for every reader prompt) is not met; `reader/workbook` has no committed set; $4.13 of the $7 slice spent; round log in `docs/evaluation/prompt-lab/reader.md`)
 - **Evidence**: the reader calls are most of an understand run's calls and spend (to be confirmed by P10-04).
 - **Reads**: `prompts/reader/*` (task, area, read-first, read-more, reread, answers, turns-left, parent-cards, workbook), `prompts/shared/text-tool-protocol*`, the reader use cases, P10-04's figures.
 - **Do**: iterate in rounds on Haiku (try, score, read the failing cases, change one thing, score again), then check the kept version on Sonnet and Opus; keep a version only under the rule of DEC-231; record each round (what changed, why, the figures) in `docs/evaluation/prompt-lab/reader.md`. Land each kept prompt as a new version with its tests and recordings.

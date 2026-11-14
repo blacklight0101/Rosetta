@@ -23,7 +23,7 @@ const readerPromptNames = [
   'cards/repair.v6.md',
   'reader/area.v12.md',
   'reader/read-first.v1.md',
-  'reader/read-more.v2.md',
+  'reader/read-more.v3.md',
   'reader/task.v2.md',
   'reader/turns-left.v2.md',
 ];
@@ -75,6 +75,17 @@ describe('the continue prompt', () => {
   });
 });
 
+describe('the read-more prompt', () => {
+  it('RF-206 loads read-more v3, which asks for whole reads, and keeps v2 loadable (P10-05)', async () => {
+    const prompts = await loadReaderPrompts('prompts');
+
+    expect(prompts.readMore).toMatchObject({ name: 'reader/read-more.v3.md', version: 'v3' });
+    expect(prompts.readMore.text).toMatch(/whole, up to 400 lines a call/u);
+    expect(prompts.readMore.text).toMatch(/start after the lines you already have/u);
+    expect((await loadPromptFile('prompts', 'reader/read-more.v2.md')).version).toBe('v2');
+  });
+});
+
 describe('loadReaderPrompts refusals', () => {
   const temp = useTempRoot('rosetta-prompts-');
 
@@ -114,7 +125,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-206 refuses a read-more prompt that lost one of its placeholders', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'read-more.v2.md'), 'Read more: {{files}} {{turns}}');
+    await writeFile(join(temp.path, 'reader', 'read-more.v3.md'), 'Read more: {{files}} {{turns}}');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 

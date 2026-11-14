@@ -3,6 +3,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
+import { summariseTurns, toolTurnSchema, type TurnSummary } from './lab-turns.js';
 
 // RF-1403, RNF-015: what one lab invocation writes (`lab-out/<id>/results.json`), its summary and
 // the side-by-side comparison of two. The figures of the target's calls are deterministic; the judge's
@@ -31,6 +32,8 @@ const caseSchema = z.strictObject({
   outputTokens: count,
   latencyMs: count,
   costMicros: count,
+  /** RF-1410: what a reader turn that a run answers with tool calls did. */
+  turn: toolTurnSchema.optional(),
   /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
   judge: judgementSchema.optional(),
 });
@@ -102,6 +105,10 @@ export interface LabSummary {
   readonly costMicros: number;
   /** RF-1407: the judge's means; null for a run without a judge. */
   readonly judge: JudgeSummary | null;
+  /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
+  readonly turns: TurnSummary | null;
+  /** RF-1410: the count of each label (`detail`) of the cases. */
+  readonly details: Readonly<Record<string, number>>;
 }
 
 function rate(part: number, whole: number): number | null {
@@ -118,6 +125,14 @@ function errorsOf(cases: readonly LabCaseResult[]): Record<string, number> {
     if (each.rstCode !== null) errors[each.rstCode] = (errors[each.rstCode] ?? 0) + 1;
   }
   return errors;
+}
+
+/** RF-1410: the count of each label of the cases, by label in code-unit order. */
+function detailsOf(cases: readonly LabCaseResult[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const labels = cases.map((each) => each.detail).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const label of labels) counts[label] = (counts[label] ?? 0) + 1;
+  return counts;
 }
 
 // RF-1403
@@ -153,6 +168,8 @@ export function summariseLab(results: LabResults): LabSummary {
     ),
     costMicros: sum(cases, (each) => each.costMicros),
     judge: judgeSummaryOf(cases),
+    turns: summariseTurns(cases.map((each) => each.turn)),
+    details: detailsOf(cases),
   };
 }
 

@@ -2,6 +2,7 @@ import type { PromptFile } from '../agent/prompt-file.js';
 import type { Result } from '../../domain/errors/result.js';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { IdGenerator } from '../ports/id-generator.js';
+import type { ToolTurn } from './lab-turns.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 
 // RF-1401, ADR-029: a lab target turns the inputs of a case into the messages of one prompt id with
@@ -23,6 +24,10 @@ export interface TargetOutcome {
   readonly usable: boolean;
   /** A short label of the result, compared with the case's `expected`. */
   readonly detail: string;
+  /** RF-1410: what a reader turn that a run answers with tool calls did; such a case is not judged. */
+  readonly turn?: ToolTurn;
+  /** RF-1410: the label is usable only in a case whose `expected` label is this detail. */
+  readonly usableWhenExpected?: boolean;
 }
 
 export interface PreparedCase {

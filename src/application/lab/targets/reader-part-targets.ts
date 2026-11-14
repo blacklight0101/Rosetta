@@ -10,22 +10,25 @@ import {
   type ReaderPrompts,
 } from '../../agent/reader-prompts.js';
 import { parseCardsLenient } from '../../cards/parse-cards.js';
-import type { LlmMessage } from '../../ports/llm-provider.js';
+import type { LlmMessage, LlmResponse } from '../../ports/llm-provider.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
 import { areaBlock, replayOfReads } from './reader-case.js';
 import { blockOf, readerPartCaseSchema, type ReaderPartCase } from './reader-part-case.js';
-import { cardsOutcome, firstTurn, PREMATURE_ANSWER } from './reader-targets.js';
+import { cardsOutcome, PREMATURE_ANSWER } from './reader-targets.js';
 import { askOnce, problemsOf } from './single-call.js';
+import { citedPaths, earlierCalls, readerFirstTurn, type TurnScope } from './tool-turn.js';
 
 // RF-1406, ADR-029: the lab targets of the reader's other prompt files. Like the first four, a case
 // measures one turn with the run's own builders and one call with the reader's tool definitions;
 // the file under test replaces its own part of the reader's prompts and the other parts are left
 // out, so a result is the effect of that file alone:
 //   reader/answers, reader/reread, reader/parent-cards  the part they add to the first user message
-//                     (first turn: `ReadsFiles`, `BadToolCall`, `Answered`, `Empty`)
+//                     (a tool turn, RF-1410: `ReadsFiles`, `ReadsWithWaste`, `NoAreaRead`,
+//                     `BadToolCall`, `Answered`, `Empty`, with the counts of its calls)
 //   reader/read-more  the refusal after a short read: the reads, a fixed answer, the refusal (same kinds)
 //   reader/turns-left the message after the reads, with the last turn left (`Valid`, `Partial`,
-//                     `Unusable`, `ReadsMore`, read by the card parser)
+//                     `NoCards`, `Unusable`, `ReadsMore`, read by the card parser; RF-1410: an
+//                     empty list with no problem is a final answer a run accepts, so it is usable)
 //   reader/workbook   the guidance added to the system prompt of a workbook area, after the same
 //                     replay as the card format (same kinds as the turns-left message)
 
@@ -44,6 +47,8 @@ interface Spec {
   ) => LlmMessage[];
   /** Whether the turn is read as the final answer (cards) or as the first turn of a task. */
   readonly cards: boolean;
+  /** RF-1410: the files the prompt points the reads at, when it points at some. */
+  readonly aim?: (input: ReaderPartCase) => TurnScope['aim'];
 }
 
 const missing = (what: string): string => `a case for this prompt needs ${what}`;
@@ -114,6 +119,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.readMore === undefined ? missing('readMore') : needsReads(input)),
     messages: afterShortRead,
     cards: false,
+    aim: (input) => ({ kind: 'unread', paths: new Set(input.readMore?.unread ?? []) }),
   },
   {
     id: 'reader/reread',
@@ -122,6 +128,7 @@ const specs: readonly Spec[] = [
     lacks: (input) => (input.rejected === undefined ? missing('rejected') : undefined),
     messages: firstMessageOnly,
     cards: false,
+    aim: (input) => ({ kind: 'cited', paths: citedPaths(input.rejected ?? '') }),
   },
   {
     id: 'reader/turns-left',
@@ -140,6 +147,19 @@ const specs: readonly Spec[] = [
   },
 ];
 
+/**
+ * RF-1410: the last turn read as a run reads it. An empty cards list with no problem ends a run's
+ * task `final-answer` with no card (agent-loop.ts `finish`); it is `NoCards`, usable only where the
+ * case expects it, as a model that gives up on an area with code answers the same.
+ */
+function lastTurnOutcome(response: LlmResponse, prompts: ReaderPrompts): TargetOutcome {
+  const outcome = cardsOutcome(response, prompts);
+  if (outcome.detail !== 'Unusable') return outcome;
+  const parsed = parseCardsLenient(response.text, new Map());
+  const noCards = { usable: false, detail: 'NoCards', usableWhenExpected: true };
+  return parsed.problems.length === 0 ? noCards : outcome;
+}
+
 function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): PreparedCase {
   return {
     run: async (env: TargetEnv, file: PromptFile): Promise<TargetOutcome> => {
@@ -150,12 +170,19 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       const tested = { ...current, [spec.part]: file };
       const marks = { flows: false, screens: false };
       const prompts = readerPromptsFor(tested, marks, input.workbook ?? false);
+      const messages = spec.messages(input, prompts, env);
       const asked = await askOnce(env, {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
-        ...{ messages: spec.messages(input, prompts, env), tools: readerToolDefinitions },
+        ...{ messages, tools: readerToolDefinitions },
       });
       if (!asked.ok) return asked.error;
-      return spec.cards ? cardsOutcome(asked.value, prompts) : firstTurn(asked.value);
+      if (spec.cards) return lastTurnOutcome(asked.value, prompts);
+      const aim = spec.aim?.(input) ?? null;
+      const shareBefore = input.readMore === undefined ? null : input.readMore.percent / 100;
+      return readerFirstTurn(asked.value, {
+        ...{ files: input.files, earlier: earlierCalls(messages) },
+        ...{ aim, shareBefore },
+      });
     },
   };
 }

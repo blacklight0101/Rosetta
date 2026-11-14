@@ -100,6 +100,11 @@ function firstTryOf(
   return read === null ? null : first !== undefined && read;
 }
 
+/** RF-1410: a label usable only where the case expects it counts only there. */
+function usableOf(outcome: TargetOutcome, expected: string | undefined): boolean {
+  return outcome.usable || (outcome.usableWhenExpected === true && expected === outcome.detail);
+}
+
 /** RF-1403: the deterministic metrics of one finished case. */
 function resultOf(
   one: Prepared & { readonly repetition: number },
@@ -114,7 +119,7 @@ function resultOf(
   return {
     ...{ caseId: one.caseId, repetition, split: one.split, expected: one.expected ?? null },
     ...{ detail: outcome.detail, answer: (last?.text ?? '').slice(0, ANSWER_CHARS) },
-    ...{ usable: outcome.usable, validFirstTry },
+    ...{ usable: usableOf(outcome, one.expected), validFirstTry },
     repaired: outcome.usable && validFirstTry === false && metered.calls.length > 1,
     refused: metered.failures.some((code) => REFUSED_BEFORE_SENDING.has(code)),
     rstCode: metered.failures[0] ?? null,
@@ -124,6 +129,7 @@ function resultOf(
     outputTokens: total(metered, (call) => call.outputTokens),
     latencyMs: total(metered, (call) => call.latencyMs),
     costMicros: total(metered, (call) => call.costMicros) + metered.unansweredCostMicros,
+    ...(outcome.turn === undefined ? {} : { turn: outcome.turn }),
   };
 }
 
@@ -174,7 +180,10 @@ export class RunLab {
     return this.write(results);
   }
 
-  /** RF-1407: the case with the judge's scores, when a judge is set and the case was answered. */
+  /**
+   * RF-1407: the case with the judge's scores, when a judge is set and the case was answered. RF-1410:
+   * a reader turn that a run answers with tool calls has no answer to judge.
+   */
   private async judged(
     result: LabCaseResult,
     one: Prepared,
@@ -183,6 +192,7 @@ export class RunLab {
   ): Promise<LabCaseResult> {
     const answer = metered.calls.at(-1)?.text;
     if (this.deps.judge === undefined || answer === undefined) return result;
+    if (result.turn !== undefined) return result;
     const judge = await this.deps.judge.score({
       ...{ family: target.id.split('/')[0] ?? target.id, caseKey: result.caseId },
       ...{ source: sourceText(one.input), answer, label: one.expected ?? null },

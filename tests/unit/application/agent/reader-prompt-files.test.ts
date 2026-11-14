@@ -21,7 +21,7 @@ describe('prompt files', () => {
       expect.arrayContaining([
         'reader/area.v12.md',
         'reader/read-first.v1.md',
-        'reader/read-more.v2.md',
+        'reader/read-more.v3.md',
         'reader/task.v2.md',
         'reader/turns-left.v2.md',
       ]),
@@ -81,7 +81,7 @@ describe('RF-206 the read-first prompts', () => {
 
 describe('P3-78 the read-more prompt', () => {
   it('RF-206 the read-more prompt holds its five placeholders once each', async () => {
-    const text = await readFile('prompts/reader/read-more.v2.md', 'utf8');
+    const text = await readFile('prompts/reader/read-more.v3.md', 'utf8');
 
     for (const placeholder of ['percent', 'read', 'total', 'files', 'turns']) {
       expect(text.split(`{{${placeholder}}}`)).toHaveLength(2);
@@ -89,7 +89,7 @@ describe('P3-78 the read-more prompt', () => {
   });
 
   it('RF-206 the read-more prompt asks for formulas and macros and says the next answer is accepted', async () => {
-    const text = await readFile('prompts/reader/read-more.v2.md', 'utf8');
+    const text = await readFile('prompts/reader/read-more.v3.md', 'utf8');
 
     expect(text).toMatch(/formulas/iu);
     expect(text).toMatch(/macros/iu);
