@@ -31,9 +31,11 @@ const card = {
   claims: [{ text: 'An order has a total.', citations: ['shop/Orders.cs:10-11'] }],
 };
 const validCards = JSON.stringify({ cards: [card] });
-const CUT = '{"cards": [{"type": "BR", "title": "';
-/** What a model would send to finish the cut answer: the rest of the same cards. */
-const rest = JSON.stringify({ cards: [card] }).slice('{"cards":[{"type":"BR","title":"'.length);
+/** Cut inside a claim about the first read of the case: the model has the lines to finish it. */
+const CUT =
+  '{"cards": [{"type": "FEAT", "title": "Reads Orders.cs", "area": "shop", "summary": "The code in shop/Orders.cs is read here.", "confidence": "High", "claims": [{"text": "The file shop/Orders.cs holds the code at lines 10-11, which is';
+/** What a model would send to finish the cut answer: the rest of the claim and the cards. */
+const rest = ' the Orders class.", "citations": ["shop/Orders.cs:10-11"]}]}]}';
 
 let prompts: ReaderPrompts;
 let targets: Map<string, LabTarget>;
@@ -78,7 +80,7 @@ describe('the surface fragments', () => {
       expect(request?.system).toBe(readerSystemPrompt(readerPromptsFor(tested, marks)));
       expect(request?.system).toContain('DRAFT-TEXT');
       expect(request?.system).not.toContain(other);
-      expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
+      expect(request?.tools).toEqual([]);
     },
   );
 
@@ -133,6 +135,95 @@ describe('the continue target', () => {
       usable: false,
       detail: 'Unusable',
     });
+  });
+});
+
+describe('the last turn of the card surface targets', () => {
+  it.each(['cards/flows', 'cards/screens'])(
+    'RF-1406 makes %s the last turn: one turn left, whatever the case holds',
+    async (id) => {
+      const { request } = await run(id, { text: validCards });
+
+      expect(request?.messages.at(-1)?.content).toContain('Turns left: 1.');
+      expect(request?.messages.at(-1)?.content).not.toContain('Turns left: 5.');
+    },
+  );
+
+  it('RF-1406 keeps the tools on a continuation and says two turns left, which a run can reach', async () => {
+    const { request } = await run('cards/continue', { text: rest });
+
+    expect(request?.messages[3]?.content).toContain('Turns left: 2.');
+    expect(request?.tools.map((tool) => tool.name)).toContain('read_file');
+  });
+});
+
+describe('the cut of a continuation', () => {
+  it('RF-1406 is made from the first read of each case and ends inside a claim', async () => {
+    const other = {
+      ...{ area: 'bank "main"', files: [{ path: 'bank/Pay.cs', language: 'csharp', lines: 9 }] },
+      reads: [{ path: 'bank/Pay.cs', startLine: 3, lines: ['class Pay {', '  int x;', '}'] }],
+    };
+    const { request } = await run('cards/continue', { text: rest }, other);
+
+    const cut = String(request?.messages.at(-2)?.content);
+    expect(cut).toContain('bank/Pay.cs');
+    expect(cut).toContain('lines 3-5');
+    expect(cut).toContain('"area": "bank \\"main\\""');
+    expect(cut).not.toContain('Orders.cs');
+    expect(cut.endsWith('which is')).toBe(true);
+  });
+});
+
+describe('a continuation that starts again', () => {
+  const again = `Here is the whole answer.\n${validCards}`;
+  const fence = '```';
+  const fenced = [`${fence}json`, validCards, fence].join('\n');
+
+  it('RF-1406 is Restarted, not usable, when the fragment is a new answer and not the rest', async () => {
+    const prose = await run('cards/continue', { text: again });
+    const inFence = await run('cards/continue', { text: fenced });
+
+    expect(prose.outcome).toEqual({ usable: false, detail: 'Restarted' });
+    expect(inFence.outcome).toEqual({ usable: false, detail: 'Restarted' });
+  });
+
+  it('RF-1406 keeps a continuation that finishes the card and is cut again, as a run does', async () => {
+    const again2 = `${rest.slice(0, -2)}, {"type": "BR", "title": "Cut`;
+
+    expect((await run('cards/continue', { text: again2 })).outcome).toEqual({
+      usable: true,
+      detail: 'Partial',
+    });
+  });
+
+  it('RF-1406 is not valid on the first try either, and the rest of the cut is', () => {
+    expect(targets.get('cards/continue')?.readsAnswer(again)).toBe(false);
+    expect(targets.get('cards/continue')?.readsAnswer(rest)).toBe(true);
+  });
+});
+
+describe('the coverage of a continuation', () => {
+  const two = {
+    ...input,
+    files: [...input.files, { path: 'shop/Pay.cs', language: 'csharp', lines: 30 }],
+    reads: [...input.reads, { path: 'shop/Pay.cs', startLine: 1, lines: ['class Pay {', '}'] }],
+  };
+  const payCard = JSON.stringify({
+    ...card,
+    title: 'Pay',
+    claims: [{ text: 'Pay exists.', citations: ['shop/Pay.cs:1-2'] }],
+  });
+  const goesOn = `${rest.slice(0, -2)}, ${payCard}]}`;
+
+  it('RF-1406 is Uncovered, not usable, when the card is finished and a file read has no card', async () => {
+    const { outcome } = await run('cards/continue', { text: rest }, two);
+
+    expect(outcome).toEqual({ usable: false, detail: 'Uncovered' });
+  });
+
+  it('RF-1406 is Valid when every file read is cited, and for a case that read one file', async () => {
+    expect((await run('cards/continue', { text: goesOn }, two)).outcome.detail).toBe('Valid');
+    expect((await run('cards/continue', { text: rest })).outcome.detail).toBe('Valid');
   });
 });
 

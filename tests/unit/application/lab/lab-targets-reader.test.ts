@@ -109,6 +109,16 @@ describe('the reader first turn', () => {
   });
 });
 
+describe('the last turn of the card format', () => {
+  it('RF-1406 makes the card format call the last turn: one turn left and no tools', async () => {
+    const { request } = await run('cards/card-format', { text: '{"cards":[]}' }, 'Format.');
+
+    expect(request?.tools).toEqual([]);
+    expect(request?.messages.at(-1)?.content).toContain('Turns left: 1.');
+    expect(request?.messages.at(-1)?.content).not.toContain('Turns left: 5.');
+  });
+});
+
 describe('the reader card format turn', () => {
   it('RF-1406 replays the reads of the case before the card format answer', async () => {
     const cards = JSON.stringify({ cards: [] });

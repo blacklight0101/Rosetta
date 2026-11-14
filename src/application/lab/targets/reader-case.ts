@@ -35,6 +35,15 @@ export const readerCaseSchema = z.strictObject({
 export type ReaderCase = z.infer<typeof readerCaseSchema>;
 type Read = NonNullable<ReaderCase['reads']>[number];
 
+/** The turns of a task on its last turn: the replay then says one turn is left (P10-09). */
+const LAST_TURN = 2;
+
+/**
+ * The case on the last turn of its task. A card target that must measure the answer replays it so,
+ * and sends no tools, so the call is the answer; a real run keeps its tools on the last turn.
+ */
+export const onLastTurn = (input: ReaderCase): ReaderCase => ({ ...input, turns: LAST_TURN });
+
 /** The text of the `list_area_files` block, as the run's tool writes it. */
 function areaText(input: ReaderCase): string {
   const files = input.files.map((file) => {

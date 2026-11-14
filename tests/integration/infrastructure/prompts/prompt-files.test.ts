@@ -66,6 +66,15 @@ describe('loadReaderPrompts', () => {
   });
 });
 
+describe('the continue prompt', () => {
+  it('RF-208 loads continue v1, the version of a run, and keeps no v2 (P10-09: not kept)', async () => {
+    const prompts = await loadReaderPrompts('prompts');
+
+    expect(prompts.continue.name).toBe('cards/continue.v1.md');
+    await expect(loadPromptFile('prompts', 'cards/continue.v2.md')).rejects.toThrow();
+  });
+});
+
 describe('loadReaderPrompts refusals', () => {
   const temp = useTempRoot('rosetta-prompts-');
 
