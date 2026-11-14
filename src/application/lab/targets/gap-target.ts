@@ -4,13 +4,14 @@ import type { PromptFile } from '../../agent/prompt-file.js';
 import { parseGapAnswer } from '../../plan/gap-answer.js';
 import { gapMessage } from '../../plan/gap-message.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
+import { gapCoverage } from './gap-coverage.js';
 import { askOnce, problemsOf } from './single-call.js';
 
 // RF-1406, RF-627, ADR-029: the lab target of the planner's task cards for the items no card builds
 // (`planner/gap`). A case holds the items and the plan they join; they reach the model as the two
 // data blocks the run builds (`gapMessage`). The lab makes the one call; the run's continuation and
-// repair are not replayed. `detail` is `Cards` (the answer holds at least one card), `NoCards` (a
-// valid answer with none) or `Unusable`.
+// repair are not replayed. `detail` is the gap check of the answer (gap-coverage.ts: `Covered`,
+// `ModulesOpen`, `Open`, `LeftOut`, P10-07) or `Unusable`.
 
 /** RF-1406: the input of a gap case; the gap repair adds its problem lines to it. */
 export const gapInputSchema = z.strictObject({
@@ -40,12 +41,22 @@ export const gapInputSchema = z.strictObject({
 
 type GapInput = z.infer<typeof gapInputSchema>;
 
-/** The run's reading of a gap answer for the items of the case: `Cards`, `NoCards` or `Unusable`. */
-export function gapOutcome(text: string, input: Pick<GapInput, 'items'>): TargetOutcome {
+/** The run's reading of a gap answer for the case, checked as a gap round checks it, or `Unusable`. */
+export function gapOutcome(
+  text: string,
+  input: Pick<GapInput, 'items' | 'phases' | 'tasks'>,
+  call: 'gap' | 'repair' = 'gap',
+): TargetOutcome {
   const only = input.items.length === 1 ? input.items[0]?.id : undefined;
   const answer = parseGapAnswer(text, only);
   if (answer === undefined) return { usable: false, detail: 'Unusable' };
-  return { usable: true, detail: answer.drafts.length > 0 ? 'Cards' : 'NoCards' };
+  const { detail, repairCall, secondRound } = gapCoverage(answer, input);
+  // RF-1403: a run makes no second repair, so a repair answer names only the second round.
+  const followUps =
+    call === 'gap'
+      ? { 'repair call': repairCall, 'second round': secondRound }
+      : { 'second round': secondRound };
+  return { usable: true, detail, followUps };
 }
 
 function preparedOf(input: GapInput): PreparedCase {

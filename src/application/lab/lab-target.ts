@@ -24,6 +24,13 @@ export interface TargetOutcome {
   readonly usable: boolean;
   /** A short label of the result, compared with the case's `expected`. */
   readonly detail: string;
+  /**
+   * RF-1403 (P10-07): what a run would do after this answer (a repair call, a second round), each
+   * true or false, counted apart from the label; absent for a target that names none.
+   */
+  readonly followUps?: Readonly<Record<string, boolean>>;
+  /** RF-1403: the counts the check used (a name and a whole number), kept per case for an audit. */
+  readonly counts?: Readonly<Record<string, number>>;
   /** RF-1410: what a reader turn that a run answers with tool calls did; such a case is not judged. */
   readonly turn?: ToolTurn;
   /** RF-1410: the label is usable only in a case whose `expected` label is this detail. */

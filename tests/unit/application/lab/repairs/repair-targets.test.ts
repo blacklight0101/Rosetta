@@ -53,7 +53,7 @@ const lines: Record<string, readonly string[]> = {
 };
 
 const answers: readonly (readonly [string, string, string])[] = [
-  ['planner/gap-repair', '{"tasks":[]}', 'NoCards'],
+  ['planner/gap-repair', '{"tasks":[]}', 'Open'],
   ['planner/gap-repair', 'No cards.', 'Unusable'],
   ['planner/plan-repair', 'No plan.', 'Unusable'],
 ];

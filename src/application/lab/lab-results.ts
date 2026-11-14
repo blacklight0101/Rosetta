@@ -37,6 +37,10 @@ const caseSchema = z.strictObject({
   turn: toolTurnSchema.optional(),
   /** RF-1407: the judge's scores, present only in a run made with `--judge`. */
   judge: judgementSchema.optional(),
+  /** RF-1403 (P10-07): the follow-ups a run would make after the answer; absent when none is named. */
+  followUps: z.record(z.string().min(1).max(60), z.boolean()).optional(),
+  /** RF-1403 (P10-07): the counts the target's check used, for an audit; never averaged. */
+  counts: z.record(z.string().min(1).max(60), count).optional(),
 });
 
 const resultsSchema = z.strictObject({
@@ -106,10 +110,15 @@ export interface LabSummary {
   readonly costMicros: number;
   /** RF-1407: the judge's means; null for a run without a judge. */
   readonly judge: JudgeSummary | null;
+  /**
+   * RF-1403 (P10-07), RF-1410: how many cases ended with each `detail` label, by label in code-unit
+   * order; the one label count of a summary.
+   */
+  readonly detailCounts: Readonly<Record<string, number>>;
+  /** RF-1403 (P10-07): each follow-up's share of the cases that name it. */
+  readonly followUpRates: Readonly<Record<string, number>>;
   /** RF-1410: the counts per tool turn; null for a run with no case that records a turn. */
   readonly turns: TurnSummary | null;
-  /** RF-1410: the count of each label (`detail`) of the cases. */
-  readonly details: Readonly<Record<string, number>>;
   /** RF-1411: the cases that differ from their expected label, by `expected -> label`. */
   readonly disagreements: Readonly<Record<string, number>>;
 }
@@ -122,20 +131,30 @@ function sum(cases: readonly LabCaseResult[], pick: (each: LabCaseResult) => num
   return cases.reduce((total, each) => total + pick(each), 0);
 }
 
+/** RF-1403, RF-1410: the count of each label of the cases, by label in code-unit order. */
+function detailCountsOf(cases: readonly LabCaseResult[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const labels = cases.map((each) => each.detail).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const label of labels) counts[label] = (counts[label] ?? 0) + 1;
+  return counts;
+}
+
+/** RF-1403: the share of the cases naming a follow-up in which a run would make it. */
+function followUpRatesOf(cases: readonly LabCaseResult[]): Record<string, number> {
+  const named: Record<string, { made: number; of: number }> = {};
+  for (const [name, made] of cases.flatMap((each) => Object.entries(each.followUps ?? {}))) {
+    const before = named[name] ?? { made: 0, of: 0 };
+    named[name] = { made: before.made + (made ? 1 : 0), of: before.of + 1 };
+  }
+  return Object.fromEntries(Object.entries(named).map(([name, { made, of }]) => [name, made / of]));
+}
+
 function errorsOf(cases: readonly LabCaseResult[]): Record<string, number> {
   const errors: Record<string, number> = {};
   for (const each of cases) {
     if (each.rstCode !== null) errors[each.rstCode] = (errors[each.rstCode] ?? 0) + 1;
   }
   return errors;
-}
-
-/** RF-1410: the count of each label of the cases, by label in code-unit order. */
-function detailsOf(cases: readonly LabCaseResult[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  const labels = cases.map((each) => each.detail).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  for (const label of labels) counts[label] = (counts[label] ?? 0) + 1;
-  return counts;
 }
 
 // RF-1403
@@ -171,8 +190,9 @@ export function summariseLab(results: LabResults): LabSummary {
     ),
     costMicros: sum(cases, (each) => each.costMicros),
     judge: judgeSummaryOf(cases),
+    detailCounts: detailCountsOf(cases),
+    followUpRates: followUpRatesOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
-    details: detailsOf(cases),
     disagreements: disagreementsOf(cases),
   };
 }

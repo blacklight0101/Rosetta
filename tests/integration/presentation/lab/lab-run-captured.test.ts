@@ -29,9 +29,7 @@ describe('the lab over captured case sets', () => {
 
     expect(code).toBe(0);
     expect(results?.cases).toHaveLength(5);
-    expect(results?.cases.every((each) => each.detail === 'NoCards' && each.validFirstTry)).toBe(
-      true,
-    );
+    expect(results?.cases.every((each) => each.detail === 'Open' && each.validFirstTry)).toBe(true);
     expect(results?.cases.filter((each) => each.split === 'held-back')).toHaveLength(2);
     expect(results?.caseSet.version).toBe('planner-gap-1');
   });

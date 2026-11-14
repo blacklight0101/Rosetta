@@ -50,7 +50,7 @@ describe('the report of a run with tool turns', () => {
 
     const lines = summaryLines(results, 'folder');
 
-    expect(lines).toContain('Labels: NoAreaRead 1, ReadsFiles 1');
+    expect(lines).toContain('Results by label: NoAreaRead 1, ReadsFiles 1');
     expect(lines).toContain(
       'Per tool turn (2 turns): 2.00 calls, 0.50 area reads, 1.00 searches, 0.00 stale, 0.00 unlisted, 0.00 repeats, 0.00 relists; 20.0 new lines, share gain 32.5 points, generated 25% of new lines, aimed 1.00, 1 of 2 reach half',
     );
@@ -65,7 +65,32 @@ describe('the report of a run with tool turns', () => {
       false,
     );
     expect(compared.ok && compareLines(compared.value)).toEqual(
-      expect.arrayContaining(['  Labels: Valid 1', '  Labels: NoCards 1']),
+      expect.arrayContaining(['  Results by label: Valid 1', '  Results by label: NoCards 1']),
     );
+  });
+
+  it('RF-1403 RF-1410 prints the label counts on one line only, in a report and on each compared side', () => {
+    const results = resultsOf([caseOf('a', 'Valid'), caseOf('b', 'NoCards'), caseOf('c', 'Valid')]);
+    const compared = compareLab(results, resultsOf([caseOf('a', 'NoCards')]));
+    const labelLine = (line: string) => /label/iu.test(line) && /\d/u.test(line);
+
+    const single = summaryLines(results, 'folder').filter(labelLine);
+    const sides = compared.ok ? compareLines(compared.value).filter(labelLine) : [];
+
+    expect(single).toEqual(['Results by label: NoCards 1, Valid 2']);
+    expect(sides).toEqual([
+      '  Results by label: NoCards 1, Valid 2',
+      '  Results by label: NoCards 1',
+    ]);
+  });
+});
+
+describe('the report of a run with no case', () => {
+  it('RF-1403 RF-1410 prints Results by label: none, once', () => {
+    const lines = summaryLines(resultsOf([]), 'folder');
+
+    expect(lines.filter((line) => line.startsWith('Results by label:'))).toEqual([
+      'Results by label: none',
+    ]);
   });
 });

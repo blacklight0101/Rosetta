@@ -16,6 +16,7 @@ import { renderRepairRequest } from '../../cards/repair-request.js';
 import type { LlmMessage } from '../../ports/llm-provider.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
 import { areaBlock, readerCaseSchema, replayOfReads } from './reader-case.js';
+import { mergedRepairOutcome } from './cards-repair-merge.js';
 import { cardsOutcome } from './reader-targets.js';
 import { askOnce, problemsOf } from './single-call.js';
 
@@ -26,8 +27,9 @@ import { askOnce, problemsOf } from './single-call.js';
 // from the problems the run's card parser finds in it (`renderRepairRequest`), the file under test
 // in place of the reader's repair prompt. One call is made with the reader's tools and the answer is
 // read by the card parser: `Valid`, `Partial`, `Unusable` or `ReadsMore`. A draft without its one
-// placeholder is `BadPrompt` before any call. The second repair and the workbook rule hints of the
-// run are not replayed.
+// placeholder is `BadPrompt` before any call. A `Valid` answer is merged into the earlier answer as
+// the run merges it, `Fixed` or `Dropped` (cards-repair-merge.ts, P10-07). The second repair and the
+// workbook rule hints of the run are not replayed.
 
 const repairCaseSchema = readerCaseSchema.extend({ answer: z.string().min(1).max(20_000) });
 type RepairCase = z.infer<typeof repairCaseSchema>;
@@ -66,7 +68,12 @@ function preparedOf(input: RepairCase, current: ReaderPrompts): PreparedCase {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
         ...{ messages: messagesOf(input, prompts, env), tools: readerToolDefinitions },
       });
-      return asked.ok ? cardsOutcome(asked.value, prompts) : asked.error;
+      if (!asked.ok) return asked.error;
+      const read = (input.reads ?? []).map((each) => each.path);
+      const answers = { earlier: input.answer, repair: asked.value.text, read };
+      const suggested = asksSuggestedAnswers(prompts.cardFormat) ? 'required' : 'optional';
+      const options = { suggestedAnswers: suggested } as const;
+      return mergedRepairOutcome(cardsOutcome(asked.value, prompts), answers, options);
     },
   };
 }
