@@ -13,7 +13,7 @@ import type { GapAnswer } from '../../plan/gap-answer.js';
 // replayed: the requirement check of a specification-driven plan (a case holds no sources) and the
 // dependencies.
 
-export type GapCoverage = 'Covered' | 'ModulesOpen' | 'Open' | 'LeftOut';
+type GapCoverage = 'Covered' | 'ModulesOpen' | 'Open' | 'LeftOut';
 
 interface GapCase {
   readonly items: readonly { readonly id: string; readonly kind: string }[];

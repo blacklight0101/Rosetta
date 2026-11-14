@@ -46,8 +46,8 @@ describe('the plan repair check of the lab', () => {
     expect(await read(plan())).toEqual({ usable: true, detail: 'Fixed' });
   });
 
-  it('RF-1406 reads a repair that names a claim id as a source as LeftOut', async () => {
-    const claimSource = { ...requirement, sources: ['FEAT-001.c1'] };
+  it('RF-1406 reads a repair that names no card of the case as a source as LeftOut', async () => {
+    const claimSource = { ...requirement, sources: ['BR-404'] };
     const second = { ...requirement, title: 'Pay' };
 
     const answer = plan({ requirements: [second, claimSource] });
@@ -78,7 +78,7 @@ describe('the plan repair check of the lab', () => {
   });
 
   it('RF-1406 reads a repair that keeps no requirement as NoRequirements, not usable', async () => {
-    const none = plan({ requirements: [{ ...requirement, sources: ['FEAT-001.c1'] }] });
+    const none = plan({ requirements: [{ ...requirement, sources: ['BR-404'] }] });
 
     expect(await read(none)).toEqual({ usable: false, detail: 'NoRequirements' });
     expect(await read('No plan.')).toEqual({ usable: false, detail: 'Unusable' });
