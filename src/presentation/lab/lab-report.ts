@@ -22,6 +22,14 @@ function errorsOf(summary: LabSummary): string {
     : entries.map(([code, count]) => `${code} x${String(count)}`).join(', ');
 }
 
+/** RF-1411: the cases that differ from their expected label, by pair. */
+function disagreementsText(summary: LabSummary): string {
+  const entries = Object.entries(summary.disagreements);
+  return entries.length === 0
+    ? 'none'
+    : entries.map(([pair, count]) => `${pair} x${String(count)}`).join(', ');
+}
+
 function judgeLines(summary: LabSummary): string[] {
   const { judge } = summary;
   if (judge === null) return [];
@@ -66,6 +74,7 @@ function metricLines(summary: LabSummary): string[] {
     `Valid on the first try: ${pct(summary.firstTryRate)}; repaired: ${pct(summary.repairedRate)}; not usable: ${pct(summary.invalidRate)}`,
     `Refused: ${String(summary.refusedCount)}; errors by RST code: ${errorsOf(summary)}`,
     `Agreement with the expected labels: ${pct(summary.agreementRate)}`,
+    `Disagreements (expected -> got): ${disagreementsText(summary)}`,
     `Per call: ${mean(summary.meanInputTokens)} input and ${mean(summary.meanOutputTokens)} output tokens, ${mean(summary.meanLatencyMs)} ms`,
     `Calls: ${String(summary.calls)}; cost: ${money(summary.costMicros)}`,
     `Labels: ${labelsOf(summary)}`,

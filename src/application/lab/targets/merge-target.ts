@@ -4,13 +4,14 @@ import type { PromptFile } from '../../agent/prompt-file.js';
 import { parseMergeAnswer } from '../../consolidate/merge-answer.js';
 import { mergeListMessage } from '../../consolidate/merge-request.js';
 import type { LabTarget, PreparedCase, TargetEnv, TargetOutcome } from '../lab-target.js';
+import { checkMerges } from './merge-check.js';
 import { askOnce, problemsOf } from './single-call.js';
 
 // RF-1406, RF-250, ADR-029: the lab target of the summariser's merge of duplicate cards
 // (`summariser/merge`). A case holds the cards of one type as the run lists them; they reach the
 // model as the one data block the run builds. The domain's checks of the ids are not replayed.
-// `detail` is `Merges` (the answer names at least one merge), `NoMerge` (a valid empty list) or
-// `Unusable`.
+// `detail` is `Merges` (the answer names at least one merge), `NoMerge` (a valid empty list),
+// `Invalid`, `Lumped` or `Thin` (RF-1412, `merge-check.ts`: not usable) or `Unusable`.
 
 const inputSchema = z.strictObject({
   type: z.enum(['BR', 'ENT', 'SCRN', 'FEAT']),
@@ -40,7 +41,8 @@ function preparedOf(input: z.infer<typeof inputSchema>): PreparedCase {
       if (!asked.ok) return asked.error;
       const merges = parseMergeAnswer(asked.value.text);
       if (merges === undefined) return { usable: false, detail: 'Unusable' };
-      return { usable: true, detail: merges.length > 0 ? 'Merges' : 'NoMerge' };
+      const detail = checkMerges(input.cards, merges);
+      return { usable: detail === 'Merges' || detail === 'NoMerge', detail };
     },
   };
 }

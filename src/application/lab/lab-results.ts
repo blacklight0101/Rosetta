@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { judgeInfoSchema, judgementSchema } from './judge/judge-results.js';
 import { judgeSummaryOf, type JudgeSummary } from './judge/judge-summary.js';
+import { disagreementsOf } from './lab-disagreements.js';
 import { ALL_CASES, describeSelection, sameSelection } from './lab-selection.js';
 import { summariseTurns, toolTurnSchema, type TurnSummary } from './lab-turns.js';
 
@@ -172,7 +173,7 @@ export function summariseLab(results: LabResults): LabSummary {
     judge: judgeSummaryOf(cases),
     turns: summariseTurns(cases.map((each) => each.turn)),
     details: detailsOf(cases),
-    disagreements: {},
+    disagreements: disagreementsOf(cases),
   };
 }
 
