@@ -10013,7 +10013,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Reads**: `prompts/planner/gap*`, `gap-repair*`, `plan-repair*`, `prompts/cards/repair*`, P9-06, P10-04.
 - **Do**: as P10-05, with the repair rate as a first-class metric. Round log in `docs/evaluation/prompt-lab/plan-gap.md`.
 - **Delivers**: new prompt versions, the round log, tests and recordings.
-- **Done when**: as P10-05; CI green. Budget slice: $5.
+- **Done when**: as P10-05; CI green. Budget: the $3.00 slice of DEC-234 plus $0.50 the orchestrator released from the reserve for the third fix round's re-measure, $3.50 in all; $3.3032 spent.
 - **Refs**: RF-623, DEC-231; P9-06, P10-04; GitHub issue #1385
 
 ### P10-08 - Tune the plan document prompts
