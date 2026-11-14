@@ -1031,7 +1031,7 @@ invocation, micros, at }`, `{ v: 1, t: "settle", id, micros, at }` and `{ v: 1, 
 prompt { id, name, version, sha256 }, model { provider, model, modelVersion }, caseSet { version, sha256 },
 selection? { split: "tune" | "held-back" | "all", sample: n | null }, repetitions, planned, endState: "Completed" | "Refused", refusal, cases[] { caseId, repetition, split, expected,
 detail, answer, usable, validFirstTry, repaired, refused, rstCode, agreed, calls, inputTokens, outputTokens,
-latencyMs, costMicros, turn? { calls, areaReads, unlisted, repeats, relists, aimed, seen[] }, judge? { state, criteria[] { id, score, reason }, overall, vetoed, rstCode, calls, inputTokens,
+latencyMs, costMicros, turn? { calls, areaReads, searches, unlisted, repeats, relists, stale, newLines, generatedLines, shareBefore, shareGain, aimed, seen[] }, judge? { state, criteria[] { id, score, reason }, overall, vetoed, rstCode, calls, inputTokens,
 outputTokens, costMicros } }, judge? { provider, model, modelVersion, prompt { name, version, sha256 }, rubric { family,
 sha256 } } }` (`selection` records `--split` and `--sample`, RF-1409, a file without it is every case; `judge` only in a run made with `--judge`, RF-1407; `validFirstTry` is `null` for a target with no parser of a first answer, RF-1403; `turn` only for a reader turn that a run answers with tool calls, RF-1410, and such a case has no `judge`). The schemas are in `src/application/lab/`.
 - `lab-out/<id>/judge-check.json` (git-ignored, masked, RF-1408): `{ calibration { items, scored, agreed, cases[] }, families {
