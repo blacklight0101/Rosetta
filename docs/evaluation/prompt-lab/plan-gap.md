@@ -1,13 +1,13 @@
 # Round log: the plan gap and repair prompts (P10-07)
 
-Status 2026-11-14 (after the verifier's second fix round): **`planner/plan-repair.v3` is kept** (section 4); `plan-repair.v2` stays loadable. `planner/gap.v6`, `planner/gap-repair.v4` and `cards/repair.v6` stay current. **Each of the four prompts has had at least three Haiku rounds**, which is the done-when of P10-05 that P10-07 shares, so no round is owed.
+Status 2026-11-14 (after the verifier's third fix round): **no version kept.** `planner/gap.v6`, `planner/gap-repair.v4`, `planner/plan-repair.v2` and `cards/repair.v6` stay current. The second fix round kept `plan-repair.v3`; on the third round's check its matched Sonnet run raised output by 35.5% and latency by 37.9%, so the keep was reverted (section 4) and `prompts/planner/plan-repair.v3.md` stays only as a recorded candidate that no run loads. **Each of the four prompts has had at least three Haiku rounds**, which is the done-when of P10-05 that P10-07 shares, so no round is owed.
 
 - The lab now gives what a run does after a gap or repair answer as numbers: the count of each label and the rate of each follow-up (section 1).
-- The second fix round changed the plan repair check: a repair that loses a card, or leaves a requirement no task lists, no longer reads `Fixed`. Under it the current `plan-repair.v2` is **not** at a repair rate of 0 (section 2), and that is what the kept round fixes.
+- The second and third fix rounds changed the plan repair check: a repair that loses a card, merges its requirements, pads its counts with copies, or leaves a requirement no task lists no longer reads `Fixed`. Under it the current `plan-repair.v2` is **not** at a repair rate of 0 (section 2).
 - Haiku 5.5 ran every round. Sonnet 5.5 and Opus 5.5 ran matched held-back runs.
 - No judge call was made (the planner and cards judges are advisory).
 - Run ids are folders of `lab-out/` of the P10-07 worktree, prefix `20261114-`.
-- Spend: **$2.67 of the $3.00 slice** (68 runs; $1.25 before the second fix round, $1.42 in it). The shared ledger stood at $22.71 after the last run.
+- Spend: **$3.3032 of the card's $3.50** (74 runs): $1.2535 before the second fix round, $1.4148 in it, and $0.6349 in the third, which used $0.3317 of the slice and $0.3032 of the $0.50 released from the DEC-234 reserve for that re-measure. The shared ledger stood at $23.34 after the last run.
 
 Keep rule: DEC-231, then DEC-235, read with the orchestrator's ruling recorded as DEC-237 (PR #1410). "No regression" holds on every model measured, on the same held-back cases and repetitions. Only matched runs are compared, and sample runs are never pooled. A rise in a follow-up rate, or in a label that is not usable, is a regression on repairs (RF-1403).
 
@@ -48,12 +48,16 @@ Every set was at 100% on every model (P10-04 baseline).
 - **`planner/plan-repair`** (`plan-repair-check.ts`). The answer is assembled with the run's `assemblePlan` over the case's cards. It is specification-driven when the brief names `sdd`, which all four cases do.
   - Labels (second fix round; content lost is never usable):
     - `NoRequirements`: not usable. **A run whose first answer kept none ends RST-1803.**
-    - `Shrunk`: not usable. The plan keeps no phase or no task card, or a card of the case that is not an open question (`OQ`) is named in no `sources` list of the kept plan (requirements, decisions, entities, risks, technical items). **The package is silent on what that card shows; a run's `better()` may still pick the repair.**
+    - `Shrunk`: not usable. The plan keeps no phase or no task card, or a card of the case that is not an open question (`OQ`) is named in no `sources` list of the kept plan (requirements, decisions, entities, risks, technical items). **The package is silent on what that card shows; a run's `better()` may still pick the repair.** Since the third fix round it is also `Shrunk` when the plan merges or pads:
+      - fewer distinct requirements (a copy, case and spacing aside, counts once) than the feature and rule cards (`FEAT`, `BR`) its requirements cite. The package prompt asks for one requirement per behaviour the cards show, and a run implements, covers and aligns each requirement on its own (RF-604, RF-627), so one requirement for every feature leaves one thing to build for all of them;
+      - fewer distinct requirements than the highest requirement position, or fewer distinct task cards (by title) than the highest task position, that the problem lines name. The case does not hold the earlier answer, but it held at least that many, and a problem line asks to fix an item, never to drop it.
     - `LeftOut`: not usable (it was usable before). **The assembly drops an item, so the repair lost content the run then logs.**
     - `Open`: usable. Every card is kept, but a kept requirement is listed by no task card. **A run sends a gap round for it** (the follow-up `gap round`, from the run's `coverageOf` over the requirement items).
     - `Fixed`: nothing is lost and every requirement has a task.
-  - Follow-up: `gap round`, counted on every usable or unusable answer that keeps requirements.
-  - The first check missed the deletion: `{"requirements":[one],"phases":[],"tasks":[]}` read `Fixed`. The first fix made that `Shrunk`, but the verifier's three probes still read `Fixed`: (a) every requirement kept but 1 task of 8; (b) one requirement citing `FEAT-001`, one phase, one task that builds nothing; (c) only the `FEAT` card cited, all tasks kept. They are now tests (`plan-repair-coverage.test.ts`): (a) reads `Open` with a gap round, (b) and (c) read `Shrunk`.
+  - Follow-up: `gap round`, counted on every usable or unusable answer that keeps requirements. It covers only requirement coverage; the gap round a run sends for its other items (modules, flows, screens) is not replayed.
+  - Counts: each case result keeps the counts the check used (`counts`: requirements, distinct requirements, behaviour cards, phases, tasks, distinct tasks, cited cards, uncovered requirements, requirement floor, task floor), so an answer longer than the 2,000 stored characters can be audited.
+  - Limit: the check is a floor on counts, not a judge of how the work is split; a plan can still meet it with thin requirements.
+  - The first check missed the deletion: `{"requirements":[one],"phases":[],"tasks":[]}` read `Fixed`. The first fix made that `Shrunk`, but the verifier's three probes still read `Fixed`: (a) every requirement kept but 1 task of 8; (b) one requirement citing `FEAT-001`, one phase, one task that builds nothing; (c) only the `FEAT` card cited, all tasks kept. They are now tests (`plan-repair-coverage.test.ts`): (a) reads `Open` with a gap round, (b) and (c) read `Shrunk`. The third round's probe, one requirement citing every card with one phase and one task, read `Fixed` on all four cases; it now reads `Shrunk` on each, as do copies of one task card and copies of one merged requirement (`plan-repair-merge.test.ts`).
 - **`cards/repair`** (`cards-repair-merge.ts`). An answer with no parser problem is merged into the earlier answer's readable cards with the run's `mergeDrafts`.
   - Labels:
     - `Fixed`: every card the earlier answer wrote keeps at least as many claims as it wrote.
@@ -74,23 +78,23 @@ Every set was at 100% on every model (P10-04 baseline).
 
 ## 2. Baselines and repair rates (current versions)
 
-The gap and gap repair rates are 0 on these cases. The plan repair and card repair rows were measured again on the second fix round's checks (the first block of rows below the table head); **their repair rate is not 0**:
+The gap and gap repair rates are 0 on these cases. The plan repair rows were measured again on the third fix round's check and the card repair rows on the second's (the first block of rows below the table head); **their repair rate is not 0**:
 
-- `plan-repair.v2` loses content in most answers: on Haiku tune 4 of 6 are `Shrunk` and every answer needs a gap round; on Haiku held-back 3 of 6 are `Shrunk` and 4 of 6 need a gap round; on Sonnet both held-back answers are `Shrunk`.
+- `plan-repair.v2` loses content in most answers on Haiku and Sonnet. On the third check, Haiku held-back has 4 of 6 not usable (Shrunk 3, LeftOut 1) and every answer needs a gap round; Sonnet has Shrunk 1 and Open 1, both with a gap round; Opus is Fixed 2. The counts show no merge in any v2 answer (5 to 10 distinct requirements against 3 feature and rule cards): its `Shrunk` answers leave a card out of every `sources` list. On the second check Haiku tune had 4 of 6 `Shrunk` and every answer needed a gap round.
 - `cards/repair.v6` drops a claim it was asked to fix about 1 run in 6 on Sonnet; on Haiku and Opus it was `Fixed` on every case of the new set, the `-nojson` variants included.
 
-| Prompt (run)              | Model  | Split, reps  | Calls | Labels                    | Follow-ups and losses | In / out tokens | Latency | Cost per call |
-| ------------------------- | ------ | ------------ | ----- | ------------------------- | --------------------- | --------------- | ------- | ------------- |
-| plan-repair.v2 (`032902`) | Haiku  | tune, 3      | 6     | Shrunk 4, Open 2          | gap round 6 of 6      | 12784 / 4519    | 18.0 s  | $0.0033       |
-| plan-repair.v2 (`033306`) | Haiku  | held-back, 3 | 6     | Fixed 1, Open 2, Shrunk 3 | gap round 4 of 6      | 12499 / 5187    | 21.3 s  | $0.0035       |
-| plan-repair.v2 (`035017`) | Sonnet | held-back, 1 | 2     | Shrunk 2                  | gap round 1 of 2      | 12498 / 2082    | 12.5 s  | $0.045        |
-| plan-repair.v2 (`035148`) | Opus   | held-back, 1 | 2     | Fixed 1, Open 1           | gap round 1 of 2      | 12494 / 3472    | 29.2 s  | $0.118        |
-| card repair.v6 (`032642`) | Haiku  | tune, 3      | 9     | Fixed 9                   | second repair 0       | 10707 / 1019    | 4.3 s   | $0.0013       |
-| card repair.v6 (`033617`) | Haiku  | held-back, 3 | 18    | Fixed 18                  | second repair 0       | 8892 / 771      | 3.3 s   | $0.0009       |
-| card repair.v6 (`033738`) | Sonnet | held-back, 1 | 6     | Fixed 5, Dropped 1        | second repair 0       | 8894 / 603      | 4.1 s   | $0.017        |
-| card repair.v6 (`033846`) | Opus   | held-back, 1 | 6     | Fixed 6                   | second repair 0       | 8891 / 760      | 6.7 s   | $0.037        |
+| Prompt (run)              | Model  | Split, reps  | Calls | Labels                          | Follow-ups and losses | In / out tokens | Latency | Cost per call |
+| ------------------------- | ------ | ------------ | ----- | ------------------------------- | --------------------- | --------------- | ------- | ------------- |
+| plan-repair.v2 (`044959`) | Haiku  | held-back, 3 | 6     | Shrunk 3, Open 2, LeftOut 1     | gap round 6 of 6      | 12497 / 5011    | 20.3 s  | $0.0035       |
+| plan-repair.v2 (`045244`) | Sonnet | held-back, 1 | 2     | Shrunk 1, Open 1                | gap round 2 of 2      | 12495 / 1644    | 10.3 s  | $0.041        |
+| plan-repair.v2 (`045410`) | Opus   | held-back, 1 | 2     | Fixed 2                         | gap round 0 of 2      | 12497 / 3241    | 26.0 s  | $0.114        |
+| plan-repair.v2 (`032902`) | Haiku  | tune, 3      | 6     | Shrunk 4, Open 2 (second check) | gap round 6 of 6      | 12784 / 4519    | 18.0 s  | $0.0033       |
+| card repair.v6 (`032642`) | Haiku  | tune, 3      | 9     | Fixed 9                         | second repair 0       | 10707 / 1019    | 4.3 s   | $0.0013       |
+| card repair.v6 (`033617`) | Haiku  | held-back, 3 | 18    | Fixed 18                        | second repair 0       | 8892 / 771      | 3.3 s   | $0.0009       |
+| card repair.v6 (`033738`) | Sonnet | held-back, 1 | 6     | Fixed 5, Dropped 1              | second repair 0       | 8894 / 603      | 4.1 s   | $0.017        |
+| card repair.v6 (`033846`) | Opus   | held-back, 1 | 6     | Fixed 6                         | second repair 0       | 8891 / 760      | 6.7 s   | $0.037        |
 
-The rows below were taken before the second fix round. The gap and gap repair rows hold. The plan repair rows read `Fixed` under the old check, which could not see a lost card or a requirement with no task; the card repair rows used the five cases without the `-nojson` variants. Both are superseded by the rows above.
+The second check's held-back plan repair rows (`033306` Haiku: Fixed 1, Open 2, Shrunk 3; `035017` Sonnet: Shrunk 2; `035148` Opus: Fixed 1, Open 1) are superseded by the third check's rows above. Those are fresh runs, not the old answers scored again, because `results.json` keeps only 2,000 characters of an answer. The rows below were taken before the second fix round. The gap and gap repair rows hold. The plan repair rows read `Fixed` under the old check, which could not see a lost card or a requirement with no task; the card repair rows used the five cases without the `-nojson` variants. Both are superseded by the rows above.
 
 | Prompt (run)              | Model  | Split, reps  | Calls | Labels             | Follow-ups and losses   | In / out tokens | Latency | Cost per call |
 | ------------------------- | ------ | ------------ | ----- | ------------------ | ----------------------- | --------------- | ------- | ------------- |
@@ -150,6 +154,7 @@ Baselines on the same tune cases and repetitions:
 Notes on the rounds:
 
 - **Two edits in one round.** Gap rounds 2 and 3 each made two edits (a new or moved rule, and a shorter paragraph or a sentence said twice dropped, to pay for it in tokens). They are logged as one round each; a round that changes one thing would have needed two runs each.
+- **The Haiku output margin of round 5 is thin.** On tune the same draft raised output by 34.5% (`034417` against `032902`), with latency +34.7%; only the held-back runs, which the keep rule reads, stayed inside 15% on Haiku (+14.48% on the second check, +13.52% on the third).
 - **Plan repair, second check.** Rounds 1 to 3 were scored on the first check, which read `Fixed` for every answer. Round 2 was scored again on the second check: tune `033055`, Shrunk 4, Open 2, gap round 5 of 6 (v2: the same labels, gap round 6 of 6). Rounds 4 to 6 started again from v2 and target what the second check found: v2 drops cards that are not requirements, and leaves requirements no task lists. Their output rises because the answers keep more (more `sources` and task requirements); the latency follows the output.
 
 Earlier card repair figures `012839` (v6) and `012823` (round 1) were taken before the merged check, as `Valid` 6 each. Round 1 was then set aside, because a `Valid` answer could not show what it lost. With the merged check it loses nothing the earlier answer had; what it no longer writes are the extra cards v6 sometimes adds.
@@ -183,9 +188,21 @@ Only the best candidate of each prompt was taken to the held-back cases. The fig
 
 **Not kept**: it regressed on Haiku (content lost) and on Sonnet.
 
-### plan-repair round 5 against v2 (kept as `plan-repair.v3`)
+### plan-repair round 5 against v2 (kept as `plan-repair.v3` in the second fix round, reverted in the third)
 
-Second check, the whole held-back side (2 cases) on each model.
+**Third check (fix round 3), the decision.** The whole held-back side (2 cases) on each model, fresh matched runs, with the counts each case now keeps:
+
+| Model  | Selection, reps | v2 (run)                                                                                 | v3 (run)                                                                               | Change v2 to v3                                                                   |
+| ------ | --------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Haiku  | held-back, 3    | Shrunk 3, Open 2, LeftOut 1; gap round 6 of 6; 12497 / 5011; 20.3 s; $0.00352 (`044959`) | Fixed 4, Open 1, Shrunk 1; gap round 1 of 6; 12585 / 5688; 23.0 s; $0.00376 (`045220`) | not usable 4 to 1; input +0.71%, output +13.52%, latency +12.99%, cost +6.84%     |
+| Sonnet | held-back, 1    | Shrunk 1, Open 1; gap round 2 of 2; 12495 / 1644; 10.3 s; $0.0408 (`045244`)             | Fixed 2; gap round 0 of 2; 12595 / 2227; 14.2 s; $0.0401 (`045315`)                    | not usable 1 to 0; input +0.80%, **output +35.50%, latency +37.88%**, cost -1.80% |
+| Opus   | held-back, 1    | Fixed 2; gap round 0 of 2; 12497 / 3241; 26.0 s; $0.1136 (`045410`)                      | Fixed 2; gap round 0 of 2; 12589 / 3268; 26.4 s; $0.1010 (`045506`)                    | no quality change; input +0.74%, output +0.83%, latency +1.42%, cost -11.13%      |
+
+Counts per case: in every answer the count of requirements equals the count of distinct ones, so neither version merged or padded. v2 kept 5 to 10 requirements, 2 to 5 tasks and 2 to 3 phases; v3 kept 5 to 9 requirements, 3 to 8 tasks and 2 to 4 phases; every answer cites the 3 feature and rule cards. v2's `Shrunk` answers cite 7 of the 8 cards (a card that is not an open question is in no `sources` list), and so does v3's one `Shrunk` answer. The figures per case are in each run's `results.json` (`counts`).
+
+**Not kept (keep reverted).** On Sonnet the matched run raised output by 35.5% and latency by 37.9%, past the 15% of DEC-235 (c). Under DEC-237 a regression on one model stops the keep, and matched runs are not pooled with the second check's Sonnet run (+1.0%). The loader names `plan-repair.v2` again (a red test first, then the `fix(plan)` commit); `prompts/planner/plan-repair.v3.md` stays as a recorded candidate that no run loads, pinned by `plan-repair-prompt-file.test.ts`. On Opus v3 showed no quality gain this time. No second Sonnet run was made: running again until a figure passes is not a matched comparison, and the spend was near the card's $3.50.
+
+**Second check (fix round 2), superseded.** The same layout:
 
 | Model  | Selection, reps | Current v2 (run)                                                                       | Round 5 (run)                                                                      | Finding                                                                                      |
 | ------ | --------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
@@ -193,11 +210,11 @@ Second check, the whole held-back side (2 cases) on each model.
 | Sonnet | held-back, 1    | Shrunk 2; gap round 1 of 2; 12498 / 2082; 12.5 s; $0.0452 (`035017`)                   | **Fixed 2**; gap round 0 of 2; 12589 / 2103; 13.6 s; $0.0389 (`035047`)            | not usable 2 to 0, gap round 1 to 0; input +0.7%, output +1.0%, latency +9.0%, cost -14%     |
 | Opus   | held-back, 1    | Fixed 1, Open 1; gap round 1 of 2; 12494 / 3472; 29.2 s; $0.118 (`035148`)             | **Fixed 2**; gap round 0 of 2; 12584 / 3717; 30.0 s; $0.110 (`035251`)             | gap round 1 to 0; input +0.7%, output +7.1%, latency +2.6%, cost -7%                         |
 
-**Kept** under DEC-235 read with DEC-237: on every model there is no regression on validity (first try 100% on each side), on labels that are not usable or on follow-ups; there is a quality gain (fewer unusable answers on Haiku and Sonnet, fewer gap rounds on all three); and input, output, latency and cost are each up by at most 15% (the largest is Haiku output, +14.5%). It lands as `prompts/planner/plan-repair.v3.md` (v2 plus the two rules of rounds 4 and 5); the loader `loadPlanRepairPrompt` names it, the manifest test and `plan-repair-prompt-file.test.ts` pin it, and v2 stays loadable.
+It was kept then under DEC-235 read with DEC-237: on every model there was no regression on validity (first try 100% on each side), on labels that are not usable or on follow-ups; there is a quality gain (fewer unusable answers on Haiku and Sonnet, fewer gap rounds on all three); and input, output, latency and cost were each up by at most 15% (the largest was Haiku output, +14.48%; Opus output was +7.04%). That check could not see a merged plan, and from 2,000 stored characters the verifier could not rule out that v3's answers merged; the third check's counts show that they did not.
 
-Limits of the keep:
+Limits that held for both checks:
 
-- The output margin on Haiku is narrow (+14.5% against 15%). The answers write more because they keep more cards and task requirements, which is the gain, and the lab cannot set it apart from the cost.
+- The output margin on Haiku is narrow (+13.5% to +14.5% held-back, +34.5% on tune). The answers write more because they keep more cards and task requirements, which is the gain, and the lab cannot set it apart from the cost.
 - The held-back side is two cases (DEC-234); Sonnet and Opus ran it once.
 - The lab does not replay a run's `better()` choice between the first plan answer and its repair, nor the gap round the run would send.
 
@@ -242,6 +259,7 @@ On tune (`032642` against `032711`) both read Fixed 9, with output -38%.
 
 - **gap round 3.** The full change is in section 3.
 - **gap-repair round 2.** Grouping module copies saves output on tune but drops or mis-names an id about once in six held-back answers.
+- **plan-repair round 5 (`plan-repair.v3.md`, recorded).** Fewer unusable answers and gap rounds on Haiku and Sonnet, and no merge, but its output rises with what it keeps, past 15% on Sonnet in the third check. A next step would ask for the two rules without a longer answer, or measure Sonnet with more repetitions on both sides.
 - **plan-repair round 2.** It is noise-level: a trim that does not move the output, and worse on the second check.
 - **card repair round 1.** It cuts the output by a quarter to a half on every model, but on Haiku it writes no card after an earlier answer that is not JSON. The full text of the draft is v6 with that one sentence replaced. A next round would keep "Keep the cards that were correct." for an answer with no readable card and try the shorter request only where some card was read; it was not run.
 
@@ -249,19 +267,19 @@ On tune (`032642` against `032711`) both read Fixed 9, with output -38%.
 
 **Three Haiku rounds per prompt (the done-when that P10-07 shares with P10-05):**
 
-| Prompt      | Rounds                                              | Kept                       |
-| ----------- | --------------------------------------------------- | -------------------------- |
-| gap         | 3 (rounds 2 and 3 with two edits each)              | none                       |
-| gap-repair  | 3                                                   | none                       |
-| plan-repair | 6 (1 to 3 on the first check, 4 to 6 on the second) | `plan-repair.v3` (round 5) |
-| card repair | 3 (round 1 measured again on the new set)           | none                       |
+| Prompt      | Rounds                                              | Kept                                                                |
+| ----------- | --------------------------------------------------- | ------------------------------------------------------------------- |
+| gap         | 3 (rounds 2 and 3 with two edits each)              | none                                                                |
+| gap-repair  | 3                                                   | none                                                                |
+| plan-repair | 6 (1 to 3 on the first check, 4 to 6 on the second) | none (round 5 kept, then reverted; recorded as `plan-repair.v3.md`) |
+| card repair | 3 (round 1 measured again on the new set)           | none                                                                |
 
-Every prompt met the rule. The kept `plan-repair.v3` had its rounds before it was kept (rounds 4 to 6 on the check it is kept under), so no further round is owed.
+Every prompt met the rule, and no version is kept, so no further round is owed.
 
 **Not done:**
 
-- Only `plan-repair.v3` landed; `gap.v6`, `gap-repair.v4` and `cards/repair.v6` stay current, with no new prompt file.
+- No version is kept: `gap.v6`, `gap-repair.v4`, `plan-repair.v2` and `cards/repair.v6` stay current. The only new prompt file is the recorded candidate `plan-repair.v3.md`, which no run loads.
 - The four `-nojson` cases are the only cases added; none was re-captured (DEC-236).
-- No judge call was made, and no card scope was judged.
-- The plan repair round 5 was not run on the tune side of Sonnet or Opus (only the matched held-back runs).
-- A run's real repair rate needs a plan run: the end-to-end check of P10-11. It should confirm that `plan-repair.v3` keeps the cards and the task requirements in a run, and that its longer answers stay within the planner's output limit.
+- No judge call was made, and no card scope was judged; the plan repair check is a floor on counts.
+- The plan repair round 5 was not run on the tune side of Sonnet or Opus (only the matched held-back runs), and Sonnet held-back was not run again after the third check.
+- A run's real repair rate needs a plan run: the end-to-end check of P10-11.
