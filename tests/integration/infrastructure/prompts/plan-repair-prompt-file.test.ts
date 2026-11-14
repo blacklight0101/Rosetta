@@ -6,31 +6,26 @@ import {
   loadPromptFile,
 } from '../../../../src/infrastructure/prompts/prompt-files.js';
 
-// RNF-004, RF-604 (P10-07): the plan repair prompt kept by the lab round is `plan-repair.v3`, loaded
-// with its version and the SHA-256 of its bytes for the manifest; `plan-repair.v2` stays loadable.
+// RNF-004, RF-604 (P10-07): a plan run loads `plan-repair.v2` with its version and the SHA-256 of
+// its bytes for the manifest. The lab round's `plan-repair.v3` regressed on Sonnet on the fixed
+// check and is kept only as a recorded candidate: loadable by name, never loaded by a run.
 
 describe('loadPlanRepairPrompt', () => {
-  it('RNF-004 loads prompts/planner/plan-repair.v3.md with its version and hash', async () => {
+  it('RNF-004 loads prompts/planner/plan-repair.v2.md with its version and hash', async () => {
     const file = await loadPlanRepairPrompt('prompts');
 
-    const bytes = await readFile('prompts/planner/plan-repair.v3.md');
-    expect(file).toMatchObject({ name: 'planner/plan-repair.v3.md', version: 'v3' });
+    const bytes = await readFile('prompts/planner/plan-repair.v2.md');
+    expect(file).toMatchObject({ name: 'planner/plan-repair.v2.md', version: 'v2' });
     expect(file.sha256).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(file.text).toBe(bytes.toString('utf8'));
   });
 
-  it('RF-604 P10-07 asks to keep every card that is not an open question and to list every requirement', async () => {
-    const { text } = await loadPlanRepairPrompt('prompts');
+  it('RF-604 P10-07 keeps the candidate plan-repair.v3 loadable with its two rules', async () => {
+    const { text, version } = await loadPromptFile('prompts', 'planner/plan-repair.v3.md');
 
+    expect(version).toBe('v3');
     expect(text).toMatch(/not an open question \(`OQ`\) stays in the `sources`/u);
     expect(text).toMatch(/Every requirement is in the `requirements` of at least one task card/u);
-    expect(text).toMatch(/Write no text other than the JSON/u);
-  });
-
-  it('RNF-004 keeps plan-repair.v2 loadable as it was', async () => {
-    const file = await loadPromptFile('prompts', 'planner/plan-repair.v2.md');
-
-    expect(file).toMatchObject({ name: 'planner/plan-repair.v2.md', version: 'v2' });
-    expect(file.text).not.toMatch(/Every requirement is in the `requirements`/u);
+    expect((await loadPlanRepairPrompt('prompts')).text).not.toMatch(/Every requirement is in/u);
   });
 });

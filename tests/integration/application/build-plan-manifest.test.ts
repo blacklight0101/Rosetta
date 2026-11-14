@@ -60,7 +60,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/gap.v6.md': { version: 'v6', sha256: await sha('gap.v6.md') },
       'planner/gap-repair.v4.md': { version: 'v4', sha256: await sha('gap-repair.v4.md') },
       'planner/adr-model.v1.md': { version: 'v1', sha256: await sha('adr-model.v1.md') },
-      'planner/plan-repair.v3.md': { version: 'v3', sha256: await sha('plan-repair.v3.md') },
+      'planner/plan-repair.v2.md': { version: 'v2', sha256: await sha('plan-repair.v2.md') },
       'shared/secret-risk.v1.md': {
         version: 'v1',
         sha256: await sha('../shared/secret-risk.v1.md'),
