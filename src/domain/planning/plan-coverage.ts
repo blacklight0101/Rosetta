@@ -31,6 +31,11 @@ const coverageKinds = [
 /** P8-06: the kinds of the source's own parts; one no card touches is named, never a failure. */
 const sourceKinds: ReadonlySet<string> = new Set(['module', 'deployment']);
 
+/** P8-06: whether an item of this kind is a part of the source, which no card touching never fails a run. */
+export function isSourceKind(kind: string): boolean {
+  return sourceKinds.has(kind);
+}
+
 export type CoverageKind = (typeof coverageKinds)[number];
 
 export interface CoverageItem {
@@ -146,7 +151,7 @@ export function coverageOf(
 const MIGRATION_TITLE = 'Write the database migrations in the chosen stack';
 
 /** The card that writes the migrations, made by code (RF-623); the planner's cards never carry its title. */
-export function isMigrationCard(task: PlanTask): boolean {
+export function isMigrationCard(task: Pick<PlanTask, 'title'>): boolean {
   return task.title === MIGRATION_TITLE;
 }
 
