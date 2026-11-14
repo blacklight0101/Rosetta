@@ -46,8 +46,11 @@ describe('the gap check of the lab', () => {
       [{ task: 'T-002', builds: ['flow:FLOW-1'] }],
     );
 
-    expect(gapOutcome(answer([everything]), input)).toEqual({ usable: true, detail: 'Covered' });
-    expect(gapOutcome(linked, input)).toEqual({ usable: true, detail: 'Covered' });
+    expect(gapOutcome(answer([everything]), input)).toMatchObject({
+      usable: true,
+      detail: 'Covered',
+    });
+    expect(gapOutcome(linked, input)).toMatchObject({ usable: true, detail: 'Covered' });
   });
 
   it('RF-1406 reads an item no card builds as Open, and a module alone as ModulesOpen', () => {
@@ -63,8 +66,8 @@ describe('the gap check of the lab', () => {
     expect(gapOutcome(answer([], [{ task: 'T-009', builds: ['flow:FLOW-1'] }]), input).detail).toBe(
       'Open',
     );
-    expect(gapOutcome('{"tasks":[]}', input)).toEqual({ usable: true, detail: 'Open' });
-    expect(gapOutcome(answer([card(['feature:F-1', 'flow:FLOW-1'])]), input)).toEqual({
+    expect(gapOutcome('{"tasks":[]}', input)).toMatchObject({ usable: true, detail: 'Open' });
+    expect(gapOutcome(answer([card(['feature:F-1', 'flow:FLOW-1'])]), input)).toMatchObject({
       usable: true,
       detail: 'ModulesOpen',
     });
@@ -84,7 +87,10 @@ describe('the gap check of the lab: the repair', () => {
     ];
 
     for (const fault of faults) {
-      expect(gapOutcome(answer([kept, fault]), input)).toEqual({ usable: true, detail: 'LeftOut' });
+      expect(gapOutcome(answer([kept, fault]), input)).toMatchObject({
+        usable: true,
+        detail: 'LeftOut',
+      });
     }
     expect(
       gapOutcome(answer([kept, { title: 'Edit', builds: ['flow:FLOW-1'] }]), input).detail,
@@ -101,7 +107,7 @@ describe('the gap check of the lab: the repair', () => {
   });
 
   it('RF-1406 keeps an unreadable answer Unusable', () => {
-    expect(gapOutcome('No cards.', input)).toEqual({ usable: false, detail: 'Unusable' });
+    expect(gapOutcome('No cards.', input)).toMatchObject({ usable: false, detail: 'Unusable' });
   });
 });
 

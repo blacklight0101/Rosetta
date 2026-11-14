@@ -30,12 +30,12 @@ function plan(extra: Record<string, unknown> = {}): string {
   return JSON.stringify({ requirements: [requirement], phases: [phase], tasks: [task], ...extra });
 }
 
-async function read(text: string, principles = ['sdd']) {
+async function read(text: string, principles = ['sdd'], cards = [card]) {
   const [, target] = repairTargets({
     gap: draftFile('planner/gap.v6.md', 'GAP'),
     plan: draftFile('planner/package.v12.md', 'PACKAGE'),
   });
-  const parsed = target?.parseInput({ cards: [card], owner: brief(principles), problems });
+  const parsed = target?.parseInput({ cards, owner: brief(principles), problems });
   if (parsed?.ok !== true) throw new Error('the plan repair case does not read');
   const { env } = environment([{ text }]);
   return parsed.value.run(env, draftFile('x.v9.md', 'P'));
@@ -97,5 +97,25 @@ describe('the plan repair check of the lab: first-try validity', () => {
       target?.readsAnswer(plan({ requirements: [{ ...requirement, sources: ['BR-404'] }] })),
     ).toBe(true);
     expect(target?.readsAnswer('No plan.')).toBe(false);
+  });
+});
+
+describe('the plan repair check of the lab: content that must survive', () => {
+  it('RF-1406 reads a repair that deletes the phases or the task cards as Shrunk, not usable', async () => {
+    const deleted = plan({ phases: [], tasks: [] });
+
+    expect(await read(deleted)).toEqual({ usable: false, detail: 'Shrunk' });
+    expect((await read(plan({ tasks: [] }))).detail).toBe('Shrunk');
+    expect((await read(plan({ phases: [], tasks: [{ ...task, phase: 1 }] }))).detail).toBe(
+      'Shrunk',
+    );
+  });
+
+  it('RF-1406 reads a repair that leaves a FEAT card of the case uncited as Shrunk', async () => {
+    const second = { ...card, id: 'FEAT-002', title: 'Refunds' };
+    const rule = { ...card, id: 'BR-001', type: 'BR', title: 'Late fee' };
+
+    expect((await read(plan(), ['sdd'], [card, second])).detail).toBe('Shrunk');
+    expect((await read(plan(), ['sdd'], [card, rule])).detail).toBe('Fixed');
   });
 });

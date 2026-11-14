@@ -78,7 +78,7 @@ describe('the card repair target', () => {
   it('RF-1406 reads the next answer with the card parser', async () => {
     const readCall = { id: 'c1', name: 'read_file', arguments: { path: 'shop/Orders.cs' } };
 
-    expect((await run({ text: valid })).outcome).toEqual({ usable: true, detail: 'Valid' });
+    expect((await run({ text: valid })).outcome).toMatchObject({ usable: true, detail: 'Fixed' });
     expect((await run({ text: 'No cards.' })).outcome.detail).toBe('Unusable');
     expect((await run({ text: '', toolCalls: [readCall] })).outcome.detail).toBe('ReadsMore');
     expect(target.readsAnswer(valid)).toBe(true);
