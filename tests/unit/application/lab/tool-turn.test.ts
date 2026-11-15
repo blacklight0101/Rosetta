@@ -98,6 +98,65 @@ describe('the share and the aim of a tool turn', () => {
   });
 });
 
+const large = [
+  { path: 'shop/Big.cs', language: 'csharp', lines: 900 },
+  { path: 'shop/Pay.cs', language: 'csharp', lines: 40 },
+];
+const capped: TurnScope = {
+  files: large,
+  earlier: [],
+  aim: null,
+  shareBefore: 0.1,
+  lineCap: 350,
+};
+
+describe('the line cap of a read-more turn', () => {
+  it('RF-1414 cuts the reads in call order at the cap and records the lines cut', () => {
+    const turn = toolTurnOf(
+      [read('shop/Big.cs', 1, 300), read('shop/Big.cs', 301, 700), read('shop/Pay.cs', 1, 40)],
+      capped,
+    );
+
+    expect(turn).toMatchObject({ newLines: 350, cutLines: 390, areaReads: 2, stale: 1 });
+    expect(turn.shareGain).toBeCloseTo(350 / 940);
+  });
+
+  it('RF-1414 counts a read again in the cap, as every served line stays in the context', () => {
+    const earlier = [read('shop/Big.cs', 1, 300)];
+    const turn = toolTurnOf([read('shop/Big.cs', 2, 300), read('shop/Big.cs', 301, 400)], {
+      ...capped,
+      earlier,
+    });
+
+    expect(turn).toMatchObject({ newLines: 51, cutLines: 49, stale: 1, areaReads: 1 });
+  });
+
+  it('RF-1414 cuts nothing without a cap and records no cut lines', () => {
+    const turn = toolTurnOf([read('shop/Big.cs', 1, 400), read('shop/Big.cs', 401, 800)], {
+      ...capped,
+      lineCap: null,
+    });
+
+    expect(turn).toMatchObject({ newLines: 800, cutLines: 0 });
+  });
+});
+
+describe('reads made again past the line cap', () => {
+  it('RF-1414 counts a refused or cut read made again in the turn as stale, not as a repeat', () => {
+    const turn = toolTurnOf(
+      [
+        read('shop/Big.cs', 1, 400),
+        read('shop/Pay.cs', 1, 40),
+        read('shop/Pay.cs', 1, 40),
+        read('shop/Big.cs', 1, 400),
+      ],
+      capped,
+    );
+
+    expect(turn).toMatchObject({ newLines: 350, cutLines: 530, repeats: 0, stale: 3 });
+  });
+});
+
 describe('the weak turns the label fails', () => {
   it('RF-1410 fails a read-more turn that only re-reads a replayed range moved by one line', () => {
     const earlier = [read('shop/Orders.cs', 10, 49)];
@@ -188,7 +247,7 @@ describe('the summary of the tool turns', () => {
 
   it('RF-1410 gives the counts per turn, the generated share and the turns that reach half', () => {
     const summary = summariseTurns([
-      turn({ calls: 4, areaReads: 3, newLines: 90, generatedLines: 30, aimed: 2 }),
+      turn({ calls: 4, areaReads: 3, newLines: 90, generatedLines: 30, aimed: 2, cutLines: 60 }),
       turn({ calls: 2, areaReads: 1, stale: 1, newLines: 30, shareBefore: 0.3, shareGain: 0.3 }),
       turn({ calls: 1, searches: 1, shareBefore: 0.2, shareGain: 0.1 }),
       undefined,
@@ -197,6 +256,7 @@ describe('the summary of the tool turns', () => {
     expect(summary).toMatchObject({
       ...{ turns: 3, calls: 7 / 3, areaReads: 4 / 3, searches: 1 / 3, stale: 1 / 3 },
       ...{ newLines: 40, generatedShare: 0.25, aimed: 2, reachedHalf: 1, shareTurns: 2 },
+      cutLines: 20,
     });
     expect(summary?.shareGain).toBeCloseTo(0.4 / 3);
     expect(summariseTurns([undefined])).toBeNull();

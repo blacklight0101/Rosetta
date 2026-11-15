@@ -11,6 +11,8 @@ import type { AreaRead } from './agent-task-result.js';
 // has nothing to read, so the rule does not apply to it. An answer after a read of less than half
 // of the area's first-party tokens is refused again, up to three times while it keeps reading, with
 // the files still unread (P8-92, RF-210).
+// RF-1414, DEC-239: each ask also opens a budget of lines read_file may serve until the next answer,
+// which the tool runner keeps (`read-budget.ts`), so the reads one ask causes stay bounded.
 
 /** Answers refused before an unread area's answer is accepted anyway (a refusal costs a turn). */
 const maxRefusals = 2;
@@ -22,6 +24,9 @@ const enoughRead = 0.5;
 /** P8-92: how many times one reader is asked to read more (each ask costs a turn and a call). */
 const maxAsks = 3;
 
+/** DEC-239, RF-1414: the lines read_file may serve after a read-more ask, until the next answer. */
+export const readMoreLines = 350;
+
 /** What the reader is told when it is asked to read more. */
 export interface ReadMoreAsk {
   readonly percent: number;
@@ -29,6 +34,8 @@ export interface ReadMoreAsk {
   readonly tokens: number;
   /** The unread files, one per line. */
   readonly files: string;
+  /** RF-1414: the lines the reader may read before its next answer. */
+  readonly lines: number;
 }
 
 function listed(paths: readonly string[]): string {
@@ -46,6 +53,8 @@ export class ReadGate {
   private refusals = 0;
   private asks = 0;
   private readAtLastAsk = 0;
+  /** RF-1414: the lines read_file may still serve before the next answer; none before the first ask. */
+  private linesLeft: number | undefined;
 
   constructor(readableFiles: readonly FileEntry[]) {
     this.entries = readableFiles;
@@ -93,11 +102,24 @@ export class ReadGate {
     if (share >= enoughRead || unread.length === 0) return undefined;
     if (this.asks > 0 && readTokens <= this.readAtLastAsk) return undefined;
     const percent = Math.round(share * 100);
-    return { percent, readTokens, tokens, files: listed(unread.map((file) => file.path)) };
+    const files = listed(unread.map((file) => file.path));
+    return { percent, readTokens, tokens, files, lines: readMoreLines };
+  }
+
+  /** RF-1414: the lines read_file may still serve before the next answer; undefined before any ask. */
+  linesLeftToRead(): number | undefined {
+    return this.linesLeft;
+  }
+
+  /** RF-1414: counts the lines a read_file call served against the budget of the ask. */
+  served(lines: number): void {
+    if (this.linesLeft === undefined) return;
+    this.linesLeft = Math.max(0, this.linesLeft - lines);
   }
 
   askedToReadMore(ask: ReadMoreAsk): void {
     this.asks += 1;
     this.readAtLastAsk = ask.readTokens;
+    this.linesLeft = ask.lines;
   }
 }

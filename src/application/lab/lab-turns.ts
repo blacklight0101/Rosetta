@@ -24,6 +24,8 @@ export const toolTurnSchema = z.strictObject({
   stale: count,
   /** Lines of readable files read for the first time. */
   newLines: count,
+  /** RF-1414: lines the reads asked for past the line cap of the turn (absent in older results). */
+  cutLines: count.optional(),
   /** The new lines that lie in generated or descriptor files. */
   generatedLines: count,
   /** The share of the area read before the turn (read-more: the refusal's); null otherwise. */
@@ -50,6 +52,8 @@ export interface TurnSummary {
   readonly repeats: number;
   readonly relists: number;
   readonly newLines: number;
+  /** RF-1414: lines cut by the line cap, per turn. */
+  readonly cutLines: number;
   readonly shareGain: number;
   /** Generated or descriptor lines over all new lines of the run; null when none was new. */
   readonly generatedShare: number | null;
@@ -79,6 +83,7 @@ export function summariseTurns(turns: readonly (ToolTurn | undefined)[]): TurnSu
     ...{ stale: per((turn) => turn.stale), unlisted: per((turn) => turn.unlisted) },
     ...{ repeats: per((turn) => turn.repeats), relists: per((turn) => turn.relists) },
     ...{ newLines: per((turn) => turn.newLines), shareGain: per((turn) => turn.shareGain) },
+    cutLines: per((turn) => turn.cutLines ?? 0),
     generatedShare: newLines === 0 ? null : sum(recorded, (turn) => turn.generatedLines) / newLines,
     aimed: aimed.length === 0 ? null : sum(aimed, (turn) => turn.aimed ?? 0) / aimed.length,
     shareTurns: shared.length,

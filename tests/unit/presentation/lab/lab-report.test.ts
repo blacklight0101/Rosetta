@@ -94,3 +94,13 @@ describe('the report of a run with no case', () => {
     ]);
   });
 });
+
+describe('the line cap in the report', () => {
+  it('RF-1414 prints the lines the line cap cut next to the new lines', () => {
+    const results = resultsOf([caseOf('a', 'ReadsFiles', turn({ newLines: 350, cutLines: 50 }))]);
+
+    const line = summaryLines(results, 'folder').find((each) => each.startsWith('Per tool turn'));
+
+    expect(line).toContain('350.0 new lines (50.0 cut by the line cap), share gain');
+  });
+});

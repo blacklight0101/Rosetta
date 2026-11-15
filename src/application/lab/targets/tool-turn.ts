@@ -18,7 +18,8 @@ import { isThirdPartyPath } from '../../../domain/code-map/third-party.js';
 // without running it (the third ends the task); the read gate counts only lines of readable files
 // of the area (RF-206) and the read share grows only by new lines (Q-50); a `codemap_query` gives
 // it no line and a `grep` gives the lines it matches, which the lab cannot know, so both are
-// searches; the area's list is already in the first message. No model and no judge.
+// searches; the area's list is already in the first message. No model and no judge. RF-1414: a
+// read-more turn has the run's line cap, so its reads are cut in call order as `ToolRunner` cuts them.
 
 export interface TurnScope {
   /** The files the case lists; a skipped file is not readable. */
@@ -29,6 +30,8 @@ export interface TurnScope {
   readonly aim: { readonly kind: 'unread' | 'cited'; readonly paths: ReadonlySet<string> } | null;
   /** The share of the area read before the turn (read-more: the refusal's), or null. */
   readonly shareBefore: number | null;
+  /** RF-1414: the lines `read_file` may serve in the turn (read-more), or null for no cap. */
+  readonly lineCap?: number | null;
 }
 
 const MAX_SEEN = 40;
@@ -67,10 +70,16 @@ function lineOf(call: ToolCall, request: ToolRequest | undefined): string {
 type Counted = 'areaReads' | 'searches' | 'unlisted' | 'repeats' | 'relists' | 'stale';
 type Counts = Record<Counted, number> & {
   newLines: number;
+  cutLines: number;
   generatedLines: number;
   shareNew: number;
   aimed: number;
 };
+
+interface LineRange {
+  readonly startLine: number;
+  readonly endLine: number;
+}
 
 /** The state of one turn's counting: the files, the lines read so far and the counts. */
 interface Tally {
@@ -78,14 +87,12 @@ interface Tally {
   readonly read: LinesRead;
   readonly aim: ReadonlySet<string> | null;
   readonly counts: Counts;
+  /** RF-1414: the lines `read_file` may still serve in the turn, or null for no cap. */
+  readonly cap: { left: number } | null;
 }
 
 /** Counts one read of a readable file: its new lines, and whether it is an area read or stale. */
-function countRead(
-  tally: Tally,
-  file: ReadableFile,
-  request: { startLine: number; endLine: number },
-) {
+function countRead(tally: Tally, file: ReadableFile, request: LineRange) {
   const { counts } = tally;
   const covered = LinesRead.covered(request.startLine, request.endLine, file.lines);
   const fresh = tally.read.add(file.path, request.startLine, request.endLine, file.lines);
@@ -100,9 +107,51 @@ function countRead(
   if (tally.aim?.has(file.path.toLowerCase()) === true) counts.aimed += 1;
 }
 
-/** What one valid call counts as, a repeat first, as the run answers it before running it. */
-function countCall(tally: Tally, request: ToolRequest, repeat: boolean): void {
+/** RF-1414: a read as the cap lets it through: what it covers, and the call the run sends, if any. */
+interface CappedRead {
+  readonly range: LineRange;
+  /** The lines the run asks the tool for (`ToolRunner`), or null when the cap refused the read. */
+  readonly sent: LineRange | null;
+}
+
+/** RF-1414: the part of a read the cap lets through (an empty range when none is left). */
+function withinCap(tally: Tally, file: ReadableFile, request: LineRange): CappedRead {
+  const { cap } = tally;
+  if (cap === null) return { range: request, sent: request };
+  const left = cap.left;
+  const served = LinesRead.covered(request.startLine, request.endLine, file.lines);
+  const allowed = Math.min(served, left);
+  cap.left -= allowed;
+  tally.counts.cutLines += served - allowed;
+  const range = { startLine: request.startLine, endLine: request.startLine + allowed - 1 };
+  if (left <= 0) return { range, sent: null };
+  const cut = request.endLine - request.startLine + 1 > left;
+  return { range, sent: cut ? { ...request, endLine: request.startLine + left - 1 } : request };
+}
+
+/**
+ * RF-1414: the key the run remembers a read by, as `ToolRunner` does: the call when it ran whole,
+ * the lines it asked for when the cap cut it, and nothing when the cap refused it.
+ */
+function remembered(call: ToolCall, request: ToolRequest, sent: LineRange | null): string | null {
+  if (request.tool !== 'read_file' || sent?.endLine === request.endLine) return signatureOf(call);
+  if (sent === null) return null;
+  const asked = { path: request.path, startLine: sent.startLine, endLine: sent.endLine };
+  return signatureOf({ ...call, arguments: asked });
+}
+
+/**
+ * What one valid call counts as, a repeat first, as the run answers it before running it; returns
+ * the key the run remembers the call by, or null when the cap refused it (RF-1414).
+ */
+function countCall(
+  tally: Tally,
+  call: ToolCall,
+  request: ToolRequest,
+  repeat: boolean,
+): string | null {
   const { counts, files } = tally;
+  const key = signatureOf(call);
   if (repeat) counts.repeats += 1;
   else if (request.tool === 'list_area_files') counts.relists += 1;
   else if (request.tool === 'grep') counts.searches += 1;
@@ -111,9 +160,15 @@ function countCall(tally: Tally, request: ToolRequest, repeat: boolean): void {
     counts[known ? 'searches' : 'unlisted'] += 1;
   } else {
     const file = files.resolve(request.path);
-    if (file === undefined) counts.unlisted += 1;
-    else countRead(tally, file, request);
+    if (file === undefined) {
+      counts.unlisted += 1;
+      return key;
+    }
+    const capped = withinCap(tally, file, request);
+    countRead(tally, file, capped.range);
+    return remembered(call, request, capped.sent);
   }
+  return key;
 }
 
 function tallyOf(scope: TurnScope): Tally {
@@ -130,9 +185,11 @@ function tallyOf(scope: TurnScope): Tally {
     scope.aim === null ? null : new Set([...scope.aim.paths].map((path) => path.toLowerCase()));
   const counts: Counts = {
     ...{ areaReads: 0, searches: 0, unlisted: 0, repeats: 0, relists: 0, stale: 0 },
-    ...{ newLines: 0, generatedLines: 0, shareNew: 0, aimed: 0 },
+    ...{ newLines: 0, cutLines: 0, generatedLines: 0, shareNew: 0, aimed: 0 },
   };
-  return { files, read, aim, counts };
+  const cap =
+    scope.lineCap === undefined || scope.lineCap === null ? null : { left: scope.lineCap };
+  return { files, read, aim, counts, cap };
 }
 
 // RF-1410
@@ -142,9 +199,9 @@ export function toolTurnOf(calls: readonly ToolCall[], scope: TurnScope): ToolTu
   for (const call of calls) {
     const signature = signatureOf(call);
     const repeat = isReaderToolName(call.name) && seenBefore.has(signature);
-    seenBefore.add(signature);
     const request = requestOf(call);
-    if (request !== undefined) countCall(tally, request, repeat);
+    const key = request === undefined ? signature : countCall(tally, call, request, repeat);
+    if (key !== null) seenBefore.add(key);
   }
   const { shareNew, aimed, ...counts } = tally.counts;
   const { shareLines } = tally.files;

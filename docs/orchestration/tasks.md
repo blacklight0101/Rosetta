@@ -20,8 +20,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
 | P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
 | P9 Evaluation fixes, round 3 | 19      | 4         | 13         | 2         | 0                  | 17      | 2       | 0      | 6          | 0         |
-| P10 Prompt lab               | 12      | 0         | 10         | 2         | 0                  | 3       | 7       | 2      | 0          | 0         |
-| **Total**                    | **664** | **127**   | **484**    | **53**    | **0**              | **350** | **285** | **29** | **324**    | **24**    |
+| P10 Prompt lab               | 13      | 0         | 11         | 2         | 0                  | 3       | 8       | 2      | 0          | 0         |
+| **Total**                    | **665** | **127**   | **485**    | **53**    | **0**              | **350** | **286** | **29** | **324**    | **24**    |
 
 ## Conventions for every card
 
@@ -10072,11 +10072,25 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Done when**: the three runs are reported against 2026-11-09. Budget slice: $6.
 - **Refs**: DEC-231; evaluation of 2026-11-09; P10-05..P10-10; GitHub issue #1389
 
+### P10-13 - Cap the lines read per read-more ask
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P10-11
+- **Gate**: owner (DEC-239, the owner's ruling on P10-11; the journeys need Docker up)
+- **Status**: In review (2026-11-15: a cap of 350 lines served by `read_file` per read-more ask, in code (RF-1414), with `read-more.v3` kept; the arithmetic on the P10-11 Asset Manager task puts the call after the reads at +8.8% to +13.2% against 2026-11-09 (fix round: 22.5 tokens a numbered line; the worst case has 1.8 points of margin); in the lab the cap binds on Haiku (v3 and v2 read the same new lines per held-back turn under it, so v3's lab gain goes) and hardly on Sonnet (no regression); drafts that state the budget read fewer lines and were not kept; fix round after the verifier: a read refused or cut by the budget no longer becomes a repeat after the next ask, and a path outside the repository is refused and logged before the budget; **journey confirmation pending**: Docker was down, so Asset Manager and Invoice on `rosetta-p10` wait for the owner to start it; lab spend $0.42 of $1.50; figures in `docs/evaluation/prompt-lab/read-more-cap.md`)
+- **Evidence**: P10-11 (`docs/evaluation/prompt-lab/end-to-end.md` section 4.1): `reader/read-more.v3` is over the +15% per call of DEC-235 (c) on Asset Manager (the call after the reads +25.5%, the last call of an asked task +17%) and within on eShop (+10%, +14%) and Invoice (+2%, +2%); on eShop an ask reads about 484 lines against v2's 226. The owner ruled "Add a line cap" (DEC-239).
+- **Reads**: `end-to-end.md` section 4.1, `reader.md` (method, P10-05 rounds and keep), DEC-231, DEC-235, DEC-237, DEC-238, DEC-239, RF-206, RF-1410, `src/application/agent/read-gate.ts`, `tool-runner.ts`, `reader-prompts.ts`, `src/infrastructure/prompts/prompt-files.ts`, the run notes and tools of the `rosetta-p10` stack.
+- **Do**: choose where the cap lives (prompt, code or both) and its number of lines from the P10-11 figures (Asset Manager's call after the reads at most +15% against 2026-11-09, with a margin), with the arithmetic written down; a cap in code gets its requirement first (SDD, a red `test:` commit, then the code). Measure it in the lab on the `reader-read-more` set with the RF-1410 grading (Haiku first, matched held-back runs, never pooled; Sonnet for no regression if the budget allows) under DEC-231, DEC-235, DEC-237 and DEC-238. Confirm on the `rosetta-p10` stack rebuilt from the branch: Asset Manager (approved at $4.00) and Invoice Generator end to end on Haiku with the estimates and approvals of P10-11, read-more figures per app against 2026-11-09 and P10-11; eShop only if the lab shows the cap could hurt it and the budget allows. Leave the stack running on the branch's build.
+- **Delivers**: the cap (code, prompt or both), its requirement if in code, `docs/evaluation/prompt-lab/read-more-cap.md` linked from `reader.md`.
+- **Done when**: the cap is measured in the lab and on the two journeys and the write-up says, under the keep rules, whether it is kept; if it cannot meet +15% without losing the RF-1410 gain, the choice is set out for the owner. Budget slice: $1.50 (model calls, lab and stack together; stop at $1.30).
+- **Refs**: DEC-239; DEC-235, DEC-238; P10-05, P10-11; GitHub issue #1390
+
 ### P10-12 - Phase 10 report and the owner's review
 
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
-- **Depends on**: P10-11
+- **Depends on**: P10-11, P10-13
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
 - **Status**: Todo
 - **Evidence**: the owner reviews the judge sample and decides what is released.
