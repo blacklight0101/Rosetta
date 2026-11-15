@@ -1,6 +1,6 @@
 # Plan coverage: behaviour kept by no card (P10-14)
 
-Status 2026-11-15 (fix round 1): **fixed in code, no prompt changed.** The cause of P10-D6 is in the code that decides which behaviour a task card keeps, not in a prompt, so no lab round was run. The eShopModernizing re-plan on the `rosetta-p10` stack is **pending**: the stack's server month cap stopped it (section 4).
+Status 2026-11-15 (fix round 1): **fixed in code, no prompt changed.** The cause of P10-D6 is in the code that decides which behaviour a task card keeps, not in a prompt, so no lab round was run. One eShopModernizing re-plan on the `rosetta-p10` stack completed with **0** behaviours kept by no card (P10-11: 98; P10-13 run: 44), read against a large run-to-run spread (section 4).
 
 Only aggregate figures and card ids of the public eShopModernizing sample are written here. The Asset Manager and Invoice packages were not opened; their counts are those of `end-to-end.md`.
 
@@ -53,9 +53,9 @@ Tests (red commits `f5d38706b` and `d15c23291`):
 
 **RST-1806 risk.** A plan can now end RST-1806 where it completed before. This happens when a requirement cites the source card of a table and any `FEAT`, `FLOW` or `SCRN` card (traced by a feature or not), no card of the planner lists it, and neither gap round (with the first round's repair) writes or links a card for it. Before this card, such a requirement counted as built by the migrations card, and its behaviour was silently kept by no card.
 
-- **Exposure.** On the two eShop packages this applies to one requirement in P10-11 (REQ-023 of the 3 the migrations card listed) and to none in P8w3 (1 listed, no behaviour card). Asset Manager and Invoice were not checked, since their packages stay closed.
-- **Odds.** The gap rounds build requirement items well: the P10-11 eShop gap call built all 10 it was sent. So the risk is low but real, and highest on a weak local model. The package is still written, `checks.md` names the requirement under "Requirements built by no card", and the owner can write the package again.
-- **No guard against it.** The requirement cites behaviour that no card would keep, so the run reports it rather than completing over it. The owner may prefer a softer outcome (see the DEC question in the PR).
+- **Exposure.** On the eShop packages this applies to 1 requirement in P10-11 (REQ-023, one of the 3 the migrations card listed), 0 in P8w3 (1 listed, no behaviour card behind it), 0 in the P10-13 run (one listed with a behaviour card, but another card lists it too), and 0 in the P10-14 re-plan. Asset Manager and Invoice were not checked, since their packages stay closed.
+- **Odds.** The risk is low but real, and highest on a local model. The gap rounds build requirement items well: the P10-11 eShop gap call built all 10 it was sent. The package is still written, `checks.md` names the requirement under "Requirements built by no card", and the owner can write the package again.
+- **Accepted, no DEC needed.** A requirement that a `FEAT`, `FLOW` or `SCRN` card stands behind, but that no real card builds, is an uncovered requirement. The existing rule (P9-06) already ends those runs RST-1806; before this fix, the migrations card only hid it. Failing a run on behaviour kept by no card stays "report only" (DEC-245 a, PR #1415).
 
 **Card growth (verifier finding F3).** The first version kept an untraced `FEAT` card on every card that lists its requirement. That repeated claims and grew the P10-11 cards from 622 behaviour items to about 738, and duplicated cards a no-feature task already kept. The owner rule adds each card once. The same scratch count (ids and counts only, from `tasks.md`, `requirements.md`, `prd.md` and `checks.md`) gives these expected figures; the re-plan checks them:
 
@@ -77,27 +77,43 @@ The REQ-023 gap card adds its own 33. On P8w3 the owner rule gives 1214 to 1228:
 
 ## 4. Real run
 
-**Not yet measured: the stack's server month cap stopped the re-plan.**
+**Measured on one re-plan: 0 behaviours kept by no card; the run completed.**
 
-- `rosetta-p10` was rebuilt from this branch at `5256ddab4` (image created 2026-11-15 11:07 UTC, volumes kept) and is left running on that build.
-- The eShop plan was started on Haiku from the P10-11 Deepen (`20261114-130936-understand`), with the P10-11 brief and plan options.
-- Run `20261115-110852-plan` ended `CapReached` (RST-1600) after 3 calls and $0.4765, on the server month cap of $5.60 that P10-11 set as a hard guard ($5.594 spent on the stack).
-- The run's three answers (package, PRD, data model) are kept, so a resume after the cap is raised does not pay for them again.
-- Still to report: "Behaviour kept by no card" (98 to ?), the task cards, the item builds and the judge-free plan stats (`p7-planstats.mjs`) against P8w3, P10-11 and the P10-13 run.
+Setup:
 
-The baselines, judge-free (the P10-14 column is filled by the re-plan):
+- `rosetta-p10` was rebuilt from this branch at `5256ddab4` (image created 2026-11-15 11:07 UTC, volumes kept). It is left running on that build.
+- The eShop plan ran on Haiku from the P10-11 Deepen (`20261114-130936-understand`), with the P10-11 brief and plan options.
+- The first try, `20261115-110852-plan`, ended `CapReached` (RST-1600) after 3 calls and $0.4765, on the server month cap of $5.60 that P10-11 had set as a hard guard. A plan run cannot be resumed (RST-2307), so the cap was raised to $7.00 and the plan run again.
 
-| eShop plan                               | P8w3 (2026-11-09) | P10-11 (2026-11-14) | P10-13 run (2026-11-15) | P10-14 |
-| ---------------------------------------- | ----------------- | ------------------- | ----------------------- | ------ |
-| Behaviour kept by no card, items (cards) | 14 (2)            | 98 (13)             | 44 (3)                  | -      |
-| Task cards                               | 35                | 28                  | 38                      | -      |
-| Item builds (mean per card)              | 88 (2.5)          | 54 (1.9)            | 46 (1.2)                | -      |
-| Cards that build no item                 | 10                | 11                  | 11                      | -      |
-| Requirements (mean per card)             | 25 (2.2)          | 30 (1.9)            | 28 (1.4)                | -      |
-| Size M / L / S                           | 20 / 15 / 0       | 14 / 12 / 2         | 23 / 10 / 5             | -      |
-| Feature cards that reach no requirement  | 58                | 56                  | 76                      | -      |
-| Data-model dropped entries rejected      | 0                 | 7                   | 3                       | -      |
+The second try, `20261115-111549-plan`:
+
+- It **completed**, with one gap round, 15 calls and $0.6511.
+- `checks.md` reads "Every feature, table, operation, journey and screen is built by at least one task card". Under it is the new line "Not every behaviour of the source is kept: 65 feature cards reach no requirement". It has no section "Behaviour kept by no card" and no "Requirements built by no card".
+
+What the re-plan exercised:
+
+- **Owner rule (exercised).** 5 cited `FEAT` cards have no PRD feature behind them: FEAT-003, FEAT-032, FEAT-064, FEAT-079 and FEAT-128, with 41 claims. Each is kept on exactly one task card. FEAT-064 is listed by 7 cards and kept on one, so the owner rule saved a sevenfold repeat. Under P10-11's code, the claims of these cards would have been kept by no card wherever every lister builds a feature.
+- **Migrations-card fix (not exercised).** The migrations card lists one requirement, with no behaviour card behind it. The path is tested by `plan-gap-migration-requirement-recorded.test.ts` instead.
+- **P10-D7 (not exercised).** No data-model entry was rejected; "Left out" is empty.
+
+This is one run, and the plan varies widely between runs (section 2: 14, 44 and 98 items on the same code, and here 19 requirements against 25 to 30). The result fits the expected effect but does not prove it. The per-card count below can be checked against later plans.
+
+| eShop plan                                                | P8w3 (2026-11-09)    | P10-11 (2026-11-14) | P10-13 run (2026-11-15) | P10-14 (2026-11-15)            |
+| --------------------------------------------------------- | -------------------- | ------------------- | ----------------------- | ------------------------------ |
+| Behaviour kept by no card, items (cards)                  | 14 (2)               | 98 (13)             | 44 (3)                  | **0 (0)**                      |
+| Run outcome                                               | Completed            | Completed           | Completed               | Completed, 1 gap round, no RST |
+| Task cards                                                | 35                   | 28                  | 38                      | 39                             |
+| Item builds (mean per card)                               | 88 (2.5)             | 54 (1.9)            | 46 (1.2)                | 74 (1.9)                       |
+| Cards that build no item                                  | 10                   | 11                  | 11                      | 10                             |
+| Requirements (mean per card)                              | 25 (2.2)             | 30 (1.9)            | 28 (1.4)                | 19 (1.4)                       |
+| Behaviour items on all cards (mean, median, max per card) | 1214 (34.7, 22, 128) | 622 (22.2, 15, 101) | 564 (14.8, 14, 71)      | 782 (20.1, 7, 74)              |
+| Cited `FEAT` cards no PRD feature traces to               | 10 of 20             | 15 of 27            | 11 of 19                | 5 of 18                        |
+| Size M / L / S                                            | 20 / 15 / 0          | 14 / 12 / 2         | 23 / 10 / 5             | 20 / 11 / 8                    |
+| Feature cards that reach no requirement                   | 58                   | 56                  | 76                      | 65                             |
+| Data-model dropped entries rejected                       | 0                    | 7                   | 3                       | 0                              |
+
+The figures are judge-free: cards, sizes and builds come from `p7-planstats.mjs`, `checks.md` counts from `checksstats.mjs`, and behaviour items are the claim ids under each card's behaviour lists, all of the stack's tools. No package judge was run.
 
 ## 5. Spend
 
-$0.4765 of the card's $2.00, all on the stack (the capped plan run above); no lab run (no prompt changed).
+**$1.1276 of the card's $2.00**, all on the stack: the capped plan run ($0.4765) and the completed re-plan ($0.6511). No lab run (no prompt changed). The `rosetta-p10` server month cap was raised from $5.60 to $7.00 for the re-plan and left at $7.00.
