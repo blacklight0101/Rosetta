@@ -10,7 +10,7 @@ Card P10-12, 2026-11-15, for the owner's review. Phase 10 (DEC-231, opened 2026-
 
 - `reader/read-more.v3` (P10-05, owner ruling DEC-238): it reads 12% to 25% more new lines at the read-more turn on every model, with cost per call within +2%.
 - `verifier/claim.v6` (P10-06): fewer retried answers (Haiku 10% to 0%, Sonnet 10% to 3% on held-back), cost per run -11% to -23%, agreement not lower on any model.
-- `shared/masked-value` v2: kept by the owner's ruling (DEC-244), wired in P10-15. In the lab it failed DEC-235 (c) on Haiku (output +23.1%, latency +25.6%, cost +18.7% per call) for secret-handling 2.5 to 4.8; the owner ruled that the gain outweighs the cost on a small, rare call.
+- `shared/masked-value` v2: kept by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet). In the lab it failed DEC-235 (c) on Haiku (output +23.1%, latency +25.6%, cost +18.7% per call) for secret-handling 2.5 to 4.8; the owner ruled that the gain outweighs the cost on a small, rare call.
 - A cap of 350 lines that `read_file` serves per read-more ask, in code (P10-13, owner ruling DEC-239 "Add a line cap", RF-1414). It bounds the later calls that v3 made larger. 350 is the number merged; the final number follows the rule of DEC-242. Its journey check is **pending P10-13 journeys**.
 
 **Not kept: every other candidate.** Most failed one condition of the keep rule (DEC-231, DEC-235, DEC-237):
@@ -48,17 +48,17 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 
 ### Shared prompts (P10-10, #1401, #1406)
 
-**Kept: `shared/masked-value` v2, by the owner's ruling (DEC-244), wired in P10-15.** Under the keep rule nothing was kept: v2 fails DEC-235 (c), and the owner kept it as an exception. `shared/text-tool-protocol.v1` stays. `shared/secret-risk` has no model call.
+**Kept: `shared/masked-value` v2, by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet).** Under the keep rule nothing was kept: v2 fails DEC-235 (c), and the owner kept it as an exception. `shared/text-tool-protocol.v1` stays. `shared/secret-risk` has no model call.
 
 **What changed in the lab.** The masked-value call is now the last turn, with no tools, so the answer is graded (RF-1406). Before, Haiku read more on 4 of 5 cases and the judge vetoed the empty answer.
 
-| Prompt, model                    | Before (current)                                          | After (best candidate)                                    | Result                                                           |
-| -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
-| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | (c) fails; kept by the owner's ruling (DEC-244), wired in P10-15 |
-| masked-value, Sonnet (2 calls)   | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +15.2%              | indicative only                                                  |
-| masked-value, Opus (2 calls)     | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +11.6%              | indicative only                                                  |
-| text-tool-protocol, Haiku (tune) | v1: bare-JSON break 5 of 20 first turns                   | v2r3: 2 of 20                                             | candidate                                                        |
-| text-tool-protocol, Haiku (held) | v1: `ReadsFiles` 5 of 5                                   | v2r3: 3 of 5, input +3.0%                                 | not kept: regression                                             |
+| Prompt, model                    | Before (current)                                          | After (best candidate)                                    | Result                                                                                  |
+| -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | (c) fails; kept by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet) |
+| masked-value, Sonnet (2 calls)   | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +15.2%              | indicative only                                                                         |
+| masked-value, Opus (2 calls)     | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +11.6%              | indicative only                                                                         |
+| text-tool-protocol, Haiku (tune) | v1: bare-JSON break 5 of 20 first turns                   | v2r3: 2 of 20                                             | candidate                                                                               |
+| text-tool-protocol, Haiku (held) | v1: `ReadsFiles` 5 of 5                                   | v2r3: 3 of 5, input +3.0%                                 | not kept: regression                                                                    |
 
 Sonnet and Opus were not run on the text-tool protocol, since nothing was kept. No `Leaked` outcome in any run.
 
@@ -238,7 +238,7 @@ Checks of the split against the ledger windows:
 | `rosetta-p10` stack (P10-11)                   | $2.523                      |
 | **Phase 10 so far**                            | **$28.651**                 |
 | of which the rejected key of P10-03 (RST-1518) | $2.1247                     |
-| For reference: without the rejected key        | $26.526                     |
+| For reference: without the rejected key        | $26.527                     |
 | P10-13 stack journeys                          | **pending P10-13 journeys** |
 | Room under the $40 stop line                   | $11.35                      |
 | Room under the $50 total                       | $21.35                      |
@@ -282,7 +282,7 @@ Proposals only: no GitHub issue and no task card is filed by this report. Each l
 6. P10-D6 (major): behaviour kept by no task card grew on eShop (14 to 98 items); find the cause (gap.v5 against v6) and give each cited item a task card or state it as left out (#1413). **In P10-14** (#1416, in review), the next card (DEC-243 a).
 7. P10-D7: data-model "dropped" entries rejected by the schema when one entry lists many fields (#1413). **In P10-14** (#1416).
 8. P10-D8: a summariser answer cut at the output limit skips its batch's merges (#1413).
-9. The sqlcmd masker redesign, on branch `task/p10-masker-gaps`, with a 674-entry corpus (no pull request yet).
+9. The sqlcmd masker redesign, on branch `task/p10-masker-gaps`, with a 674-entry corpus; its pull request #1404 was closed unmerged on 2026-11-13, and the gaps came from the verifier of #1402.
 10. Mask before JSON serialization in `src/infrastructure/lab/lab-files.ts`, `cost-report-files.ts`, `calibration-files.ts` and `evaluation-files.ts`; masking the text of `JSON.stringify` broke two `results.json` files (#1406).
 11. `joinFragment` strips a leading line break inside a cut string; then re-measure `cards/continue` s1 (#1409).
 12. Record the card-format parser's problems per case in `results.json`, so `Partial` and `Unusable` can be read (#1409).
