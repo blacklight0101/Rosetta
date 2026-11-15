@@ -1,20 +1,24 @@
 import type { ToolCall } from '../ports/llm-provider.js';
 import type { ToolOutcome } from './read-only-tools.js';
+import { isRepositoryPath } from '../../domain/sources/permalink.js';
 import { parseToolArguments } from './tool-arguments.js';
 
 // RF-1414, DEC-239: the line budget of a read-more ask, applied to one tool call. Only `read_file`
 // is cut: a read that asks for more lines than are left is cut to the lines left from its start
 // line, and a read made when none is left is not run. `grep`, `codemap_query` and
 // `list_area_files` pass as they are. Every line served counts, a line read again included,
-// because each one stays in the input of the task's later calls.
+// because each one stays in the input of the task's later calls. A read the tool would refuse anyway
+// (arguments not valid, a path outside the repository) is left to the tool, which refuses it with its
+// RST code and logs the security event of RF-145, and it serves no line.
 
 /** The call to run within the lines left, or `spent` when it is a read and none is left. */
 export function withinBudget(call: ToolCall, linesLeft: number | undefined): ToolCall | 'spent' {
   if (linesLeft === undefined || call.name !== 'read_file') return call;
-  if (linesLeft <= 0) return 'spent';
   const parsed = parseToolArguments('read_file', call.arguments);
   if (!parsed.ok || parsed.value.tool !== 'read_file') return call;
   const { path, startLine, endLine } = parsed.value;
+  if (!isRepositoryPath(path)) return call;
+  if (linesLeft <= 0) return 'spent';
   if (endLine - startLine + 1 <= linesLeft) return call;
   return { ...call, arguments: { path, startLine, endLine: startLine + linesLeft - 1 } };
 }

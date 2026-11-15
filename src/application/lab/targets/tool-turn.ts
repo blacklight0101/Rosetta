@@ -107,20 +107,51 @@ function countRead(tally: Tally, file: ReadableFile, request: LineRange) {
   if (tally.aim?.has(file.path.toLowerCase()) === true) counts.aimed += 1;
 }
 
-/** RF-1414: the part of a read the cap lets through (an empty range when none is left). */
-function withinCap(tally: Tally, file: ReadableFile, request: LineRange): LineRange {
-  const { cap } = tally;
-  if (cap === null) return request;
-  const served = LinesRead.covered(request.startLine, request.endLine, file.lines);
-  const allowed = Math.min(served, cap.left);
-  cap.left -= allowed;
-  tally.counts.cutLines += served - allowed;
-  return { startLine: request.startLine, endLine: request.startLine + allowed - 1 };
+/** RF-1414: a read as the cap lets it through: what it covers, and the call the run sends, if any. */
+interface CappedRead {
+  readonly range: LineRange;
+  /** The lines the run asks the tool for (`ToolRunner`), or null when the cap refused the read. */
+  readonly sent: LineRange | null;
 }
 
-/** What one valid call counts as, a repeat first, as the run answers it before running it. */
-function countCall(tally: Tally, request: ToolRequest, repeat: boolean): void {
+/** RF-1414: the part of a read the cap lets through (an empty range when none is left). */
+function withinCap(tally: Tally, file: ReadableFile, request: LineRange): CappedRead {
+  const { cap } = tally;
+  if (cap === null) return { range: request, sent: request };
+  const left = cap.left;
+  const served = LinesRead.covered(request.startLine, request.endLine, file.lines);
+  const allowed = Math.min(served, left);
+  cap.left -= allowed;
+  tally.counts.cutLines += served - allowed;
+  const range = { startLine: request.startLine, endLine: request.startLine + allowed - 1 };
+  if (left <= 0) return { range, sent: null };
+  const cut = request.endLine - request.startLine + 1 > left;
+  return { range, sent: cut ? { ...request, endLine: request.startLine + left - 1 } : request };
+}
+
+/**
+ * RF-1414: the key the run remembers a read by, as `ToolRunner` does: the call when it ran whole,
+ * the lines it asked for when the cap cut it, and nothing when the cap refused it.
+ */
+function remembered(call: ToolCall, request: ToolRequest, sent: LineRange | null): string | null {
+  if (request.tool !== 'read_file' || sent?.endLine === request.endLine) return signatureOf(call);
+  if (sent === null) return null;
+  const asked = { path: request.path, startLine: sent.startLine, endLine: sent.endLine };
+  return signatureOf({ ...call, arguments: asked });
+}
+
+/**
+ * What one valid call counts as, a repeat first, as the run answers it before running it; returns
+ * the key the run remembers the call by, or null when the cap refused it (RF-1414).
+ */
+function countCall(
+  tally: Tally,
+  call: ToolCall,
+  request: ToolRequest,
+  repeat: boolean,
+): string | null {
   const { counts, files } = tally;
+  const key = signatureOf(call);
   if (repeat) counts.repeats += 1;
   else if (request.tool === 'list_area_files') counts.relists += 1;
   else if (request.tool === 'grep') counts.searches += 1;
@@ -129,9 +160,15 @@ function countCall(tally: Tally, request: ToolRequest, repeat: boolean): void {
     counts[known ? 'searches' : 'unlisted'] += 1;
   } else {
     const file = files.resolve(request.path);
-    if (file === undefined) counts.unlisted += 1;
-    else countRead(tally, file, withinCap(tally, file, request));
+    if (file === undefined) {
+      counts.unlisted += 1;
+      return key;
+    }
+    const capped = withinCap(tally, file, request);
+    countRead(tally, file, capped.range);
+    return remembered(call, request, capped.sent);
   }
+  return key;
 }
 
 function tallyOf(scope: TurnScope): Tally {
@@ -162,9 +199,9 @@ export function toolTurnOf(calls: readonly ToolCall[], scope: TurnScope): ToolTu
   for (const call of calls) {
     const signature = signatureOf(call);
     const repeat = isReaderToolName(call.name) && seenBefore.has(signature);
-    seenBefore.add(signature);
     const request = requestOf(call);
-    if (request !== undefined) countCall(tally, request, repeat);
+    const key = request === undefined ? signature : countCall(tally, call, request, repeat);
+    if (key !== null) seenBefore.add(key);
   }
   const { shareNew, aimed, ...counts } = tally.counts;
   const { shareLines } = tally.files;

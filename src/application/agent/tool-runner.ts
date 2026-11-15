@@ -17,6 +17,11 @@ import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
 const maxRepeatedCalls = 3;
 const maxUnknownToolCalls = 3;
 
+/** The key calls are compared by; wrapped in a list, so arguments that are undefined still give a string. */
+function signatureOf(name: string, args: unknown): string {
+  return `${name}\n${JSON.stringify([args])}`;
+}
+
 const repeatedMessage =
   'You already made this exact call; its result is above. Use it, or make a different call.';
 
@@ -37,25 +42,30 @@ export class ToolRunner {
   }
 
   async run(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome> {
-    const { name } = call;
-    const outcome =
-      isReaderToolName(name) && this.isRepeat(name, call.arguments)
-        ? this.repeatedOutcome(name)
-        : await this.runWithinBudget(call, ids);
+    const outcome = await this.outcomeOf(call, ids);
     if (outcome.error !== undefined) this.toolErrors += 1;
     if (outcome.error?.code === ERROR_CODES.toolUnknown) this.unknownCalls += 1;
     this.gate.note(outcome);
     return outcome;
   }
 
-  /** RF-1414: runs the call cut to the lines the read-more budget has left, and counts what it served. */
-  private async runWithinBudget(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome> {
+  /**
+   * RF-1414: a repeat of a call that ran is answered without running it; any other call runs cut to
+   * the lines the read-more budget has left. A read the budget refuses is not made, so it is not
+   * remembered and never becomes a repeat; a cut read is remembered as the lines it served, so the
+   * same call runs again after the next ask.
+   */
+  private async outcomeOf(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome> {
+    const { name } = call;
+    if (!isReaderToolName(name)) return this.tools.run(call, ids);
+    if (this.isRepeat(name, call.arguments)) return this.repeatedOutcome(name);
     const within = withinBudget(call, this.gate.linesLeftToRead());
     if (within === 'spent') {
       return { content: this.tools.renderBlock('read_file', spentMessage(readMoreLines)) };
     }
+    this.seen.add(signatureOf(name, within.arguments));
     const outcome = await this.tools.run(within, ids);
-    if (call.name === 'read_file') this.gate.served(servedLines(outcome));
+    if (name === 'read_file') this.gate.served(servedLines(outcome));
     return outcome;
   }
 
@@ -74,14 +84,9 @@ export class ToolRunner {
     return undefined;
   }
 
-  /** A known tool called again with the same arguments; unknown tools are counted on their own. */
+  /** A known tool called again with the arguments of a call that ran; unknown tools are counted on their own. */
   private isRepeat(name: ReaderToolName, args: unknown): boolean {
-    // Wrapped in a list, so arguments that are undefined still give a string.
-    const signature = `${name}\n${JSON.stringify([args])}`;
-    if (!this.seen.has(signature)) {
-      this.seen.add(signature);
-      return false;
-    }
+    if (!this.seen.has(signatureOf(name, args))) return false;
     this.repeated += 1;
     this.lastRepeat = { tool: name, arguments: JSON.stringify(args ?? null) };
     return true;
