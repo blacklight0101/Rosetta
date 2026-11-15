@@ -92,11 +92,18 @@ The second try, `20261115-111549-plan`:
 
 What the re-plan exercised:
 
-- **Owner rule (exercised).** 5 cited `FEAT` cards have no PRD feature behind them: FEAT-003, FEAT-032, FEAT-064, FEAT-079 and FEAT-128, with 41 claims. Each is kept on exactly one task card. FEAT-064 is listed by 7 cards and kept on one, so the owner rule saved a sevenfold repeat. Under P10-11's code, the claims of these cards would have been kept by no card wherever every lister builds a feature.
+- **Owner rule (exercised).** 5 cited `FEAT` cards have no PRD feature behind them: FEAT-003, FEAT-032, FEAT-064, FEAT-079 and FEAT-128, with 41 claims. Each is kept on exactly one task card. The owner rule chose for two of them: FEAT-032 (3 listers, owner T-011, 8 claims) and FEAT-128 (2 listers, owner T-027, 4 claims), every lister building a feature. These 12 claims are the ones P10-11's code would have kept by no card. The other three (FEAT-003, FEAT-064, FEAT-079) are listed by a card that builds no feature, which keeps them under either code, so no owner was named.
 - **Migrations-card fix (not exercised).** The migrations card lists one requirement, with no behaviour card behind it. The path is tested by `plan-gap-migration-requirement-recorded.test.ts` instead.
 - **P10-D7 (not exercised).** No data-model entry was rejected; "Left out" is empty.
 
 This is one run, and the plan varies widely between runs (section 2: 14, 44 and 98 items on the same code, and here 19 requirements against 25 to 30). The result fits the expected effect but does not prove it. The per-card count below can be checked against later plans.
+
+**Why the re-plan has fewer requirements.** It has 19 requirements against 30 in P10-11, planned from the same source cards: the same Deepen, 360 cards and 2,011 claims.
+
+- The 19 cite 46 distinct cards, holding 285 behaviour claims. The 30 of P10-11 cite 77 cards, holding 430.
+- The mean citations per requirement are close (2.8 against 3.0), so no requirements were merged; fewer were written.
+- Requirements come from the planner's first answer (`planner-package`), which no change of P10-14 touches. So the drop is run variance, not an effect of this fix.
+- A narrower citation base does make "0 kept by no card" easier to reach: fewer cited cards means fewer that no feature traces to (5 here against 15). Of the 5 that remained, the owner rule kept the two whose listers all build features (12 claims).
 
 | eShop plan                                                | P8w3 (2026-11-09)    | P10-11 (2026-11-14) | P10-13 run (2026-11-15) | P10-14 (2026-11-15)            |
 | --------------------------------------------------------- | -------------------- | ------------------- | ----------------------- | ------------------------------ |
