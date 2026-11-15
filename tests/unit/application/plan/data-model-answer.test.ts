@@ -133,6 +133,26 @@ describe('parseDataModelAnswer: answers that are no answer', () => {
     expect(parsed?.draft.dropped).toEqual(dropped);
   });
 
+  it('RF-623 a dropped claim whose field lists several fields in one text is kept (P10-D7)', () => {
+    const fields = Array.from({ length: 12 }, (_, at) => `LegacyField${String(at + 1)}`).join(', ');
+    const dropped = [{ claim: 'ENT-001.c1', field: fields, reason: 'Not stored.' }];
+
+    const parsed = parseDataModelAnswer(JSON.stringify({ tables: [table], dropped }));
+
+    expect(fields.length).toBeGreaterThan(80);
+    expect(parsed?.draft.dropped).toEqual(dropped);
+    expect(parsed?.problems).toEqual([]);
+  });
+
+  it('RF-623 a dropped field longer than 300 characters still fails its schema (P10-D7)', () => {
+    const dropped = [{ claim: 'ENT-001.c1', field: 'f'.repeat(301), reason: 'Not stored.' }];
+
+    const parsed = parseDataModelAnswer(JSON.stringify({ tables: [table], dropped }));
+
+    expect(parsed?.draft.dropped).toEqual([]);
+    expect(parsed?.problems).toHaveLength(1);
+  });
+
   it('RF-623 an empty table list whose dropped claims are all unreadable is no answer', () => {
     const bad = JSON.stringify({ tables: [], dropped: [{ claim: 'ENT-001.c1' }] });
 
