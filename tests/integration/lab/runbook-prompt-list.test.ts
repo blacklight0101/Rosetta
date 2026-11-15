@@ -36,13 +36,19 @@ async function newestFiles(folder: string): Promise<Map<string, string>> {
   return new Map([...newest].map(([stem, { file }]) => [stem, file]));
 }
 
-/** A family is live when the run's code names the file of its newest version. */
+/**
+ * A family is live when the run's code names a version file of it: the newest, or an older one the
+ * run went back to (DEC-246: `reader/read-more.v2.md`, with v3 kept in the folder).
+ */
 async function liveFamilies(): Promise<string[]> {
   const code = await sourceText(join(root, 'src'));
   const live: string[] = [];
   for (const folder of FOLDERS) {
-    for (const [stem, file] of await newestFiles(folder)) {
-      if (code.includes(`${folder}/${file}`)) live.push(`${folder}/${stem}`);
+    const files = await readdir(join(root, 'prompts', folder));
+    for (const stem of (await newestFiles(folder)).keys()) {
+      const versions = files.filter((file) => file.startsWith(`${stem}.v`));
+      const named = versions.some((file) => code.includes(`${folder}/${file}`));
+      if (named) live.push(`${folder}/${stem}`);
     }
   }
   return live.sort();

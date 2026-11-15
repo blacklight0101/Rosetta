@@ -45,13 +45,14 @@ interface Spec {
     input: ReaderPartCase,
     prompts: ReaderPrompts,
     env: TargetEnv,
+    lineCap: number | undefined,
   ) => LlmMessage[];
   /** Whether the turn is read as the final answer (cards) or as the first turn of a task. */
   readonly cards: boolean;
   /** RF-1410: the files the prompt points the reads at, when it points at some. */
   readonly aim?: (input: ReaderPartCase) => TurnScope['aim'];
-  /** RF-1414: the lines `read_file` may serve in the turn, as a run cuts them after the prompt. */
-  readonly lineCap?: number;
+  /** RF-1414: the run's line cap, when one is set, cuts the turn's reads as a run cuts them after the prompt. */
+  readonly capped?: boolean;
 }
 
 const missing = (what: string): string => `a case for this prompt needs ${what}`;
@@ -79,12 +80,13 @@ function afterShortRead(
   input: ReaderPartCase,
   prompts: ReaderPrompts,
   env: TargetEnv,
+  lineCap: number | undefined,
 ): LlmMessage[] {
   const facts = input.readMore;
   if (facts === undefined) return [];
   const filesBlock = blockOf('list_area_files', facts.unread.join('\n'), env.ids.dataBlockTag());
   const turns = Math.max(1, input.turns - 1);
-  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns, lines: readMoreLines });
+  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns, lines: lineCap });
   return [
     ...replayedTurn(input, prompts, env),
     { role: 'assistant', content: PREMATURE_ANSWER },
@@ -123,7 +125,7 @@ const specs: readonly Spec[] = [
     messages: afterShortRead,
     cards: false,
     aim: (input) => ({ kind: 'unread', paths: new Set(input.readMore?.unread ?? []) }),
-    lineCap: readMoreLines,
+    capped: true,
   },
   {
     id: 'reader/reread',
@@ -164,7 +166,14 @@ function lastTurnOutcome(response: LlmResponse, prompts: ReaderPrompts): TargetO
   return parsed.problems.length === 0 ? noCards : outcome;
 }
 
-function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): PreparedCase {
+function preparedOf(
+  spec: Spec,
+  input: ReaderPartCase,
+  current: ReaderPrompts,
+  lineCap: number | undefined,
+): PreparedCase {
+  // RF-1414: only the read-more turn is cut, and only when the run's cap is set.
+  const turnCap = spec.capped === true && lineCap !== undefined ? lineCap : null;
   return {
     run: async (env: TargetEnv, file: PromptFile): Promise<TargetOutcome> => {
       const { placeholder } = spec;
@@ -174,7 +183,7 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       const tested = { ...current, [spec.part]: file };
       const marks = { flows: false, screens: false };
       const prompts = readerPromptsFor(tested, marks, input.workbook ?? false);
-      const messages = spec.messages(input, prompts, env);
+      const messages = spec.messages(input, prompts, env, lineCap);
       const asked = await askOnce(env, {
         ...{ role: 'reader', task: 'reader-lab', system: readerSystemPrompt(prompts) },
         ...{ messages, tools: readerToolDefinitions },
@@ -185,13 +194,13 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       const shareBefore = input.readMore === undefined ? null : input.readMore.percent / 100;
       return readerFirstTurn(asked.value, {
         ...{ files: input.files, earlier: earlierCalls(messages) },
-        ...{ aim, shareBefore, lineCap: spec.lineCap ?? null },
+        ...{ aim, shareBefore, lineCap: turnCap },
       });
     },
   };
 }
 
-function targetOf(spec: Spec, current: ReaderPrompts): LabTarget {
+function targetOf(spec: Spec, current: ReaderPrompts, lineCap: number | undefined): LabTarget {
   return {
     id: spec.id,
     role: 'reader',
@@ -199,7 +208,7 @@ function targetOf(spec: Spec, current: ReaderPrompts): LabTarget {
       const parsed = readerPartCaseSchema.safeParse(data);
       if (!parsed.success) return err(problemsOf(parsed.error.issues));
       const lacks = spec.lacks(parsed.data);
-      return lacks === undefined ? ok(preparedOf(spec, parsed.data, current)) : err(lacks);
+      return lacks === undefined ? ok(preparedOf(spec, parsed.data, current, lineCap)) : err(lacks);
     },
     readsAnswer: (text) => {
       // RF-1403: a first turn has no answer parser and may answer with tool calls: not applicable.
@@ -210,8 +219,14 @@ function targetOf(spec: Spec, current: ReaderPrompts): LabTarget {
   };
 }
 
-/** The six targets of the reader's other prompts over its current prompts, which the lab does not vary. */
+/**
+ * The six targets of the reader's other prompts over its current prompts, which the lab does not vary.
+ * RF-1414: `lineCap` is the run's read-more line cap, none by default (DEC-246), as a run has it.
+ */
 // RF-1406
-export function readerPartTargets(current: ReaderPrompts): LabTarget[] {
-  return specs.map((spec) => targetOf(spec, current));
+export function readerPartTargets(
+  current: ReaderPrompts,
+  lineCap: number | undefined = readMoreLines,
+): LabTarget[] {
+  return specs.map((spec) => targetOf(spec, current, lineCap));
 }
