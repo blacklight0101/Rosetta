@@ -98,19 +98,19 @@ describe('the share and the aim of a tool turn', () => {
   });
 });
 
-describe('the line cap of a read-more turn', () => {
-  const large = [
-    { path: 'shop/Big.cs', language: 'csharp', lines: 900 },
-    { path: 'shop/Pay.cs', language: 'csharp', lines: 40 },
-  ];
-  const capped: TurnScope = {
-    files: large,
-    earlier: [],
-    aim: null,
-    shareBefore: 0.1,
-    lineCap: 350,
-  };
+const large = [
+  { path: 'shop/Big.cs', language: 'csharp', lines: 900 },
+  { path: 'shop/Pay.cs', language: 'csharp', lines: 40 },
+];
+const capped: TurnScope = {
+  files: large,
+  earlier: [],
+  aim: null,
+  shareBefore: 0.1,
+  lineCap: 350,
+};
 
+describe('the line cap of a read-more turn', () => {
   it('RF-1414 cuts the reads in call order at the cap and records the lines cut', () => {
     const turn = toolTurnOf(
       [read('shop/Big.cs', 1, 300), read('shop/Big.cs', 301, 700), read('shop/Pay.cs', 1, 40)],
@@ -138,6 +138,22 @@ describe('the line cap of a read-more turn', () => {
     });
 
     expect(turn).toMatchObject({ newLines: 800, cutLines: 0 });
+  });
+});
+
+describe('reads made again past the line cap', () => {
+  it('RF-1414 counts a refused or cut read made again in the turn as stale, not as a repeat', () => {
+    const turn = toolTurnOf(
+      [
+        read('shop/Big.cs', 1, 400),
+        read('shop/Pay.cs', 1, 40),
+        read('shop/Pay.cs', 1, 40),
+        read('shop/Big.cs', 1, 400),
+      ],
+      capped,
+    );
+
+    expect(turn).toMatchObject({ newLines: 350, cutLines: 530, repeats: 0, stale: 3 });
   });
 });
 
