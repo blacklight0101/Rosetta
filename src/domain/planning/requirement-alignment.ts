@@ -1,5 +1,5 @@
 import { planId, type PlanContent, type PlanTask } from './plan-content.js';
-import type { CoverageDocuments } from './plan-coverage.js';
+import { citesBehaviourCard, isMigrationCard, type CoverageDocuments } from './plan-coverage.js';
 import type { RequirementNote } from './requirement-notes.js';
 
 // RF-627, RF-630, RF-631: a task card lists the requirements whose source cards are behind what it
@@ -61,11 +61,15 @@ function alignTask(task: PlanTask, plan: PlanContent, sources: Sources): Aligned
     plan.tasks.filter((each) => each.id !== task.id),
     sources,
   );
-  const wanted = plan.requirements
+  // P10-14: the migrations card keeps only rules, so it never takes a requirement with a behaviour card.
+  const listable = isMigrationCard(task)
+    ? plan.requirements.filter((each) => !citesBehaviourCard(each))
+    : plan.requirements;
+  const wanted = listable
     .filter((each) => each.sources.some((card) => behind.has(card)))
     .map((each) => each.id);
   // Listed by the card, and no other card builds an item behind it: it has nowhere else to go.
-  const stranded = plan.requirements
+  const stranded = listable
     .filter((each) => task.requirements.includes(each.id))
     .filter((each) => !each.sources.some((card) => elsewhere.has(card)))
     .map((each) => each.id);

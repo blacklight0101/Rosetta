@@ -20,12 +20,17 @@ function plain(name: string): string {
   return name.toLowerCase().replace(/_/gu, '').replace(/^tbl/u, '').replace(/s$/u, '');
 }
 
+/** The separators of a dropped entry that lists several fields: commas, semicolons, slashes, "and". */
+const fieldSeparator = /\s*(?:[,;/]|\band\b)\s*/iu;
+
 function presentIn(model: TargetDataModel): Set<string> {
   const names = model.tables.flatMap((table) => [
     table.name,
     ...table.columns.flatMap((column) => [column.name, column.legacy?.field ?? '']),
   ]);
-  return new Set([...names, ...model.dropped.map((each) => each.field)].map(plain));
+  // P10-14, P10-D7: a dropped entry may list several fields; each one counts.
+  const dropped = model.dropped.flatMap((each) => each.field.split(fieldSeparator));
+  return new Set([...names, ...dropped].filter((name) => name !== '').map(plain));
 }
 
 const MAX_LISTED = 20;

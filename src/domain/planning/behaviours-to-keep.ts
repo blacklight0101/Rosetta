@@ -2,6 +2,7 @@ import type { Citation } from '../cards/citation.js';
 import type { ClaimJudgement } from './claim-judgement.js';
 import type { ModelTable } from './data-model.js';
 import { isMigrationCard } from './plan-coverage.js';
+import { traced } from './untraced-features.js';
 import type { PlanTask } from './plan-content.js';
 import type { SourceCard } from './plan-sources.js';
 
@@ -25,23 +26,22 @@ const scopeKinds: Readonly<Record<string, string>> = {
   SCRN: 'screen:',
 };
 
-/** Whether some item of the package of that kind (`feature:`) traces to the card. */
-function traced(scope: BuiltScope, prefix: string, cardId: string): boolean {
-  return [...scope].some(([id, cards]) => id.startsWith(prefix) && cards.includes(cardId));
-}
-
 /**
  * P5-41: a card of a type that the task builds items of counts only when one of those items traces to
  * it. A task that links no item of that kind keeps every card its requirements cite. P10-14, P10-D6:
- * a FEAT card that no feature traces to is built by no feature, so the tasks that list a requirement
- * citing it keep it; a FLOW or SCRN card no journey or screen traces to was left out with a reason.
+ * a FEAT card that no feature traces to is built by no feature, so it is kept by its owner
+ * (untracedFeatureOwners), or by every such task when no owners are given; a FLOW or SCRN card no
+ * journey or screen traces to was left out with a reason.
  */
-function inScope(task: PlanTask, card: SourceCard, scope: BuiltScope | undefined): boolean {
+function inScope(task: PlanTask, card: SourceCard, input: Input): boolean {
+  const { scope, owners } = input;
   const prefix = scopeKinds[card.type];
   if (scope === undefined || prefix === undefined) return true;
   const items = task.builds.filter((id) => id.startsWith(prefix));
   if (items.length === 0) return true;
-  if (card.type === 'FEAT' && !traced(scope, prefix, card.id)) return true;
+  if (card.type === 'FEAT' && !traced(scope, prefix, card.id)) {
+    return owners === undefined || owners.get(card.id) === task.id;
+  }
   return items.some((id) => scope.get(id)?.includes(card.id) === true);
 }
 
@@ -80,6 +80,7 @@ interface Input {
   readonly requirements: readonly Requirement[];
   readonly sources: readonly SourceCard[];
   readonly scope?: BuiltScope | undefined;
+  readonly owners?: ReadonlyMap<string, string> | undefined;
 }
 
 /** The supported claims of the covered cards the task's requirements come from, that `keeps` allows. */
@@ -87,7 +88,7 @@ function keptFrom(
   input: Input,
   keeps: (card: SourceCard, claim: SourceClaim) => boolean,
 ): KeptBehaviour[] {
-  const { task, requirements, sources, scope } = input;
+  const { task, requirements, sources } = input;
   const built = new Set(
     requirements
       .filter((each) => task.requirements.includes(each.id))
@@ -95,7 +96,7 @@ function keptFrom(
   );
   return sources
     .filter((card) => built.has(card.id) && coveredTypes.includes(card.type))
-    .filter((card) => inScope(task, card, scope))
+    .filter((card) => inScope(task, card, input))
     .flatMap((card) =>
       card.claims
         .filter((claim) => claim.status === 'Supported' && keeps(card, claim))
@@ -110,8 +111,8 @@ function plainBehaviours(
   sources: readonly SourceCard[],
   context: BehaviourContext,
 ): KeptBehaviour[] {
-  const { scope, tables = [] } = context;
-  const input = { task, requirements, sources, scope };
+  const { scope, owners, tables = [] } = context;
+  const input = { task, requirements, sources, scope, owners };
   if (!isMigrationCard(task)) return keptFrom(input, () => true);
   const names = namesOf(tables.filter((table) => task.builds.includes(`table:${table.name}`)));
   return keptFrom(input, (card, claim) => card.type === 'BR' && namesAnItem(claim, names));

@@ -159,12 +159,14 @@ export function isMigrationCard(task: Pick<PlanTask, 'title'>): boolean {
 // lists a requirement with a feature, journey or screen behind it: a card that keeps that behaviour must.
 const BEHAVIOUR_CARD = /^(?:FEAT|FLOW|SCRN)-/u;
 
+/** Whether a requirement cites a feature, journey or screen card, which the migrations card cannot keep. */
+export function citesBehaviourCard(requirement: Pick<Requirement, 'sources'>): boolean {
+  return requirement.sources.some((card) => BEHAVIOUR_CARD.test(card));
+}
+
 /** Whether the migrations card may list the requirement: a table's card is behind it and no behaviour card. */
 function migratesRequirement(requirement: Requirement, sources: ReadonlySet<string>): boolean {
-  const cited = requirement.sources;
-  return (
-    cited.some((card) => sources.has(card)) && !cited.some((card) => BEHAVIOUR_CARD.test(card))
-  );
+  return requirement.sources.some((card) => sources.has(card)) && !citesBehaviourCard(requirement);
 }
 
 function migrationCard(content: PlanContent, tables: readonly ModelTable[]): PlanTask {
