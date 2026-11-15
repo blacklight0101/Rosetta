@@ -2,6 +2,7 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import type { BehaviourContext, BuiltScope } from '../../domain/planning/behaviours-to-keep.js';
 import { keepOrFixRows, type KeepOrFixRow } from '../../domain/planning/keep-or-fix.js';
 import { planId } from '../../domain/planning/plan-content.js';
+import { untracedFeatureOwners } from '../../domain/planning/untraced-features.js';
 
 // RF-631, P5-41: what the writers of the task cards, risks.md, open-questions.md and checks.md share
 // about the behaviour of the legacy system: the items a card builds traced to the cards they come
@@ -36,12 +37,15 @@ export function keepOrFixOf(handoff: HandoffPackage): Shared {
   const known = shared.get(handoff);
   if (known !== undefined) return known;
   const { judgements = [], tasks, requirements } = handoff.content;
+  const scope = scopeOf(handoff);
+  // P10-14: one task keeps each FEAT card no feature traces to.
+  const owners = untracedFeatureOwners(tasks, requirements, scope);
   const context: BehaviourContext = {
-    ...{ tables: handoff.dataModel.tables, scope: scopeOf(handoff), judgements },
+    ...{ tables: handoff.dataModel.tables, scope, owners, judgements },
   };
   const rows = keepOrFixRows(judgements, {
     ...{ tasks, requirements, sources: handoff.sources, tables: handoff.dataModel.tables },
-    scope: scopeOf(handoff),
+    ...{ scope, owners },
   });
   const result = { context, rows };
   shared.set(handoff, result);

@@ -1,5 +1,5 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
-import { behavioursKeptByNoCard, behavioursOf } from '../../domain/planning/behaviours-to-keep.js';
+import { behavioursOf } from '../../domain/planning/behaviours-to-keep.js';
 import { requirementsBuiltByNoCard } from '../../domain/planning/coverage-checks.js';
 import {
   coverageItems,
@@ -9,6 +9,7 @@ import {
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { probeStatesOutcome } from '../../domain/planning/task-card-quality.js';
 import { adrModelCheckLines } from './handoff-adr-model-checks-markdown.js';
+import { behaviourGapLines, keptByNoCard } from './handoff-behaviour-gaps-markdown.js';
 import { dataModelCheckLines, isDataModelCheck } from './handoff-data-model-checks-markdown.js';
 import { modelCheckLines } from './handoff-model-checks-markdown.js';
 import { keepOrFixOf } from './handoff-keep-or-fix.js';
@@ -44,6 +45,8 @@ function unbuiltRequirements(handoff: HandoffPackage): string {
 function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const { items, uncovered } = coverageOf(coverageItems(handoff), handoff.content.tasks);
   const requirements = unbuiltRequirements(handoff);
+  // P10-14: the behaviour no card keeps is named under the summary, never left to read as built.
+  const gaps = behaviourGapLines(handoff);
   // P9-06: a requirement built by no card also ends the run RST-1806.
   const also = requirements === '' ? '' : `; ${requirements}, so the run is not complete`;
   const head = [
@@ -53,13 +56,14 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
     '',
   ];
   if (items.length === 0) {
-    return [...head, `The package has no item to cover${also}.`, ''];
+    return [...head, `The package has no item to cover${also}.`, '', ...gaps];
   }
   if (uncovered.length === 0) {
     return [
       ...head,
       `Every feature, table, operation, journey and screen is built by at least one task card${also}.`,
       '',
+      ...gaps,
     ];
   }
   const and = requirements === '' ? '' : `, and ${requirements}`;
@@ -67,6 +71,7 @@ function coverageLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
     ...head,
     `${plural(uncovered.length, 'item')} of ${String(items.length)} ${uncovered.length === 1 ? 'is' : 'are'} built by no task card${and}; the run is not complete.`,
     '',
+    ...gaps,
     '| Kind | Id | Name |',
     '|---|---|---|',
     ...uncovered.map((item) => rowOf(item, esc)),
@@ -114,12 +119,7 @@ function restatedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
 
 // RF-631: the legacy behaviour the migrations card no longer keeps and no task card keeps.
 function keptByNoCardLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
-  const lost = behavioursKeptByNoCard(
-    handoff.content.tasks,
-    handoff.content.requirements,
-    handoff.sources,
-    keepOrFixOf(handoff).context,
-  );
+  const lost = keptByNoCard(handoff);
   if (lost.length === 0) return [];
   return [
     '## Behaviour kept by no card',
