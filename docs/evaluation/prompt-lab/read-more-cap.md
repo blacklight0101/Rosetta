@@ -9,7 +9,7 @@ Card P10-13, 2026-11-15, GitHub issue #1390. The owner ruled "Add a line cap" on
 **Journeys (section 6): the keep of 350 is not confirmed.** The three apps ran end to end on Haiku on the `rosetta-p10` stack rebuilt with the cap, one run each:
 
 - **Asset Manager: within on both measures.** Against 2026-11-09 the call after the reads is +1.4% and the last call of the asked task -7.5% (P10-11: +25.5% and +17%). But its understand kept fewer cards (6 against 11 and 20), because the reader's last answer was short; the Deepen made most of it up.
-- **Invoice: within on the call after the reads (+5.5%), over on the last call of the asked task (+44.8%).** The cap split the one ask of 2026-11-09 into two asks, which read the same 664 lines in all. The extra ask leaves one more refused answer in every later call, which neither model of section 2 counts.
+- **Invoice: within on the call after the reads (+5.5%), over on the last call of the asked task (+44.8%).** The cap split the one ask of 2026-11-09 into two asks, which read the same 664 lines in all. Of the 19,090 tokens above 2026-11-09, about 8.4k come from the extra ask and its refused answer (the cap's effect, which neither model of section 2 counts), about 8.3k from a continuation after the last answer hit the output limit, and about 2.4k from a longer first answer written before any ask.
 - **eShop (run with the owner's extra budget): within on every measure,** in the understand (+2.6%, +3.1%) and the Deepen (-12.9%, -8.2%), where section 2's worst case at 27.5 tokens a line was +19.9%.
 - No task failed. No refused read was repeated within an ask and none became a repeat (RST-1303). One Asset Manager Deepen reader ended at the context limit after three asks, with its cards kept.
 
@@ -29,7 +29,7 @@ Only aggregate figures are written here. The Asset Manager and Invoice runs' fil
 
 How the code cap works (RF-1414, `read-gate.ts`, `read-budget.ts`, `tool-runner.ts`):
 
-- Each read-more ask gives the task a budget of 350 lines (`readMoreLines`). It lasts until the next final answer, and the next ask starts a new one. The reads before the first ask have no cap.
+- When the cap is set (`readMoreLines`; 350 in #1414, off by default since DEC-246, section 9), each read-more ask gives the task a budget of that many lines. It lasts until the next final answer, and the next ask starts a new one. The reads before the first ask have no cap.
 - Every line `read_file` serves counts, a re-read included, because each one stays in the input of the task's later calls.
 - A read that asks for more lines than are left is cut from its start line.
 - A read made with no line left is not run. The reader gets one data block that says the lines are spent and asks for the final answer. It is not a tool error.
@@ -109,7 +109,7 @@ Neither model counts a shorter answer after fewer reads. Both assume the rest of
 | eShop understand, v2         | 23   | 196, 190, 426                    | 2 of 23 (9%)   |
 | eShop understand, v3         | 21   | 450, 355, 1,798                  | 11 of 21 (52%) |
 | eShop Deepen, v2             | 17   | 211, 156, 581                    | 3 of 17 (18%)  |
-| eShop Deepen, v3             | 12   | 301, 330, 666                    | 5 of 12 (42%)  |
+| eShop Deepen, v3             | 12   | 301, 305, 666                    | 5 of 12 (42%)  |
 
 So the cap does more than trim v3's extra reads:
 
@@ -197,7 +197,7 @@ The tool runner's tests now cover two asks (`tool-runner-budget-asks.test.ts`). 
 - The journeys ran through the API with P10-11's driver, copied with its own state: every role on Haiku 5.5, reader `maxTurns` 12, parallelism 4, then scan, understand, answers (one picked, one typed), Deepen, answers, and the Plan with the 2026-11-09 brief.
 - Asset Manager was approved at $4.00, the run cap, as on 2026-11-09 (P10-11 used $1.50 by mistake).
 - Invoice was approved at $0.10, with the user day cap lowered around the understand start, as in both earlier runs. Its Deepen pauses were answered Continue, Stop here, Resume, then Continue (EV-84).
-- eShopModernizing was added after the owner raised the card's slice to $4.50 on 2026-11-15. It ran with the settings of P10-11 and was approved at $4.00 (50M tokens), as in P10-11. The API returned P10-11's eShop project for the same URL (one project per URL and user), so the journey ran in that project after a new scan. Its estimate therefore came from history instead of assumptions; the approved amount is the same.
+- eShopModernizing was added after the owner raised the card's slice to $4.50 on 2026-11-15. It ran with the settings of P10-11 and was approved at $4.00 (50M tokens), as in P10-11. The API returned P10-11's eShop project for the same URL (one project per URL and user), so the journey ran in that project after a new scan. Its estimate therefore came from history instead of assumptions; the approved amount is the same. **Not like for like:** the project kept P10-11's answers, so the Deepen readers got 6 project answers against 2 in P10-11 (the Deepen estimate's `answers`). That may change the Deepen's cards and claims, the plan and its count of behaviour kept by no task card.
 - The measures follow section 2 and `end-to-end.md` section 4.1. They are taken on the understand runs, where every 2026-11-09 and P10-11 ask of Asset Manager and Invoice happened. The Deepens' asks are given apart.
 - Lines are the numbered file lines `read_file` served from the ask to the next answer. Model output and frame lines are not counted.
 - A cut read asked for more lines than the ask had left. A refused read was made with none left and got the "Not read" notice.
@@ -234,7 +234,7 @@ The Deepens, where eShop's asks cost the most per line (27.5 tokens, section 2):
 | eShop         | last call of an asked task      | 48,017          | 49,552        | 44,096                            | -8.2%      | -11.0%         | within              |
 | eShop         | mean reader call                | 17,034          | 15,181        | 16,290                            | -4.4%      | +7.3%          | within              |
 | eShop         | asks (tasks with an ask)        | 17 (8)          | 12 (5)        | 19 (9)                            |            |                |                     |
-| eShop         | lines per ask: mean, median     | 211, 156        | 301, 330      | 260, 266                          |            |                |                     |
+| eShop         | lines per ask: mean, median     | 211, 156        | 301, 305      | 260, 266                          |            |                |                     |
 | eShop         | asks above 350 lines served     | 3 of 17 (18%)   | 5 of 12 (42%) | 0 of 19 (the cap bound on 7, 37%) |            |                |                     |
 | Asset Manager | asks; lines per ask             | 1; 112          | none          | 3 in one task; 215, 350, 296      |            |                |                     |
 | Asset Manager | call after the reads; last call | 50,353; 50,353  | none          | 76,511; 99,920                    | other task | no ask         |                     |
@@ -252,9 +252,19 @@ The Asset Manager Deepen asked too (P10-11's did not; 2026-11-09's asked once, i
 1. Under v2 the reader read 664 lines after one ask, and its next answer was accepted. P10-11's v3 read 417.
 2. Under the cap, the first ask served 350 lines: one read was cut by 92 lines and five reads were refused. The reader had still read less than half of its area, so its next answer was refused again.
 3. The second ask served 314 lines, 664 in all, as many as v2 read after its one ask.
-4. Each extra ask leaves one more refused answer (here 8,192 output tokens, cut at the limit) and one more ask in the conversation. The call after the second ask's reads carried 53,397 tokens (+25.4% against 42,598), and its answer stopped at the 8,192-token output limit. The continuation call carried 61,688 (+44.8%).
+4. The extra ask leaves one more refused answer and one more ask in the conversation. The refused answer here was 8,192 output tokens because it hit the output limit (2026-11-09's refused answer was 4,645). The call after the second ask's reads carried 53,397 tokens (+25.4% against 42,598). Its answer also stopped at the 8,192-token limit, and the continuation call carried 61,688 (+44.8%).
 
-Neither model of section 2 counts an extra ask: both assume the rest of the task stays as it was. When a task needs more than 350 lines to reach half its area, the cap moves the reads to a later ask instead of removing them, and each ask adds a refused answer to every later call. The mean reader call rose for the same reason: 9 reader calls instead of 7, the later ones larger.
+The 19,090 tokens of the last call above 2026-11-09 (42,598, the call after v2's one ask, with no continuation) split three ways:
+
+| Part                                                                                | Tokens | Points of the +44.8% | Caused by the cap       |
+| ----------------------------------------------------------------------------------- | ------ | -------------------- | ----------------------- |
+| The continuation after the last answer hit the 8,192 output limit (61,688 - 53,397) | 8,291  | +19.5                | no: the answer's length |
+| The extra ask and its refused answer (the lines read are the same 664)              | 8,423  | +19.8                | yes: the extra ask      |
+| A longer first answer, written before any ask (7,021 against 4,645 output)          | 2,376  | +5.6                 | no                      |
+
+The extra ask is the cap's mechanical effect; its size depends on the length of the refused answer, which here hit the output limit. With a refused answer of 2026-11-09's size (4,645 output tokens), that part would be about 4.9k, +11.4% on its own, within +15%. So this run is over on its own measure: even with no continuation, the call after the second ask's reads is +25.4%. But one run does not show that the cap alone always takes Invoice over +15%.
+
+Neither model of section 2 counts an extra ask: both assume the rest of the task stays as it was. When a task needs more than 350 lines to reach half its area, the cap moves the reads to a later ask instead of removing them, and each ask adds a refused answer to every later call. The mean reader call rose for the same reasons: 9 reader calls against 6 on 2026-11-09 (7 in P10-11), the extra ask's call and the continuation among them, the later ones larger.
 
 **eShop: within on every measure, in the understand and the Deepen.** The cap bound on about a third of the asks (8 of 23 and 7 of 19 asks reached it), where half of v3's asks went above 350 without it. Asks per run went back to v2's level (23 and 19, against v3's 21 and 12), and lines per ask sit between v2's and v3's. The Deepen's worst case of section 2 at 27.5 tokens a line (+19.9%) did not occur: its call after the reads fell 12.9% against 2026-11-09. Coverage rose a little against both runs (understand 37.6%, Deepen 47.8%).
 
@@ -296,7 +306,7 @@ Neither model of section 2 counts an extra ask: both assume the rest of the task
 | eShop         | Failed tasks                                            | none                                                     | none                                 | none (98 and 100 reader tasks `Done`)                    |
 
 - The Invoice Deepens are not like for like. P10-11's finished inside the $0.10 with no pause. This understand spent $0.058 of it, so the Deepen reached the approval and went through the EV-84 pauses, as on 2026-11-09, which re-runs part of a round. Its cost and its larger card and claim counts come mostly from that.
-- eShop's behaviour kept by no task card fell from 98 items to 44, with 38 task cards instead of 28. The planner prompts and code are the same as in P10-11, and one run each cannot separate this from run-to-run variance, so this card does not credit it to the cap. P10-D6 stays open.
+- eShop's behaviour kept by no task card fell from 98 items to 44, with 38 task cards instead of 28. The planner prompts and code are the same as in P10-11, but the Deepen readers had 6 project answers against 2 (method above), and one run each cannot separate either from run-to-run variance, so this card does not credit it to the cap. P10-D6 stays open.
 - Server log of the three journeys: 1,353 lines, 0 `error`, 65 `warn`, no HTTP 5xx. The warnings are of the kinds P10-11 listed: readers that ended with no card, skipped screen merges, self-family verifier notices, 9 RST-1600 budget refusals at the Invoice Deepen's pauses, one RST-1305 (the Asset Manager Deepen reader), three tool refusals (RST-1104, RST-1107, RST-1306), and the plans' data-model and PRD notices.
 
 ## 7. Spend
@@ -325,7 +335,7 @@ What the evidence says, whatever the choice:
 - **Later calls on real runs (section 6), one run per app, against 2026-11-09:**
   - Asset Manager: within on both measures (+1.4% and -7.5%), where v3 with no cap was over (+25.5% and +17%);
   - eShop: within on both measures in the understand (+2.6%, +3.1%) and the Deepen (-12.9%, -8.2%);
-  - Invoice: within on the call after the reads (+5.5%), over on the last call of the asked task (+44.8%) and on the mean reader call (+51%). The cap turned one ask into two that read the same 664 lines, and the extra refused answer stays in every later call.
+  - Invoice: within on the call after the reads (+5.5%), over on the last call of the asked task (+44.8%) and on the mean reader call (+51%). The cap turned one ask into two that read the same 664 lines, and the extra refused answer stays in every later call. About 8.4k of the 19.1k extra tokens come from that extra ask (its refused answer hit the output limit), 8.3k from a continuation of the last answer and 2.4k from a longer first answer (section 6).
 - **The arithmetic (section 2)** bounds the call after the reads for the same number of asks. It does not count an ask that the cap adds. On the P10-11 Asset Manager task, 350 gives +8.8% to +13.2% (+16.7% at 25.1 tokens a line, +19.9% at 27.5); 300 gives +5.1% to +8.8% (+14.6% at 27.5); 400 is over in the worst case (+17.5%).
 - **Lines read in real runs.** Under the cap, lines per ask were 346 on Asset Manager (v2 264, v3 383), 332 on Invoice (v2 664, v3 417), and 265 and 260 on eShop's understand and Deepen (v2 196 and 211, v3 450 and 301). The cap bound on about a third of eShop's asks.
 - **Cards.** The capped Asset Manager understand kept 6 cards against 11 and 20, from a short last answer; the Deepens and plans of the three apps came out at or near the earlier runs. One run each cannot tell the cap from run-to-run variance.
@@ -348,10 +358,11 @@ The cap is one constant (`readMoreLines`), so changing N is a one-line change pl
 
 The orchestrator chose under the owner's delegation ("choose the best option for the system"). DEC-246 is recorded in the decision log by another pull request. **`reader/read-more.v2` with no line cap**, the behaviour of 2026-11-09:
 
-- **Invoice's last call is +44.8% at 350, and the cause is mechanical, not noise.** The cap splits v2's single 664-line ask into two. The extra refused final answer (8,192 output tokens) stays in every later call.
-- **Every capped option fails Invoice for the same reason.** DEC-242's fallback assumed a lower cap costs less, and on Invoice it does not. A cap of 300 splits the ask further. v2 with a cap splits it the same way, since v2 read 664 lines in one ask. No more spend goes on showing it.
+- **Invoice's last call is +44.8% at 350.** The extra ask is mechanical: the cap splits v2's single 664-line ask into two, and the extra refused final answer stays in every later call. Its size depends on that answer's length, which here hit the 8,192-token output limit. Of the 19.1k extra tokens, about 8.4k come from the extra ask, 8.3k from a continuation of the last answer and 2.4k from a longer first answer (section 6). The run is over on its own measure: the call after the second ask's reads, with no continuation, is +25.4%.
+- **The other capped options are expected to fail Invoice for the same reason; this is inferred, not run.** DEC-242's fallback assumed a lower cap costs less, and on Invoice it does not. A cap of 300 would split the ask further. v2 with a cap would split it the same way, since v2 read 664 lines in one ask. No more spend goes on showing it.
 - **v3 with no cap is over on Asset Manager** (+25.5% and +17%, P10-11).
 - **v2 with no cap is the only option within DEC-235 (c) on every app measured.** What it gives up is small: v3 with the cap read 23% to 35% more lines per ask than v2 on Asset Manager and eShop (346 against 264; 265 and 260 against 196 and 211), though half as many on Invoice (332 against 664), and eShop coverage was 1.0 to 1.6 points higher.
+- **The decision rests on one run per app.** On this run the capped option is over on Invoice, and v2 with no cap is the only option measured within the rule. A second Invoice run, or the follow-up below that compacts the refused answer, could change that.
 
 | App           | Measure                    | v2, no cap (2026-11-09) | v3, no cap (P10-11) | v3, cap 350 (P10-13) |
 | ------------- | -------------------------- | ----------------------- | ------------------- | -------------------- |
