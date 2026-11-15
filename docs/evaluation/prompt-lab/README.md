@@ -25,7 +25,7 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 
 **Spend.** The shared lab ledger holds **$26.1283** settled. The `rosetta-p10` stack spent **$2.523** more (P10-11). Phase 10 so far: **$28.65 of $50**, $11.35 under the $40 stop line. The P10-13 journeys are not yet in it (their slice is $4.50, DEC-241). Details in [Spend](#spend).
 
-**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243); the judge-sample default stands and `shared/masked-value` v2 is kept by ruling (DEC-244). Left for the owner: this report, the release after the P10-D6 fix, and two questions from the P10-14 builder (8 and 9). **Nothing of Phase 10 is released.**
+**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243); the judge-sample default stands and `shared/masked-value` v2 is kept by ruling (DEC-244); behaviour kept by no task card is reported only, and a requirement that cites an out-of-scope journey stays listed as now (DEC-245). Left for the owner: the review of this report and the release after the P10-D6 fix. **Nothing of Phase 10 is released.**
 
 ## How to read this folder
 
@@ -258,7 +258,7 @@ The P10-13 slice is $4.50 (DEC-241), of which $0.4212 is spent. If the journeys 
 
 ## Owner questions left
 
-The owner answered questions 1 to 7 on 2026-11-15 (DEC-242, DEC-243, DEC-244). Questions 8 and 9 came later from the P10-14 builder (#1416) and are open; each has a default, which stays if you do not answer.
+The owner answered every question on 2026-11-15 (DEC-242 to DEC-245). Questions 8 and 9 came later from the P10-14 builder (#1416). No question is left open.
 
 1. **The final read-more cap** (P10-13). **Answered (DEC-242):** the owner delegated the choice to the orchestrator, with a rule. Take the largest cap that keeps every app measured in the P10-13 journeys within the +15% of DEC-235 (c), on both the call after the reads and the last call of an asked task, with no rise in failed tasks or wasted repeats: 350 lines with v3 if it holds on Asset Manager, Invoice and eShop; 300 with v3 if any app is over; v2 with a cap if 300 cannot hold either. **Chosen cap: pending P10-13 journeys.**
 2. **The $2.12 booked for rejected calls.** P10-03's first judge check ran with a key Anthropic rejected (RST-1518); nothing was answered, but the ledger settled the calls at their worst case, $2.1247. **Answered (DEC-243 c):** it counts toward the Phase 10 total, $28.65 so far.
@@ -267,8 +267,8 @@ The owner answered questions 1 to 7 on 2026-11-15 (DEC-242, DEC-243, DEC-244). Q
 5. **Release Phase 10 to `main`.** Nothing of Phase 9 or Phase 10 is released. **Answered (DEC-243 b):** Phase 10 is released to `main` after the P10-D6 fix is merged; the release stays the owner's (DEC-175).
 6. **The judge sample** ([judge-sample.md](judge-sample.md)). **Answered (DEC-244 a):** the default stands. The judge is trusted for a family at 80% of calibration claims and 80% within one point per criterion; a family below that uses the judge as advisory only, as Phase 10 applied it.
 7. **`shared/masked-value` v2.** It raises secret-handling from 2.5 to 4.8 on Haiku but adds about 23% output tokens per masked-value answer, over DEC-235 (c). **Answered (DEC-244 b):** v2 is kept by the owner's ruling, as an exception to DEC-235 (c), because the secret-handling gain outweighs +23% output on a small, rare call. Wiring it is card P10-15, in its own pull request; if that card finds the change reaches many calls, the owner gets the facts before it merges.
-8. **Behaviour kept by no task card: fail or report?** (from the P10-14 builder, #1416). Should a plan whose `checks.md` lists behaviour kept by no task card fail the run (RST-1806), as a requirement built by no card does, rather than only report it? Options: (a) report it only; (b) fail the run. Default: (a), reported only.
-9. **A requirement that cites an out-of-scope journey** (from the P10-14 builder, #1416). Should it be flagged as inconsistent? Options: (a) list it as now; (b) flag it as inconsistent. Default: (a), listed as now.
+8. **Behaviour kept by no task card: fail or report?** (from the P10-14 builder, #1416). Should a plan whose `checks.md` lists behaviour kept by no task card fail the run (RST-1806), as a requirement built by no card does, rather than only report it? **Answered (DEC-245 a):** it is reported in `checks.md` only and does not fail the run (RST-1806); it is still listed there.
+9. **A requirement that cites an out-of-scope journey** (from the P10-14 builder, #1416). Should it be flagged as inconsistent? **Answered (DEC-245 b):** it stays listed as "kept by no card", with the out-of-scope reason kept in `flows/README.md`; it is not flagged separately.
 
 ## Proposed follow-up cards
 
