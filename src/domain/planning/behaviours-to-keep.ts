@@ -162,6 +162,8 @@ export interface BehaviourContext {
   /** Item id (`flow:FLOW-001`) to the card ids it traces to. */
   readonly scope?: BuiltScope;
   readonly judgements?: readonly ClaimJudgement[];
+  /** P10-14: the task that keeps each FEAT card no feature traces to (untracedFeatureOwners). */
+  readonly owners?: ReadonlyMap<string, string>;
 }
 
 export interface ChangedBehaviour extends KeptBehaviour {

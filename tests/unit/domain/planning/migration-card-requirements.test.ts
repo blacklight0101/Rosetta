@@ -5,9 +5,10 @@ import {
   withMigrationCard,
 } from '../../../../src/domain/planning/plan-coverage.js';
 import { requirementsBuiltByNoCard } from '../../../../src/domain/planning/coverage-checks.js';
+import { alignRequirements } from '../../../../src/domain/planning/requirement-alignment.js';
 import type { PlanContent } from '../../../../src/domain/planning/plan-content.js';
 import { targetModel } from '../../../support/data-model-fixtures.js';
-import { planOf } from '../../../support/coverage-fixtures.js';
+import { coverageDocuments, planOf } from '../../../support/coverage-fixtures.js';
 import { planTask } from '../../../support/task-card-fixtures.js';
 
 // P10-14, P10-D6, RF-627, RF-623: the migrations card keeps only the business rules that name its
@@ -68,5 +69,37 @@ describe('the requirements of the migrations card (P10-14)', () => {
       'REQ-004',
       'REQ-005',
     ]);
+  });
+});
+
+describe('the migrations card after the requirement alignment (P10-14)', () => {
+  const tables = targetModel().tables;
+
+  it('RF-627 the requirement alignment gives the migrations card no requirement with a behaviour card behind it', () => {
+    const content = withMigrationCard(plan(), tables);
+
+    const aligned = alignRequirements(content, coverageDocuments());
+
+    expect(aligned.tasks[0]?.requirements).toEqual(['REQ-001', 'REQ-003']);
+    const report = coverageOf(requirementItems(aligned.requirements), aligned.tasks);
+    expect(report.uncovered.map((each) => each.id)).toEqual([
+      'requirement:REQ-002',
+      'requirement:REQ-004',
+      'requirement:REQ-005',
+    ]);
+  });
+
+  it('RF-627 the alignment takes off a behaviour requirement the migrations card was given', () => {
+    const content = withMigrationCard(plan(), tables);
+    const [first, ...rest] = content.tasks;
+    if (first === undefined) throw new Error('The plan has the migrations card.');
+    const given = {
+      ...content,
+      tasks: [{ ...first, requirements: ['REQ-001', 'REQ-002'] }, ...rest],
+    };
+
+    const aligned = alignRequirements(given, coverageDocuments());
+
+    expect(aligned.tasks[0]?.requirements).not.toContain('REQ-002');
   });
 });
