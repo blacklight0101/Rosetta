@@ -2,7 +2,9 @@
 
 Card P10-13, 2026-11-15, GitHub issue #1390. The owner ruled "Add a line cap" on the P10-11 result (DEC-239): `reader/read-more.v3` was over the +15% per call of DEC-235 (c) on Asset Manager (the call after the reads +25.5%, the last call of an asked task +17%) and within on eShop and Invoice (`end-to-end.md` section 4.1). Spend: **$3.015** of the slice, which the owner raised from $1.50 to $4.50 on 2026-11-15: lab $0.4212, stack $2.594 (section 7).
 
-**Result: a cap of 350 lines per ask, enforced in code (RF-1414); the prompt stays `read-more.v3`.** After a read-more ask, `read_file` serves at most 350 lines until the reader's next answer: a read past the budget is cut from its start line, and one made with no line left is not run (a notice, not a tool error). The arithmetic on the P10-11 Asset Manager task puts the call after the reads at +8.8% to +13.2% against 2026-11-09 (limit +15%). The +13.2% worst case has 1.8 points of margin and depends on how many tokens a line costs (section 2). Drafts that tell the model the budget read fewer new lines than v3 under the same cap, so none is kept. **What the cap costs:** on the lab's held-back cases, where every model reads big areas, v3 under the cap reads no more new lines per turn than v2 under the cap, so the cap gives back the lab gain of v3 (section 4).
+**Decision (DEC-246, section 9): `reader/read-more.v2` with no line cap.** It is the only option measured within the +15% of DEC-235 (c) on every app. The keep of 350 below is withdrawn. `read-more.v3` stays in the prompts folder, and the cap of RF-1414 stays in the code, off unless `readMoreLines` is set.
+
+**First result, withdrawn by DEC-246: a cap of 350 lines per ask, enforced in code (RF-1414), with `read-more.v3`.** After a read-more ask, `read_file` serves at most 350 lines until the reader's next answer: a read past the budget is cut from its start line, and one made with no line left is not run (a notice, not a tool error). The arithmetic on the P10-11 Asset Manager task puts the call after the reads at +8.8% to +13.2% against 2026-11-09 (limit +15%). The +13.2% worst case has 1.8 points of margin and depends on how many tokens a line costs (section 2). Drafts that tell the model the budget read fewer new lines than v3 under the same cap, so none is kept. **What the cap costs:** on the lab's held-back cases, where every model reads big areas, v3 under the cap reads no more new lines per turn than v2 under the cap, so the cap gives back the lab gain of v3 (section 4).
 
 **Journeys (section 6): the keep of 350 is not confirmed.** The three apps ran end to end on Haiku on the `rosetta-p10` stack rebuilt with the cap, one run each:
 
@@ -11,7 +13,7 @@ Card P10-13, 2026-11-15, GitHub issue #1390. The owner ruled "Add a line cap" on
 - **eShop (run with the owner's extra budget): within on every measure,** in the understand (+2.6%, +3.1%) and the Deepen (-12.9%, -8.2%), where section 2's worst case at 27.5 tokens a line was +19.9%.
 - No task failed. No refused read was repeated within an ask and none became a repeat (RST-1303). One Asset Manager Deepen reader ended at the context limit after three asks, with its cards kept.
 
-The cap stays 350 on `develop`, as #1414 merged it; this card does not change it. The choice is the owner's (section 8).
+The builder left the cap unchanged and set out the choice (section 8). The orchestrator, under the owner's delegation, chose v2 with no cap (DEC-246, section 9).
 
 **Fix round (the verifier's review of #1414).** A read that the budget refused or cut was still recorded for the repeat check. After the next ask, the same call was refused as a repeat, and three such calls could end the task. This is fixed and tested (section 1). The lab figures do not change (section 3), and the lab cannot see this kind of defect (section 5).
 
@@ -174,7 +176,7 @@ No turn reaches 50% (the held-back areas are large), as in P10-05. Input tokens 
   - The r3 decision does not change. It rests on r3's lower new lines, not on the cost of v3's extra calls. What r3 would save (output -14% to -24%) is a trade the owner can still weigh (section 8).
   - Not run: Sonnet on r3, as r3 was already out on Haiku.
 
-**Keep decision.** The code cap of 350 lines with the prompt `read-more.v3` (no new prompt version). It is a code change, not a prompt version, so the keep rules apply only to the prompt choice (v3 kept, r3 not). The cap itself is DEC-239's ruling. The journeys (section 6) found it within +15% on Asset Manager and eShop and over on Invoice's last call, so the keep of 350 is not confirmed and goes to the owner (section 8).
+**Keep decision.** The code cap of 350 lines with the prompt `read-more.v3` (no new prompt version). It is a code change, not a prompt version, so the keep rules apply only to the prompt choice (v3 kept, r3 not). The cap itself is DEC-239's ruling. The journeys (section 6) found it within +15% on Asset Manager and eShop and over on Invoice's last call, so the keep of 350 is not confirmed. It is withdrawn by DEC-246 (section 9).
 
 ## 5. What the lab does not see
 
@@ -316,7 +318,7 @@ The owner raised the card's slice from $1.50 to $4.50 on 2026-11-15, to run eSho
 
 The stack's spend is its own administrator figure (server month to date), read before the first journey and after the last. The shared ledger's settled total went from $25.707 to $26.128 for the lab rounds; the journeys made no lab or judge call. No judge was used: RF-1410 makes no judge call on a tool turn. Ollama was not used. The fix round made no model call.
 
-## 8. Choice for the owner
+## 8. Choice for the owner (the record before DEC-246)
 
 What the evidence says, whatever the choice:
 
@@ -338,6 +340,35 @@ The options, in no order:
 4. **Cap of 350 with v2.** In the lab, v2 under the cap reads about the same new lines as v3 (299.8 against 300.9) with slightly less output (747 against 773). Not run on the journeys.
 5. **Revert to v2 with no cap.** The figures go back to those of 2026-11-09. v2's own asks went above 350 on Invoice and on some Asset Manager and eShop asks.
 6. **Any cap, with r3 in place of v3.** Less output and no calls past the cap, for 1% to 6% fewer new lines per turn. Not run on the journeys.
-7. **Change what follows a cut ask (new code, not built or measured).** The Invoice overrun comes from the answer after a cut ask being refused again because the area is still under half read. The read-more gate could, for example, count the cap's lines as enough for that ask. This needs its own requirement and lab round.
+7. **Change what follows a cut ask (new code, not built or measured).** The Invoice overrun comes from the answer after a cut ask being refused again because the area is still under half read. The read-more gate could, for example, count the cap's lines as enough for that ask. This needs its own requirement and lab round. DEC-246 keeps a form of it as the proposed follow-up (section 9).
 
 The cap is one constant (`readMoreLines`), so changing N is a one-line change plus a regrade of the lab runs. Options 2 to 7 would need their own journey run to be confirmed.
+
+## 9. Decision (DEC-246)
+
+The orchestrator chose under the owner's delegation ("choose the best option for the system"). DEC-246 is recorded in the decision log by another pull request. **`reader/read-more.v2` with no line cap**, the behaviour of 2026-11-09:
+
+- **Invoice's last call is +44.8% at 350, and the cause is mechanical, not noise.** The cap splits v2's single 664-line ask into two. The extra refused final answer (8,192 output tokens) stays in every later call.
+- **Every capped option fails Invoice for the same reason.** DEC-242's fallback assumed a lower cap costs less, and on Invoice it does not. A cap of 300 splits the ask further. v2 with a cap splits it the same way, since v2 read 664 lines in one ask. No more spend goes on showing it.
+- **v3 with no cap is over on Asset Manager** (+25.5% and +17%, P10-11).
+- **v2 with no cap is the only option within DEC-235 (c) on every app measured.** What it gives up is small: v3 with the cap read 23% to 35% more lines per ask than v2 on Asset Manager and eShop (346 against 264; 265 and 260 against 196 and 211), though half as many on Invoice (332 against 664), and eShop coverage was 1.0 to 1.6 points higher.
+
+| App           | Measure                    | v2, no cap (2026-11-09) | v3, no cap (P10-11) | v3, cap 350 (P10-13) |
+| ------------- | -------------------------- | ----------------------- | ------------------- | -------------------- |
+| Asset Manager | call after the reads, mean | 51,698                  | +25.5% (over)       | +1.4% (within)       |
+| Asset Manager | last call of an asked task | 74,748                  | +17% (over)         | -7.5% (within)       |
+| Invoice       | call after the reads, mean | 42,598                  | +2% (within)        | +5.5% (within)       |
+| Invoice       | last call of an asked task | 42,598                  | +2% (within)        | +44.8% (over)        |
+| eShop         | call after the reads, mean | 45,179                  | +10% (within)       | +2.6% (within)       |
+| eShop         | last call of an asked task | 60,108                  | +14% (within)       | +3.1% (within)       |
+
+Percentages are against v2 with no cap. The eShop rows are the understand runs; its Deepen under the cap was -12.9% and -8.2%.
+
+**What changes (this pull request):**
+
+- `reader/read-more.v2.md` is the current read-more prompt again (RF-206). v3 stays loadable.
+- The cap of RF-1414 is off by default: `readMoreLines` is undefined, so an ask opens no budget and `read_file` cuts nothing. With a cap set, the rules of RF-1414 are unchanged.
+- The lab's `reader/read-more` target follows the same setting, so it grades with no cut (`cutLines` 0) unless a cap is given.
+- The seven options of section 8 stay as the record.
+
+**Proposed follow-up (text only, not filed; nothing in it is built or measured).** Change what follows a cut ask: in the later calls of a task, compact or drop a refused final answer, so an ask added by the cap does not carry the whole refused answer into every later call. Then measure v3 with a cap again on the lab and on the Asset Manager and Invoice journeys.

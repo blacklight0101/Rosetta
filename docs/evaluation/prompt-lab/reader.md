@@ -1,5 +1,7 @@
 # Round log: the reader prompts (P10-05)
 
+**Current read-more prompt: `reader/read-more.v2.md` (DEC-246, 2026-11-15).** After the journeys of P10-13, the read-more refusal went back to v2 with no line cap; v3 stays in the prompts folder ([read-more-cap.md](read-more-cap.md) section 9). The rest of this page is the P10-05 record.
+
 Status 2026-11-14 (fix round after the verification of #1410): **`reader/read-more.v3.md` is kept; every other reader version stays current.** The first measure of RF-1410 could not fail; it was rewritten to grade what a tool turn gives the run's read gate (section 1), and round 0 was run again on it. `reader/read-more` went through four Haiku rounds and `reader/turns-left` through three; v3 (round 4 of `read-more`) beats v2 on matched held-back runs of Haiku (twice), Sonnet and Opus 5.5 (section 6). **The card's done-when is not met in full:** only `read-more` and `turns-left` had three Haiku rounds or more; the other six wired prompts had round 0 on the new measure and no round (section 5 says why), and `reader/workbook` has no committed set. Spend: **$4.1303 of the $7.00 slice** in all (target calls $2.7559, judge $1.3744); the shared ledger, which includes the other builder's spend, stood at $20.89 after the last run.
 
 Run ids are folders of `lab-out/` (git-ignored) and all have the prefix `20261114-`. No answer text is quoted beyond a few words. Runs before `020252` were scored with the first measure and are superseded; section 8 lists them.
@@ -144,7 +146,7 @@ Count check: every run planned and ran cases times repetitions (for example `rea
 - **`cards/card-format` and `NoCards`**: its target still labels a problem-free empty list `Unusable`.
 - **The `area` system prompt** (in every reader call) needs a multi-turn replay or the end-to-end check of P10-11.
 - **`reader/workbook`** needs a committed set before any round.
-- **The later cost of `read-more.v3`** (P10-11: Asset Manager over the +15% of DEC-235 (c); a served line costs about 22.5 tokens, not 12): P10-13 caps the lines `read_file` serves per read-more ask at 350 in code (DEC-239, RF-1414) and keeps v3; the arithmetic, the lab rounds and the journeys are in [read-more-cap.md](read-more-cap.md). The journeys found it within +15% on Asset Manager and eShop and over on the last call of Invoice's asked task, where the cap added an ask, so the keep of 350 goes to the owner.
+- **The later cost of `read-more.v3`** (P10-11: Asset Manager over the +15% of DEC-235 (c); a served line costs about 22.5 tokens, not 12): P10-13 caps the lines `read_file` serves per read-more ask at 350 in code (DEC-239, RF-1414) and keeps v3; the arithmetic, the lab rounds and the journeys are in [read-more-cap.md](read-more-cap.md). The journeys found it within +15% on Asset Manager and eShop and over on the last call of Invoice's asked task, where the cap added an ask. DEC-246 then made `read-more.v2` current again with no cap (the cap stays in the code, off unless set), and v3 stays in the repository.
 
 ## 8. Superseded and free runs
 
