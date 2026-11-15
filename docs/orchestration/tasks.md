@@ -20,8 +20,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | P7 Evaluation fixes          | 38      | 6         | 26         | 6         | 0                  | 7       | 25      | 6      | 3          | 0         |
 | P8 Evaluation fixes, round 2 | 143     | 5         | 125        | 13        | 0                  | 104     | 32      | 7      | 56         | 24        |
 | P9 Evaluation fixes, round 3 | 19      | 4         | 13         | 2         | 0                  | 17      | 2       | 0      | 6          | 0         |
-| P10 Prompt lab               | 13      | 0         | 11         | 2         | 0                  | 3       | 8       | 2      | 0          | 0         |
-| **Total**                    | **665** | **127**   | **485**    | **53**    | **0**              | **350** | **286** | **29** | **324**    | **24**    |
+| P10 Prompt lab               | 14      | 0         | 12         | 2         | 0                  | 4       | 8       | 2      | 0          | 0         |
+| **Total**                    | **666** | **127**   | **486**    | **53**    | **0**              | **351** | **286** | **29** | **324**    | **24**    |
 
 ## Conventions for every card
 
@@ -10085,6 +10085,20 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Delivers**: the cap (code, prompt or both), its requirement if in code, `docs/evaluation/prompt-lab/read-more-cap.md` linked from `reader.md`.
 - **Done when**: the cap is measured in the lab and on the two journeys and the write-up says, under the keep rules, whether it is kept; if it cannot meet +15% without losing the RF-1410 gain, the choice is set out for the owner. Budget slice: $1.50 (model calls, lab and stack together; stop at $1.30), raised by the owner to $4.50 on 2026-11-15 (stop at $3.80) to run eShop too.
 - **Refs**: DEC-239; DEC-235, DEC-238; P10-05, P10-11; GitHub issue #1390
+
+### P10-15 - Make masked-value v2 the active version
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P10-10
+- **Gate**: owner (the owner's ruling of 2026-11-15, "Keep v2 by ruling", DEC-244)
+- **Status**: In review (2026-11-15: `prompts/shared/masked-value.v2.md` restored with the landed text of P10-10 and made the active note, `v1` kept; scope: the note is no call of its own but the text after every masked value in the reader's turns, found in 4 of 8 `cards-card-format` and 3 of 6 `reader-turns-left` cases (all eShop), and in the verifier's claim and retry calls on every plain-text-secret claim (not measured: no verifier set holds a masked case; a verifier set with masked cases is proposed as a follow-up), and in the logs, run files and report Rosetta writes; input cost on Haiku about 46 tokens a note, +1.0% and +0.6% per call over those sets (the +2% stop line read per set), +1.3% to +3.9% on the calls that hold a note; the owner kept v2 after the scope (DEC-247); RF-141 Given first, red `test:` commit, then the change; lab spend $0.034 of $0.50; figures in `docs/evaluation/prompt-lab/shared.md` section 5)
+- **Evidence**: P10-10 (`docs/evaluation/prompt-lab/shared.md` section 2b): v2 raised the judge from 4.0 to 4.6 and secret-handling from 2.5 to 4.8 on Haiku with no `Leaked`, but output +23.1% and latency +25.6% failed DEC-235 (c), so `v1` was kept. The owner ruled that the security gain outweighs the cost (DEC-244).
+- **Reads**: `shared.md` sections 2 and 2b, DEC-235, DEC-236, DEC-244, RF-141, `src/infrastructure/prompts/masked-value-prompt.ts`, `prompt-files.ts`, commit `1d591365c`.
+- **Do**: find how the note reaches the model calls and measure the input it adds on the most frequent families (stop and report before wiring if it is over +2% on one); then restore v2 and make it active as other kept versions were, with `v1` kept and the committed lab sets left on their note (DEC-236); the Given of RF-141 first, a red `test:` commit, then the change.
+- **Delivers**: `prompts/shared/masked-value.v2.md` active, its tests, RF-141, `docs/architecture.md`, the runbook, section 5 of `shared.md`.
+- **Done when**: v2 is the note every masked value gets, the scope and input cost are written down, and the pull request is green. Budget slice: $0.50 (lab only; stop at $0.45).
+- **Refs**: DEC-244, DEC-247; DEC-235, DEC-236; P10-10; RF-141; GitHub issue #1390
 
 ### P10-12 - Phase 10 report and the owner's review
 

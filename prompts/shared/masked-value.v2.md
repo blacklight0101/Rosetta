@@ -1,0 +1,1 @@
+[MASKED:{{kind}}] (a secret value is written here in plain text in the code, Rosetta masked it before sending, report it at this line, never ask for or repeat the value, and say that it is exposed and must move to a secret store and be replaced)

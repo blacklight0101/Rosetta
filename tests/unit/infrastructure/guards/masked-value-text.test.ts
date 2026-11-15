@@ -5,6 +5,7 @@ import {
   loadMaskedValuePrompt,
   maskedValueReplacement,
 } from '../../../../src/infrastructure/prompts/masked-value-prompt.js';
+import { loadPromptFile } from '../../../../src/infrastructure/prompts/prompt-files.js';
 import { fakePassword, configText } from '../../../support/masked-secret-fixtures.js';
 
 // P5-34, RF-141, RNF-004: the text a masked value is replaced with tells the model that a secret
@@ -29,8 +30,8 @@ describe('the replacement text of a masked value', () => {
   it('P5-34 comes from a versioned prompt file with the kind as its one placeholder', async () => {
     const file = await loadMaskedValuePrompt('prompts');
 
-    expect(file.name).toBe('shared/masked-value.v1.md');
-    expect(file.version).toBe('v1');
+    expect(file.name).toBe('shared/masked-value.v2.md');
+    expect(file.version).toBe('v2');
     expect(file.text.split('{{kind}}')).toHaveLength(2);
   });
 
@@ -70,6 +71,23 @@ describe('the replacement text of a masked value', () => {
     const note = file.text.slice(file.text.indexOf('('));
 
     expect(note).not.toMatch(/[;"'/<=:`]/u);
+  });
+});
+
+describe('the note of masked-value v2 (P10-15, DEC-244)', () => {
+  it('P10-15 tells the model to report it, never repeat it, and that it must move and be replaced', async () => {
+    const masked = (await explained()).mask(configText).text;
+
+    expect(masked).toMatch(/report it at this line/u);
+    expect(masked).toMatch(/never ask for or repeat the value/u);
+    expect(masked).toMatch(/exposed and must move to a secret store and be replaced/u);
+  });
+
+  it('P10-15 keeps v1 in the repository, loadable by its name', async () => {
+    const file = await loadPromptFile('prompts', 'shared/masked-value.v1.md');
+
+    expect(file.version).toBe('v1');
+    expect(file.text).not.toMatch(/secret store/u);
   });
 });
 
