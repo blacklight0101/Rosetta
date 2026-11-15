@@ -6,15 +6,16 @@ Card P10-12, 2026-11-15, for the owner's review. Phase 10 (DEC-231, opened 2026-
 
 ## Summary
 
-**Kept: two prompt versions and one code cap.**
+**Kept: two prompt versions under the keep rule, one by the owner's ruling, and one code cap.**
 
 - `reader/read-more.v3` (P10-05, owner ruling DEC-238): it reads 12% to 25% more new lines at the read-more turn on every model, with cost per call within +2%.
 - `verifier/claim.v6` (P10-06): fewer retried answers (Haiku 10% to 0%, Sonnet 10% to 3% on held-back), cost per run -11% to -23%, agreement not lower on any model.
+- `shared/masked-value` v2: kept by the owner's ruling (DEC-244), wired in P10-15. In the lab it failed DEC-235 (c) on Haiku (output +23.1%, latency +25.6%, cost +18.7% per call) for secret-handling 2.5 to 4.8; the owner ruled that the gain outweighs the cost on a small, rare call.
 - A cap of 350 lines that `read_file` serves per read-more ask, in code (P10-13, owner ruling DEC-239 "Add a line cap", RF-1414). It bounds the later calls that v3 made larger. 350 is the number merged; the final number follows the rule of DEC-242. Its journey check is **pending P10-13 journeys**.
 
 **Not kept: every other candidate.** Most failed one condition of the keep rule (DEC-231, DEC-235, DEC-237):
 
-- a rise of more than 15% in output tokens or latency (`shared/masked-value` v2, `planner/plan-repair` v3 on Sonnet);
+- a rise of more than 15% in output tokens or latency (`planner/plan-repair` v3 on Sonnet; `shared/masked-value` v2 too, kept afterwards by the owner's ruling);
 - a regression on one model (`cards/continue`, gap, gap repair and card repair candidates);
 - no deterministic gain where the judge is only advisory (plan document prompts at 100% valid first try).
 
@@ -24,7 +25,7 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 
 **Spend.** The shared lab ledger holds **$26.1283** settled. The `rosetta-p10` stack spent **$2.523** more (P10-11). Phase 10 so far: **$28.65 of $50**, $11.35 under the $40 stop line. The P10-13 journeys are not yet in it (their slice is $4.50, DEC-241). Details in [Spend](#spend).
 
-**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243). Left for the owner: this report, the judge sample, the `shared/masked-value` v2 candidate and the release. **Nothing of Phase 10 is released.**
+**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243); the judge-sample default stands and `shared/masked-value` v2 is kept by ruling (DEC-244). Left for the owner: this report, the release after the P10-D6 fix, and two questions from the P10-14 builder (8 and 9). **Nothing of Phase 10 is released.**
 
 ## How to read this folder
 
@@ -47,17 +48,17 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 
 ### Shared prompts (P10-10, #1401, #1406)
 
-**Kept: nothing.** `shared/masked-value.v1` and `shared/text-tool-protocol.v1` stay. `shared/secret-risk` has no model call.
+**Kept: `shared/masked-value` v2, by the owner's ruling (DEC-244), wired in P10-15.** Under the keep rule nothing was kept: v2 fails DEC-235 (c), and the owner kept it as an exception. `shared/text-tool-protocol.v1` stays. `shared/secret-risk` has no model call.
 
 **What changed in the lab.** The masked-value call is now the last turn, with no tools, so the answer is graded (RF-1406). Before, Haiku read more on 4 of 5 cases and the judge vetoed the empty answer.
 
-| Prompt, model                    | Before (current)                                          | After (best candidate)                                    | Result                                     |
-| -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------ |
-| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | not kept: (c) fails, output, latency, cost |
-| masked-value, Sonnet (2 calls)   | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +15.2%              | indicative only                            |
-| masked-value, Opus (2 calls)     | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +11.6%              | indicative only                            |
-| text-tool-protocol, Haiku (tune) | v1: bare-JSON break 5 of 20 first turns                   | v2r3: 2 of 20                                             | candidate                                  |
-| text-tool-protocol, Haiku (held) | v1: `ReadsFiles` 5 of 5                                   | v2r3: 3 of 5, input +3.0%                                 | not kept: regression                       |
+| Prompt, model                    | Before (current)                                          | After (best candidate)                                    | Result                                                           |
+| -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | (c) fails; kept by the owner's ruling (DEC-244), wired in P10-15 |
+| masked-value, Sonnet (2 calls)   | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +15.2%              | indicative only                                                  |
+| masked-value, Opus (2 calls)     | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +11.6%              | indicative only                                                  |
+| text-tool-protocol, Haiku (tune) | v1: bare-JSON break 5 of 20 first turns                   | v2r3: 2 of 20                                             | candidate                                                        |
+| text-tool-protocol, Haiku (held) | v1: `ReadsFiles` 5 of 5                                   | v2r3: 3 of 5, input +3.0%                                 | not kept: regression                                             |
 
 Sonnet and Opus were not run on the text-tool protocol, since nothing was kept. No `Leaked` outcome in any run.
 
@@ -199,7 +200,7 @@ EV-100 (Continue then plan) and EV-108 (requirements built by no card) are fixed
 
 The judge (Opus 5.5) agreed with all 12 calibration claims. Its overall score was in the same band as the hand score for verifier 3 of 3, shared 3 of 3, reader 2 of 3, summariser 2 of 3, cards 1 of 3 and planner 1 of 3. So it is trusted for the verifier and shared families, used with care for reader and summariser, and advisory for cards and planner. The hand scores were written by a builder, so the agreement is with one builder's opinion until the owner has read the sample.
 
-**Please read [judge-sample.md](judge-sample.md)** (section "For the owner"): the 18 samples, the samples where the judge differs most (`cards-write-good`, `planner-data-good`), the verifier grounding gap, and whether the proposed default of 80% stands. Question 6 below asks for the answer.
+**Please read [judge-sample.md](judge-sample.md)** (section "For the owner"): the 18 samples, the samples where the judge differs most (`cards-write-good`, `planner-data-good`), the verifier grounding gap, and whether the proposed default of 80% stands. The owner kept the default (DEC-244 a, question 6 below).
 
 ## Spend
 
@@ -257,27 +258,29 @@ The P10-13 slice is $4.50 (DEC-241), of which $0.4212 is spent. If the journeys 
 
 ## Owner questions left
 
-The owner answered questions 1 to 5 on 2026-11-15 (DEC-242, DEC-243). Questions 6 and 7 are still open; each has a default, which stays if you do not answer.
+The owner answered questions 1 to 7 on 2026-11-15 (DEC-242, DEC-243, DEC-244). Questions 8 and 9 came later from the P10-14 builder (#1416) and are open; each has a default, which stays if you do not answer.
 
 1. **The final read-more cap** (P10-13). **Answered (DEC-242):** the owner delegated the choice to the orchestrator, with a rule. Take the largest cap that keeps every app measured in the P10-13 journeys within the +15% of DEC-235 (c), on both the call after the reads and the last call of an asked task, with no rise in failed tasks or wasted repeats: 350 lines with v3 if it holds on Asset Manager, Invoice and eShop; 300 with v3 if any app is over; v2 with a cap if 300 cannot hold either. **Chosen cap: pending P10-13 journeys.**
 2. **The $2.12 booked for rejected calls.** P10-03's first judge check ran with a key Anthropic rejected (RST-1518); nothing was answered, but the ledger settled the calls at their worst case, $2.1247. **Answered (DEC-243 c):** it counts toward the Phase 10 total, $28.65 so far.
 3. **Re-capture the local lab sets** (`lab/local-cases/`, the Asset Manager and Invoice workbook sets, never committed). They were captured before the second round of lab fixes and may hold twins, an older split and text the masker now masks. **Answered (DEC-243 d):** they are re-captured at the start of the next tuning round, not now, so the comparisons of Phase 10 stay valid.
 4. **P10-D6 (plan regression, major): priority.** **Answered (DEC-243 a):** P10-D6 is the next card, before P9-18 and P9-19.
 5. **Release Phase 10 to `main`.** Nothing of Phase 9 or Phase 10 is released. **Answered (DEC-243 b):** Phase 10 is released to `main` after the P10-D6 fix is merged; the release stays the owner's (DEC-175).
-6. **The judge sample** ([judge-sample.md](judge-sample.md)). Does the proposed default stand (80% of calibration claims and 80% within one point per criterion), and may a family below it use the judge as advisory only? Default: yes to both, as Phase 10 applied it.
-7. **`shared/masked-value` v2.** It raises secret-handling from 2.5 to 4.8 but adds about 23% output tokens per masked-value answer, over DEC-235 (c). Options: (a) leave v1; (b) keep v2 by a ruling; (c) try a shorter wording in a later card. Default: (a).
+6. **The judge sample** ([judge-sample.md](judge-sample.md)). **Answered (DEC-244 a):** the default stands. The judge is trusted for a family at 80% of calibration claims and 80% within one point per criterion; a family below that uses the judge as advisory only, as Phase 10 applied it.
+7. **`shared/masked-value` v2.** It raises secret-handling from 2.5 to 4.8 on Haiku but adds about 23% output tokens per masked-value answer, over DEC-235 (c). **Answered (DEC-244 b):** v2 is kept by the owner's ruling, as an exception to DEC-235 (c), because the secret-handling gain outweighs +23% output on a small, rare call. Wiring it is card P10-15, in its own pull request; if that card finds the change reaches many calls, the owner gets the facts before it merges.
+8. **Behaviour kept by no task card: fail or report?** (from the P10-14 builder, #1416). Should a plan whose `checks.md` lists behaviour kept by no task card fail the run (RST-1806), as a requirement built by no card does, rather than only report it? Options: (a) report it only; (b) fail the run. Default: (a), reported only.
+9. **A requirement that cites an out-of-scope journey** (from the P10-14 builder, #1416). Should it be flagged as inconsistent? Options: (a) list it as now; (b) flag it as inconsistent. Default: (a), listed as now.
 
 ## Proposed follow-up cards
 
-Proposals only: no GitHub issue and no task card is filed. Each line gives its source.
+Proposals only: no GitHub issue and no task card is filed by this report. Each line gives its source. Carded since the report was written: **P10-14**, the P10-D6 fix, which also carries P10-D7 (PR #1416, in review), and **P10-15**, wiring `shared/masked-value` v2 (DEC-244), in its own pull request.
 
 1. P10-D1: `read-more.v3` over +15% per call on Asset Manager; now P10-13 (DEC-239), left: a real run on Sonnet and Opus before it becomes their default (#1413).
 2. P10-D2: `verifier/claim.v6` reasons above 150 characters and three verdicts on the context margin; add held-back cases where only the margin shows the claim (#1413).
 3. P10-D3: the data-model check of `checks.md` lists a deployment placeholder token as a missing table (#1413).
 4. P10-D4: field-presence claims counted apart from the verifier's verdicts; repeat the Asset Manager understand for the feature-card yield (#1413).
 5. P10-D5: the DEC-228 env-file order and an evaluation-stack runbook (#1413).
-6. P10-D6 (major): behaviour kept by no task card grew on eShop (14 to 98 items); find the cause (gap.v5 against v6) and give each cited item a task card or state it as left out (#1413). The next card (DEC-243 a), carded separately.
-7. P10-D7: data-model "dropped" entries rejected by the schema when one entry lists many fields (#1413).
+6. P10-D6 (major): behaviour kept by no task card grew on eShop (14 to 98 items); find the cause (gap.v5 against v6) and give each cited item a task card or state it as left out (#1413). **In P10-14** (#1416, in review), the next card (DEC-243 a).
+7. P10-D7: data-model "dropped" entries rejected by the schema when one entry lists many fields (#1413). **In P10-14** (#1416).
 8. P10-D8: a summariser answer cut at the output limit skips its batch's merges (#1413).
 9. The sqlcmd masker redesign, on branch `task/p10-masker-gaps`, with a 674-entry corpus (no pull request yet).
 10. Mask before JSON serialization in `src/infrastructure/lab/lab-files.ts`, `cost-report-files.ts`, `calibration-files.ts` and `evaluation-files.ts`; masking the text of `JSON.stringify` broke two `results.json` files (#1406).
