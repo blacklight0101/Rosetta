@@ -10086,6 +10086,20 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Done when**: the cap is measured in the lab and on the two journeys and the write-up says, under the keep rules, whether it is kept; if it cannot meet +15% without losing the RF-1410 gain, the choice is set out for the owner. Budget slice: $1.50 (model calls, lab and stack together; stop at $1.30).
 - **Refs**: DEC-239; DEC-235, DEC-238; P10-05, P10-11; GitHub issue #1390
 
+### P10-14 - Keep every cited behaviour in a task card
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P10-11
+- **Gate**: owner (the owner's ruling: the next card, and Phase 10 is released to `main` only after it is merged)
+- **Status**: In review (2026-11-15: cause found in code, not in a prompt: the P5-41 narrowing drops a `FEAT` card that a requirement cites but no PRD feature traces to from every card that builds some other feature (60 of the 98 eShop items), and the migrations card listed a requirement with a feature behind it, so it counted as built and the gap round never asked for it (33 items); fix in code (RF-627, RF-631) with `checks.md` naming behaviour gaps under "Plan coverage", and P10-D7 (a dropped field up to 300 characters, RF-623); expected 98 to 5 on the P10-11 package; **eShop re-plan pending** the `rosetta-p10` stack; spend $0.00 of $2.00; write-up in `docs/evaluation/prompt-lab/plan-coverage.md`)
+- **Evidence**: P10-11 (`docs/evaluation/prompt-lab/end-to-end.md`, P10-D6): the eShop "Behaviour kept by no card" grew from 14 items of 2 cards (P8w3) to 98 items of 13 cards, under a coverage summary that read "every feature ... is built"; P10-D7: 7 data-model dropped entries rejected by the 80-character name limit.
+- **Reads**: `end-to-end.md` P10-D6 and P10-D7, RF-623, RF-627, RF-631, `src/domain/planning/behaviours-to-keep.ts`, `plan-coverage.ts`, `src/application/plan/gap-round.ts`, `src/infrastructure/handoff/handoff-checks-markdown.ts`, the P8w3 and P10-11 eShop packages (aggregates only), `git log bbb696cd8..cb146766a`.
+- **Do**: find the cause with evidence (code path, commit, counts); write the requirement first; red `test:` commit, then the fix, deterministic in code where the cause is in code (a prompt change is a new version measured in the lab under DEC-231, DEC-235, DEC-237 and DEC-238); fix P10-D7 if cheap and clearly correct; when `rosetta-p10` is free, re-plan eShop on Haiku and report "Behaviour kept by no card", task cards, item builds and plan stats against P8w3 and P10-11.
+- **Delivers**: the fix and its requirement, `docs/evaluation/prompt-lab/plan-coverage.md`.
+- **Done when**: every behaviour a requirement cites is kept by a card or listed in `checks.md` with the coverage summary saying so, the eShop re-plan figures are written down, and the pull request is green. Budget slice: $2.00 (lab and stack together; stop at $1.80).
+- **Refs**: P10-D6, P10-D7; P10-11; RF-623, RF-627, RF-631; GitHub issue #1390
+
 ### P10-12 - Phase 10 report and the owner's review
 
 - **Difficulty**: 6 (sonnet)
