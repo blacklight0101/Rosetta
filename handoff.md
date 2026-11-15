@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 and its follow-ups P9-14..P9-17 are built and merged into `develop` and not released; P9-18 and P9-19 are held; Phase 10, the prompt lab, is carded (DEC-231). The latest state is the first entry of the resume point below._
+_Last updated 2026-11-15. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 and its follow-ups P9-14..P9-17 are built and merged into `develop` and not released; P9-18 and P9-19 are held until Phase 10 is finished (DEC-233); Phase 10, the prompt lab, is built and merged into `develop` and not released, and its report waits for the owner ([prompt-lab README](docs/evaluation/prompt-lab/README.md)). The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-231.
+- `docs/decision-log.md` - decisions DEC-01..DEC-243.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -29,6 +29,17 @@ _Last updated 2026-11-13. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-15, Phase 10 built, report for the owner).** Phase 10, the prompt lab (DEC-231), is merged into `develop` and nothing is released. `develop` is at `d2349f9ba` (P10-13, #1414); the P10-12 report is in review, waiting on the P10-13 journeys. Merged: P10-01 #1392, P10-02 #1393, P10-03 #1394 and #1399, P10-04 #1403 and #1405, P10-10 #1401 and #1406, P10-08 #1396 and #1408, P10-09 #1397 and #1409, P10-05 #1395 and #1410, P10-07 #1398 and #1411, P10-06 #1412, P10-11 #1413, P10-13 #1414; lab fixes #1400 and #1402; decisions #1407. Kept: `reader/read-more.v3` (DEC-238) and `verifier/claim.v6`, and a cap of 350 lines per read-more ask in code (DEC-239, RF-1414); every other prompt stays at its version. End to end on the new stack the three comparable journeys cost 11% less than on 2026-11-09; EV-100 and EV-108 are fixed; the eShop plan keeps less behaviour in its task cards (P10-D6, major). Spend: the shared lab ledger holds $26.1283 settled (two holds of 2026-11-13 21:30 UTC, $0.136, never settled and not counted) and the stack $2.523, so $28.65 of the $50, $11.35 under the $40 stop line. Still open: P10-13's journeys on Asset Manager, Invoice Generator and eShopModernizing (slice $4.50, DEC-241), then P10-12 is filled in and merged. On 2026-11-15 the owner allowed as many builders and verifiers as needed for that day (DEC-240). P9-18 and P9-19 come after Phase 10 (DEC-233). The report is [docs/evaluation/prompt-lab/README.md](docs/evaluation/prompt-lab/README.md).
+
+Stacks running: `rosetta-p10` on `127.0.0.1:18098` (built by P10-11 from `cb146766a`; the P10-13 journeys rebuild it from their branch and leave it running). No other stack was touched.
+
+The owner answered the Phase 10 questions on 2026-11-15. The final read-more cap is chosen by the orchestrator under the owner's rule once the P10-13 journeys report: the largest of 350 or 300 lines with v3 that keeps every app within +15% on the call after the reads and the last call of an asked task, else v2 with a cap (DEC-242). P10-D6 is the next card, before P9-18 and P9-19; Phase 10 is released to `main` after the P10-D6 fix is merged; the $2.12 of the rejected key counts toward the Phase 10 total; the local lab sets are re-captured at the start of the next tuning round (DEC-243). The P10-D6 card is being added separately. The other 25 proposed follow-ups are listed in the report and none is filed.
+
+Owner agenda from Phase 10:
+
+- **Review the report** ([docs/evaluation/prompt-lab/README.md](docs/evaluation/prompt-lab/README.md)), with the judge sample (`docs/evaluation/prompt-lab/judge-sample.md`) and the `shared/masked-value` v2 candidate (its questions 6 and 7, defaults stated there).
+- **The release** of Phase 10 to `main` after the P10-D6 fix is merged (`develop` also holds Phase 9 and its follow-ups); releases are the owner's (DEC-175).
 
 **Resume (2026-11-13, Phase 9 follow-ups built, Phase 10 carded).** On the owner's word (DEC-230) the held follow-ups were built with two builders and two verifiers and merged into `develop`, none released: P9-17 #1373 (the stress job skips release pull requests), P9-16 #1374 (Resume keeps a run in the journey it was queued under), P9-15 #1375 (the plan checks its data model against the planner's decision records and lists missing tables in checks.md; a cap refusal of that call keeps the package), P9-14 #1376 (the Phase 9 minor findings; a second QueueCancel in one life stays accepted). P9-15 and P9-14 each needed a second round. The owner questions of each card are in its pull request with the default built (P9-14 Q1-Q5, P9-15 Q1-Q4). New held follow-ups: P9-18 (Resume takes the project lock; stop-path tests of the data model check) and P9-19 (first-call warnings beside the approved amount). The owner opened Phase 10, the prompt lab (DEC-231): $50 in all with a stop at $40, Haiku tuned deeply, Sonnet less, Opus least, Opus as the judge with an owner sample, the end-to-end check on a new stack `rosetta-p10`. Twelve cards P10-01..P10-12 (issues #1379..#1390): the lab and its spend ledger, case sets from the three public repositories, the judge and rubrics, a baseline, five tuning cards by prompt family, the end-to-end check and the report.
 
