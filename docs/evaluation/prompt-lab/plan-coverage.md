@@ -1,6 +1,6 @@
 # Plan coverage: behaviour kept by no card (P10-14)
 
-Status 2026-11-15: **fixed in code, no prompt changed.** The cause of P10-D6 is in the code that decides which behaviour a task card keeps, not in a prompt, so no lab round was run. The eShopModernizing re-plan on the `rosetta-p10` stack is **pending stack** (section 4).
+Status 2026-11-15 (fix round 1): **fixed in code, no prompt changed.** The cause of P10-D6 is in the code that decides which behaviour a task card keeps, not in a prompt, so no lab round was run. The eShopModernizing re-plan on the `rosetta-p10` stack is **pending**: the stack's server month cap stopped it (section 4).
 
 Only aggregate figures and card ids of the public eShopModernizing sample are written here. The Asset Manager and Invoice packages were not opened; their counts are those of `end-to-end.md`.
 
@@ -77,7 +77,13 @@ The REQ-023 gap card adds its own 33. On P8w3 the owner rule gives 1214 to 1228:
 
 ## 4. Real run
 
-Pending stack: `rosetta-p10` was busy with the P10-13 journeys. To do when it is free: rebuild it from this branch, re-run only the eShop plan on Haiku from the P10-11 Deepen, and report "Behaviour kept by no card" (98 to ?), the task cards, the item builds and the judge-free plan stats (`p7-planstats.mjs`) against P8w3 and P10-11.
+**Not yet measured: the stack's server month cap stopped the re-plan.**
+
+- `rosetta-p10` was rebuilt from this branch at `5256ddab4` (image created 2026-11-15 11:07 UTC, volumes kept) and is left running on that build.
+- The eShop plan was started on Haiku from the P10-11 Deepen (`20261114-130936-understand`), with the P10-11 brief and plan options.
+- Run `20261115-110852-plan` ended `CapReached` (RST-1600) after 3 calls and $0.4765, on the server month cap of $5.60 that P10-11 set as a hard guard ($5.594 spent on the stack).
+- The run's three answers (package, PRD, data model) are kept, so a resume after the cap is raised does not pay for them again.
+- Still to report: "Behaviour kept by no card" (98 to ?), the task cards, the item builds and the judge-free plan stats (`p7-planstats.mjs`) against P8w3, P10-11 and the P10-13 run.
 
 The baselines, judge-free (the P10-14 column is filled by the re-plan):
 
@@ -94,4 +100,4 @@ The baselines, judge-free (the P10-14 column is filled by the re-plan):
 
 ## 5. Spend
 
-$0.00 of the card's $2.00: no lab run (no prompt changed) and no stack run yet.
+$0.4765 of the card's $2.00, all on the stack (the capped plan run above); no lab run (no prompt changed).
