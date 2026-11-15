@@ -123,12 +123,12 @@ describe('the line cap of a read-more turn', () => {
 
   it('RF-1414 counts a read again in the cap, as every served line stays in the context', () => {
     const earlier = [read('shop/Big.cs', 1, 300)];
-    const turn = toolTurnOf([read('shop/Big.cs', 1, 300), read('shop/Big.cs', 301, 400)], {
+    const turn = toolTurnOf([read('shop/Big.cs', 2, 300), read('shop/Big.cs', 301, 400)], {
       ...capped,
       earlier,
     });
 
-    expect(turn).toMatchObject({ newLines: 50, cutLines: 50, stale: 1, areaReads: 1 });
+    expect(turn).toMatchObject({ newLines: 51, cutLines: 49, stale: 1, areaReads: 1 });
   });
 
   it('RF-1414 cuts nothing without a cap and records no cut lines', () => {

@@ -3,13 +3,15 @@ import type { ToolCall } from '../ports/llm-provider.js';
 import type { AgentTaskEnd } from './agent-task-result.js';
 import type { RepeatedCall } from './retry-note.js';
 import type { AgentToolSet } from './agent-tool-set.js';
-import type { ReadGate } from './read-gate.js';
+import { readMoreLines, type ReadGate } from './read-gate.js';
+import { servedLines, spentMessage, withinBudget } from './read-budget.js';
 import type { ToolCallIds, ToolOutcome } from './read-only-tools.js';
 import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
 
 // RF-201, RF-206: the tool calls of one task. It runs each call through the task's tools, answers a
 // call made twice with the same arguments without running it again, counts the errors and the
 // calls of unknown tools, tells the read gate what each call gave, and says when the model loops.
+// RF-1414: after a read-more ask, `read_file` is cut to the lines the ask's budget has left.
 
 /** A model that repeats one call this often, or names unknown tools this often, is stopped. */
 const maxRepeatedCalls = 3;
@@ -39,10 +41,21 @@ export class ToolRunner {
     const outcome =
       isReaderToolName(name) && this.isRepeat(name, call.arguments)
         ? this.repeatedOutcome(name)
-        : await this.tools.run(call, ids);
+        : await this.runWithinBudget(call, ids);
     if (outcome.error !== undefined) this.toolErrors += 1;
     if (outcome.error?.code === ERROR_CODES.toolUnknown) this.unknownCalls += 1;
     this.gate.note(outcome);
+    return outcome;
+  }
+
+  /** RF-1414: runs the call cut to the lines the read-more budget has left, and counts what it served. */
+  private async runWithinBudget(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome> {
+    const within = withinBudget(call, this.gate.linesLeftToRead());
+    if (within === 'spent') {
+      return { content: this.tools.renderBlock('read_file', spentMessage(readMoreLines)) };
+    }
+    const outcome = await this.tools.run(within, ids);
+    if (call.name === 'read_file') this.gate.served(servedLines(outcome));
     return outcome;
   }
 

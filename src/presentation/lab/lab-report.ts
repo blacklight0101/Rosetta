@@ -70,7 +70,8 @@ function turnLines(summary: LabSummary): string[] {
       ? ''
       : `, ${String(turns.reachedHalf)} of ${String(turns.shareTurns)} reach half`;
   const calls = `${two(turns.calls)} calls, ${two(turns.areaReads)} area reads, ${two(turns.searches)} searches, ${two(turns.stale)} stale, ${two(turns.unlisted)} unlisted, ${two(turns.repeats)} repeats, ${two(turns.relists)} relists`;
-  const lines = `${turns.newLines.toFixed(1)} new lines, share gain ${(turns.shareGain * 100).toFixed(1)} points`;
+  const cut = turns.cutLines > 0 ? ` (${turns.cutLines.toFixed(1)} cut by the line cap)` : '';
+  const lines = `${turns.newLines.toFixed(1)} new lines${cut}, share gain ${(turns.shareGain * 100).toFixed(1)} points`;
   return [
     `Per tool turn (${String(turns.turns)} turns): ${calls}; ${lines}${generated}${aimed}${half}`,
   ];

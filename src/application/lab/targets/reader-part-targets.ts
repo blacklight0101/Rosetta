@@ -1,5 +1,6 @@
 import { err, ok, type Result } from '../../../domain/errors/result.js';
 import type { PromptFile } from '../../agent/prompt-file.js';
+import { readMoreLines } from '../../agent/read-gate.js';
 import { readerToolDefinitions } from '../../agent/tool-definitions.js';
 import {
   readerPlaceholders,
@@ -49,6 +50,8 @@ interface Spec {
   readonly cards: boolean;
   /** RF-1410: the files the prompt points the reads at, when it points at some. */
   readonly aim?: (input: ReaderPartCase) => TurnScope['aim'];
+  /** RF-1414: the lines `read_file` may serve in the turn, as a run cuts them after the prompt. */
+  readonly lineCap?: number;
 }
 
 const missing = (what: string): string => `a case for this prompt needs ${what}`;
@@ -81,7 +84,7 @@ function afterShortRead(
   if (facts === undefined) return [];
   const filesBlock = blockOf('list_area_files', facts.unread.join('\n'), env.ids.dataBlockTag());
   const turns = Math.max(1, input.turns - 1);
-  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns, lines: 0 });
+  const content = readMoreMessage(prompts, { ...facts, filesBlock, turns, lines: readMoreLines });
   return [
     ...replayedTurn(input, prompts, env),
     { role: 'assistant', content: PREMATURE_ANSWER },
@@ -120,6 +123,7 @@ const specs: readonly Spec[] = [
     messages: afterShortRead,
     cards: false,
     aim: (input) => ({ kind: 'unread', paths: new Set(input.readMore?.unread ?? []) }),
+    lineCap: readMoreLines,
   },
   {
     id: 'reader/reread',
@@ -181,7 +185,7 @@ function preparedOf(spec: Spec, input: ReaderPartCase, current: ReaderPrompts): 
       const shareBefore = input.readMore === undefined ? null : input.readMore.percent / 100;
       return readerFirstTurn(asked.value, {
         ...{ files: input.files, earlier: earlierCalls(messages) },
-        ...{ aim, shareBefore },
+        ...{ aim, shareBefore, lineCap: spec.lineCap ?? null },
       });
     },
   };

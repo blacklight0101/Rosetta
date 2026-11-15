@@ -64,6 +64,8 @@ export const readerPlaceholders = {
   readMoreTotal: '{{total}}',
   readMoreFiles: '{{files}}',
   readMoreTurns: '{{turns}}',
+  /** RF-1414: the line budget of the ask; read-more v4 holds it, earlier versions do not. */
+  readMoreLines: '{{lines}}',
 } as const;
 
 /** The same on every turn, so providers that cache a stable prefix charge less for it. */
@@ -133,7 +135,7 @@ export interface ReadMoreFacts {
   readonly lines: number;
 }
 
-/** Q-50: the refusal of an answer given after reading little of the area. */
+/** Q-50: the refusal of an answer given after reading little of the area, with its line budget (RF-1414). */
 export function readMoreMessage(prompts: ReaderPrompts, facts: ReadMoreFacts): string {
   // The files block last: it holds repository text, which must not be read as a placeholder.
   return prompts.readMore.text
@@ -141,6 +143,7 @@ export function readMoreMessage(prompts: ReaderPrompts, facts: ReadMoreFacts): s
     .replace(readerPlaceholders.readMoreRead, String(facts.readTokens))
     .replace(readerPlaceholders.readMoreTotal, String(facts.tokens))
     .replace(readerPlaceholders.readMoreTurns, String(facts.turns))
+    .replace(readerPlaceholders.readMoreLines, String(facts.lines))
     .replace(readerPlaceholders.readMoreFiles, () => facts.filesBlock)
     .trimEnd();
 }
