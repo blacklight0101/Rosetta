@@ -5,9 +5,10 @@ import { loadPromptFile, loadPromptFileSync, requirePlaceholder } from './prompt
 // P5-34, RF-141, RNF-004: the text a masked value is replaced with is a versioned prompt file, not
 // a string in code. It starts with `[MASKED:{{kind}}]` (the marker every rule and every reader of a
 // masked text knows) and tells the model that a secret value is written there in the code in plain
-// text and that Rosetta masked it before sending.
+// text and that Rosetta masked it before sending. Since v2 (P10-15, DEC-244) it also tells the model
+// to report it at that line, never repeat it, and that it must move to a secret store and be replaced.
 
-const maskedValuePromptName = 'shared/masked-value.v1.md';
+const maskedValuePromptName = 'shared/masked-value.v2.md';
 
 /** The kind's place in the file; it must hold it exactly once. */
 export const maskedKindPlaceholder = '{{kind}}';
