@@ -1,5 +1,6 @@
 import {
   coverageOf,
+  requirementSources,
   type CoverageDocuments,
   type CoverageItem,
 } from '../../domain/planning/plan-coverage.js';
@@ -70,7 +71,11 @@ export async function gapRound(
   const positions = answer?.positions;
   const taken = addGapTasks(content, answer?.drafts ?? [], open, {
     ...{ specificationDriven, ...(positions === undefined ? {} : { positions }) },
-    itemSources: sourcesWithModules(documents),
+    // P9-06: a card that builds a requirement item lists it, so its sources are the requirement's.
+    itemSources: new Map([
+      ...sourcesWithModules(documents),
+      ...requirementSources(content.requirements),
+    ]),
   });
   const linked = linkedItems(answer, content, taken.content, open);
   const grown = checkedPlan(linked.content, documents);

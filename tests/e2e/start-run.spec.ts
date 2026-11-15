@@ -63,7 +63,7 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
   // P3-79, Q-51: the roles are local, so the estimate is in tokens against the token cap.
   await expect(table).not.toContainText('$');
   await expect(page.getByRole('meter')).toHaveAccessibleDescription(
-    /run token cap of [\d,]+ tokens/u,
+    /approved amount of [\d,]+ tokens/u,
   );
   await expect(page.getByText(/Assumptions: \d+ areas?,/u)).toBeVisible();
   const areas = page.getByRole('group', { name: 'Areas from the code map' }).getByRole('checkbox');
@@ -133,13 +133,15 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expect(page).toHaveURL(/\/runs\//u);
 });
 
-test('RF-1001 a likely estimate above the run cap warns, names the cap and Start stays available', async ({
+test('RF-1001 a project run cap below the likely estimate is not named beside the approved amount and Start stays available', async ({
   page,
 }) => {
   await openStartPage(page);
   const projectId = projectIdOf(page);
-  // RF-436: the cap is the project settings'; the page warns against it and links to it.
-  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  // RF-436: the cap is set in the project settings, opened here because a journey's start page has no
+  // link to them. P9-12, P9-14: the approved amount replaces the project run caps, so the page names
+  // no run cap in a warning, shows no link to the caps and keeps the approved amount as its one limit.
+  await page.goto(`/projects/${projectId}/settings#caps`);
   const cap = page.getByLabel('Run cost cap (USD)', { exact: true });
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
   // P8-16: read what the project has now and put exactly that back in finally, also when an
@@ -154,9 +156,9 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
     await page.getByRole('link', { name: 'Start a run' }).click();
     await giveCloudConsent(page, consent);
 
-    const warning = page.getByTestId('cap-warning');
-    await expect(warning).toContainText('run cap');
-    await expect(warning).toContainText('<$0.0001');
+    await expect(page.getByTestId('journey-approved')).toBeVisible();
+    await expect(page.getByTestId('cap-warning').filter({ hasText: 'run cap' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Review the caps' })).toHaveCount(0);
     await expect(page.getByRole('button', startButton)).toBeEnabled();
     await transitionsDone(page);
     await expectNoSeriousViolations(page);
@@ -260,7 +262,7 @@ test('RF-1001 a run cap below the confirm threshold is refused in the settings; 
     "OpenAI runs on the server's key",
   );
   const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
-  await page.getByRole('link', { name: 'Change the caps in the project settings' }).click();
+  await page.goto(`/projects/${projectIdOf(page)}/settings#caps`);
   await expect(threshold).toHaveValue('0.25');
 
   // RF-436: the cap and the threshold are the project settings'; the threshold may not be above the cap.

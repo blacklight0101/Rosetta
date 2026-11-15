@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import type { Project } from '../api/project-schemas.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { RoleWarning } from './RoleWarning.js';
-import { useStartRoleWarning } from './use-start-role-warning.js';
+import { useStartRoleWarning, type RoleFacts } from './use-start-role-warning.js';
 
 // RF-436, P8-75: the warning of the project settings page (P8-74), at the top of the start page.
 // The start page has no Save, so the warning says that Apply saves the project settings; after it,
@@ -15,11 +15,12 @@ const savesNote =
 interface StartRoleWarningProps {
   readonly project: Project;
   readonly onSaved: (project: Project) => void;
+  readonly facts: RoleFacts;
 }
 
 // RF-436
-export function StartRoleWarning({ project, onSaved }: StartRoleWarningProps): JSX.Element {
-  const { warning, lists, apply, saved, error } = useStartRoleWarning(project, onSaved);
+export function StartRoleWarning({ project, onSaved, facts }: StartRoleWarningProps): JSX.Element {
+  const { warning, lists, apply, saved, error } = useStartRoleWarning(project, onSaved, facts);
   const line = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (saved !== undefined) line.current?.focus();

@@ -104,7 +104,9 @@ test('RF-432 RF-435 a step approved near the real spend pauses at the line and C
   await expect(status).toContainText(RUN_DONE);
 });
 
-test('RF-432 RF-435 Stop here ends a paused step at its cap', async ({ page }, info) => {
+test('RF-432 RF-435 Stop here ends a paused step at the approved amount', async ({
+  page,
+}, info) => {
   test.setTimeout(420_000);
   await signInThroughPage(page, accountFor('approval-pause', info.project.name));
   await expect(page).toHaveURL(/\/projects$/u);

@@ -47,6 +47,7 @@ function roleKindsOf(
 // and its judgement step will run again (RF-1014: the claims a stop left unjudged wait for it).
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
   const restarted = {
+    starts: state.starts + 1,
     startedAt: event.at,
     ended: undefined,
     awaiting: undefined,

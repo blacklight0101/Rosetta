@@ -23,12 +23,18 @@ const coverageKinds = [
   'operation',
   'flow',
   'screen',
+  'requirement',
   'module',
   'deployment',
 ] as const;
 
 /** P8-06: the kinds of the source's own parts; one no card touches is named, never a failure. */
 const sourceKinds: ReadonlySet<string> = new Set(['module', 'deployment']);
+
+/** P8-06: whether an item of this kind is a part of the source, which no card touching never fails a run. */
+export function isSourceKind(kind: string): boolean {
+  return sourceKinds.has(kind);
+}
 
 export type CoverageKind = (typeof coverageKinds)[number];
 
@@ -133,7 +139,10 @@ export function coverageOf(
   items: readonly CoverageItem[],
   tasks: readonly PlanTask[],
 ): CoverageReport {
-  const built = new Set(tasks.flatMap((task) => task.builds));
+  // P9-06: a requirement item is built by a card that lists the requirement.
+  const built = new Set(
+    tasks.flatMap((task) => [...task.builds, ...task.requirements.map(requirementItemId)]),
+  );
   const open = items.filter((each) => !built.has(each.id)).sort(byKindThenId);
   const uncovered = open.filter((each) => !sourceKinds.has(each.kind));
   return { items, uncovered, modules: open.filter((each) => sourceKinds.has(each.kind)) };
@@ -142,8 +151,22 @@ export function coverageOf(
 const MIGRATION_TITLE = 'Write the database migrations in the chosen stack';
 
 /** The card that writes the migrations, made by code (RF-623); the planner's cards never carry its title. */
-export function isMigrationCard(task: PlanTask): boolean {
+export function isMigrationCard(task: Pick<PlanTask, 'title'>): boolean {
   return task.title === MIGRATION_TITLE;
+}
+
+// P10-14, P10-D6: the migrations card keeps only the rules that name its tables (RF-631), so it never
+// lists a requirement with a feature, journey or screen behind it: a card that keeps that behaviour must.
+const BEHAVIOUR_CARD = /^(?:FEAT|FLOW|SCRN)-/u;
+
+/** Whether a requirement cites a feature, journey or screen card, which the migrations card cannot keep. */
+export function citesBehaviourCard(requirement: Pick<Requirement, 'sources'>): boolean {
+  return requirement.sources.some((card) => BEHAVIOUR_CARD.test(card));
+}
+
+/** Whether the migrations card may list the requirement: a table's card is behind it and no behaviour card. */
+function migratesRequirement(requirement: Requirement, sources: ReadonlySet<string>): boolean {
+  return requirement.sources.some((card) => sources.has(card)) && !citesBehaviourCard(requirement);
 }
 
 function migrationCard(content: PlanContent, tables: readonly ModelTable[]): PlanTask {
@@ -153,7 +176,7 @@ function migrationCard(content: PlanContent, tables: readonly ModelTable[]): Pla
     ...{ id: planId('T', 1), title: MIGRATION_TITLE, phase: 1 },
     builds: tables.map((table) => `table:${table.name}`),
     requirements: content.requirements
-      .filter((requirement) => requirement.sources.some((source) => sources.has(source)))
+      .filter((requirement) => migratesRequirement(requirement, sources))
       .map((requirement) => requirement.id),
     acceptanceCriteria: [
       `Given an empty database of the chosen stack, when the migrations run, then the ${count} of the target data model exist with their columns, keys and constraints.`,
@@ -200,4 +223,53 @@ export function withMigrationCard(
     };
   });
   return { ...content, tasks: [first, ...moved] };
+}
+
+// RF-627, P9-06, EV-108: a requirement of the plan is an item like a feature or a table. It is built
+// when a task card lists it in `requirements`, so a plan never completes with a requirement that no
+// card builds. The planner may write `requirement:REQ-020` in the `builds` of a gap card or in a
+// link of the gap round; code then moves it to the card's requirements, so `builds` holds only the
+// items of the documents and the requirement is listed once.
+
+const REQUIREMENT_PREFIX = 'requirement:';
+
+type Requirement = PlanContent['requirements'][number];
+
+/** The id of the item for a requirement id (`requirement:REQ-020`). */
+export function requirementItemId(requirementId: string): string {
+  return `${REQUIREMENT_PREFIX}${requirementId}`;
+}
+
+/** One item per requirement of the plan, in the order of the plan. */
+// RF-627
+export function requirementItems(requirements: readonly Requirement[]): CoverageItem[] {
+  return requirements.map((each) => ({
+    ...{ id: requirementItemId(each.id), kind: 'requirement' as const },
+    name: each.title,
+    detail: each.statement,
+  }));
+}
+
+/** The source cards behind each requirement item (gap cards derive their requirements from them). */
+export function requirementSources(
+  requirements: readonly Requirement[],
+): Map<string, ReadonlySet<string>> {
+  return new Map(requirements.map((each) => [requirementItemId(each.id), new Set(each.sources)]));
+}
+
+/** The plan with every `requirement:` id of a card's `builds` moved to its `requirements`. */
+// RF-627
+export function withBuiltRequirements(content: PlanContent): PlanContent {
+  const known = new Set(requirementItems(content.requirements).map((each) => each.id));
+  const isRequirement = (id: string): boolean => id.startsWith(REQUIREMENT_PREFIX);
+  if (!content.tasks.some((task) => task.builds.some(isRequirement))) return content;
+  const tasks = content.tasks.map((task) => {
+    if (!task.builds.some(isRequirement)) return task;
+    const added = task.builds
+      .filter((id) => known.has(id))
+      .map((id) => id.slice(REQUIREMENT_PREFIX.length));
+    const requirements = [...new Set([...task.requirements, ...added])];
+    return { ...task, builds: task.builds.filter((id) => !isRequirement(id)), requirements };
+  });
+  return { ...content, tasks };
 }

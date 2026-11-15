@@ -124,7 +124,7 @@ export class RunQueue {
         controller.abort();
         return ok({ kind: 'stopping', run });
       }
-      // RF-432: Stop here ends a paused run as a cap would have: `CapReached`, its work kept.
+      // RF-432, P9-03: Stop here ends a paused run `CapReached`, its work kept, for its own reason.
       const ended =
         run.queueState === 'AwaitingApproval'
           ? await this.deps.lifecycle.finish(run, 'CapReached', pausedEnd(run))

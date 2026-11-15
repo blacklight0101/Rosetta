@@ -29,7 +29,7 @@ describe('the prompts of the defined-elsewhere retry', () => {
     const { system } = await loadVerifierPrompts('prompts');
     const old = await loadPromptFile('prompts', 'verifier/claim.v3.md');
 
-    expect(system.sha256).toBe(await sha256Of('prompts/verifier/claim.v5.md'));
+    expect(system.sha256).toBe(await sha256Of('prompts/verifier/claim.v6.md'));
     expect(system.text).toMatch(/Kind: defined elsewhere/u);
     expect(old.text).not.toMatch(/Kind: defined elsewhere/u);
   });

@@ -1,6 +1,4 @@
 import { renderDataBlock } from '../../domain/egress/data-block.js';
-import type { PlanContent } from '../../domain/planning/plan-content.js';
-import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
 
 // Q-45, RF-627, RF-145, ADR-013: what the planner is given to write the task cards for the items no
 // card builds. Two data blocks, each with its own fresh tag: the gaps by id with their kind, name
@@ -11,20 +9,39 @@ import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
 /** The longest detail sent; the card needs a hint, not the whole text. */
 const DETAIL_CHARS = 300;
 
-export interface GapMessageInput {
-  /** The items no task card builds. */
-  readonly items: readonly CoverageItem[];
-  readonly content: PlanContent;
+/** What the message reads of an item no card builds (a `CoverageItem`; the lab holds it as text). */
+interface GapListedItem {
+  readonly id: string;
+  readonly kind: string;
+  readonly name: string;
+  readonly detail: string;
 }
 
-function itemsText(items: readonly CoverageItem[]): string {
+/** What the message reads of the plan (a `PlanContent` is one; the lab holds just these fields). */
+interface GapPlanView {
+  readonly phases: readonly {
+    readonly number: number;
+    readonly name: string;
+    readonly goal: string;
+  }[];
+  readonly requirements: readonly { readonly title: string }[];
+  readonly tasks: readonly { readonly id: string; readonly title: string }[];
+}
+
+export interface GapMessageInput {
+  /** The items no task card builds. */
+  readonly items: readonly GapListedItem[];
+  readonly content: GapPlanView;
+}
+
+function itemsText(items: readonly GapListedItem[]): string {
   const listed = items.map(({ id, kind, name, detail }) => ({
     ...{ id, kind, name, detail: detail.slice(0, DETAIL_CHARS) },
   }));
   return JSON.stringify({ items: listed }, null, 2);
 }
 
-function planText(content: PlanContent): string {
+function planText(content: GapPlanView): string {
   const plan = {
     phases: content.phases.map(({ number, name, goal }) => ({ number, name, goal })),
     requirements: content.requirements.map(({ title }, index) => ({

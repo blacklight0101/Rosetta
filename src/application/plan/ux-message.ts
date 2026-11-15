@@ -12,7 +12,7 @@ import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 export interface UxMessageInput {
   /** The verified `SCRN` cards with their supported claims. */
   readonly screenCards: readonly SourceCard[];
-  readonly brief: PlanningBrief;
+  readonly brief: Pick<PlanningBrief, 'stack'>;
   /** P8-09: the style the components are judged against (an own answer may name another than the brief's). */
   readonly style: ArchitectureStyleId;
 }
@@ -38,7 +38,7 @@ function cardsText(cards: readonly SourceCard[]): string {
   return JSON.stringify({ screenCards }, null, 2);
 }
 
-function ownerText(brief: PlanningBrief, style: ArchitectureStyleId): string {
+function ownerText(brief: Pick<PlanningBrief, 'stack'>, style: ArchitectureStyleId): string {
   const frontEnd = brief.stack.find((entry) => entry.layer === 'front-end')?.choice ?? null;
   return JSON.stringify({ targetStack: { frontEnd }, architectureStyle: style }, null, 2);
 }

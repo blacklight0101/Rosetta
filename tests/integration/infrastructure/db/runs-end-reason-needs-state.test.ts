@@ -93,6 +93,25 @@ describe.skipIf(!hasTestDatabase)('runs.end_reason needs an end state', () => {
   });
 });
 
+describe.skipIf(!hasTestDatabase)('runs.end_reason StoppedAtApproval', () => {
+  const database = useTestDatabase();
+
+  it('RF-432 StoppedAtApproval goes with CapReached only (migration 0026, P9-03)', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    const ids = await parentsIn(pool);
+    const atApproval = 'StoppedAtApproval';
+    const outcomes = [
+      await outcomeOf(pool, runIn(ids, 'Ended', 'CapReached', atApproval)),
+      await outcomeOf(pool, runIn(ids, 'Ended', 'Interrupted', atApproval)),
+      await outcomeOf(pool, runIn(ids, 'Ended', 'Completed', atApproval)),
+      await outcomeOf(pool, runIn(ids, 'Running', null, atApproval)),
+      await outcomeOf(pool, runIn(ids, 'Ended', 'CapReached', 'UserStop')),
+    ];
+
+    expect(outcomes).toEqual(['ok', ...Array<string>(4).fill(CHECK_VIOLATION)]);
+  });
+});
+
 describe.skipIf(!hasTestDatabase)('migration 0023', () => {
   const database = useTestDatabase();
 

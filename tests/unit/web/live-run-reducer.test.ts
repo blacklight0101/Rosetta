@@ -137,7 +137,14 @@ describe('the overview and the event log', () => {
       agentEnded(12, 'reader-005', 'InvalidOutput'),
     );
 
-    expect(overviewOf(state)).toEqual({ planned: 1, running: 1, done: 1, failed: 2 });
+    expect(overviewOf(state)).toEqual({
+      planned: 1,
+      running: 1,
+      done: 1,
+      failed: 2,
+      stopped: 0,
+      total: 5,
+    });
   });
 
   it('RF-1002 keeps every event as a log line with its sequence, time, type and a short text', () => {

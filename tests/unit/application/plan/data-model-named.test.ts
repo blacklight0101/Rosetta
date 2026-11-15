@@ -26,7 +26,27 @@ describe('missingNamed', () => {
 
     expect(missingNamed({ ...model, dropped }, ordersCards())).toEqual([]);
   });
+});
 
+describe('missingNamed: dropped entries that list several fields', () => {
+  it('RF-623 counts each field of a dropped entry that lists several as present (P10-14, P10-D7)', async () => {
+    const model = await recordedModel('wrong');
+    const fields = ['Fax, status_id and tblStatus', 'Fax; status_id / tblStatus'];
+
+    for (const field of fields) {
+      const dropped = [
+        {
+          ...{ cardId: 'ENT-001', claimId: 'ENT-001.c1', field },
+          ...{ reason: 'Not needed.', byPlanner: true },
+        },
+      ];
+
+      expect(missingNamed({ ...model, dropped }, ordersCards())).toEqual([]);
+    }
+  });
+});
+
+describe('missingNamed: the cards it reads', () => {
   it('RF-623 reads requirement and rule cards only', async () => {
     const feature = ordersCards().map((card) =>
       card.type === 'ENT' ? card : { ...card, type: 'FEAT' as const },

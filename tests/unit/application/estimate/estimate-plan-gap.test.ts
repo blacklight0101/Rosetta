@@ -26,8 +26,8 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
   it('Q-45 counts the gap call, with its own measured prompt, after the coverage call', async () => {
     const { assumptions } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/gap.v5.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(7);
+    const system = (await readFile('prompts/planner/gap.v6.md', 'utf8')).length;
+    expect(assumptions.calls).toBe(8);
     expect(assumptions.gapPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(assumptions.gapPromptTokens).not.toBe(assumptions.coveragePromptTokens);
   });
@@ -40,7 +40,7 @@ describe('EstimatePlan: the call for the items no task card builds', () => {
     const high = planner.points.high.inputTokens + planner.points.high.outputTokens;
     expect(high).toBeGreaterThan(reservation(assumptions.gapPromptTokens));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 });
 
@@ -64,7 +64,7 @@ describe('EstimatePlan: the repair attempt of the call for the items no task car
   it('Q-54 RF-627 counts the repair call after the gap call, with the gap prompt and the repair prompt measured', async () => {
     const { assumptions } = await estimateOf();
 
-    const system = (await readFile('prompts/planner/gap.v5.md', 'utf8')).length;
+    const system = (await readFile('prompts/planner/gap.v6.md', 'utf8')).length;
     const repair = (await readFile('prompts/planner/gap-repair.v4.md', 'utf8')).length;
     expect(assumptions.gapRepairPromptTokens).toBeGreaterThan(
       assumptions.gapPromptTokens + Math.ceil(repair / 4) - 1,

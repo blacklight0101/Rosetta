@@ -5,7 +5,7 @@ import type {
 } from '../../api/journey-schemas.js';
 import { runDownloadPath } from '../../api/runs.js';
 import { approvedLineOf, approvedViewOf, type ApprovedView } from '../live-run/approved-line.js';
-import { NO_COST, leftText, stepCostsOf } from './journey-costs.js';
+import { NO_COST, journeySpentOf, leftText, stepCostsOf } from './journey-costs.js';
 import { nextOf, type JourneyAction, type JourneyLink } from './journey-action.js';
 import {
   deepenFirst,
@@ -37,10 +37,10 @@ export type StepState =
   /** P8-87, RF-006: the user pressed Stop; the run can be resumed, so it is not a failure. */
   | 'stopped'
   /** P8-111, DEC-217: the server restarted under the run, or it was cancelled while queued; it can be resumed. */
-  | 'restarted'
-  | 'cancelled'
+  | ('restarted' | 'cancelled')
   /** P8-112, DEC-217: the run reached its cap; it is not a failure, and it still offers its next step. */
-  | 'capped';
+  | 'capped'
+  | 'stopped-here'; // P9-03, RF-432: Stop here at the approval pause; no cap stopped the run
 
 /** A file or a download a step offers besides its page. */
 export interface StepLink {
@@ -102,14 +102,18 @@ function ofRun(run: JourneyRunFacts, completed: Part): Part {
   return { ...unfinishedStep(run), href: runPage(run) };
 }
 
+// P9-07 (EV-102): a completed scan is done, with or without an understand run.
 function scanPart({ source, facts }: Context): Part {
-  if (source === null) return { state: 'upcoming', detail: 'Start a run to map the code' };
+  if (source === null && facts.scanRunId === null) {
+    return { state: 'upcoming', detail: 'Start a run to map the code' };
+  }
   const href = facts.scanRunId === null ? undefined : `/runs/${facts.scanRunId}`;
   return { state: 'done', detail: 'Code map ready', href };
 }
 
-function understandPart({ source }: Context): Part {
-  if (source === null) return locked('Needs a run: start one');
+function understandPart({ source, facts }: Context): Part {
+  if (source === null && facts.scanRunId === null) return locked('Needs a run: start one');
+  if (source === null) return { state: 'upcoming', detail: 'Start a run to understand the code' };
   const claims = source.supportedClaims;
   const detail =
     claims === 0
@@ -281,13 +285,12 @@ export function journeyOf(
       links: part.links ?? [],
     };
   });
-  const spent = (source?.costMicros ?? 0) + (plan?.costMicros ?? 0);
   return {
     projectId,
     steps,
     action: next.action,
     secondary: next.secondary,
-    totalCostMicros: spent,
+    totalCostMicros: journeySpentOf(facts),
     left: leftText(facts),
     approved: approvedViewOf(approvedLineOf(facts.budget), 'micros'),
     facts,

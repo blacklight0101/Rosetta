@@ -53,3 +53,34 @@ describe('RF-1002 the head of the run page', () => {
     expect(title.parentElement?.textContent).toContain('20261012-100000-understand');
   });
 });
+
+// RF-1108, EV-106: a queued run behind the user's own running run names that run and links to it.
+describe('RF-1108 EV-106 the run a queued run waits for', () => {
+  const holder = { id: 'holder-uuid', runId: '20261109-100000-understand' };
+  const queued = (waitsFor: { id: string; runId: string } | null, position: number | null = 2) =>
+    bar({ kind: 'queued', position, waitsFor });
+
+  it('RF-1108 EV-106 says the queued run waits for the user run and links to that run page', () => {
+    queued(holder);
+
+    const status = screen.getByTestId('queue-position');
+    expect(status.textContent).toContain(`Waits for your run ${holder.runId} to end`);
+    const link = screen.getByRole('link', { name: 'Open that run' });
+    expect(link.getAttribute('href')).toBe('/runs/holder-uuid');
+  });
+
+  it('RF-1108 EV-106 shows neither the wait nor a link when no run is waited for', () => {
+    queued(null);
+
+    expect(screen.getByTestId('queue-position').textContent).not.toContain('Waits for your run');
+    expect(screen.queryByRole('link', { name: 'Open that run' })).toBeNull();
+  });
+
+  it('RF-1108 EV-106 shows the wait only together with the queue position', () => {
+    queued(holder, null);
+
+    expect(screen.queryByTestId('queue-position')).toBeNull();
+    expect(screen.queryByText(/Waits for your run/)).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open that run' })).toBeNull();
+  });
+});

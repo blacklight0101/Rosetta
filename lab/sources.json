@@ -1,0 +1,9 @@
+{
+  "eshop": {
+    "key": "eshop",
+    "name": "dotnet-architecture/eShopModernizing",
+    "url": "https://github.com/dotnet-architecture/eShopModernizing",
+    "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+    "licence": "MIT (Copyright (c) .NET Foundation and Contributors)"
+  }
+}

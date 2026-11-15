@@ -69,7 +69,7 @@ describe('runAgentTask repair turn and a stop', () => {
 
     const result = await runAgentTask(request(aborting, controller.signal));
 
-    expect(result.state).toBe('Failed');
+    expect(result.state).toBe('Stopped');
     expect(result.reason).toBe('aborted');
     expect(result.code).toBe(ERROR_CODES.providerCallCancelled);
     // The loop itself checks the signal; it does not rely on the provider to refuse the call.
@@ -104,7 +104,7 @@ describe('runAgentTask stop between tool calls', () => {
 
     const result = await runAgentTask({ ...base, tools });
 
-    expect(result.state).toBe('Failed');
+    expect(result.state).toBe('Stopped');
     expect(result.reason).toBe('aborted');
     expect(ran).toEqual(['read_file']);
     expect(fake.requests).toHaveLength(1);

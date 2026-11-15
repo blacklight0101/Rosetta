@@ -54,6 +54,7 @@ import { uploadPartsOf } from './upload-parts-of.js';
 import type { PartlyReadReader } from './partly-read-doubles.js';
 import { historyServices } from './web-history-services.js';
 import { runServices, type RunOutputGiven } from './web-run-services.js';
+import type { JourneyGiven } from './continue-run-of.js';
 import {
   keyParts,
   memoryStores,
@@ -125,7 +126,7 @@ export interface TestServer extends HistoryDoubles {
 
 /** `archiveWriter`, `runFileReader` and `report` replace the memory doubles of the run outputs. */
 export interface TestServerOptions
-  extends Partial<Omit<ServerOptions, 'auth' | 'projects' | 'runs'>>, RunOutputGiven {
+  extends Partial<Omit<ServerOptions, 'auth' | 'projects' | 'runs'>>, RunOutputGiven, JourneyGiven {
   /** RF-407: what the fake adapter of each provider name replays; the text answer by default. */
   readonly providerRecordings?: Readonly<Record<string, Recording>>;
   /** DEC-106: the server's default models, which the provider test uses. */
@@ -179,14 +180,10 @@ function keyServices(parts: AuthParts) {
 function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
   const { users, hasher, sessions, auditLog, logger, clock, usage } = parts;
   const base = { users, auditLog, logger, clock };
+  const ids = new SequenceIdGenerator();
   return {
     changePassword: new ChangePassword({ ...base, hasher, sessions, commonPasswords }),
-    createUser: new CreateUser({
-      ...base,
-      hasher,
-      ids: new SequenceIdGenerator(),
-      commonPasswords,
-    }),
+    createUser: new CreateUser({ ...base, hasher, ids, commonPasswords }),
     updateUser: new UpdateUser({ ...base, sessions }),
     resetPassword: new ResetPassword({ ...base, hasher, sessions, commonPasswords }),
     listUsers: new ListUsers({ users, usage, clock }),
@@ -225,16 +222,19 @@ function runHarnessOf(
 }
 
 /** The observability and answer files of a test server, the key stores and what the run routes read. */
-function fileDoubles(parts: {
-  readonly projects: MemoryProjectRepository;
-  readonly clock: FixedClock;
-  readonly masker: SecretMasker;
-  readonly logDir: string | undefined;
-  readonly logger: MemoryLogger;
-}) {
+function fileDoubles(
+  parts: {
+    readonly projects: MemoryProjectRepository;
+    readonly clock: FixedClock;
+    readonly masker: SecretMasker;
+    readonly logDir: string | undefined;
+    readonly logger: MemoryLogger;
+  },
+  given: JourneyGiven,
+) {
   const { masker, logger } = parts;
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
-  return { files, keys: keyParts(), stores: { ...parts, ...files } };
+  return { files, keys: keyParts(), stores: { ...parts, ...files, journeys: given.journeys } };
 }
 
 /** The options of a test server that do not depend on its stores. */
@@ -270,7 +270,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore, projects);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
-  const { files, keys, stores } = fileDoubles({ projects, clock, masker, logDir, logger });
+  const { files, keys, stores } = fileDoubles({ projects, clock, masker, logDir, logger }, options);
   const { providers, providerLedger, testProviders, factory } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });

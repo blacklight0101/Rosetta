@@ -2,7 +2,12 @@ import type { JSX } from 'preact';
 import type { PlanEstimate } from '../api/plan-schemas.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { capFigure, scenarioCost, type Blocker } from '../lib/plan-setup/estimate.js';
+import {
+  capFigure,
+  journeyShortOf,
+  scenarioCost,
+  type Blocker,
+} from '../lib/plan-setup/estimate.js';
 import type { EstimateLoad } from './use-plan-estimate.js';
 import { useWritePackage } from './use-write-package.js';
 
@@ -34,6 +39,9 @@ function reasonOf(props: PlanStartBarProps): string | undefined {
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';
   if (blockers.length > 0) return 'Fix the problem above first.';
+  if (journeyShortOf(load.estimate)?.usedUp === true) {
+    return 'Nothing is left of the approved amount. Press Analyse again on the start page first.';
+  }
   return stepReason;
 }
 

@@ -7,6 +7,8 @@ const words: Readonly<Record<EndReason, string>> = {
   UserStop: 'Stopped by you',
   Restart: 'Stopped by a restart',
   QueueCancel: 'Cancelled while queued',
+  // P9-03, RF-432: the owner's Stop here at the approval pause; the run ended `CapReached`, no cap did.
+  StoppedAtApproval: 'Stopped at the approved amount',
 };
 
 export function interruptedWord(reason: EndReason | null | undefined): string {

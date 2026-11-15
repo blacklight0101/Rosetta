@@ -27,7 +27,7 @@ describe('the prompt files for a masked value', () => {
     const { system } = await loadVerifierPrompts('prompts');
     const text = system.text.replaceAll(/\s+/gu, ' ');
 
-    expect(system).toMatchObject({ name: 'verifier/claim.v5.md', version: 'v5' });
+    expect(system).toMatchObject({ name: 'verifier/claim.v6.md', version: 'v6' });
     expect(text).toMatch(
       /Answer `Rejected` when the claim says a value is masked, hidden or protected/u,
     );

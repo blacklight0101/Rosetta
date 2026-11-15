@@ -79,7 +79,7 @@ describe('GitHub Actions workflows: the stress job', () => {
 
     expect(job).toMatch(/^ {4}needs: test-picks$/mu);
     expect(job).toContain(
-      "if: needs.test-picks.outputs.changed != '[]' && needs.test-picks.outputs.changed != ''",
+      "if: needs.test-picks.outputs.changed != '[]' && needs.test-picks.outputs.changed != '' && (github.event_name != 'pull_request' || github.base_ref != 'main')",
     );
     expect(job).toContain('run: node scripts/stress-tests.mjs');
     expect(job).toContain('ROSETTA_STRESS_FILES: ${{ needs.test-picks.outputs.changed }}');

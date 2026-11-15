@@ -70,4 +70,6 @@ export interface JourneyBudget {
   readonly remainingMicros: number;
   readonly approvedTokens: number;
   readonly remainingTokens: number;
+  /** P9-08, RF-1020: what every step of the journey spent, as the Cost page counts it. */
+  readonly spentMicros: number;
 }

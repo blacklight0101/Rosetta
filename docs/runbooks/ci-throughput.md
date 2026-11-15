@@ -150,7 +150,9 @@ gaps; the eight required check names do not change, so the ruleset does not eith
 the test files: `tests/**/*.test.ts`, `tests/**/*.test.tsx` and `tests/e2e/**/*.spec.ts`. It does not use
 `vitest --changed`, which follows imports and misses tests that read the documents. When no test file changed, the job
 `stress` (check `stress changed tests (not required)`) is skipped: a pull request without test changes pays only the
-few seconds of `test-picks`. Otherwise `node scripts/stress-tests.mjs` runs only those tests:
+few seconds of `test-picks`. It is also skipped on a release pull request (base `main`): a release reruns every changed
+test of the release, which hit its 20-minute limit with PostgreSQL "too many clients" on #1351, while each card had
+already passed its own stress run (DEC-227). Otherwise `node scripts/stress-tests.mjs` runs only those tests:
 
 - Vitest: `vitest run <files> --sequence.shuffle --sequence.seed=<seed> --repeats=4 --retry=0`, so every test runs five
   times, the files in parallel workers and the files and tests in a shuffled order; the seed is printed, so a failing

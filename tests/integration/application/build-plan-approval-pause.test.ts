@@ -172,12 +172,29 @@ describe('RF-613 the plan estimate names the line the run gets', () => {
     expect(estimate.caps.find((cap) => cap.kind === 'run-tokens')?.limit).toBe(3_000_000n);
   });
 
+  it('RF-435 P9-02 the estimate gives the approved total and whether the journey is used up', async () => {
+    const h = await seededHarness('estimate-journey-total');
+    const journeys = new MemoryJourneyRecords();
+    await journeys.save({
+      ...{ userId: h.project.userId, projectId: h.project.id, createdAt: Number.MAX_SAFE_INTEGER },
+      approved: { tokens: 3_000_000, costMicros: 400_000 },
+    });
+
+    const estimate = await planEstimateOf(h.s, h.project, undefined, journeys);
+
+    expect(estimate.journey).toEqual({
+      approved: { tokens: 3_000_000, costMicros: 400_000 },
+      usedUp: false,
+    });
+  });
+
   it('RF-432 P8-01 a project with no journey: the project run caps, whose high figure does not fit', async () => {
     const h = await seededHarness('estimate-project');
 
     const estimate = await h.estimate();
 
     expect(estimate).toMatchObject({ runLine: 'project' });
+    expect(estimate.journey).toBeUndefined();
     expect(estimate.caps.find((cap) => cap.kind === 'run-cost')).toMatchObject({
       approved: false,
       limit: 500_000n,

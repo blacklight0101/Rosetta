@@ -120,7 +120,9 @@ function afterThePlan(c: Context, setUp: string): Next {
 // RF-615
 export function nextOf(c: Context): Next {
   if (c.source === null || c.setUp === undefined) {
-    return { action: link('Start a run', `/projects/${c.projectId}`), here: 'scan' };
+    // P9-07 (EV-102): a completed scan leaves the understand run as the next step.
+    const here: StepKey = c.facts.scanRunId === null ? 'scan' : 'understand';
+    return { action: link('Start a run', `/projects/${c.projectId}`), here };
   }
   const early = afterTheRun(c, c.setUp);
   if (early !== undefined) return early;

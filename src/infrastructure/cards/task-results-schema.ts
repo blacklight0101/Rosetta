@@ -89,7 +89,7 @@ const coverageSchema = z.object({
 const resultSchema = z.object({
   agentTaskId: text,
   area: text,
-  state: z.enum(['Done', 'TurnLimitReached', 'InvalidOutput', 'Failed', 'StoppedByCap']),
+  state: z.enum(['Done', 'TurnLimitReached', 'InvalidOutput', 'Failed', 'StoppedByCap', 'Stopped']),
   turns: count,
   withoutCards: z.boolean(),
   cards: z.array(cardSchema),

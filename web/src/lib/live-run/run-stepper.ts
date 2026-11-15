@@ -46,9 +46,10 @@ function statusOf(progress: Progress, phase: RunPhase): StepStatus {
 
 function agentsDone(state: RunState): string | undefined {
   if (state.agents.length === 0) return undefined;
-  const { done, failed } = overviewOf(state);
+  const { done, failed, stopped, total } = overviewOf(state);
   const lost = failed === 0 ? '' : `, ${String(failed)} failed`;
-  return `${String(done)} of ${String(state.agents.length)} agents done${lost}`;
+  const cut = stopped === 0 ? '' : `, ${String(stopped)} stopped`;
+  return `${String(done)} of ${String(total)} agents done${lost}${cut}`;
 }
 
 function everyAgentEnded(state: RunState): boolean {
@@ -56,6 +57,12 @@ function everyAgentEnded(state: RunState): boolean {
     state.agents.length > 0 &&
     state.agents.every((agent) => agent.state !== 'Planned' && agent.state !== 'Running')
   );
+}
+
+/** No reader failed and none was stopped without being read again. */
+function unbroken(state: RunState): boolean {
+  const { failed, stopped } = overviewOf(state);
+  return failed === 0 && stopped === 0;
 }
 
 function claimsStarted(state: RunState): boolean {
@@ -107,7 +114,7 @@ function scanSteps(run: StepperRun, state: RunState, phase: RunPhase): readonly 
 /** An understand run starts from a scan that is already done. */
 function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
   const completed = completedOf(phase);
-  const understood = completed || (everyAgentEnded(state) && overviewOf(state).failed === 0);
+  const understood = completed || (everyAgentEnded(state) && unbroken(state));
   // RF-1014: Verify is done once every claim was checked and none still waits for judgement.
   const checked = everyClaimChecked(state) && !waitsForJudgement(state);
   const verified = understood && (completed || checked);

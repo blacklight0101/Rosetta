@@ -37,3 +37,9 @@ export function leftText(facts: JourneyFacts): string | undefined {
   if (budget === null || budget === undefined) return undefined;
   return `${leftLabel(budget.remainingMicros)} left of ${costLabel(budget.approvedMicros)} approved`;
 }
+
+/** P9-08, RF-1020: the journey's spend as the server counts it; without a journey record, the source run and the plan. */
+export function journeySpentOf(facts: JourneyFacts): number {
+  const spent = facts.budget?.spentMicros;
+  return spent ?? (facts.source?.costMicros ?? 0) + (facts.plan?.costMicros ?? 0);
+}

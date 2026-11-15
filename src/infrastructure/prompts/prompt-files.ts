@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import type { PromptFile } from '../../application/agent/prompt-file.js';
 import { STYLES_PLACEHOLDER } from '../../application/planning/plan-options-request.js';
 import { readerPlaceholders, type ReaderPrompts } from '../../application/agent/reader-prompts.js';
@@ -18,7 +18,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 const readerPromptNames = {
   system: 'reader/area.v12.md',
-  cardFormat: 'cards/card-format.v5.md',
+  cardFormat: 'cards/card-format.v6.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
   repair: 'cards/repair.v6.md',
@@ -44,8 +44,8 @@ function invalid(name: string, problem: string): RosettaError {
 }
 
 /** The checked and hashed file made of the bytes read from `name`. */
-function promptFileOf(name: string, bytes: Buffer): PromptFile {
-  const version = versionPattern.exec(name)?.[1];
+function promptFileOf(name: string, bytes: Buffer, draft = false): PromptFile {
+  const version = draft ? 'file' : versionPattern.exec(name)?.[1];
   if (version === undefined) throw invalid(name, 'has no version in its file name');
   const text = bytes.toString('utf8');
   if (holdsDataMarker(text)) throw invalid(name, 'holds a data block marker');
@@ -55,6 +55,14 @@ function promptFileOf(name: string, bytes: Buffer): PromptFile {
 /** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v2.md`). */
 export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
   return promptFileOf(name, await readFile(join(promptsFolder, ...name.split('/'))));
+}
+
+/**
+ * P10-01, RF-1400: a draft prompt file anywhere on disk, for the prompt lab: named by its file name,
+ * versioned `file`, and checked like any prompt file (no data block marker).
+ */
+export async function loadDraftPromptFile(path: string): Promise<PromptFile> {
+  return promptFileOf(basename(path), await readFile(path), true);
 }
 
 /** P5-34: the same, read at once, for the one file the composition root needs before it starts. */
@@ -157,13 +165,19 @@ export function loadCoveragePrompt(promptsFolder: string): Promise<PromptFile> {
 /** The planner's prompt for the task cards of the items no card builds (Q-45), checked and hashed. */
 // RNF-004
 export function loadGapPrompt(promptsFolder: string): Promise<PromptFile> {
-  return loadPromptFile(promptsFolder, 'planner/gap.v5.md');
+  return loadPromptFile(promptsFolder, 'planner/gap.v6.md');
 }
 
 /** The planner's prompt for the one repair attempt of the gap call (Q-54), checked and hashed. */
 // RNF-004
 export function loadGapRepairPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/gap-repair.v4.md');
+}
+
+/** P9-15, RF-623: the planner's prompt for the check of the data model against the decision records. */
+// RNF-004
+export function loadAdrModelPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/adr-model.v1.md');
 }
 
 /**

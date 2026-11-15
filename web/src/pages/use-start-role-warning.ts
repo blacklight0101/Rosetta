@@ -9,6 +9,7 @@ import { settingsOnEveryRole, type EveryRoleChoice } from './every-role-settings
 import { hasShippedList, type ModelListState } from './model-lists.js';
 import { ROLE_NAMES } from './project-settings-form.js';
 import { providerLabel } from './provider-choices.js';
+import { roleStates, providersDown, type ProvidersDown } from './role-state.js';
 import { roleWarningOf, type RoleWarningFacts } from './role-warning.js';
 import { useKeyAccess } from './use-key-access.js';
 import { useModelLists } from './use-model-lists.js';
@@ -45,10 +46,15 @@ async function listFor(
     : undefined;
 }
 
-function useWarningFacts(project: Project): {
-  warning: RoleWarningFacts | undefined;
-  lists: Lists;
-} {
+/** The warning's facts, and (P9-09) what the start page cannot offer because of them. */
+export interface RoleFacts {
+  readonly warning: RoleWarningFacts | undefined;
+  readonly lists: Lists;
+  readonly down: ProvidersDown;
+}
+
+// RF-436
+export function useRoleFacts(project: Project): RoleFacts {
   const { settings } = project;
   const access = useKeyAccess();
   const roles = ROLE_NAMES.map((role) => settings.roles[role].provider);
@@ -58,6 +64,7 @@ function useWarningFacts(project: Project): {
   return {
     warning: roleWarningOf(settings, { roles: settings.roles, access, ollama, usable }),
     lists,
+    down: providersDown(roleStates(settings, settings.roles, access, ollama), ollama),
   };
 }
 
@@ -65,9 +72,10 @@ function useWarningFacts(project: Project): {
 export function useStartRoleWarning(
   project: Project,
   onSaved: (project: Project) => void,
+  facts: RoleFacts,
 ): StartRoleWarning {
   const { client } = useApp();
-  const { warning, lists } = useWarningFacts(project);
+  const { warning, lists } = facts;
   const [saved, setSaved] = useState<StartRoleWarning['saved']>();
   const [error, setError] = useState<ApiFailure | undefined>();
   const busy = useRef(false);

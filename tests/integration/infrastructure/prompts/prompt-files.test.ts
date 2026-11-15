@@ -18,7 +18,7 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // RNF-004: prompts are versioned files; a run records the version and SHA-256 of each one it used.
 
 const readerPromptNames = [
-  'cards/card-format.v5.md',
+  'cards/card-format.v6.md',
   'cards/continue.v1.md',
   'cards/repair.v6.md',
   'reader/area.v12.md',
@@ -63,6 +63,27 @@ describe('loadReaderPrompts', () => {
         sha256: await sha256Of(join('prompts', name)),
       });
     }
+  });
+});
+
+describe('the continue prompt', () => {
+  it('RF-208 loads continue v1, the version of a run, and keeps no v2 (P10-09: not kept)', async () => {
+    const prompts = await loadReaderPrompts('prompts');
+
+    expect(prompts.continue.name).toBe('cards/continue.v1.md');
+    await expect(loadPromptFile('prompts', 'cards/continue.v2.md')).rejects.toThrow();
+  });
+});
+
+describe('the read-more prompt', () => {
+  it('RF-206 loads read-more v2 again and keeps v3, which asks for whole reads, loadable (DEC-246)', async () => {
+    const prompts = await loadReaderPrompts('prompts');
+    const v3 = await loadPromptFile('prompts', 'reader/read-more.v3.md');
+
+    expect(prompts.readMore).toMatchObject({ name: 'reader/read-more.v2.md', version: 'v2' });
+    expect(prompts.readMore.text).not.toMatch(/whole, up to 400 lines a call/u);
+    expect(v3.version).toBe('v3');
+    expect(v3.text).toMatch(/whole, up to 400 lines a call/u);
   });
 });
 

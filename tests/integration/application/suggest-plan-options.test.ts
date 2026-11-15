@@ -32,12 +32,12 @@ function ask(h: SuggestOptionsHarness, cloudConsent = false) {
 }
 
 describe('SuggestPlanOptions: the journey amount', () => {
-  it('RF-435 P8-01 the options call runs under what is left of the journey amount, not the project run cap', async () => {
+  it('RF-435 P8-01 the options call runs under what is left of the journey amount: a sliver left is refused at that line with RST-2311', async () => {
     const h = await harness({ journey: { tokens: 1, costMicros: 1 } });
 
     const result = await ask(h);
 
-    expect(result).toEqual({ ok: false, error: ERROR_CODES.budgetCapReached });
+    expect(result).toEqual({ ok: false, error: ERROR_CODES.journeyAmountUsed });
     expect(h.factory.ledger.entries.filter((entry) => entry.costMicros > 0n)).toEqual([]);
   });
 });

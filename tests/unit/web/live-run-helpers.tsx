@@ -16,6 +16,8 @@ interface RowOptions {
   readonly stage?: string;
   readonly queueState?: 'Queued' | 'Running' | 'AwaitingApproval' | 'Ended';
   readonly endState?: string | null;
+  /** P9-03: why the run ended (`StoppedAtApproval` for a Stop here). */
+  readonly endReason?: string | null;
   readonly costMicros?: number;
   readonly reportBuilt?: boolean;
   readonly failedAreas?: number;
@@ -30,6 +32,7 @@ interface RowOptions {
 const recorded = (options: RowOptions) => ({
   cloudConsent: options.cloudConsent ?? false,
   sourceRunId: options.sourceRunId ?? null,
+  endReason: options.endReason ?? null,
 });
 
 /** What `GET /api/runs/:runId` answers. */

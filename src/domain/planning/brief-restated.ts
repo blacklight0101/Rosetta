@@ -240,3 +240,11 @@ export function decideOnce(
     restated,
   };
 }
+
+/**
+ * P9-15, RF-623: the ids decideOnce gives the planner records it keeps: they come first, numbered
+ * from ADR-001 in order, one per record of the plan answer that does not restate the brief.
+ */
+export function keptPlannerIds(planned: number, restated: number): string[] {
+  return Array.from({ length: Math.max(planned - restated, 0) }, (_, at) => planId('ADR', at + 1));
+}

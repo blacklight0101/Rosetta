@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "version": "verifier-claim-calibration-1",
+  "prompt": "verifier/claim",
+  "description": "The 30 hand-labelled claims of eval/calibration/webforms-shop.json about the synthetic tests/fixtures/repos/webforms-shop fixture (RF-305, RF-1411): expected is Supported when the cited lines show what the claim says, Rejected when they contradict it or do not show it. Invented code, no employer data.",
+  "cases": [
+    {
+      "id": "cal-01",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The details page reads the item id from the request (query string, form fields or cookies) and loads the item through the catalogue service.",
+        "citations": ["Catalog/Details.aspx.cs:10-10"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-02",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The details page shows the item's name and its price formatted as currency.",
+        "citations": ["Catalog/Details.aspx.cs:11-12"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-03",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The quantity on the details page must be a whole number from 1 to 10; otherwise the page shows 'Quantity must be between 1 and 10.'",
+        "citations": ["Catalog/Details.aspx:8-8"],
+        "files": {
+          "Catalog/Details.aspx": "<%@ Page Language=\"C#\" CodeBehind=\"Details.aspx.cs\" Inherits=\"ShopWeb.Catalog.Details\" %>\n<html>\n<body>\n  <form runat=\"server\">\n    <asp:Label ID=\"NameLabel\" runat=\"server\" />\n    <asp:Label ID=\"PriceLabel\" runat=\"server\" />\n    <asp:TextBox ID=\"QuantityBox\" runat=\"server\" />\n    <asp:RangeValidator ControlToValidate=\"QuantityBox\" MinimumValue=\"1\" MaximumValue=\"10\" Type=\"Integer\" runat=\"server\" ErrorMessage=\"Quantity must be between 1 and 10.\" />\n    <asp:Button ID=\"AddButton\" Text=\"Add to basket\" runat=\"server\" OnClick=\"AddButton_Click\" />\n  </form>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "id": "cal-04",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "Clicking 'Add to basket' does nothing when the page is not valid.",
+        "citations": ["Catalog/Details.aspx.cs:17-17"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-05",
+      "expected": "Supported",
+      "split": "held-back",
+      "input": {
+        "claim": "After a line is added to the basket, the user is sent to the checkout page.",
+        "citations": ["Catalog/Details.aspx.cs:18-19"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-06",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The basket is kept in the session under the key 'Basket'.",
+        "citations": ["Catalog/Details.aspx.cs:18-18"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-07",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The home page fills the catalogue grid only on the first load, not on a postback.",
+        "citations": ["Default.aspx.cs:11-11"],
+        "files": {
+          "Default.aspx.cs": "using System;\nusing System.Web.UI.WebControls;\nusing ShopWeb.Services;\n\nnamespace ShopWeb\n{\n    public partial class DefaultPage : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            if (!IsPostBack) BindGrid(string.Empty);\n        }\n\n        protected void SearchButton_Click(object sender, EventArgs e)\n        {\n            BindGrid(SearchBox.Text.Trim());\n        }\n\n        protected void CatalogGrid_RowCommand(object sender, GridViewCommandEventArgs e)\n        {\n            if (e.CommandName == \"Details\") Response.Redirect(\"~/Catalog/Details.aspx?id=\" + e.CommandArgument);\n        }\n\n        private void BindGrid(string term)\n        {\n            CatalogGrid.DataSource = new CatalogService().Find(term);\n            CatalogGrid.DataBind();\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-08",
+      "expected": "Supported",
+      "split": "held-back",
+      "input": {
+        "claim": "A search removes the spaces around the typed text before it filters the catalogue.",
+        "citations": ["Default.aspx.cs:14-17"],
+        "files": {
+          "Default.aspx.cs": "using System;\nusing System.Web.UI.WebControls;\nusing ShopWeb.Services;\n\nnamespace ShopWeb\n{\n    public partial class DefaultPage : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            if (!IsPostBack) BindGrid(string.Empty);\n        }\n\n        protected void SearchButton_Click(object sender, EventArgs e)\n        {\n            BindGrid(SearchBox.Text.Trim());\n        }\n\n        protected void CatalogGrid_RowCommand(object sender, GridViewCommandEventArgs e)\n        {\n            if (e.CommandName == \"Details\") Response.Redirect(\"~/Catalog/Details.aspx?id=\" + e.CommandArgument);\n        }\n\n        private void BindGrid(string term)\n        {\n            CatalogGrid.DataSource = new CatalogService().Find(term);\n            CatalogGrid.DataBind();\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-09",
+      "expected": "Supported",
+      "split": "held-back",
+      "input": {
+        "claim": "Choosing the 'Details' command on a grid row opens the details page of that row's item.",
+        "citations": ["Default.aspx.cs:19-22"],
+        "files": {
+          "Default.aspx.cs": "using System;\nusing System.Web.UI.WebControls;\nusing ShopWeb.Services;\n\nnamespace ShopWeb\n{\n    public partial class DefaultPage : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            if (!IsPostBack) BindGrid(string.Empty);\n        }\n\n        protected void SearchButton_Click(object sender, EventArgs e)\n        {\n            BindGrid(SearchBox.Text.Trim());\n        }\n\n        protected void CatalogGrid_RowCommand(object sender, GridViewCommandEventArgs e)\n        {\n            if (e.CommandName == \"Details\") Response.Redirect(\"~/Catalog/Details.aspx?id=\" + e.CommandArgument);\n        }\n\n        private void BindGrid(string term)\n        {\n            CatalogGrid.DataSource = new CatalogService().Find(term);\n            CatalogGrid.DataBind();\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-10",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The checkout page requires an e-mail address.",
+        "citations": ["Orders/Checkout.aspx:5-6"],
+        "files": {
+          "Orders/Checkout.aspx": "<%@ Page Language=\"C#\" CodeBehind=\"Checkout.aspx.cs\" Inherits=\"ShopWeb.Orders.Checkout\" %>\n<html>\n<body>\n  <form runat=\"server\">\n    <asp:TextBox ID=\"EmailBox\" runat=\"server\" />\n    <asp:RequiredFieldValidator ControlToValidate=\"EmailBox\" runat=\"server\" ErrorMessage=\"E-mail is required.\" />\n    <asp:RegularExpressionValidator ControlToValidate=\"EmailBox\" ValidationExpression=\"^[^@]+@[^@]+$\" runat=\"server\" ErrorMessage=\"Enter a valid e-mail.\" />\n    <asp:DropDownList ID=\"ShippingList\" runat=\"server\" />\n    <asp:Button ID=\"PlaceButton\" Text=\"Place order\" runat=\"server\" OnClick=\"PlaceButton_Click\" />\n  </form>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "id": "cal-11",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "An e-mail address is accepted only when it has one or more characters other than '@', then an '@', then one or more characters other than '@'.",
+        "citations": ["Orders/Checkout.aspx:7-7"],
+        "files": {
+          "Orders/Checkout.aspx": "<%@ Page Language=\"C#\" CodeBehind=\"Checkout.aspx.cs\" Inherits=\"ShopWeb.Orders.Checkout\" %>\n<html>\n<body>\n  <form runat=\"server\">\n    <asp:TextBox ID=\"EmailBox\" runat=\"server\" />\n    <asp:RequiredFieldValidator ControlToValidate=\"EmailBox\" runat=\"server\" ErrorMessage=\"E-mail is required.\" />\n    <asp:RegularExpressionValidator ControlToValidate=\"EmailBox\" ValidationExpression=\"^[^@]+@[^@]+$\" runat=\"server\" ErrorMessage=\"Enter a valid e-mail.\" />\n    <asp:DropDownList ID=\"ShippingList\" runat=\"server\" />\n    <asp:Button ID=\"PlaceButton\" Text=\"Place order\" runat=\"server\" OnClick=\"PlaceButton_Click\" />\n  </form>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "id": "cal-12",
+      "expected": "Supported",
+      "split": "held-back",
+      "input": {
+        "claim": "When the basket is empty at checkout, the user is sent back to the home page.",
+        "citations": ["Orders/Checkout.aspx.cs:11-12"],
+        "files": {
+          "Orders/Checkout.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Checkout : System.Web.UI.Page\n    {\n        protected void PlaceButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            var basket = Session[\"Basket\"];\n            if (basket == null) Response.Redirect(\"~/Default.aspx\");\n            var number = new OrderService().Place(EmailBox.Text, ShippingList.SelectedValue, basket);\n            Session[\"Basket\"] = null;\n            Response.Redirect(\"~/Orders/Confirm.aspx?number=\" + number);\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-13",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "Placing an order empties the basket in the session.",
+        "citations": ["Orders/Checkout.aspx.cs:13-15"],
+        "files": {
+          "Orders/Checkout.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Checkout : System.Web.UI.Page\n    {\n        protected void PlaceButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            var basket = Session[\"Basket\"];\n            if (basket == null) Response.Redirect(\"~/Default.aspx\");\n            var number = new OrderService().Place(EmailBox.Text, ShippingList.SelectedValue, basket);\n            Session[\"Basket\"] = null;\n            Response.Redirect(\"~/Orders/Confirm.aspx?number=\" + number);\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-14",
+      "expected": "Supported",
+      "split": "held-back",
+      "input": {
+        "claim": "Express shipping adds a fee of 12 to the order number and every other shipping method adds a fee of 4.",
+        "citations": ["Services/OrderService.cs:16-16"],
+        "files": {
+          "Services/OrderService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class OrderService\n    {\n        public object AddToBasket(object basket, int itemId, int quantity)\n        {\n            var lines = basket as List<int[]> ?? new List<int[]>();\n            lines.Add(new[] { itemId, quantity });\n            return lines;\n        }\n\n        public int Place(string email, string shipping, object basket)\n        {\n            var shippingFee = shipping == \"express\" ? 12 : 4;\n            return 1000 + shippingFee;\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-15",
+      "expected": "Supported",
+      "split": "tune",
+      "input": {
+        "claim": "The basket is a list in which each line holds an item id and a quantity.",
+        "citations": ["Services/OrderService.cs:9-11"],
+        "files": {
+          "Services/OrderService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class OrderService\n    {\n        public object AddToBasket(object basket, int itemId, int quantity)\n        {\n            var lines = basket as List<int[]> ?? new List<int[]>();\n            lines.Add(new[] { itemId, quantity });\n            return lines;\n        }\n\n        public int Place(string email, string shipping, object basket)\n        {\n            var shippingFee = shipping == \"express\" ? 12 : 4;\n            return 1000 + shippingFee;\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-16",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The quantity is not limited from 1 to 10 but from 1 to 100.",
+        "citations": ["Catalog/Details.aspx:8-8"],
+        "files": {
+          "Catalog/Details.aspx": "<%@ Page Language=\"C#\" CodeBehind=\"Details.aspx.cs\" Inherits=\"ShopWeb.Catalog.Details\" %>\n<html>\n<body>\n  <form runat=\"server\">\n    <asp:Label ID=\"NameLabel\" runat=\"server\" />\n    <asp:Label ID=\"PriceLabel\" runat=\"server\" />\n    <asp:TextBox ID=\"QuantityBox\" runat=\"server\" />\n    <asp:RangeValidator ControlToValidate=\"QuantityBox\" MinimumValue=\"1\" MaximumValue=\"10\" Type=\"Integer\" runat=\"server\" ErrorMessage=\"Quantity must be between 1 and 10.\" />\n    <asp:Button ID=\"AddButton\" Text=\"Add to basket\" runat=\"server\" OnClick=\"AddButton_Click\" />\n  </form>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "id": "cal-17",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The search on the home page ignores upper and lower case.",
+        "citations": ["Default.aspx.cs:14-17"],
+        "files": {
+          "Default.aspx.cs": "using System;\nusing System.Web.UI.WebControls;\nusing ShopWeb.Services;\n\nnamespace ShopWeb\n{\n    public partial class DefaultPage : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            if (!IsPostBack) BindGrid(string.Empty);\n        }\n\n        protected void SearchButton_Click(object sender, EventArgs e)\n        {\n            BindGrid(SearchBox.Text.Trim());\n        }\n\n        protected void CatalogGrid_RowCommand(object sender, GridViewCommandEventArgs e)\n        {\n            if (e.CommandName == \"Details\") Response.Redirect(\"~/Catalog/Details.aspx?id=\" + e.CommandArgument);\n        }\n\n        private void BindGrid(string term)\n        {\n            CatalogGrid.DataSource = new CatalogService().Find(term);\n            CatalogGrid.DataBind();\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-18",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The checkout page asks for the customer's postal address.",
+        "citations": ["Orders/Checkout.aspx:4-10"],
+        "files": {
+          "Orders/Checkout.aspx": "<%@ Page Language=\"C#\" CodeBehind=\"Checkout.aspx.cs\" Inherits=\"ShopWeb.Orders.Checkout\" %>\n<html>\n<body>\n  <form runat=\"server\">\n    <asp:TextBox ID=\"EmailBox\" runat=\"server\" />\n    <asp:RequiredFieldValidator ControlToValidate=\"EmailBox\" runat=\"server\" ErrorMessage=\"E-mail is required.\" />\n    <asp:RegularExpressionValidator ControlToValidate=\"EmailBox\" ValidationExpression=\"^[^@]+@[^@]+$\" runat=\"server\" ErrorMessage=\"Enter a valid e-mail.\" />\n    <asp:DropDownList ID=\"ShippingList\" runat=\"server\" />\n    <asp:Button ID=\"PlaceButton\" Text=\"Place order\" runat=\"server\" OnClick=\"PlaceButton_Click\" />\n  </form>\n</body>\n</html>\n"
+        }
+      }
+    },
+    {
+      "id": "cal-19",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "Placing an order sends a confirmation e-mail to the customer.",
+        "citations": ["Orders/Checkout.aspx.cs:8-16"],
+        "files": {
+          "Orders/Checkout.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Checkout : System.Web.UI.Page\n    {\n        protected void PlaceButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            var basket = Session[\"Basket\"];\n            if (basket == null) Response.Redirect(\"~/Default.aspx\");\n            var number = new OrderService().Place(EmailBox.Text, ShippingList.SelectedValue, basket);\n            Session[\"Basket\"] = null;\n            Response.Redirect(\"~/Orders/Confirm.aspx?number=\" + number);\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-20",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "Orders are saved in a database table when they are placed.",
+        "citations": ["Services/OrderService.cs:14-18"],
+        "files": {
+          "Services/OrderService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class OrderService\n    {\n        public object AddToBasket(object basket, int itemId, int quantity)\n        {\n            var lines = basket as List<int[]> ?? new List<int[]>();\n            lines.Add(new[] { itemId, quantity });\n            return lines;\n        }\n\n        public int Place(string email, string shipping, object basket)\n        {\n            var shippingFee = shipping == \"express\" ? 12 : 4;\n            return 1000 + shippingFee;\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-21",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "Standard shipping costs 12 and express shipping costs 4.",
+        "citations": ["Services/OrderService.cs:16-16"],
+        "files": {
+          "Services/OrderService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class OrderService\n    {\n        public object AddToBasket(object basket, int itemId, int quantity)\n        {\n            var lines = basket as List<int[]> ?? new List<int[]>();\n            lines.Add(new[] { itemId, quantity });\n            return lines;\n        }\n\n        public int Place(string email, string shipping, object basket)\n        {\n            var shippingFee = shipping == \"express\" ? 12 : 4;\n            return 1000 + shippingFee;\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-22",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The details page sends users who are not signed in to the login page.",
+        "citations": ["Catalog/Details.aspx.cs:8-13"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-23",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "The home page fills the catalogue grid on every request, including postbacks.",
+        "citations": ["Default.aspx.cs:9-12"],
+        "files": {
+          "Default.aspx.cs": "using System;\nusing System.Web.UI.WebControls;\nusing ShopWeb.Services;\n\nnamespace ShopWeb\n{\n    public partial class DefaultPage : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            if (!IsPostBack) BindGrid(string.Empty);\n        }\n\n        protected void SearchButton_Click(object sender, EventArgs e)\n        {\n            BindGrid(SearchBox.Text.Trim());\n        }\n\n        protected void CatalogGrid_RowCommand(object sender, GridViewCommandEventArgs e)\n        {\n            if (e.CommandName == \"Details\") Response.Redirect(\"~/Catalog/Details.aspx?id=\" + e.CommandArgument);\n        }\n\n        private void BindGrid(string term)\n        {\n            CatalogGrid.DataSource = new CatalogService().Find(term);\n            CatalogGrid.DataBind();\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-24",
+      "expected": "Rejected",
+      "split": "held-back",
+      "input": {
+        "claim": "The basket is stored in a browser cookie.",
+        "citations": ["Catalog/Details.aspx.cs:18-18"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-25",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The confirmation page loads the order from the database by its number.",
+        "citations": ["Orders/Confirm.aspx.cs:7-10"],
+        "files": {
+          "Orders/Confirm.aspx.cs": "using System;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Confirm : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            NumberLabel.Text = \"Order \" + Request[\"number\"] + \" received\";\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-26",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "Checkout checks the chosen shipping method against a list of allowed values and refuses any other.",
+        "citations": ["Orders/Checkout.aspx.cs:10-13"],
+        "files": {
+          "Orders/Checkout.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Checkout : System.Web.UI.Page\n    {\n        protected void PlaceButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            var basket = Session[\"Basket\"];\n            if (basket == null) Response.Redirect(\"~/Default.aspx\");\n            var number = new OrderService().Place(EmailBox.Text, ShippingList.SelectedValue, basket);\n            Session[\"Basket\"] = null;\n            Response.Redirect(\"~/Orders/Confirm.aspx?number=\" + number);\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-27",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "A discount is applied to baskets of more than five items.",
+        "citations": ["Services/OrderService.cs:7-12"],
+        "files": {
+          "Services/OrderService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class OrderService\n    {\n        public object AddToBasket(object basket, int itemId, int quantity)\n        {\n            var lines = basket as List<int[]> ?? new List<int[]>();\n            lines.Add(new[] { itemId, quantity });\n            return lines;\n        }\n\n        public int Place(string email, string shipping, object basket)\n        {\n            var shippingFee = shipping == \"express\" ? 12 : 4;\n            return 1000 + shippingFee;\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-28",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The catalogue service returns the items whose name contains the search term.",
+        "citations": ["Services/CatalogService.cs:14-14"],
+        "files": {
+          "Services/CatalogService.cs": "using System.Collections.Generic;\n\nnamespace ShopWeb.Services\n{\n    public class CatalogItem\n    {\n        public int Id { get; set; }\n        public string Name { get; set; }\n        public decimal Price { get; set; }\n    }\n\n    public class CatalogService\n    {\n        public IList<CatalogItem> Find(string term) { return new List<CatalogItem>(); }\n\n        public CatalogItem Get(int id) { return new CatalogItem { Id = id }; }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-29",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "An invalid e-mail address empties the basket.",
+        "citations": ["Orders/Checkout.aspx.cs:8-14"],
+        "files": {
+          "Orders/Checkout.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Orders\n{\n    public partial class Checkout : System.Web.UI.Page\n    {\n        protected void PlaceButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            var basket = Session[\"Basket\"];\n            if (basket == null) Response.Redirect(\"~/Default.aspx\");\n            var number = new OrderService().Place(EmailBox.Text, ShippingList.SelectedValue, basket);\n            Session[\"Basket\"] = null;\n            Response.Redirect(\"~/Orders/Confirm.aspx?number=\" + number);\n        }\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "cal-30",
+      "expected": "Rejected",
+      "split": "tune",
+      "input": {
+        "claim": "The details page shows a 'not found' message for an unknown item id.",
+        "citations": ["Catalog/Details.aspx.cs:8-13"],
+        "files": {
+          "Catalog/Details.aspx.cs": "using System;\nusing ShopWeb.Services;\n\nnamespace ShopWeb.Catalog\n{\n    public partial class Details : System.Web.UI.Page\n    {\n        protected void Page_Load(object sender, EventArgs e)\n        {\n            var item = new CatalogService().Get(int.Parse(Request[\"id\"]));\n            NameLabel.Text = item.Name;\n            PriceLabel.Text = item.Price.ToString(\"C\");\n        }\n\n        protected void AddButton_Click(object sender, EventArgs e)\n        {\n            if (!Page.IsValid) return;\n            Session[\"Basket\"] = new OrderService().AddToBasket(Session[\"Basket\"], int.Parse(Request[\"id\"]), int.Parse(QuantityBox.Text));\n            Response.Redirect(\"~/Orders/Checkout.aspx\");\n        }\n    }\n}\n"
+        }
+      }
+    }
+  ]
+}

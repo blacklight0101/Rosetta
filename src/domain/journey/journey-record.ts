@@ -5,7 +5,8 @@ import type { Run } from '../runs/run.js';
 // RF-011, RF-435, ADR-027, DEC-196, DEC-206: the journey of a project. It records the one amount
 // the owner approved (the lower of the worst-case total and the administrator ceilings) and when. Its steps are the
 // project's understand and plan runs queued since then; its spend is their cost and tokens, and
-// what is left is the line every step runs under. A scan is free and never counts.
+// what is left is the line every step runs under. A scan is free and never counts. Continue (+N) on
+// a paused step raises the approved amount by the same N (RF-432, P9-01).
 
 export interface JourneyRecord {
   readonly userId: string;
@@ -15,14 +16,18 @@ export interface JourneyRecord {
   readonly createdAt: EpochMs;
 }
 
-/** The runs that are steps of the journey: understand and plan runs queued at or after its start. */
-function stepsOf(record: JourneyRecord, runs: readonly Run[]): readonly Run[] {
-  return runs.filter(
-    (run) =>
-      run.projectId === record.projectId &&
-      (run.stage === 'understand' || run.stage === 'plan') &&
-      run.queuedAt >= record.createdAt,
+/** RF-011: whether a run is a step of the journey: an understand or plan run queued since its start. */
+export function isJourneyStep(record: JourneyRecord, run: Run): boolean {
+  return (
+    run.projectId === record.projectId &&
+    (run.stage === 'understand' || run.stage === 'plan') &&
+    run.queuedAt >= record.createdAt
   );
+}
+
+/** The runs that are steps of the journey. */
+function stepsOf(record: JourneyRecord, runs: readonly Run[]): readonly Run[] {
+  return runs.filter((run) => isJourneyStep(record, run));
 }
 
 /** RF-011: the sum of what the steps have used. */

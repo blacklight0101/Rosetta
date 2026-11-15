@@ -133,3 +133,54 @@ export function overCaps(estimate: PlanEstimate, scenario: Scenario): readonly P
   const local = isLocalModel(estimate.planner.kind);
   return estimate.caps.filter((cap) => !cap.fits[scenario] && !(local && cap.unit === 'micros'));
 }
+
+/** RF-435, P9-02: the journey's remainder is below the likely plan estimate. */
+export interface JourneyShort {
+  /** The approved cap the figures are told in; none for a local run that has no approved cap. */
+  readonly cap: PlanCap | undefined;
+  /** Nothing is left, so "Start the plan" is refused (RST-2311) until Analyse approves more. */
+  readonly usedUp: boolean;
+  readonly text: string;
+}
+
+/** P9-14: "used up" told without a cap: the approved figure in dollars, or in tokens when it has none. */
+function usedUpWithoutCap(
+  approved: NonNullable<PlanEstimate['journey']>['approved'],
+): JourneyShort {
+  const figure =
+    approved.costMicros > 0n ? dollars(approved.costMicros) : tokensText(approved.tokens);
+  const text = `Nothing is left of the ${figure} you approved. The plan cannot start until you approve a new amount.`;
+  return { cap: undefined, usedUp: true, text };
+}
+
+/**
+ * The cap the journey's shortness is told in: the approved cap the likely figure passes, else (the
+ * server says the amount is used up) the approved cap of the first unit it has.
+ */
+function shortCapOf(estimate: PlanEstimate): PlanCap | undefined {
+  const over = overCaps(estimate, 'likely').find((each) => each.approved);
+  if (over !== undefined || estimate.journey?.usedUp !== true) return over;
+  return estimate.caps.find((each) => each.approved);
+}
+
+/**
+ * RF-435, RF-613, P9-02: what is short of the journey's approved amount, with both figures (the
+ * amount approved, which the server gives, and what is left, the approved cap's limit), and the one
+ * way on: with something left the plan starts and pauses to Continue (+N); with nothing left only
+ * Analyse again on the start page approves a new amount. "Used up" is the server's own rule.
+ */
+export function journeyShortOf(estimate: PlanEstimate): JourneyShort | undefined {
+  const { journey } = estimate;
+  const cap = shortCapOf(estimate);
+  if (journey === undefined) return undefined;
+  // P9-14: a local run has no approved cap, but the server still says the amount is used up.
+  if (cap === undefined) return journey.usedUp ? usedUpWithoutCap(journey.approved) : undefined;
+  const total = cap.unit === 'tokens' ? journey.approved.tokens : journey.approved.costMicros;
+  const approved = capFigure(cap, total);
+  const needs = `the plan is estimated at ${scenarioFigure(estimate, 'likely', cap)}`;
+  const { usedUp } = journey;
+  const text = usedUp
+    ? `Nothing is left of the ${approved} you approved, and ${needs}. The plan cannot start until you approve a new amount.`
+    : `Only ${capFigure(cap, cap.remaining)} is left of the ${approved} you approved, and ${needs}. You can still start it: the run pauses before it passes what is left and asks you to Continue (+N), which raises the approved amount.`;
+  return { cap, usedUp, text };
+}

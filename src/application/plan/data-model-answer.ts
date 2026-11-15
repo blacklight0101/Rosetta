@@ -9,12 +9,15 @@ import { NO_REAL_COLUMN, withoutPlaceholders } from './data-model-placeholders.j
 // names, types, keys and legacy claims are allowed is decided by the domain (data-model-assembly.ts),
 // not here. A part the answer leaves out takes its empty value. A part that fails its schema (a
 // column, a table, a key, a dropped claim) is dropped alone and named in `problems`, so one long
-// field does not cost the whole model (EV-02); an answer with no table at all is no answer.
+// field does not cost the whole model (EV-02); an answer with no table at all is no answer, unless
+// it gives a reason for a dropped claim (RF-623: the cards describe no stored data, and the prompt
+// tells the planner to write no table then).
 
 const MAX_TABLES = 100;
 const MAX_COLUMNS = 200;
 const MAX_LIST = 50;
 const NAME = 80;
+const FIELDS = 300;
 const TEXT = 2000;
 
 const FAILS = 'The part fails its schema, so the parser drops it; the rest of the answer is kept.';
@@ -43,7 +46,12 @@ const tableIndex = z.object({
   reason: optionalText.default(''),
 });
 
-const droppedField = z.object({ claim: name, field: name, reason: text });
+// P10-14, P10-D7: a dropped entry may name several legacy fields in one text, so its field is longer.
+const droppedField = z.object({
+  claim: name,
+  field: z.string().trim().min(1).max(FIELDS),
+  reason: text,
+});
 
 // The table as the planner wrote it, each part still untrusted: read part by part below.
 const tableRaw = z
@@ -61,7 +69,7 @@ const tableRaw = z
   .partial();
 
 const answerShape = z.object({
-  tables: z.array(z.unknown()).min(1),
+  tables: z.array(z.unknown()),
   dropped: z.unknown().optional(),
 });
 
@@ -200,7 +208,9 @@ function readAnswer(shape: z.infer<typeof answerShape>): DataModelParse {
 export function parseDataModelAnswer(output: string): DataModelParse | undefined {
   for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
     const shape = answerShape.safeParse(value);
-    if (shape.success) return readAnswer(shape.data);
+    if (!shape.success) continue;
+    const read = readAnswer(shape.data);
+    if (shape.data.tables.length > 0 || read.draft.dropped.length > 0) return read;
   }
   return undefined;
 }

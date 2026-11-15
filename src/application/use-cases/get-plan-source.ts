@@ -24,6 +24,8 @@ export interface PlanSource {
   readonly runKey: string;
   /** `Completed`, or `CapReached` for a run that stopped at a cap but holds Supported claims (P3-121). */
   readonly endState: 'Completed' | 'CapReached';
+  /** P9-03: set to `StoppedAtApproval` for a run its owner stopped at the approval pause. */
+  readonly endReason?: 'StoppedAtApproval';
   readonly endedAt: EpochMs | null;
   /** The areas of the run's cards, in code-unit order. */
   readonly areas: readonly string[];
@@ -72,6 +74,7 @@ export class GetPlanSource {
     return ok({
       ...{ runId: run.id, runKey: run.runKey, endedAt: run.endedAt },
       endState: run.endState === 'CapReached' ? 'CapReached' : 'Completed',
+      ...(run.endReason === 'StoppedAtApproval' ? { endReason: run.endReason } : {}),
       areas: [...new Set(supported.map((card) => card.area))].sort(byCodeUnit),
       supportedClaims,
       newest: newest.ok && newest.value.id === run.id,

@@ -126,6 +126,35 @@ describe('task card parsers', () => {
   });
 });
 
+describe('two-digit phases', () => {
+  const P10 = `
+| P1 Milestone slice (M1) | 1 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| P10 Prompt lab | 1 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+
+### P1-01 - Scaffold
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Status**: Done
+
+### P10-01 - Lab
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-01
+- **Status**: Todo
+`;
+
+  it('RNF-005 reads a P10 card and row apart from P1', () => {
+    const cards = parseCards(P10);
+    const totals = parseTaskTotals(P10);
+
+    expect(cards.map((c) => c.id)).toEqual(['P1-01', 'P10-01']);
+    expect([...totals.keys()]).toEqual(['P1', 'P10']);
+    expect(countCards(cards, 'P1').cards).toBe(1);
+    expect(countCards(cards, 'P10')).toMatchObject({ cards: 1, sonnet: 1, m: 1 });
+  });
+});
+
 describe('task card counting', () => {
   it('RNF-005 counts cards by phase, difficulty band and size', () => {
     const cards = parseCards(TASKS);

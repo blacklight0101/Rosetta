@@ -55,7 +55,7 @@ describe('an understand run: prompts', () => {
 
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
-      'cards/card-format.v5.md',
+      'cards/card-format.v6.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
       'cards/repair.v6.md',
@@ -65,8 +65,8 @@ describe('an understand run: prompts', () => {
       'reader/read-more.v2.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
-      'shared/masked-value.v1.md',
-      'verifier/claim.v5.md',
+      'shared/masked-value.v2.md',
+      'verifier/claim.v6.md',
       'verifier/retry.v1.md',
     ]);
     expect(manifest.promptVersions['reader/area.v12.md']?.version).toBe('v12');

@@ -1,7 +1,11 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { journeyRemaining, type JourneyRecord } from '../../domain/journey/journey-record.js';
+import {
+  journeyRemaining,
+  journeySpend,
+  type JourneyRecord,
+} from '../../domain/journey/journey-record.js';
 import { isBriefOutOfDateAt } from '../../domain/planning/brief-freshness.js';
 import type { Run } from '../../domain/runs/run.js';
 import { familyIn } from '../answers/run-family.js';
@@ -104,6 +108,7 @@ function budgetOf(record: JourneyRecord | undefined, list: readonly Run[]): Jour
   if (record === undefined) return null;
   const left = journeyRemaining(record, list);
   return {
+    spentMicros: journeySpend(record, list).costMicros,
     approvedMicros: record.approved.costMicros,
     remainingMicros: left.costMicros,
     approvedTokens: record.approved.tokens,

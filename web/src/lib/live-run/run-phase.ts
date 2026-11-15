@@ -7,7 +7,12 @@ import type { AwaitingState, RunState } from './run-state.js';
 // and for a resumed run that waits in the queue again (its events are those of its earlier start).
 
 export type RunPhase =
-  | { readonly kind: 'queued'; readonly position?: number | null }
+  | {
+      readonly kind: 'queued';
+      readonly position?: number | null;
+      /** RF-1108, EV-106: the user's running run that holds this one back, if any. */
+      readonly waitsFor?: RunRow['waitsFor'];
+    }
   | { readonly kind: 'running' }
   /** RF-432: paused near the approved amount; `continueAmount` is the N Continue offers. */
   | { readonly kind: 'awaiting'; readonly continueAmount: AwaitingState['continueAmount'] }
@@ -30,14 +35,18 @@ export function phaseOf(row: RunRow, state: RunState): RunPhase {
   if (row.queueState === 'Ended') {
     return { kind: 'ended', endState: row.endState ?? 'Interrupted', endReason: row.endReason };
   }
-  if (queuedAgain(row, state)) return { kind: 'queued', position: row.position };
+  if (queuedAgain(row, state)) return queuedOf(row);
   // RF-432: the event says it paused; a run whose events have not arrived has the row's word.
   if (state.awaiting !== undefined)
     return { kind: 'awaiting', continueAmount: state.awaiting.continueAmount };
   if (row.queueState === 'AwaitingApproval') return { kind: 'awaiting', continueAmount: undefined };
   if (state.startedAt !== undefined) return { kind: 'running' };
-  if (row.queueState === 'Queued') return { kind: 'queued', position: row.position };
+  if (row.queueState === 'Queued') return queuedOf(row);
   return { kind: 'running' };
+}
+
+function queuedOf(row: RunRow): RunPhase {
+  return { kind: 'queued', position: row.position, waitsFor: row.waitsFor };
 }
 
 /**

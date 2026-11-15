@@ -8,6 +8,7 @@ import {
   tokenValue,
 } from './secret-option-pieces.js';
 import { settingRules } from './secret-setting-rules.js';
+import { sqlToolRules } from './secret-sql-tool-rules.js';
 import { caseless, notMasked, placeholderValue } from './secret-value-pieces.js';
 
 // P2-43 (RF-141, RNF-003): the secret shapes the first rules missed. They run after those rules, so a
@@ -95,6 +96,7 @@ export const extraRules: readonly ExtraRule[] = [
       'gi',
     ),
   },
+  ...sqlToolRules,
   {
     // The response of an Authorization Digest header (the hash of the password).
     kind: 'bearer-token',

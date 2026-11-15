@@ -53,6 +53,9 @@ function understandStatus(step: JourneyStep, view: JourneyView): HeadingStatus {
   const interrupted = interruptedHeading(step);
   if (interrupted !== undefined) return plain(`Understand ${interrupted}`, 'warn', step.href);
   if (step.state === 'capped') return plain('Understand stopped at its cap', 'warn', step.href);
+  if (step.state === 'stopped-here') {
+    return plain(`Understand ${interruptedPhrase('StoppedAtApproval')}`, 'warn', step.href);
+  }
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   if (step.state === 'upcoming' || step.state === 'current') {
     return plain('Understand running', 'info', step.href);
@@ -75,6 +78,9 @@ function planStatus(step: JourneyStep): HeadingStatus {
   const interrupted = interruptedHeading(step);
   if (interrupted !== undefined) return plain(`Plan ${interrupted}`, 'warn', step.href);
   if (step.state === 'capped') return plain('Plan stopped at its cap', 'warn', step.href);
+  if (step.state === 'stopped-here') {
+    return plain(`Plan ${interruptedPhrase('StoppedAtApproval')}`, 'warn', step.href);
+  }
   if (step.state === 'awaiting') return plain('Paused for approval', 'warn', step.href);
   return plain('Plan running', 'info', step.href);
 }

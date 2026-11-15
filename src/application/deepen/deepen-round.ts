@@ -7,6 +7,7 @@ import type { RoundPlan } from '../../domain/deepen/round-plan.js';
 import type { DeepenStopReason } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { endsWithoutRoomStops } from '../understand/reader-room.js';
 import {
@@ -134,14 +135,18 @@ async function spentSoFar(parts: DeepenParts): Promise<{ tokens: number; costMic
   return { tokens: totals.inputTokens + totals.outputTokens, costMicros: totals.costMicros };
 }
 
+/** A task a Stop (`Stopped`, or a failure while the run was aborted) or a cap cut short did not run to an end. */
+function ranToAnEnd(state: AgentTaskState, aborted: boolean): boolean {
+  if (state === 'StoppedByCap' || state === 'Stopped') return false;
+  return state !== 'Failed' || !aborted;
+}
+
 /**
  * RF-209, RF-006: the rejected claims whose re-read ran to an end. A re-read a Stop or a cap cut
  * short is not counted, so the resume of the run reads it again; any other is its one retry.
  */
 function rereadDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: boolean) {
-  const finished = ended.filter(({ outcome }) =>
-    outcome.state === 'StoppedByCap' ? false : outcome.state !== 'Failed' || !aborted,
-  );
+  const finished = ended.filter(({ outcome }) => ranToAnEnd(outcome.state, aborted));
   const ids = new Set(finished.flatMap(({ task }) => task.replaceable ?? []));
   return plan.reread
     .filter((claim) => ids.has(claim.claimId))
@@ -150,9 +155,7 @@ function rereadDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: boole
 
 /** EV-10: the failed areas whose new reading ran to an end, counted like a re-read (RF-006). */
 function failedAreasDone(plan: RoundPlan, ended: readonly EndedTask[], aborted: boolean) {
-  const finished = ended.filter(({ outcome }) =>
-    outcome.state === 'StoppedByCap' ? false : outcome.state !== 'Failed' || !aborted,
-  );
+  const finished = ended.filter(({ outcome }) => ranToAnEnd(outcome.state, aborted));
   const areas = new Set(finished.map(({ task }) => task.area.name));
   return plan.failedAreas.map(({ area }) => area).filter((area) => areas.has(area));
 }

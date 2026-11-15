@@ -5,24 +5,25 @@ import { loadPromptFile, loadPromptFileSync, requirePlaceholder } from './prompt
 // P5-34, RF-141, RNF-004: the text a masked value is replaced with is a versioned prompt file, not
 // a string in code. It starts with `[MASKED:{{kind}}]` (the marker every rule and every reader of a
 // masked text knows) and tells the model that a secret value is written there in the code in plain
-// text and that Rosetta masked it before sending.
+// text and that Rosetta masked it before sending. Since v2 (P10-15, DEC-244) it also tells the model
+// to report it at that line, never repeat it, and that it must move to a secret store and be replaced.
 
-const maskedValuePromptName = 'shared/masked-value.v1.md';
+const maskedValuePromptName = 'shared/masked-value.v2.md';
 
 /** The kind's place in the file; it must hold it exactly once. */
-const KIND_PLACEHOLDER = '{{kind}}';
+export const maskedKindPlaceholder = '{{kind}}';
 
 /** The prompt file of the replacement text, checked and hashed. */
 // RNF-004
 export async function loadMaskedValuePrompt(promptsFolder: string): Promise<PromptFile> {
   const file = await loadPromptFile(promptsFolder, maskedValuePromptName);
-  return requirePlaceholder(file, KIND_PLACEHOLDER);
+  return requirePlaceholder(file, maskedKindPlaceholder);
 }
 
 /** The replacement of every masked value: the file's one line with the kind put in. */
 export function maskedValueReplacement(file: PromptFile): ReplacementOf {
   const line = file.text.trim();
-  return (kind) => line.replace(KIND_PLACEHOLDER, () => kind);
+  return (kind) => line.replace(maskedKindPlaceholder, () => kind);
 }
 
 /** The masker whose replacement is the note of the prompt file, read at once (RF-141). */
@@ -31,7 +32,7 @@ export function explainedMasker(promptsFolder: string): SecretMasker {
   const file = requirePlaceholder(
     // eslint-disable-next-line n/no-sync -- one small file read before the server starts.
     loadPromptFileSync(promptsFolder, maskedValuePromptName),
-    KIND_PLACEHOLDER,
+    maskedKindPlaceholder,
   );
   return new SecretMasker(undefined, maskedValueReplacement(file));
 }

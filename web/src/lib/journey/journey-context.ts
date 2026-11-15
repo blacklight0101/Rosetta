@@ -93,7 +93,14 @@ export function unfinishedStep(
   >,
 ): {
   readonly state:
-    'awaiting' | 'upcoming' | 'stopped' | 'restarted' | 'cancelled' | 'capped' | 'failed';
+    | 'awaiting'
+    | 'upcoming'
+    | 'stopped'
+    | 'restarted'
+    | 'cancelled'
+    | 'capped'
+    | 'stopped-here'
+    | 'failed';
   readonly detail: string;
 } {
   if (phaseOf(run) === 'working') {
@@ -102,6 +109,10 @@ export function unfinishedStep(
   }
   if (run.endState === 'Interrupted') {
     return { state: interruptedState(run.endReason), detail: run.errorCode ?? '' };
+  }
+  if (run.endState === 'CapReached' && run.endReason === 'StoppedAtApproval') {
+    // P9-14: no code, but the areas the stop left unread are still told.
+    return { state: 'stopped-here', detail: (run.unreadAreas ?? 0) > 0 ? 'Partly read' : '' };
   }
   if (run.endState === 'CapReached') return { state: 'capped', detail: endText(run) };
   return { state: 'failed', detail: endText(run) };

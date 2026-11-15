@@ -74,3 +74,20 @@ it('RF-006 RF-432 the pause of the earlier life does not show while the resumed 
   expect(phaseOf(requeued('2026-10-12T10:00:05.000Z'), paused).kind).toBe('queued');
   expect(phaseOf(row('AwaitingApproval', null), paused).kind).toBe('awaiting');
 });
+
+// RF-1108, EV-106: a queued run behind the user's own running run carries that run to the page.
+it('RF-1108 EV-106 a queued run carries the run it waits for into its phase', () => {
+  const waitsFor = {
+    id: '2f0c4b1e-0000-4000-8000-000000000009',
+    runId: '20261109-100000-understand',
+  };
+  const queued: RunRow = { ...row('Queued', null), position: 2, waitsFor };
+
+  expect(phaseOf(queued, stateAfter())).toEqual({ kind: 'queued', position: 2, waitsFor });
+});
+
+it('RF-1108 EV-106 a queued run that waits for no run carries no holder into its phase', () => {
+  const queued: RunRow = { ...row('Queued', null), position: 2, waitsFor: null };
+
+  expect(phaseOf(queued, stateAfter())).toEqual({ kind: 'queued', position: 2, waitsFor: null });
+});

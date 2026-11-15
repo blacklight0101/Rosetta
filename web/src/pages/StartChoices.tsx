@@ -79,7 +79,7 @@ function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null
       confirmed={privateCode.checked}
       error={actions.refusals.private}
       onConfirm={privateCode.set}
-      onSwitch={privateCode.switchToOllama.run}
+      {...(form.roleFacts.down.ollama ? {} : { onSwitch: privateCode.switchToOllama.run })}
       switching={privateCode.switchToOllama.switching}
       switchError={privateCode.switchToOllama.error}
     />

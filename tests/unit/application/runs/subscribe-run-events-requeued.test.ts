@@ -96,3 +96,23 @@ describe('SubscribeRunEvents for a resumed run that waits in the queue', () => {
     expect(page.ends.count).toBe(1);
   });
 });
+
+describe('SubscribeRunEvents for a resumed run cancelled in the queue', () => {
+  it('RF-006 P9-05 ends the stream at the QueueCancel end of a resumed run, not at the first life', async () => {
+    const h = createRunHarness({ maxRunning: 1 });
+    const run = await h.start(userAmy);
+    h.executor.settle(run.id, { endState: 'Interrupted' });
+    await h.ended(run);
+    await h.start(userAmy);
+    await h.runs.reopen(run.userId, run.id, h.clock.now().getTime());
+    await h.queue.dispatch();
+    await h.queue.stop(userAmy.userId, run.id);
+    const page = pageOf();
+
+    await open(h, run, page);
+
+    expect(page.events.map((event) => event.type)).toEqual(['run.started', 'run.ended']);
+    expect(page.events.at(-1)?.data).toMatchObject({ endReason: 'QueueCancel' });
+    expect(page.ends.count).toBe(1);
+  });
+});

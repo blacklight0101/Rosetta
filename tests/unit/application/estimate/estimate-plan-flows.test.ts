@@ -30,17 +30,17 @@ describe('EstimatePlan: the target flows call', () => {
     const { assumptions, planner } = await estimateOf();
 
     const system = (await readFile('prompts/planner/flows.v2.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(8);
+    expect(assumptions.calls).toBe(9);
     expect(assumptions.flowsPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(9 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-625 does not count it when no FLOW card has a supported step, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf({ seed: { cards: planCards() } });
 
-    expect(assumptions).toMatchObject({ calls: 7, flowsPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(7 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 8, flowsPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(8 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
@@ -54,6 +54,8 @@ describe('EstimatePlan: the target flows call', () => {
       ...[assumptions.flowsPromptTokens, assumptions.coveragePromptTokens],
       ...[assumptions.gapPromptTokens, assumptions.gapRepairPromptTokens],
       assumptions.gapPromptTokens,
+      // P9-15: the check of the data model against the decision records.
+      assumptions.adrModelPromptTokens,
     ];
     const plan = named.reduce((left, each) => left - each, assumptions.promptTokens);
     const sum = [plan, ...named].map(reservation).reduce((total, each) => total + each, 0);

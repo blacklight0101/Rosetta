@@ -33,6 +33,8 @@ export interface PlanPromptSources {
   readonly gapPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
   readonly gapRepairPrompt: () => Promise<PromptFile>;
+  /** P9-15: the planner's versioned prompt file for the check of the data model against the decision records (RF-623). */
+  readonly adrModelPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the plan answer (P3-126). */
   readonly planRepairPrompt: () => Promise<PromptFile>;
   /** The wording of the plan risk for a file that holds a masked secret (P5-34, RF-608). */
@@ -53,6 +55,7 @@ type PlanPrompts = Readonly<
     | 'coverage'
     | 'gap'
     | 'gapRepair'
+    | 'adrModel'
     | 'planRepair'
     | 'continue'
     | 'secretRisk',
@@ -86,6 +89,7 @@ export async function loadPlanFiles(
     coverage,
     gap,
     gapRepair,
+    adrModel,
     cont,
     planRepair,
     secretRisk,
@@ -100,6 +104,7 @@ export async function loadPlanFiles(
     sources.coveragePrompt(),
     sources.gapPrompt(),
     sources.gapRepairPrompt(),
+    sources.adrModelPrompt(),
     sources.continuePrompt(),
     sources.planRepairPrompt(),
     sources.secretRiskPrompt(),
@@ -108,7 +113,8 @@ export async function loadPlanFiles(
   const older = (await sources.promptTexts?.()) ?? [];
   const prompts = {
     ...{ plan: withWorkbookGuidance(plan, guidance), prd, dataModel, flows },
-    ...{ apiContract, ux, coverage, gap, gapRepair, planRepair, secretRisk, continue: cont },
+    ...{ apiContract, ux, coverage, gap, gapRepair, adrModel, planRepair, secretRisk },
+    continue: cont,
   };
   const examples = [...Object.values(prompts).map((file) => file.text), ...older];
   return { catalogue, prompts, examples, ...(guidance === undefined ? {} : { guidance }) };

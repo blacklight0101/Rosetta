@@ -16,6 +16,7 @@ import { ApprovalPause, capStopsRun } from '../../domain/budget/cap-stop.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { CapBreach, UsageCap, WorstCase } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { CapReachedError } from '../../domain/errors/cap-reached-error.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProviderTarget } from '../providers/call-attempts.js';
 import { ProviderCallError } from '../providers/provider-call-error.js';
@@ -192,9 +193,8 @@ export class BudgetGuard implements LlmProvider {
   /** RF-422: records the refused call, stops the run and throws the refusal. */
   private async refuse(request: LlmRequest, breach: CapBreach, at: Date): Promise<never> {
     const { recorder, ids, logger, stopRun, target } = this.options;
-    const refusal = new RosettaError(ERROR_CODES.budgetCapReached);
-    // RF-423: the cap of a role stops that role's calls only, and so does a role's reserve of the run
-    // cap (RF-429, DEC-193: the verifier's line below the summariser's part); any other cap stops the run.
+    const refusal = new CapReachedError(breach.source === 'approved');
+    // RF-423, RF-429, DEC-193: a role's cap or its reserve of the run cap stops that role; any other, the run.
     const roleStop =
       breach.kind === 'role-cost' || breach.kind === 'role-tokens' || breach.source === 'reserve';
     const reported: CapBreach = roleStop ? { ...breach, role: request.context.role } : breach;

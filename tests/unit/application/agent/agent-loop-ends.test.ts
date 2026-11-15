@@ -137,7 +137,7 @@ describe('runAgentTask and a model that misbehaves', () => {
 });
 
 describe('runAgentTask stop', () => {
-  it('RF-201 honours the abort signal between turns', async () => {
+  it('RF-201 honours the abort signal between turns and ends Stopped, not Failed (P9-04)', async () => {
     const { fake, request } = loopSetup([toolTurn([readOrder]), textTurn(shippingCards)]);
     const controller = new AbortController();
     const aborting: LlmProvider = {
@@ -150,7 +150,7 @@ describe('runAgentTask stop', () => {
 
     const result = await runAgentTask(request(aborting, controller.signal));
 
-    expect(result.state).toBe('Failed');
+    expect(result.state).toBe('Stopped');
     expect(result.reason).toBe('aborted');
     expect(result.code).toBe(ERROR_CODES.providerCallCancelled);
     expect(fake.requests).toHaveLength(1);

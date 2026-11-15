@@ -25,6 +25,8 @@ interface CapInputs {
   readonly limits: SpendLimits | undefined;
   /** False when the run cap in force is the administrator's, which the project settings page does not hold. */
   readonly runCapFromProject?: boolean;
+  /** P9-14, RF-434: the estimate is a journey's, whose approved amount replaces the project run caps. */
+  readonly approvedLine?: boolean;
 }
 
 const stops = 'Start stays available; the run stops cleanly when it reaches a cap.';
@@ -95,11 +97,20 @@ function ownWarning(estimate: RunEstimate, limits: SpendLimits): CapWarning[] {
 // RF-1001, RF-1106, DEC-108
 export function capWarnings(inputs: CapInputs): readonly CapWarning[] {
   const { estimate, runCapMicros, limits } = inputs;
-  const run = runWarning(estimate, runCapMicros, inputs.runCapFromProject ?? true);
+  const approvedLine = inputs.approvedLine ?? false;
+  // The meter states the likely figure against the approved amount, so no project run cap is named.
+  const run = approvedLine
+    ? undefined
+    : runWarning(estimate, runCapMicros, inputs.runCapFromProject ?? true);
   const limited =
     limits === undefined
       ? []
       : [...serverWarnings(estimate, limits), ...ownWarning(estimate, limits)];
-  const first = firstCallWarnings(estimate, runCapMicros, inputs.runCapFromProject ?? true);
+  const first = firstCallWarnings(
+    estimate,
+    runCapMicros,
+    inputs.runCapFromProject ?? true,
+    approvedLine,
+  );
   return [...(run === undefined ? [] : [run]), ...limited, ...first];
 }

@@ -51,9 +51,12 @@ export function interruptReasonOf(
   return stop.byShutdown ? 'Restart' : undefined;
 }
 
-/** RF-432: what `run.ended` of a paused run that is stopped says, as at a cap (RF-422). */
+/**
+ * RF-432, P9-03: what `run.ended` of a paused run that its owner stops says: `CapReached` with its
+ * work kept and its unread areas, for its own reason and with no cap code, because no cap stopped it.
+ */
 export function pausedEnd(run: Run): EndDetail {
-  return { errorCode: ERROR_CODES.budgetCapReached, unreadAreas: run.unreadAreas };
+  return { endReason: 'StoppedAtApproval', unreadAreas: run.unreadAreas };
 }
 
 export function failureOf(error: unknown): RunOutcome {

@@ -19,6 +19,8 @@ import { uxMessage } from '../plan/ux-message.js';
 import { coverageMessage } from '../plan/coverage-message.js';
 import { gapMessage } from '../plan/gap-message.js';
 import { gapRepairMessage } from '../plan/gap-repair-message.js';
+import { adrModelMessage } from '../plan/adr-model-message.js';
+import { assumedAdrModelInput } from './adr-model-estimate.js';
 import { assumedCoverageInput, assumedGapInput, assumedGapProblems } from './coverage-estimate.js';
 import { assumedComponents } from './flows-estimate.js';
 import { MEASURING_TAG } from '../plan/plan-call-packing.js';
@@ -52,12 +54,23 @@ export interface PlanPromptFiles {
   readonly gapPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the one repair attempt of the gap call (Q-54). */
   readonly gapRepairPrompt: () => Promise<PromptFile>;
+  /** P9-15: the planner's versioned prompt file for the check of the data model against the decision records (RF-623). */
+  readonly adrModelPrompt: () => Promise<PromptFile>;
   /** RF-155: the package prompt with the workbook guidance after it, when this run would add it. */
   readonly workbookGuidance?: (inputs: PlanInputs) => Promise<PromptFile | undefined>;
 }
 
 export type PlannedCallKind =
-  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage' | 'gap' | 'gapRepair';
+  | 'plan'
+  | 'prd'
+  | 'dataModel'
+  | 'flows'
+  | 'apiContract'
+  | 'ux'
+  | 'coverage'
+  | 'gap'
+  | 'gapRepair'
+  | 'adrModel';
 
 interface PlannedCall {
   readonly kind: PlannedCallKind;
@@ -217,6 +230,21 @@ function closingCalls(files: {
   ];
 }
 
+/**
+ * RF-623, P9-15: the check of the data model against the decision records, counted whenever a data
+ * model call is (whether a record will name a stored structure is not known before the run).
+ */
+function adrModelCalls(documents: readonly PlannedCall[], file: PromptFile): PlannedCall[] {
+  if (!documents.some((call) => call.kind === 'dataModel')) return [];
+  return [
+    whole(
+      'adrModel',
+      file,
+      adrModelMessage(assumedAdrModelInput(), () => TAG),
+    ),
+  ];
+}
+
 // RF-613, P3-113
 export async function plannedPrompts(
   files: PlanPromptFiles,
@@ -224,7 +252,7 @@ export async function plannedPrompts(
   window?: PlanWindow,
 ): Promise<PlannedPrompts> {
   const { cards, brief, questions } = inputs;
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, repair] =
+  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage, gap, repair, adr] =
     await Promise.all([
       files.catalogue(),
       files.prompt(),
@@ -236,6 +264,7 @@ export async function plannedPrompts(
       files.coveragePrompt(),
       files.gapPrompt(),
       files.gapRepairPrompt(),
+      files.adrModelPrompt(),
     ]);
   const guidance = await files.workbookGuidance?.(inputs);
   const supported = supportedCards(cards);
@@ -248,16 +277,18 @@ export async function plannedPrompts(
   );
   const planned = (kind: 'plan' | 'prd', file: PromptFile): PlannedCall =>
     packed(window, { kind, file }, supported, planRender);
+  const documents = documentCalls(
+    supported,
+    { brief, style: judgedStyleId(brief, catalogue.styles) },
+    { dataModel, flows, apiContract, ux },
+    window,
+  );
   const calls: PlannedCall[] = [
     planned('plan', withWorkbookGuidance(plan, guidance)),
     planned('prd', prd),
-    ...documentCalls(
-      supported,
-      { brief, style: judgedStyleId(brief, catalogue.styles) },
-      { dataModel, flows, apiContract, ux },
-      window,
-    ),
+    ...documents,
     ...closingCalls({ coverage, gap, repair }),
+    ...adrModelCalls(documents, adr),
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };
 }

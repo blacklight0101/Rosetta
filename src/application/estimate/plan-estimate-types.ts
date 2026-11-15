@@ -1,4 +1,5 @@
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
+import type { Amount } from '../../domain/budget/approved-amount.js';
 import type { ByScenario, RoleEstimate } from './estimate-types.js';
 
 // RF-613, ADR-007, DEC-81: what the estimate before a plan run answers: the planner's one call as
@@ -30,6 +31,8 @@ interface PlanAssumptions {
   readonly gapPromptTokens: number;
   /** The part of `promptTokens` that belongs to the repair attempt of the gap call (Q-54). */
   readonly gapRepairPromptTokens: number;
+  /** P9-15: the part of `promptTokens` that belongs to the check of the data model against the decision records (RF-623); 0 when none is counted. */
+  readonly adrModelPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** RF-604: the continuations one planner call may make when its answer is cut off; the high figure reserves them. */
@@ -88,6 +91,12 @@ export interface PlanEstimate {
    * amount; the run pauses there) or `project` (the project run caps; the run ends there).
    */
   readonly runLine: 'journey' | 'project';
+  /**
+   * RF-435, P9-02: the journey's one approved amount and whether it is used up (the rule that
+   * refuses a start, RST-2311); absent for a project with no journey. The approved cap's own
+   * limit is only the remainder, so the amount approved is given here.
+   */
+  readonly journey?: { readonly approved: Amount; readonly usedUp: boolean };
   /**
    * Whether the figure of the scenario fits under every cap. `high` is the budget guard's worst
    * case: when it does not fit, the guard may refuse the call and the run ends `CapReached`.

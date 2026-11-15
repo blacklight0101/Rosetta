@@ -13,6 +13,20 @@ export interface ResumeControlProps {
   readonly onResumed: () => void;
 }
 
+/** The line beside Resume: a cap asks to be raised first (RF-006); a Stop here asks for nothing (P9-03). */
+function ResumeNote(props: { readonly phase: RunPhase }): JSX.Element | null {
+  const { phase } = props;
+  if (phase.kind !== 'ended' || phase.endState !== 'CapReached') return null;
+  const atApproval = phase.endReason === 'StoppedAtApproval';
+  return (
+    <span class="rst-live-head__note" data-testid="resume-note">
+      {atApproval
+        ? 'You stopped this run at the approved amount. Resume goes on with it and asks for your approval again before it spends more.'
+        : 'Raise the cap in the project settings first, then resume.'}
+    </span>
+  );
+}
+
 // RF-006
 export function ResumeControl(props: ResumeControlProps): JSX.Element | null {
   const { phase } = props;
@@ -20,11 +34,7 @@ export function ResumeControl(props: ResumeControlProps): JSX.Element | null {
   return (
     <>
       <ResumeButton runId={props.runId} onResumed={props.onResumed} />
-      {phase.endState === 'CapReached' ? (
-        <span class="rst-live-head__note" data-testid="resume-note">
-          Raise the cap in the project settings first, then resume.
-        </span>
-      ) : null}
+      <ResumeNote phase={phase} />
     </>
   );
 }

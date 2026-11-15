@@ -51,6 +51,8 @@ export const journeySchema = z.object({
       remainingMicros: count,
       approvedTokens: count,
       remainingTokens: count,
+      /** P9-08: the spend of every step of the journey; older answers have none. */
+      spentMicros: count.optional(),
     })
     .nullable()
     .optional(),

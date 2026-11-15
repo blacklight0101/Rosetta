@@ -70,6 +70,7 @@ describe('release migrations', () => {
       '0023_runs_end_reason_needs_state.sql',
       '0024_journey_facts.sql',
       '0025_project_consent.sql',
+      '0026_runs_end_reason_stopped_at_approval.sql',
     ]);
   });
 

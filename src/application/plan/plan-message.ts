@@ -29,7 +29,8 @@ export interface PlanMessageInput {
   readonly workbook?: WorkbookSetup | undefined;
 }
 
-function cardsText(input: PlanMessageInput): string {
+/** RF-1406: the cards of the first block; the lab renders the cards of a case with it. */
+export function planCardsText(input: Pick<PlanMessageInput, 'cards' | 'omitted'>): string {
   const omitted = input.omitted ?? new Set<string>();
   const shown = input.cards.filter((card) => !omitted.has(card.id));
   const listed = shown.map(({ id, type, title, summary, claims }) => ({
@@ -40,7 +41,7 @@ function cardsText(input: PlanMessageInput): string {
       citations: claim.citations.map(formatCitation),
     })),
   }));
-  const json = JSON.stringify(listed, null, 2);
+  const json = planOwnerText(listed);
   const summary = omittedSummary(input.cards.filter((card) => omitted.has(card.id)));
   return summary === ''
     ? json
@@ -107,42 +108,50 @@ function workbookPart(input: PlanMessageInput): object {
 function ownerText(input: PlanMessageInput): string {
   const { brief, catalogue } = input;
   const { replaced, own } = ownAnswersPart(brief);
-  return JSON.stringify(
-    {
-      planningBrief: {
-        ...replaced,
-        architectureStyle: styleOf(brief, catalogue),
-        migration: {
-          strategy: brief.migration,
-          order: migrationStrategyInfo[brief.migration].ordering,
-        },
-        applicationKind: brief.application,
-        stack: brief.stack.map(({ layer, choice, proposed }) => ({
-          ...{ layer, choice },
-          ...(proposed === true ? { proposedByRosetta: true } : {}),
-        })),
-        context: brief.context,
-        aiAssistedBuild: brief.buildMethod.aiAssisted,
-        principles: principlesOf(brief, catalogue),
+  return planOwnerText({
+    planningBrief: {
+      ...replaced,
+      architectureStyle: styleOf(brief, catalogue),
+      migration: {
+        strategy: brief.migration,
+        order: migrationStrategyInfo[brief.migration].ordering,
       },
-      ...own,
-      ...workbookPart(input),
-      answeredQuestions: input.answered.map(({ cardId, question, answer }) => ({
-        ...{ cardId, question, answer },
+      applicationKind: brief.application,
+      stack: brief.stack.map(({ layer, choice, proposed }) => ({
+        ...{ layer, choice },
+        ...(proposed === true ? { proposedByRosetta: true } : {}),
       })),
+      context: brief.context,
+      aiAssistedBuild: brief.buildMethod.aiAssisted,
+      principles: principlesOf(brief, catalogue),
     },
-    null,
-    2,
-  );
+    ...own,
+    ...workbookPart(input),
+    answeredQuestions: input.answered.map(({ cardId, question, answer }) => ({
+      ...{ cardId, question, answer },
+    })),
+  });
+}
+
+/** RF-1406: the text of a block as the run writes it, from its object. */
+export function planOwnerText(value: unknown): string {
+  return JSON.stringify(value, null, 2);
 }
 
 /** The user message: the cards block, then the owner's block, each with a tag of its own. */
 // RF-604, RF-145
 export function planMessage(input: PlanMessageInput, tags: () => string): string {
-  const cards = renderDataBlock({ source: 'cards', excerpts: [], text: cardsText(input) }, tags());
+  return planBlocks({ cards: planCardsText(input), owner: ownerText(input) }, tags);
+}
+
+/** RF-1406: the two blocks from the text of each, as the lab sends the parts a run sent. */
+export function planBlocks(parts: { cards: string; owner: string }, tags: () => string): string {
+  const cards = renderDataBlock({ source: 'cards', excerpts: [], text: parts.cards }, tags());
   const owner = renderDataBlock(
-    { source: 'owner_answers', excerpts: [], text: ownerText(input) },
+    { source: 'owner_answers', excerpts: [], text: parts.owner },
     tags(),
   );
-  return `${cards}\n\n${owner}`;
+  return `${cards}
+
+${owner}`;
 }

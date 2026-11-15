@@ -188,15 +188,19 @@ export interface SourceStop {
   /** The claims the verifier never judged (`Unverified` or `Proposed`); they are excluded. */
   readonly unjudgedClaims: number;
   readonly totalClaims: number;
+  /** P9-03: set when the owner stopped the run at the approval pause (no cap stopped it). */
+  readonly atApproval?: true;
 }
 
 /** RF-604, P3-121: the stop of a source run that ended `CapReached`; undefined for any other end. */
 export function sourceStopOf(
   endState: string | null,
   cards: readonly SourceCard[],
+  endReason?: string | null,
 ): SourceStop | undefined {
   if (endState !== 'CapReached') return undefined;
   const claims = cards.flatMap((card) => card.claims);
   const unjudged = claims.filter((c) => c.status === 'Unverified' || c.status === 'Proposed');
-  return { unjudgedClaims: unjudged.length, totalClaims: claims.length };
+  const counts = { unjudgedClaims: unjudged.length, totalClaims: claims.length };
+  return endReason === 'StoppedAtApproval' ? { ...counts, atApproval: true } : counts;
 }

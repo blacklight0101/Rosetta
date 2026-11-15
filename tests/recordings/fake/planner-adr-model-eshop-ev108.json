@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "P9-15, EV-108: a SYNTHETIC answer (written for this repository, not recorded from a model) to the check of the data model against the decision records (adr-model.v1) of the eShop plan of EV-95, whose ADR-001 decides \"Hi-lo ids generated in the application\": it names the three hi-lo sequences BR-006 names (catalog_hilo, catalog_brand_hilo, catalog_type_hilo), and catalog_brand, a table the model has, which is dropped. Source: the public eShopModernizing (MIT licence); no employer text.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"missing\": [\n    {\n      \"decision\": \"ADR-001\",\n      \"structure\": \"catalog_hilo\",\n      \"reason\": \"The catalog item ids come from this hi-lo sequence; the data model has no table or sequence for it.\"\n    },\n    {\n      \"decision\": \"ADR-001\",\n      \"structure\": \"catalog_brand_hilo\",\n      \"reason\": \"The catalog brand ids come from this hi-lo sequence; the data model has none.\"\n    },\n    {\n      \"decision\": \"ADR-001\",\n      \"structure\": \"catalog_type_hilo\",\n      \"reason\": \"The catalog type ids come from this hi-lo sequence; the data model has none.\"\n    },\n    {\n      \"decision\": \"ADR-001\",\n      \"structure\": \"catalog_brand\",\n      \"reason\": \"The brands table holds the ids the generator hands out.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1840,
+              "outputTokens": 212,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-p9-15-1",
+            "modelVersion": "claude-haiku-5-5"
+          }
+        }
+      ]
+    }
+  ]
+}

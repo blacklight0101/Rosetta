@@ -42,6 +42,8 @@ function stateOf(phase: RunPhase): string {
     case 'ended':
       // P8-111: an interrupted run is worded by why it ended.
       if (phase.endState === 'Interrupted') return interruptedPhrase(phase.endReason);
+      // P9-03: Stop here at the approval pause is the owner's stop, not a cap.
+      if (phase.endReason === 'StoppedAtApproval') return interruptedPhrase(phase.endReason);
       return endWords[phase.endState] ?? 'stopped';
   }
 }

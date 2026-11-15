@@ -12,8 +12,10 @@ export type RunEndState = (typeof RUN_END_STATES)[number];
 /**
  * P8-111, DEC-217: why a run ended `Interrupted`: its owner stopped it (`UserStop`), the server
  * restarted or shut down under it (`Restart`), or it was cancelled while queued (`QueueCancel`).
+ * P9-03, RF-432: `StoppedAtApproval` is the one reason of a `CapReached` run: its owner chose
+ * Stop here at the approval pause, so no cap stopped it.
  */
-export const RUN_END_REASONS = ['UserStop', 'Restart', 'QueueCancel'] as const;
+export const RUN_END_REASONS = ['UserStop', 'Restart', 'QueueCancel', 'StoppedAtApproval'] as const;
 export type RunEndReason = (typeof RUN_END_REASONS)[number];
 
 /**
@@ -24,12 +26,22 @@ export type RunEndReason = (typeof RUN_END_REASONS)[number];
 export const RUN_QUEUE_STATES = ['Queued', 'Running', 'AwaitingApproval', 'Ended'] as const;
 export type RunQueueState = (typeof RUN_QUEUE_STATES)[number];
 
-/** RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other five. */
+/**
+ * RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other six. `Stopped` (P9-04)
+ * is a task the user's Stop (or a shutdown) cut short: a stop is no failure.
+ */
 export type AgentTaskState =
-  'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
+  | ('Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput')
+  | ('Failed' | 'StoppedByCap' | 'Stopped');
 
 /** RF-006: whether a resume runs a task of this state again (its state, as the manifest stores it). */
-const UNFINISHED_TASK_STATES: readonly string[] = ['Planned', 'Running', 'StoppedByCap', 'Failed'];
+const UNFINISHED_TASK_STATES: readonly string[] = [
+  'Planned',
+  'Running',
+  'StoppedByCap',
+  'Failed',
+  'Stopped',
+];
 
 export function isUnfinishedTask(state: string): boolean {
   return UNFINISHED_TASK_STATES.includes(state);

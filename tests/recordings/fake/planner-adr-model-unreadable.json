@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "P9-15: a SYNTHETIC answer (written for this repository, not recorded from a model) to the check of the data model against the decision records (adr-model.v1) that is prose, not the JSON the prompt asks for, so the check could not run. No employer text.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "The data model looks complete for every decision.",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1840,
+              "outputTokens": 212,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-p9-15-2",
+            "modelVersion": "claude-haiku-5-5"
+          }
+        }
+      ]
+    }
+  ]
+}

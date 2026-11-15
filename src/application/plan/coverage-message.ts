@@ -12,18 +12,18 @@ import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
 const DETAIL_CHARS = 300;
 
 export interface CoverageMessageInput {
-  readonly tasks: readonly PlanTask[];
-  readonly items: readonly CoverageItem[];
+  readonly tasks: readonly Pick<PlanTask, 'title' | 'acceptanceCriteria'>[];
+  readonly items: readonly (Omit<CoverageItem, 'kind'> & { readonly kind: string })[];
 }
 
-function tasksText(tasks: readonly PlanTask[]): string {
+function tasksText(tasks: CoverageMessageInput['tasks']): string {
   const listed = tasks.map(({ title, acceptanceCriteria }, index) => ({
     ...{ position: index + 1, title, acceptanceCriteria },
   }));
   return JSON.stringify({ tasks: listed }, null, 2);
 }
 
-function itemsText(items: readonly CoverageItem[]): string {
+function itemsText(items: CoverageMessageInput['items']): string {
   const listed = items.map(({ id, kind, name, detail }) => ({
     ...{ id, kind, name, detail: detail.slice(0, DETAIL_CHARS) },
   }));

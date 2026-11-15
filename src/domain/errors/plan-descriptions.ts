@@ -39,7 +39,7 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
   },
   'RST-1806': {
     message:
-      'The hand-off package was written, but some feature, table, operation, journey or screen in it is built by no task card, so the plan is not complete.',
+      'The hand-off package was written, but some feature, table, operation, journey, screen or requirement in it is built by no task card, so the plan is not complete.',
     nextStep:
       'Open checks.md in the package to see the items no task card builds, then write the package again.',
   },

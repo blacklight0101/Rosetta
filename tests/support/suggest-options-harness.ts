@@ -40,6 +40,10 @@ export interface SuggestOptionsHarness {
   readonly project: Project;
   /** The stores the plan sources are seeded into, to add more runs. */
   readonly stores: PlanSourceStores;
+  /** RF-435: the project's journey records, to record or raise its journey. */
+  readonly journeys: MemoryJourneyRecords;
+  /** The project's run index, for a use case that needs all of it. */
+  readonly runs: MemoryRunIndex;
 }
 
 export interface SuggestOptionsOptions {
@@ -108,5 +112,5 @@ export async function createSuggestOptionsHarness(
     signals: options.signals ?? { after: () => new AbortController().signal },
   });
   const stores = { files, briefs, runs };
-  return { suggest, factory, account, actor: actorOf(account), project, stores };
+  return { suggest, factory, account, actor: actorOf(account), project, stores, journeys, runs };
 }

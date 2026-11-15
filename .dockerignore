@@ -14,11 +14,13 @@ playwright-report
 rosetta-out
 _legacy
 eval-out
+lab-out
 **/*.map
 **/*.tsbuildinfo
 **/*.log
 docs
 eval
+lab
 *.md
 Dockerfile
 .dockerignore
@@ -38,3 +40,5 @@ eslint.config.ts
 knip.json
 lefthook.yml
 web-lint.config.ts
+lab/local-cases
+lab/local-sources.json

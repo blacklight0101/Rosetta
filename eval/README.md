@@ -26,4 +26,12 @@ licence, no text of eShopModernizing). Each claim cites lines of that fixture an
 lines, with the three lines of margin the verifier sees, show what the claim says) and a note that says why. The claims
 and notes are our own words. The command reads the lines from the fixture, so the set needs no download.
 
+`judge-check/hand-scored.json` (P10-03, RF-1408) holds eighteen answers with scores a person gave them against the rubrics of
+`lab/rubrics/`, three per prompt family. Their sources are short excerpts (at most 20 lines each) of
+`Services/CatalogService.cs` and `Catalog/Edit.aspx.cs` of the eShopLegacyWebForms application of
+[dotnet-architecture/eShopModernizing](https://github.com/dotnet-architecture/eShopModernizing) (MIT licence, copyright .NET
+Foundation and Contributors) at commit `63bc9ec4414d7e281dc9f9d7bdcf70030950457d`, with that attribution kept in each sample, or
+material invented for this repository. The answers and the cards of the planner and summariser samples were written for this file,
+and the scores were given by the builder of the card; the owner reviews them.
+
 `config.json` and this file were written for this repository. Nothing here comes from the owner's employer (DEC-03).

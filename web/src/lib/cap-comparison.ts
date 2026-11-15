@@ -27,24 +27,29 @@ export interface CapComparison {
 export interface RunCaps {
   readonly micros: bigint;
   readonly tokens: number;
+  /** RF-434, P9-12: the figure is the journey's approved amount, the one limit the start page names. */
+  readonly approved?: boolean;
 }
 
-function tokenComparison(estimate: RunEstimate, capTokens: number): CapComparison {
+function tokenComparison(estimate: RunEstimate, caps: RunCaps): CapComparison {
   const likely = totalTokens(estimate.total, 'likely');
   const high = totalTokens(estimate.total, 'high');
-  const cap = BigInt(capTokens);
+  const cap = BigInt(caps.tokens);
   const used = percentOf(BigInt(likely), cap);
+  const noun = caps.approved === true ? 'the approved amount' : 'the run token cap';
   return {
     label: 'Likely tokens against the cap',
     used,
     mark: percentOf(BigInt(high), cap),
     sentence:
-      `Likely ${tokensText(likely)} is ${String(used)}% of the run token cap of ` +
-      `${tokensText(capTokens)}; the marker shows the high estimate, ${tokensText(high)}.`,
+      `Likely ${tokensText(likely)} is ${String(used)}% of ${noun} of ` +
+      `${tokensText(caps.tokens)}; the marker shows the high estimate, ${tokensText(high)}.`,
   };
 }
 
-function costComparison(estimate: RunEstimate, cap: bigint): CapComparison {
+function costComparison(estimate: RunEstimate, caps: RunCaps): CapComparison {
+  const cap = caps.micros;
+  const noun = caps.approved === true ? 'the approved amount' : 'the cap';
   const likely = pricedTotal(estimate, 'likely');
   const high = pricedTotal(estimate, 'high');
   const used = percentOf(likely, cap);
@@ -58,7 +63,7 @@ function costComparison(estimate: RunEstimate, cap: bigint): CapComparison {
     used,
     mark: percentOf(high, cap),
     sentence:
-      `Likely ${dollars(likely)} is ${String(used)}% of the cap; the marker shows the high ` +
+      `Likely ${dollars(likely)} is ${String(used)}% of ${noun}; the marker shows the high ` +
       `estimate, ${dollars(high)}.${leftOut}`,
   };
 }
@@ -66,6 +71,6 @@ function costComparison(estimate: RunEstimate, cap: bigint): CapComparison {
 // RF-425
 export function capComparison(estimate: RunEstimate, caps: RunCaps): CapComparison {
   return isLocalEstimate(estimate)
-    ? tokenComparison(estimate, caps.tokens)
-    : costComparison(estimate, caps.micros);
+    ? tokenComparison(estimate, caps)
+    : costComparison(estimate, caps);
 }

@@ -68,18 +68,47 @@ export function basisMovedText(before: RunEstimate, after: RunEstimate): string 
     : 'The figures changed: they now come from the fixed assumptions, because no earlier run of this model is counted.';
 }
 
+/** P9-11: the likely total is above the approvable one in tokens or, for priced roles, dollars. */
+function likelyIsAbove(estimate: RunEstimate): boolean {
+  const { journey } = estimate;
+  if (journey === undefined) return false;
+  if (journey.likely.tokens > journey.approvable.tokens) return true;
+  if (isLocalEstimate(estimate)) return false;
+  return BigInt(journey.likely.costMicros) > BigInt(journey.approvable.costMicros);
+}
+
 /** DEC-210: says so when the likely total is above the approvable one; undefined when it is not. */
 // RF-434
 function likelyAboveText(estimate: RunEstimate): string | undefined {
   const { journey } = estimate;
-  if (journey === undefined) return undefined;
-  const local = isLocalEstimate(estimate);
-  const above = local
-    ? journey.likely.tokens > journey.approvable.tokens
-    : BigInt(journey.likely.costMicros) > BigInt(journey.approvable.costMicros);
-  return above
-    ? `likely above what can be approved (likely ${figureText(estimate, journey.likely)})`
-    : undefined;
+  if (journey === undefined || !likelyIsAbove(estimate)) return undefined;
+  return `likely above what can be approved (likely ${figureText(estimate, journey.likely)})`;
+}
+
+/**
+ * P9-11, RF-434: the likely figure of the bar at the foot of the start page when it is above the
+ * approvable one, with what follows; undefined when it fits (the bar keeps its own words).
+ */
+// RF-434
+export function journeyBarText(estimate: RunEstimate): string | undefined {
+  const { journey } = estimate;
+  if (journey === undefined || !likelyIsAbove(estimate)) return undefined;
+  const [likely, approved] = [likelyText(estimate), approvalText(estimate)];
+  return `Likely ${likely ?? ''}, above the ${approved ?? ''} approved: the run pauses and asks`;
+}
+
+/**
+ * P9-11, EV-96, RF-430: says so when a later read gives another approvable figure than the earlier
+ * one, with both figures and the reason; undefined when the figure did not move.
+ */
+// RF-430
+export function figureMovedText(before: RunEstimate, after: RunEstimate): string | undefined {
+  const [was, now] = [approvalText(before), approvalText(after)];
+  if (was === undefined || now === undefined || was === now) return undefined;
+  const reason =
+    basisMovedText(before, after) ??
+    'The ceilings, the settings or the areas changed since the earlier read.';
+  return `The approvable figure moved from ${was} to ${now}. ${reason}`;
 }
 
 /** The journey figures as three short lines, in the words of the Deepen panel (P8-26, RF-434). */

@@ -39,6 +39,7 @@ import {
   loadCoveragePrompt,
   loadGapPrompt,
   loadGapRepairPrompt,
+  loadAdrModelPrompt,
   loadPlanRepairPrompt,
   loadPlannerSecretRiskPrompt,
   loadPrdPrompt,
@@ -96,6 +97,8 @@ export interface PlanHarnessOptions {
   /** Q-45: the answer to the call for the items no card builds (no card if absent), and a hook before it. */
   readonly gapRecording?: Recording;
   readonly beforeGapCall?: (harness: PlanHarness) => Promise<void>;
+  /** P9-15: the answer to the check of the data model against the decision records (none if absent). */
+  readonly adrModelRecording?: Recording;
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
@@ -149,6 +152,7 @@ export function planExecutor(
     coveragePrompt: () => loadCoveragePrompt('prompts'),
     gapPrompt: () => loadGapPrompt('prompts'),
     gapRepairPrompt: () => loadGapRepairPrompt('prompts'),
+    adrModelPrompt: () => loadAdrModelPrompt('prompts'),
     planRepairPrompt: () => loadPlanRepairPrompt('prompts'),
     secretRiskPrompt: () => loadPlannerSecretRiskPrompt('prompts'),
     secretLines: new MaskedLineFinder(masker),
@@ -271,6 +275,9 @@ export async function createPlanHarness(
       options.coverageRecording ??
       (await loadRecording(join('tests', 'recordings', 'fake', 'planner-coverage.json'))),
     gapRecording: options.gapRecording ?? noGapCards(),
+    ...(options.adrModelRecording === undefined
+      ? {}
+      : { adrModelRecording: options.adrModelRecording }),
     beforeGapCall: async () => {
       if (made.harness !== undefined) await options.beforeGapCall?.(made.harness);
     },

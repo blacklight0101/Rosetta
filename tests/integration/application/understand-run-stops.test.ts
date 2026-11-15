@@ -100,7 +100,7 @@ describe('an understand run the user stops', UNDERSTAND_TIMEOUT, () => {
     expect(manifest.endedAt).not.toBeNull();
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
-      ['Services', 'Failed', 0],
+      ['Services', 'Stopped', 0],
     ]);
     const folder = h.runFolder(run);
     expect(await readFile(join(folder, 'cards', 'BR', 'BR-001.md'), 'utf8')).toContain(

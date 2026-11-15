@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "version": "overview-sample-1",
+  "prompt": "summariser/overview",
+  "description": "Two invented card lists, to show the format of a second prompt and to test the lab. Not a tuning set.",
+  "cases": [
+    {
+      "id": "ov-01",
+      "input": {
+        "cards": [
+          {
+            "id": "C-001",
+            "type": "RULE",
+            "area": "shop",
+            "title": "Gold discount",
+            "summary": "Gold customers get a discount.",
+            "claims": ["A gold-tier customer gets 20 percent off the order total."]
+          },
+          {
+            "id": "C-002",
+            "type": "ENTITY",
+            "area": "shop",
+            "title": "Order",
+            "summary": "An order has a total and a customer tier.",
+            "claims": ["An order holds a total and the tier of its customer."]
+          },
+          {
+            "id": "C-003",
+            "type": "SCREEN",
+            "area": "web",
+            "title": "Checkout page",
+            "summary": "The page where a customer pays.",
+            "claims": ["The checkout page shows the order total."]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ov-02",
+      "input": {
+        "cards": [
+          {
+            "id": "C-010",
+            "type": "RULE",
+            "area": "billing",
+            "title": "Late fee",
+            "summary": "Late invoices carry a fee.",
+            "claims": ["An invoice paid after its due date adds a fee of 2 percent."]
+          },
+          {
+            "id": "C-011",
+            "type": "INTEGRATION",
+            "area": "billing",
+            "title": "Mail",
+            "summary": "Invoices are sent by mail.",
+            "claims": ["Each invoice is sent to the customer by e-mail."]
+          }
+        ]
+      }
+    }
+  ]
+}

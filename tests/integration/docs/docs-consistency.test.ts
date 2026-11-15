@@ -65,7 +65,7 @@ describe('task card consistency', () => {
   );
 
   it('RNF-005 the tasks.md Totals table has one row per phase of the cards plus the total', () => {
-    const phases = [...new Set(cards.map((c) => c.id.slice(0, 2)))];
+    const phases = [...new Set(cards.map((c) => c.id.split('-')[0] ?? ''))];
 
     expect([...totals.keys()].sort()).toEqual([...phases, 'Total'].sort());
   });

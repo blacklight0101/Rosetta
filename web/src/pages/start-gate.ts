@@ -25,6 +25,8 @@ export interface StartGateInput {
   readonly noWorkbooks?: boolean;
   /** RF-431: the providers whose key is missing, named; empty or absent when every role has one. */
   readonly keyMissing?: string;
+  /** RF-434, P9-09: every role is on a provider the page knows cannot answer. */
+  readonly rolesDown?: boolean;
   /** RF-430: the figure the user approves, named on the button. */
   readonly approval?: string;
 }
@@ -37,10 +39,15 @@ export interface StartGate {
   readonly notice?: string | undefined;
 }
 
+// RF-434, P9-09
+const rolesDownReason =
+  'Every role uses a provider that cannot answer now, so a run would fail at its first call. Fix the roles above first.';
+
 function understandReason(input: StartGateInput): string | undefined {
   if (input.estimate.status === 'loading') return 'Wait for the estimate.';
   if (input.estimate.status === 'failed') return 'The estimate could not be loaded.';
   if (input.chosenAreas === 0) return 'Choose at least one area.';
+  if (input.rolesDown === true) return rolesDownReason;
   if ((input.keyMissing ?? '') !== '') {
     return `The ${input.keyMissing ?? ''} key is missing: add your own key in Settings and keys.`;
   }

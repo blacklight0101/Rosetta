@@ -4,7 +4,8 @@ import type { EndReason } from '../../api/end-reason.js';
 // `reduce-run.ts`. Nothing here is HTML: every text is shown as text.
 
 export type AgentState =
-  'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
+  | ('Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput')
+  | ('Failed' | 'StoppedByCap' | 'Stopped');
 
 export interface ToolNow {
   /** For example `read_file Catalog/Edit.aspx.cs:40-80`. */
@@ -20,6 +21,8 @@ interface CardRef {
 
 export interface AgentPanelState {
   readonly agentTaskId: string;
+  /** P9-14: the run's life the agent first appeared in: how many `run.started` the page had seen. */
+  readonly life: number;
   readonly area: string;
   readonly role: string;
   readonly model: string;
@@ -218,6 +221,8 @@ interface CallsInFlight {
 
 export interface RunState {
   readonly lastSeq: number;
+  /** P9-14: the `run.started` events seen: the run's lives (a resume or a Continue starts a new one). */
+  readonly starts: number;
   /** The `at` of `run.started`; the event log shows times from it. */
   readonly startedAt: string | undefined;
   readonly stage: string | undefined;

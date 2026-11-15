@@ -41,7 +41,7 @@ export interface CollectedAnswer {
   readonly cutKept?: true;
 }
 
-function keyOf(draft: CardDraft): string {
+export function keyOf(draft: { readonly type: string; readonly title: string }): string {
   return `${draft.type}\u0000${draft.title.trim().toLowerCase()}`;
 }
 

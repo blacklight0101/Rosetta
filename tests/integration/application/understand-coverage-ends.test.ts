@@ -82,7 +82,7 @@ describe('an understand run whose task ends without a card: coverage', UNDERSTAN
       'Catalog',
     );
 
-    expect(ended.taskStates).toEqual(['Failed']);
+    expect(ended.taskStates).toEqual(['Stopped']);
     expect(ended.files).toContainEqual(catalogRead);
     expect(ended.markdown).toContain(catalogRow);
   });
