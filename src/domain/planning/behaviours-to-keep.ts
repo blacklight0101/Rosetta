@@ -25,15 +25,23 @@ const scopeKinds: Readonly<Record<string, string>> = {
   SCRN: 'screen:',
 };
 
+/** Whether some item of the package of that kind (`feature:`) traces to the card. */
+function traced(scope: BuiltScope, prefix: string, cardId: string): boolean {
+  return [...scope].some(([id, cards]) => id.startsWith(prefix) && cards.includes(cardId));
+}
+
 /**
  * P5-41: a card of a type that the task builds items of counts only when one of those items traces to
- * it. A task that links no item of that kind keeps every card its requirements cite.
+ * it. A task that links no item of that kind keeps every card its requirements cite. P10-14, P10-D6:
+ * a FEAT card that no feature traces to is built by no feature, so the tasks that list a requirement
+ * citing it keep it; a FLOW or SCRN card no journey or screen traces to was left out with a reason.
  */
 function inScope(task: PlanTask, card: SourceCard, scope: BuiltScope | undefined): boolean {
   const prefix = scopeKinds[card.type];
   if (scope === undefined || prefix === undefined) return true;
   const items = task.builds.filter((id) => id.startsWith(prefix));
   if (items.length === 0) return true;
+  if (card.type === 'FEAT' && !traced(scope, prefix, card.id)) return true;
   return items.some((id) => scope.get(id)?.includes(card.id) === true);
 }
 

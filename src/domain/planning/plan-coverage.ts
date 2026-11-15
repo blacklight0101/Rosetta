@@ -155,6 +155,18 @@ export function isMigrationCard(task: Pick<PlanTask, 'title'>): boolean {
   return task.title === MIGRATION_TITLE;
 }
 
+// P10-14, P10-D6: the migrations card keeps only the rules that name its tables (RF-631), so it never
+// lists a requirement with a feature, journey or screen behind it: a card that keeps that behaviour must.
+const BEHAVIOUR_CARD = /^(?:FEAT|FLOW|SCRN)-/u;
+
+/** Whether the migrations card may list the requirement: a table's card is behind it and no behaviour card. */
+function migratesRequirement(requirement: Requirement, sources: ReadonlySet<string>): boolean {
+  const cited = requirement.sources;
+  return (
+    cited.some((card) => sources.has(card)) && !cited.some((card) => BEHAVIOUR_CARD.test(card))
+  );
+}
+
 function migrationCard(content: PlanContent, tables: readonly ModelTable[]): PlanTask {
   const sources = new Set(tables.flatMap((table) => table.sources));
   const count = `${String(tables.length)} table${tables.length === 1 ? '' : 's'}`;
@@ -162,7 +174,7 @@ function migrationCard(content: PlanContent, tables: readonly ModelTable[]): Pla
     ...{ id: planId('T', 1), title: MIGRATION_TITLE, phase: 1 },
     builds: tables.map((table) => `table:${table.name}`),
     requirements: content.requirements
-      .filter((requirement) => requirement.sources.some((source) => sources.has(source)))
+      .filter((requirement) => migratesRequirement(requirement, sources))
       .map((requirement) => requirement.id),
     acceptanceCriteria: [
       `Given an empty database of the chosen stack, when the migrations run, then the ${count} of the target data model exist with their columns, keys and constraints.`,
