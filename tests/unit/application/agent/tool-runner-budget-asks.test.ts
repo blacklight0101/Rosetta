@@ -19,6 +19,8 @@ const entries = [
   entry(big, 10_000, { language: 'csharp', lines: 1000 }),
   entry(other, 10_000, { language: 'csharp', lines: 1000 }),
 ];
+/** RF-1414: these tests set the cap DEC-239 measured; it is off by default (DEC-246). */
+const cap = 350;
 const ids = { runId: 'run-1', agentTaskId: 'task-1', callId: 'run-1#1' };
 
 /** Serves exactly the lines a read_file call asks for, and records each call it runs. */
@@ -55,7 +57,7 @@ const read = (path: string, startLine: number, endLine: number): ToolCall => ({
 
 function setup() {
   const ran: ToolCall[] = [];
-  const gate = new ReadGate(entries);
+  const gate = new ReadGate(entries, cap);
   const runner = new ToolRunner(fakeTools(ran), gate);
   const ask = (): void => {
     const more = gate.readMore(8);
@@ -129,7 +131,7 @@ describe('refused reads and repeats', () => {
 describe('a path outside the repository once the budget is spent', () => {
   it('RF-1414 RF-145 refuses it and logs the security event, as without a budget', async () => {
     const { tools, logger } = toolsSetup();
-    const gate = new ReadGate(entries);
+    const gate = new ReadGate(entries, cap);
     gate.note({ content: 'lines', excerpts: [{ path: big, startLine: 1, endLine: 10 }] });
     const more = gate.readMore(8);
     if (more === undefined) throw new Error('no ask');
