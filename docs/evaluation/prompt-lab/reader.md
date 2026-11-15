@@ -144,7 +144,7 @@ Count check: every run planned and ran cases times repetitions (for example `rea
 - **`cards/card-format` and `NoCards`**: its target still labels a problem-free empty list `Unusable`.
 - **The `area` system prompt** (in every reader call) needs a multi-turn replay or the end-to-end check of P10-11.
 - **`reader/workbook`** needs a committed set before any round.
-- **The later cost of `read-more.v3`** (P10-11: Asset Manager over the +15% of DEC-235 (c); a served line costs about 22.5 tokens, not 12): P10-13 caps the lines `read_file` serves per read-more ask at 350 in code (DEC-239, RF-1414) and keeps v3; the arithmetic, the lab rounds and the journeys are in [read-more-cap.md](read-more-cap.md).
+- **The later cost of `read-more.v3`** (P10-11: Asset Manager over the +15% of DEC-235 (c); a served line costs about 22.5 tokens, not 12): P10-13 caps the lines `read_file` serves per read-more ask at 350 in code (DEC-239, RF-1414) and keeps v3; the arithmetic, the lab rounds and the journeys are in [read-more-cap.md](read-more-cap.md). The journeys found it within +15% on Asset Manager and eShop and over on the last call of Invoice's asked task, where the cap added an ask, so the keep of 350 goes to the owner.
 
 ## 8. Superseded and free runs
 
