@@ -216,7 +216,8 @@ latency. It is recorded as an exception to the 15% limit of DEC-235 (c); the rul
 change. `prompts/shared/masked-value.v2.md` holds the landed text of section 2b and is the active
 version; `v1` stays in the repository. The committed lab sets keep the `v1` note they were captured
 with (DEC-236); the `shared/masked-value` target puts the note under test in, so a later version is
-still compared without a re-capture.
+still compared without a re-capture. After the scope below (reader and cards) was reported, the
+owner ruled to keep v2 anyway (DEC-247); the verifier reach below is reported for the owner too.
 
 **Scope.** The note is not a model call of its own. It is the text the run's one masker
 (`explainedMasker`) writes after `[MASKED:<kind>]` for every secret value in anything sent to a
@@ -230,11 +231,31 @@ turn repeats the earlier reads, so once such a file is read every later turn of 
 its notes. So the change reaches frequent calls on an app with secrets in its code, not one small,
 rare call; on an app without them it adds nothing.
 
+**The verifier too.** RF-141 makes the reader write one claim per plain-text secret, citing its
+`file:line`. The verifier's claim call sends the cited lines in a `cited_lines` block
+(`judge-claim.ts`, `evidenceMessage`), and the egress guard masks every part, so the note goes with
+them (`verifier-masked-secret.test.ts` asserts it); the retry turn (`verifier/retry`) sends the same
+history again. So every claim about a plain-text secret now reaches the verifier with the v2 note,
+which speaks to the reader ("report it at this line ... must move to a secret store and be
+replaced"). Its effect on the verifier's verdicts, output and parsing is **not measured**: the
+committed verifier sets (`verifier-claim-*`, `verifier-retry-calibration`) hold no masked case.
+Follow-up proposed: a verifier set with masked cases (claims on plain-text secrets, with the note
+of `v1` and of v2) to measure it.
+
+**Beyond model calls.** The same `explainedMasker` masks what Rosetta writes for people as well:
+the logs (`composition-root.ts`), the event log, the live updates (SSE) and the run manifests
+(`compose-runs.ts`), the card, task-result, egress and cost files (`compose-understand.ts`), the
+report HTML (`compose-report.ts`) and the scan's code map. These files now show the longer,
+model-directed wording after every masked value. In the code map a SQL statement is cut at 500
+characters after masking (`mask-code-map.ts`, RF-103); the v2 note is 135 characters longer than
+`v1` (227 against 92 after the marker), so a statement with a masked value keeps less SQL, or its
+note is cut. No code was changed for this.
+
 **Input cost (Haiku 5.5, measured).** The v2 note is about 46 input tokens longer per masked value
 than `v1`: a case with one note switched from `v1` to v2 went from 7011 to 7058 tokens
 (`cards/card-format`, runs 20261115-101608-lab and 20261115-101734-lab) and from 10565 to 10611
 (`reader/read-more`, 20261115-101749-lab and 20261115-101806-lab); the cases left unchanged moved
-by up to 18 tokens between runs, so the figure is about 46 plus or minus 15. Only one note per set
+by up to 18 tokens between runs, so the figure is about 46 plus or minus 18. Only one note per set
 could be switched in the lab: the case schema keeps a read line to 300 characters and most masked
 lines of the eShop cases would pass it with the longer note. The per-call cost below is that figure
 times the notes of each case, on the input tokens of the full sets (runs 20261115-101928-lab and
@@ -246,11 +267,15 @@ times the notes of each case, on the input tokens of the full sets (runs 2026111
 | `reader-turns-left` | 3 of 6            | 2 to 3         | 8566           | +1.1% to +1.8%          | +0.6%                 |
 | `reader-read-more`  | 4 of 10           | 1              | about 9800     | about +0.5%             | about +0.2%           |
 
-Both frequent families stay under +2% over their set; single calls that hold six notes reach about
-+4%. The output cost of section 2b (+23% on Haiku) applies to the turns that carry a note, and was
-not re-measured on these families: with one note switched per set the answers cannot show it.
+The +2% stop line of the card was read per set: both frequent families stay under it (+1.0% and
++0.6%), while single calls reach +3.9% (six notes). The output cost of section 2b (+23% on Haiku)
+applies to the turns that carry a note, and was not re-measured on these families: with one note
+switched per set the answers cannot show it.
 Limits: the committed cases keep at most two reads of 40 lines each, so a real turn can hold more
 notes than a case and also more input around them; a re-capture with v2 (DEC-236, at the end of
-Phase 10) cuts a line at 300 characters and so may cut the note on a long masked line.
+Phase 10) cuts a line at 300 characters and so may cut the note on a long masked line; and a case
+captured from an older transcript, re-masked for a newly learned secret shape, gains 227 characters
+per value and can pass the 300-character cap of the case schema (`reader-case.ts`), so the case fails
+the schema.
 
-Spend: six Haiku runs, 28 calls, $0.034 (target calls only, no judge).
+Spend: six Haiku runs, 30 calls, $0.034 (target calls only, no judge).
