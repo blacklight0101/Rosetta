@@ -6,8 +6,8 @@ import { ToolRunner } from '../../../../src/application/agent/tool-runner.js';
 import type { ToolCall } from '../../../../src/application/ports/llm-provider.js';
 import { entry } from '../../../support/code-map-builders.js';
 
-// RF-1414, DEC-239: after a read-more ask, read_file serves at most 350 lines until the next
-// answer; a read past the budget is cut from its start line, one made with no line left is not run
+// RF-1414, DEC-239: with the cap set to 350, after a read-more ask read_file serves at most 350
+// lines until the next answer (DEC-246: the cap is off by default, and then nothing is cut); a read past the budget is cut from its start line, one made with no line left is not run
 // (a notice, not a tool error); grep is neither counted nor cut.
 
 const big = 'src/Big.cs';
@@ -48,9 +48,12 @@ const read = (startLine: number, endLine: number): ToolCall => ({
   arguments: { path: big, startLine, endLine },
 });
 
-function setup() {
+/** RF-1414: the cap DEC-239 measured; it is off by default (DEC-246). */
+const cap = 350;
+
+function setup(capped = true) {
   const ran: ToolCall[] = [];
-  const gate = new ReadGate(entries);
+  const gate = new ReadGate(entries, capped ? cap : undefined);
   const runner = new ToolRunner(fakeTools(ran), gate);
   const ask = (): void => {
     const more = gate.readMore(8);
@@ -59,6 +62,21 @@ function setup() {
   };
   return { ran, gate, runner, ask };
 }
+
+describe('the read-more line budget off by default', () => {
+  it('RF-1414 serves every read after an ask whole when no cap is set (DEC-246)', async () => {
+    const { ran, runner, ask } = setup(false);
+    await runner.run(read(1, 10), ids);
+    ask();
+
+    await runner.run(read(11, 410), ids);
+    await runner.run(read(411, 810), ids);
+
+    expect(ran[1]?.arguments).toMatchObject({ startLine: 11, endLine: 410 });
+    expect(ran[2]?.arguments).toMatchObject({ startLine: 411, endLine: 810 });
+    expect(runner.toolErrors).toBe(0);
+  });
+});
 
 describe('the read-more line budget in the tool runner', () => {
   it('RF-1414 does not cap the reads before the first ask', async () => {

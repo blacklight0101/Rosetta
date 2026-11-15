@@ -26,6 +26,8 @@ export interface KeepOrFixInput {
   readonly sources: readonly SourceCard[];
   readonly tables: readonly ModelTable[];
   readonly scope?: BuiltScope;
+  /** P10-14: the task that keeps each FEAT card no feature traces to. */
+  readonly owners?: ReadonlyMap<string, string>;
 }
 
 /** The default of a keep-or-fix question: the legacy behaviour is not kept. */
@@ -69,6 +71,7 @@ export function keepOrFixRows(
       behavioursOf(task, input.requirements, input.sources, {
         ...{ tables: input.tables, judgements },
         ...(input.scope === undefined ? {} : { scope: input.scope }),
+        ...(input.owners === undefined ? {} : { owners: input.owners }),
       }).fix.map((each) => each.claimId),
     ),
   }));

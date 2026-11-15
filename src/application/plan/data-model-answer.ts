@@ -17,6 +17,7 @@ const MAX_TABLES = 100;
 const MAX_COLUMNS = 200;
 const MAX_LIST = 50;
 const NAME = 80;
+const FIELDS = 300;
 const TEXT = 2000;
 
 const FAILS = 'The part fails its schema, so the parser drops it; the rest of the answer is kept.';
@@ -45,7 +46,12 @@ const tableIndex = z.object({
   reason: optionalText.default(''),
 });
 
-const droppedField = z.object({ claim: name, field: name, reason: text });
+// P10-14, P10-D7: a dropped entry may name several legacy fields in one text, so its field is longer.
+const droppedField = z.object({
+  claim: name,
+  field: z.string().trim().min(1).max(FIELDS),
+  reason: text,
+});
 
 // The table as the planner wrote it, each part still untrusted: read part by part below.
 const tableRaw = z
