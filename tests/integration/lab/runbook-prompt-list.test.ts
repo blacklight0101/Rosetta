@@ -36,13 +36,29 @@ async function newestFiles(folder: string): Promise<Map<string, string>> {
   return new Map([...newest].map(([stem, { file }]) => [stem, file]));
 }
 
-/** A family is live when the run's code names the file of its newest version. */
+/**
+ * DEC-246: the families whose run went back to an older version, with the version the loader wires.
+ * Every other family is live only when the run's code names the file of its newest version.
+ */
+const ROLLED_BACK: Readonly<Record<string, string>> = { 'reader/read-more': 'v2' };
+
+/** The file a family's run must name: its newest, or the rolled-back version (same extension). */
+function wiredFile(family: string, stem: string, newest: string): string {
+  const back = ROLLED_BACK[family];
+  return back === undefined ? newest : `${stem}.${back}${newest.slice(newest.lastIndexOf('.'))}`;
+}
+
+/** Whether the code names the file a family's run must use (RF-1406, DEC-246). */
+function isLive(code: string, folder: string, stem: string, newest: string): boolean {
+  return code.includes(`${folder}/${wiredFile(`${folder}/${stem}`, stem, newest)}`);
+}
+
 async function liveFamilies(): Promise<string[]> {
   const code = await sourceText(join(root, 'src'));
   const live: string[] = [];
   for (const folder of FOLDERS) {
     for (const [stem, file] of await newestFiles(folder)) {
-      if (code.includes(`${folder}/${file}`)) live.push(`${folder}/${stem}`);
+      if (isLive(code, folder, stem, file)) live.push(`${folder}/${stem}`);
     }
   }
   return live.sort();
@@ -58,6 +74,35 @@ async function runbookRows(): Promise<Map<string, string>> {
   }
   return rows;
 }
+
+describe('which prompt family is live', () => {
+  const loader = 'reader: { readMore: "reader/read-more.v2.md", area: "reader/area.v12.md" }';
+
+  it('RF-1406 counts a family live only when its newest version is wired, not an older one', () => {
+    expect(isLive(loader, 'reader', 'area', 'area.v12.md')).toBe(true);
+    expect(isLive('/** was reader/area.v2.md */', 'reader', 'area', 'area.v12.md')).toBe(false);
+  });
+
+  it('RF-1406 counts a rolled-back family live only when its rolled-back version is wired (DEC-246)', () => {
+    expect(isLive(loader, 'reader', 'read-more', 'read-more.v3.md')).toBe(true);
+    expect(isLive('reader/read-more.v3.md', 'reader', 'read-more', 'read-more.v3.md')).toBe(false);
+  });
+
+  it('RF-1406 names each rolled-back version in the loader, with a newer version in the folder (DEC-246)', async () => {
+    const loaderText = await readFile(
+      join(root, 'src', 'infrastructure', 'prompts', 'prompt-files.ts'),
+      'utf8',
+    );
+    for (const [family, version] of Object.entries(ROLLED_BACK)) {
+      const [folder = '', stem = ''] = family.split('/');
+      const newest = (await newestFiles(folder)).get(stem);
+
+      expect(loaderText).toContain(`'${family}.${version}.md'`);
+      expect(newest).toBeDefined();
+      expect(newest).not.toBe(`${stem}.${version}.md`);
+    }
+  });
+});
 
 describe('the runbook list of prompt ids', () => {
   it('RF-1406 lists every live prompt family, once', async () => {

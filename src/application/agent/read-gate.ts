@@ -11,8 +11,9 @@ import type { AreaRead } from './agent-task-result.js';
 // has nothing to read, so the rule does not apply to it. An answer after a read of less than half
 // of the area's first-party tokens is refused again, up to three times while it keeps reading, with
 // the files still unread (P8-92, RF-210).
-// RF-1414, DEC-239: each ask also opens a budget of lines read_file may serve until the next answer,
-// which the tool runner keeps (`read-budget.ts`), so the reads one ask causes stay bounded.
+// RF-1414, DEC-239: when a line cap is set, each ask also opens a budget of lines read_file may serve
+// until the next answer, which the tool runner keeps (`read-budget.ts`), so the reads one ask causes
+// stay bounded. DEC-246: no cap is set by default, so an ask opens no budget.
 
 /** Answers refused before an unread area's answer is accepted anyway (a refusal costs a turn). */
 const maxRefusals = 2;
@@ -24,8 +25,11 @@ const enoughRead = 0.5;
 /** P8-92: how many times one reader is asked to read more (each ask costs a turn and a call). */
 const maxAsks = 3;
 
-/** DEC-239, RF-1414: the lines read_file may serve after a read-more ask, until the next answer. */
-export const readMoreLines = 350;
+/**
+ * RF-1414: the lines read_file may serve after a read-more ask, until the next answer, or undefined
+ * for no cap. DEC-246 turned the cap off (DEC-239 had measured 350); a later card sets it here.
+ */
+export const readMoreLines: number | undefined = undefined;
 
 /** What the reader is told when it is asked to read more. */
 export interface ReadMoreAsk {
@@ -34,8 +38,8 @@ export interface ReadMoreAsk {
   readonly tokens: number;
   /** The unread files, one per line. */
   readonly files: string;
-  /** RF-1414: the lines the reader may read before its next answer. */
-  readonly lines: number;
+  /** RF-1414: the lines the reader may read before its next answer, or undefined for no cap. */
+  readonly lines: number | undefined;
 }
 
 function listed(paths: readonly string[]): string {
@@ -55,9 +59,12 @@ export class ReadGate {
   private readAtLastAsk = 0;
   /** RF-1414: the lines read_file may still serve before the next answer; none before the first ask. */
   private linesLeft: number | undefined;
+  /** RF-1414: the lines each ask may read, or undefined for no cap (the default, DEC-246). */
+  readonly lineCap: number | undefined;
 
-  constructor(readableFiles: readonly FileEntry[]) {
+  constructor(readableFiles: readonly FileEntry[], lineCap: number | undefined = readMoreLines) {
     this.entries = readableFiles;
+    this.lineCap = lineCap;
     this.readable = new Set(readableFiles.map((file) => file.path));
   }
 
@@ -103,10 +110,10 @@ export class ReadGate {
     if (this.asks > 0 && readTokens <= this.readAtLastAsk) return undefined;
     const percent = Math.round(share * 100);
     const files = listed(unread.map((file) => file.path));
-    return { percent, readTokens, tokens, files, lines: readMoreLines };
+    return { percent, readTokens, tokens, files, lines: this.lineCap };
   }
 
-  /** RF-1414: the lines read_file may still serve before the next answer; undefined before any ask. */
+  /** RF-1414: the lines read_file may still serve before the next answer; undefined before any ask or with no cap. */
   linesLeftToRead(): number | undefined {
     return this.linesLeft;
   }

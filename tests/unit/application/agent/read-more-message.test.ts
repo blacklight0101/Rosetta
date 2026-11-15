@@ -44,3 +44,20 @@ describe('readMoreMessage', () => {
     expect(message).toContain('src/{{lines}}.cs');
   });
 });
+
+describe('readMoreMessage with no line cap', () => {
+  it('RF-1414 leaves {{lines}} as written when no cap is set (DEC-246)', () => {
+    const readMore: PromptFile = {
+      ...testReaderPrompts.readMore,
+      text: 'Read at most {{lines}} lines.\n{{files}}\nTurns left: {{turns}}.',
+    };
+    const message = readMoreMessage(
+      { ...testReaderPrompts, readMore },
+      { ...share, lines: undefined, filesBlock: 'BLOCK', turns: 6 },
+    );
+
+    expect(message).toContain('Read at most {{lines}} lines.');
+    expect(message).not.toContain('undefined');
+    expect(message).toContain('Turns left: 6.');
+  });
+});

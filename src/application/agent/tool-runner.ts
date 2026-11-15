@@ -3,7 +3,7 @@ import type { ToolCall } from '../ports/llm-provider.js';
 import type { AgentTaskEnd } from './agent-task-result.js';
 import type { RepeatedCall } from './retry-note.js';
 import type { AgentToolSet } from './agent-tool-set.js';
-import { readMoreLines, type ReadGate } from './read-gate.js';
+import type { ReadGate } from './read-gate.js';
 import { servedLines, spentMessage, withinBudget } from './read-budget.js';
 import type { ToolCallIds, ToolOutcome } from './read-only-tools.js';
 import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
@@ -11,7 +11,8 @@ import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
 // RF-201, RF-206: the tool calls of one task. It runs each call through the task's tools, answers a
 // call made twice with the same arguments without running it again, counts the errors and the
 // calls of unknown tools, tells the read gate what each call gave, and says when the model loops.
-// RF-1414: after a read-more ask, `read_file` is cut to the lines the ask's budget has left.
+// RF-1414: after a read-more ask, `read_file` is cut to the lines the ask's budget has left when a
+// line cap is set (none by default, DEC-246).
 
 /** A model that repeats one call this often, or names unknown tools this often, is stopped. */
 const maxRepeatedCalls = 3;
@@ -61,7 +62,7 @@ export class ToolRunner {
     if (this.isRepeat(name, call.arguments)) return this.repeatedOutcome(name);
     const within = withinBudget(call, this.gate.linesLeftToRead());
     if (within === 'spent') {
-      return { content: this.tools.renderBlock('read_file', spentMessage(readMoreLines)) };
+      return { content: this.tools.renderBlock('read_file', spentMessage(this.gate.lineCap ?? 0)) };
     }
     this.seen.add(signatureOf(name, within.arguments));
     const outcome = await this.tools.run(within, ids);
