@@ -10,6 +10,9 @@ ends on the answer (RF-1406). Both wired prompts went through at least three Hai
 - `shared/text-tool-protocol`: no version kept; the best candidate does not beat `v1` on the
   held-back cases (section 3).
 
+Update 2026-11-15 (P10-15): the owner ruled to keep `shared/masked-value` v2 as an exception to the
+15% limit (DEC-244). v2 is now the active version; the scope and the input cost are in section 5.
+
 The card spent about **$1.5 of its $1.50 slice** (target calls $0.2, Opus judge $1.3) and $0.014 of
 the reserve for the pooled re-measure of section 2b. The ledger moves with the other builders, so no
 ledger total is stated here.
@@ -204,3 +207,50 @@ was kept.
 
 - Give the text-tool-protocol `after-reads` cases the same last-turn treatment as masked-value if
   the protocol is tuned again.
+
+## 5. `shared/masked-value` v2 made active by the owner's ruling (P10-15)
+
+**Ruling.** On 2026-11-15 the owner ruled "Keep v2 by ruling" (DEC-244): the security gain (judge
+4.0 to 4.6, secret-handling 2.5 to 4.8 on Haiku, section 2b) outweighs the +23% output and +26%
+latency. It is recorded as an exception to the 15% limit of DEC-235 (c); the rule itself does not
+change. `prompts/shared/masked-value.v2.md` holds the landed text of section 2b and is the active
+version; `v1` stays in the repository. The committed lab sets keep the `v1` note they were captured
+with (DEC-236); the `shared/masked-value` target puts the note under test in, so a later version is
+still compared without a re-capture.
+
+**Scope.** The note is not a model call of its own. It is the text the run's one masker
+(`explainedMasker`) writes after `[MASKED:<kind>]` for every secret value in anything sent to a
+model, so it rides inside the calls whose input holds a masked value. In the committed sets these
+are the reader's turns over files that hold a plain-text secret: `cards-card-format` 4 of 8 cases
+(2 to 6 notes each), `cards-continue` 4 of 8, `cards-repair` 3 of 9, `reader-turns-left` 3 of 6,
+`reader-read-more` 4 of 10 (one note each) and `cards-flows` 1 of 9; the area, task, read-first and
+the verifier, summariser and planner sets hold none. All of them come from eShopModernizing, whose
+compose and configuration files hold passwords, connection strings and a bearer token. A reader
+turn repeats the earlier reads, so once such a file is read every later turn of that task carries
+its notes. So the change reaches frequent calls on an app with secrets in its code, not one small,
+rare call; on an app without them it adds nothing.
+
+**Input cost (Haiku 5.5, measured).** The v2 note is about 46 input tokens longer per masked value
+than `v1`: a case with one note switched from `v1` to v2 went from 7011 to 7058 tokens
+(`cards/card-format`, runs 20261115-101608-lab and 20261115-101734-lab) and from 10565 to 10611
+(`reader/read-more`, 20261115-101749-lab and 20261115-101806-lab); the cases left unchanged moved
+by up to 18 tokens between runs, so the figure is about 46 plus or minus 15. Only one note per set
+could be switched in the lab: the case schema keeps a read line to 300 characters and most masked
+lines of the eShop cases would pass it with the longer note. The per-call cost below is that figure
+times the notes of each case, on the input tokens of the full sets (runs 20261115-101928-lab and
+20261115-102013-lab):
+
+| Set                 | Cases with a note | Notes per case | Input per call | Increase on those calls | Increase over the set |
+| ------------------- | ----------------- | -------------- | -------------- | ----------------------- | --------------------- |
+| `cards-card-format` | 4 of 8            | 2 to 6         | 7654           | +1.3% to +3.9%          | +1.0%                 |
+| `reader-turns-left` | 3 of 6            | 2 to 3         | 8566           | +1.1% to +1.8%          | +0.6%                 |
+| `reader-read-more`  | 4 of 10           | 1              | about 9800     | about +0.5%             | about +0.2%           |
+
+Both frequent families stay under +2% over their set; single calls that hold six notes reach about
++4%. The output cost of section 2b (+23% on Haiku) applies to the turns that carry a note, and was
+not re-measured on these families: with one note switched per set the answers cannot show it.
+Limits: the committed cases keep at most two reads of 40 lines each, so a real turn can hold more
+notes than a case and also more input around them; a re-capture with v2 (DEC-236, at the end of
+Phase 10) cuts a line at 300 characters and so may cut the note on a long masked line.
+
+Spend: six Haiku runs, 28 calls, $0.034 (target calls only, no judge).
