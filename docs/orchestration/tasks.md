@@ -10092,7 +10092,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Size**: S
 - **Depends on**: P10-11, P10-13
 - **Gate**: owner (Phase 10 opened 2026-11-13, DEC-231)
-- **Status**: In review (pending P10-13 journeys)
+- **Status**: In review (merges after #1418)
 - **Evidence**: the owner reviews the judge sample and decides what is released.
 - **Reads**: `docs/evaluation/prompt-lab/*`, the ledger.
 - **Do**: one page per prompt family (before and after per model, what changed, the spend), the total spend against $50, the judge sample for the owner, and the owner questions left.
