@@ -1,6 +1,6 @@
 # Round log: the plan document prompts (P10-08)
 
-Status 2026-11-13: **in progress, no version kept.** Haiku 5.5 ran every round; the judge (Opus 5.5) is advisory for the planner and scored a few cases per round (noise of 0.3 or more). Keep rule: DEC-231, then DEC-235 (a planner version needs a deterministic gain on the held-back cases; a judge gain alone does not count; input tokens, output tokens, latency and cost each rise by at most 15%). Spend of this card: about $4.6 of $6. Run ids are folders of `lab-out/`, prefix `20261113-`.
+Status 2026-11-13 (merged in #1408): **no version kept.** Haiku 5.5 ran every round; the judge (Opus 5.5) is advisory for the planner and scored a few cases per round (noise of 0.3 or more). Keep rule: DEC-231, then DEC-235 (a planner version needs a deterministic gain on the held-back cases; a judge gain alone does not count; input tokens, output tokens, latency and cost each rise by at most 15%). Spend of this card: about $4.6 of $6. Run ids are folders of `lab-out/`, prefix `20261113-`.
 
 ## What was found before any tuning
 
