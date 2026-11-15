@@ -87,16 +87,16 @@ The REQ-023 gap card adds its own 33. On P8w3 the owner rule gives 1214 to 1228:
 
 The baselines, judge-free (the P10-14 column is filled by the re-plan):
 
-| eShop plan | P8w3 (2026-11-09) | P10-11 (2026-11-14) | P10-13 run (2026-11-15) | P10-14 |
-| ---------------------------------------- | ----------------- | ------------------- | ------ |
-| Behaviour kept by no card, items (cards) | 14 (2) | 98 (13) | - |
-| Task cards | 35 | 28 | - |
-| Item builds (mean per card) | 88 (2.5) | 54 (1.9) | - |
-| Cards that build no item | 10 | 11 | - |
-| Requirements (mean per card) | 25 (2.2) | 30 (1.9) | - |
-| Size M / L / S | 20 / 15 / 0 | 14 / 12 / 2 | - |
-| Feature cards that reach no requirement | 58 | 56 | - |
-| Data-model dropped entries rejected | 0 | 7 | - |
+| eShop plan                               | P8w3 (2026-11-09) | P10-11 (2026-11-14) | P10-13 run (2026-11-15) | P10-14 |
+| ---------------------------------------- | ----------------- | ------------------- | ----------------------- | ------ |
+| Behaviour kept by no card, items (cards) | 14 (2)            | 98 (13)             | 44 (3)                  | -      |
+| Task cards                               | 35                | 28                  | 38                      | -      |
+| Item builds (mean per card)              | 88 (2.5)          | 54 (1.9)            | 46 (1.2)                | -      |
+| Cards that build no item                 | 10                | 11                  | 11                      | -      |
+| Requirements (mean per card)             | 25 (2.2)          | 30 (1.9)            | 28 (1.4)                | -      |
+| Size M / L / S                           | 20 / 15 / 0       | 14 / 12 / 2         | 23 / 10 / 5             | -      |
+| Feature cards that reach no requirement  | 58                | 56                  | 76                      | -      |
+| Data-model dropped entries rejected      | 0                 | 7                   | 3                       | -      |
 
 ## 5. Spend
 
