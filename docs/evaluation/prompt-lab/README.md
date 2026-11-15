@@ -2,30 +2,30 @@
 
 Card P10-12, 2026-11-15, for the owner's review. Phase 10 (DEC-231, opened 2026-11-13) tested every prompt Rosetta sends to a model in a lab, with a budget of $50 and a stop for the owner at $40, one cap for all builders (DEC-232). Haiku 5.5 was tuned deeply, Sonnet 5.5 less and Opus 5.5 least; Opus 5.5 is the judge. This page is the entry point to the folder: one section per prompt family, the spend, the judge sample, the owner questions and the proposed follow-ups. Every figure comes from the linked doc of its card or from the shared lab ledger.
 
-**Two items wait for P10-13** (the read-more cap, #1414): its Asset Manager, Invoice Generator and eShopModernizing journeys on the `rosetta-p10` stack, and the cap they select under the owner's rule (DEC-242). Both are marked **pending P10-13 journeys** below and will be filled in when that card reports.
+**The P10-13 journeys have reported** (#1418, in review): Asset Manager, Invoice Generator and eShopModernizing on the `rosetta-p10` stack with the 350-line cap. Under the owner's rule (DEC-242) no cap held on every app, so `reader/read-more` goes back to v2 with no cap (DEC-246). Their figures are in the reader section and the spend below.
 
 ## Summary
 
-**Kept: two prompt versions under the keep rule, one by the owner's ruling, and one code cap.**
+**Kept: one prompt version under the keep rule and one by the owner's ruling.**
 
-- `reader/read-more.v3` (P10-05, owner ruling DEC-238): it reads 12% to 25% more new lines at the read-more turn on every model, with cost per call within +2%.
 - `verifier/claim.v6` (P10-06): fewer retried answers (Haiku 10% to 0%, Sonnet 10% to 3% on held-back), cost per run -11% to -23%, agreement not lower on any model.
-- `shared/masked-value` v2: kept by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet). In the lab it failed DEC-235 (c) on Haiku (output +23.1%, latency +25.6%, cost +18.7% per call) for secret-handling 2.5 to 4.8; the owner ruled that the gain outweighs the cost on a small, rare call.
-- A cap of 350 lines that `read_file` serves per read-more ask, in code (P10-13, owner ruling DEC-239 "Add a line cap", RF-1414). It bounds the later calls that v3 made larger. 350 is the number merged; the final number follows the rule of DEC-242. Its journey check is **pending P10-13 journeys**.
+- `shared/masked-value` v2: kept by the owner's ruling (DEC-244, confirmed by DEC-247), to be wired by P10-15 (#1417, not merged yet). In the lab it failed DEC-235 (c) on Haiku (output +23.1%, latency +25.6%, cost +18.7% per call) for secret-handling 2.5 to 4.8. P10-15 found that the note rides in every call that carries a masked secret, frequent reader and cards calls included, and repeats on later reader turns: input +0.5% to +1% over a set, up to +4% on one call; the output of those calls was not measured again and may be about +23%. The owner said "Keep v2 anyway" (DEC-247).
+
+**`reader/read-more` stays v2, with no line cap (DEC-246).** `read-more.v3` was kept in P10-05 (DEC-238), but its later calls were over +15% on Asset Manager in P10-11 (DEC-239). The 350-line cap of P10-13 (RF-1414) brought Asset Manager and eShop within the limit, but on Invoice it split v2's single 664-line ask in two, and the refused final answer (8,192 output tokens) stayed in every later call: the last call of the asked task was +44.8% against 2026-11-09. A cap of 300 and v2 with a cap split the ask the same way, and v3 with no cap is +25.5% on Asset Manager, so v2 with no cap is the only option within DEC-235 (c) on every app measured. The cap code stays in, off by default. `develop` has v2 once #1418 merges.
 
 **Not kept: every other candidate.** Most failed one condition of the keep rule (DEC-231, DEC-235, DEC-237):
 
-- a rise of more than 15% in output tokens or latency (`planner/plan-repair` v3 on Sonnet; `shared/masked-value` v2 too, kept afterwards by the owner's ruling);
+- a rise of more than 15% in tokens or latency per call (`planner/plan-repair` v3 on Sonnet; `shared/masked-value` v2 too, kept afterwards by the owner's ruling); in real runs, `read-more.v3` (Asset Manager) and every capped read-more option (Invoice), hence DEC-246;
 - a regression on one model (`cards/continue`, gap, gap repair and card repair candidates);
 - no deterministic gain where the judge is only advisory (plan document prompts at 100% valid first try).
 
 Several "not kept" results came with a better measure. The lab now reads what a run does next with an answer (repair calls, gap rounds, lost cards, lines read). Those measures caught two versions that an earlier measure had kept: `cards/continue.v2` dropped cards, and `plan-repair.v3` raised Sonnet's output.
 
-**End to end (P10-11, #1413).** On the new `rosetta-p10` stack the three comparable journeys cost $2.35 against $2.65 on 2026-11-09 (-11%), with about the same coverage. EV-100 and EV-108 are fixed. Two results went the wrong way: the eShop plan keeps less behaviour in its task cards (P10-D6, major), and `read-more.v3` was over +15% per call on Asset Manager, which led to DEC-239 and P10-13.
+**End to end (P10-11, #1413).** On the new `rosetta-p10` stack the three comparable journeys cost $2.35 against $2.65 on 2026-11-09 (-11%), with about the same coverage. EV-100 and EV-108 are fixed. Two results went the wrong way: the eShop plan keeps less behaviour in its task cards (P10-D6, major), and `read-more.v3` was over +15% per call on Asset Manager, which led to DEC-239, P10-13 and, after its journeys, DEC-246.
 
-**Spend.** The shared lab ledger holds **$26.1283** settled. The `rosetta-p10` stack spent **$2.523** more (P10-11). Phase 10 so far: **$28.65 of $50**, $11.35 under the $40 stop line. The P10-13 journeys are not yet in it (their slice is $4.50, DEC-241). Details in [Spend](#spend).
+**Spend.** The shared lab ledger holds **$26.1623** settled. The `rosetta-p10` stack spent **$5.117** more ($2.523 for P10-11, $2.594 for P10-13). Phase 10 in all: **$31.28 of $50**, $8.72 under the $40 stop line. Details in [Spend](#spend).
 
-**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243); the judge-sample default stands and `shared/masked-value` v2 is kept by ruling (DEC-244); behaviour kept by no task card is reported only, and a requirement that cites an out-of-scope journey stays listed as now (DEC-245). Left for the owner: the review of this report and the release after the P10-D6 fix. **Nothing of Phase 10 is released.**
+**The owner answered** on 2026-11-15 ([Owner questions left](#owner-questions-left)): the cap is chosen by a rule from the P10-13 journeys (DEC-242), which led to v2 with no cap (DEC-246); P10-D6 is the next card; Phase 10 is released to `main` after the P10-D6 fix; the $2.12 of the rejected key counts; the local sets are re-captured at the start of the next tuning round (DEC-243); the judge-sample default stands and `shared/masked-value` v2 is kept by ruling (DEC-244), also after P10-15 showed that it reaches frequent calls (DEC-247); behaviour kept by no task card is reported only, and a requirement that cites an out-of-scope journey stays listed as now (DEC-245). Left for the owner: the review of this report and the release after the P10-D6 fix. **Nothing of Phase 10 is released.**
 
 ## How to read this folder
 
@@ -36,11 +36,11 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 | [shared.md](shared.md)                           | P10-10 | `shared/masked-value`, `shared/text-tool-protocol`                                  |
 | [plan-docs.md](plan-docs.md)                     | P10-08 | the plan document prompts                                                           |
 | [cards.md](cards.md)                             | P10-09 | the card prompts                                                                    |
-| [reader.md](reader.md)                           | P10-05 | the reader prompts and the keep of `read-more.v3`                                   |
+| [reader.md](reader.md)                           | P10-05 | the reader prompts and the keep of `read-more.v3` (reverted by DEC-246)             |
 | [plan-gap.md](plan-gap.md)                       | P10-07 | the plan gap and repair prompts, and `cards/repair`                                 |
 | [verifier-summariser.md](verifier-summariser.md) | P10-06 | the verifier and summariser prompts and the keep of `claim.v6`                      |
 | [end-to-end.md](end-to-end.md)                   | P10-11 | three apps end to end on `rosetta-p10` against 2026-11-09, defects P10-D1 to P10-D8 |
-| [read-more-cap.md](read-more-cap.md)             | P10-13 | the 350-line cap per read-more ask, its arithmetic and lab rounds                   |
+| [read-more-cap.md](read-more-cap.md)             | P10-13 | the line cap per read-more ask: arithmetic, lab rounds, journeys                    |
 
 **The keep rule** used in every section: DEC-231 (no regression on any check), relaxed by DEC-235 (a clear quality gain may raise input tokens, output tokens, latency and cost per call by at most 15% each). DEC-237 says "no regression" holds on every model measured, on matched held-back runs only, never pooled. DEC-238 says a deterministic measure of what the prompt is for, defined in a requirement first, also counts as a quality gain. DEC-234 says no version is kept from a set with no held-back case.
 
@@ -48,13 +48,13 @@ Several "not kept" results came with a better measure. The lab now reads what a 
 
 ### Shared prompts (P10-10, #1401, #1406)
 
-**Kept: `shared/masked-value` v2, by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet).** Under the keep rule nothing was kept: v2 fails DEC-235 (c), and the owner kept it as an exception. `shared/text-tool-protocol.v1` stays. `shared/secret-risk` has no model call.
+**Kept: `shared/masked-value` v2, by the owner's ruling (DEC-244, DEC-247), to be wired by P10-15 (#1417, not merged yet).** Under the keep rule nothing was kept: v2 fails DEC-235 (c), and the owner kept it as an exception. P10-15 found that the note reaches every call that carries a masked secret, not only a small, rare call (input +0.5% to +1% over a set, up to +4% on one call; output not measured again); the owner kept v2 anyway (DEC-247). `shared/text-tool-protocol.v1` stays. `shared/secret-risk` has no model call.
 
 **What changed in the lab.** The masked-value call is now the last turn, with no tools, so the answer is graded (RF-1406). Before, Haiku read more on 4 of 5 cases and the judge vetoed the empty answer.
 
 | Prompt, model                    | Before (current)                                          | After (best candidate)                                    | Result                                                                                  |
 | -------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | (c) fails; kept by the owner's ruling (DEC-244), to be wired by P10-15 (not merged yet) |
+| masked-value, Haiku (pooled)     | v1: judge 4.0, secret-handling 2.5, output 663.9, 3103 ms | v2: judge 4.6, secret-handling 4.8, output +23.1%, +25.6% | (c) fails; kept by the owner's ruling (DEC-244, DEC-247), to be wired by P10-15 (#1417) |
 | masked-value, Sonnet (2 calls)   | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +15.2%              | indicative only                                                                         |
 | masked-value, Opus (2 calls)     | v1: no `Leaked`, 100% agreement                           | v2 pre-fix: no `Leaked`, 100%, output +11.6%              | indicative only                                                                         |
 | text-tool-protocol, Haiku (tune) | v1: bare-JSON break 5 of 20 first turns                   | v2r3: 2 of 20                                             | candidate                                                                               |
@@ -103,7 +103,7 @@ Sonnet and Opus were not run on the text-tool protocol, since nothing was kept. 
 
 ### Reader prompts (P10-05, #1395, #1410; cap P10-13, #1414)
 
-**Kept: `reader/read-more.v3`** (DEC-238). Every other reader version stays: `task.v2`, `area.v12`, `read-first.v1`, `reread.v5`, `answers.v2`, `parent-cards.v2`, `turns-left.v2`, `workbook.v5`.
+**Kept: nothing in the end.** `reader/read-more.v3` was kept in P10-05 (DEC-238) and went back to v2 with no cap after the P10-13 journeys (DEC-246). Every other reader version stays: `task.v2`, `area.v12`, `read-first.v1`, `reread.v5`, `answers.v2`, `parent-cards.v2`, `turns-left.v2`, `workbook.v5`.
 
 **What changed in the lab.** A reader turn that calls tools is graded by what its reads give the run's read gate (RF-1410): new lines read, share gain, stale and generated reads. The first version of this measure could not fail and was rewritten after verification.
 
@@ -118,20 +118,30 @@ Sonnet and Opus were not run on the text-tool protocol, since nothing was kept. 
 
 **The later cost a one-turn replay cannot see.** In real runs (P10-11), more lines read make every later call of the task larger. On Asset Manager the call after the reads was +25.5% against 2026-11-09, the task's last call +17%; on eShop +10% and +14%; on Invoice +2%. The owner ruled "Add a line cap" (DEC-239).
 
-**The cap (P10-13).** `read_file` serves at most 350 lines per read-more ask, in code; the prompt stays v3. The arithmetic on the P10-11 Asset Manager task puts the call after the reads at +8.8% to +13.2%. In the lab the cap binds on Haiku, where v2 and v3 under it read the same new lines on held-back (299.8 and 300.9), so v3's lab gain goes on large areas. On Sonnet it hardly binds (278.1 new lines, no regression). A draft that states the budget (r3) read 1% to 6% fewer lines and was not kept.
+**The cap (P10-13).** `read_file` serves at most 350 lines per read-more ask, in code, with the prompt v3. The arithmetic on the P10-11 Asset Manager task put the call after the reads at +8.8% to +13.2%. In the lab the cap binds on Haiku, where v2 and v3 under it read the same new lines on held-back (299.8 and 300.9), so v3's lab gain goes on large areas. On Sonnet it hardly binds (278.1 new lines, no regression). A draft that states the budget (r3) read 1% to 6% fewer lines and was not kept.
 
-| App           | Measure                    | 2026-11-09 (v2) | P10-11 (v3)     | P10-13 (v3, cap 350)    |
-| ------------- | -------------------------- | --------------- | --------------- | ----------------------- |
-| Asset Manager | call after the reads, mean | 51,698          | 64,901 (+25.5%) | pending P10-13 journeys |
-| Asset Manager | last call of an asked task | 74,748          | 87,280 (+17%)   | pending P10-13 journeys |
-| Invoice       | call after the reads, mean | 42,598          | 43,497 (+2%)    | pending P10-13 journeys |
-| eShop         | call after the reads, mean | 45,179          | 49,727 (+10%)   | pending P10-13 journeys |
+**The journeys (P10-13, #1418)**, Haiku understand runs; each P10-13 figure is given against 2026-11-09, then against P10-11:
+
+| App           | Measure                    | 2026-11-09 (v2) | P10-11 (v3, no cap) | P10-13 (v3, cap 350)              |
+| ------------- | -------------------------- | --------------- | ------------------- | --------------------------------- |
+| Asset Manager | call after the reads, mean | 51,698          | 64,901 (+25.5%)     | 52,427: +1.4% / -19.2%, within    |
+| Asset Manager | last call of an asked task | 74,748          | 87,280 (+17%)       | 69,151: -7.5% / -20.8%, within    |
+| Asset Manager | mean reader call           | 37,461          | 45,261 (+21%)       | -10.5% against 2026-11-09         |
+| Invoice       | call after the reads, mean | 42,598          | 43,497 (+2%)        | 44,953: +5.5% / +3.3%, within     |
+| Invoice       | last call of an asked task | 42,598          | 43,497 (+2%)        | 61,688: +44.8% / +41.8%, **over** |
+| Invoice       | mean reader call           | 20,270          | 21,635 (+7%)        | +51.0% against 2026-11-09         |
+| eShop         | call after the reads, mean | 45,179          | 49,727 (+10%)       | 46,342: +2.6% / -6.8%, within     |
+| eShop         | last call of an asked task | 60,108          | 68,441 (+14%)       | 61,942: +3.1% / -9.5%, within     |
+| eShop Deepen  | call after the reads, mean | 41.3k           | 39.0k               | 35,994: -12.9% against 2026-11-09 |
+| eShop Deepen  | last call of an asked task | 48.0k           | 49.6k               | 44,096: -8.2% against 2026-11-09  |
+
+**Decision (DEC-246, the orchestrator under the owner's rule of DEC-242).** On Invoice the cap splits v2's single 664-line ask into two, and the refused final answer (8,192 output tokens) stays in every later call, so the last call is +44.8%. DEC-242's fallback assumed that a lower cap costs less, but a cap of 300 and v2 with a cap split the ask the same way, so every capped option fails Invoice; v3 with no cap is +25.5% on Asset Manager. **`reader/read-more` goes back to v2 with no cap**, the only option within DEC-235 (c) on every app measured. The RF-1414 cap code stays, off by default. Follow-up 27: compact or drop a refused final answer in later calls, then measure v3 with a cap again.
 
 **`turns-left`:** three judged Haiku rounds, none kept: t1 gained 0.08 on the judge (DEC-235 asks 0.3) for output +23%, t2 lost on the judge, t3 lost coverage and card form. **The other six prompts** had round 0 on the new measure and no round: three are at the ceiling on held-back, three act on final cards their sets cannot replay. So the card's done-when (three Haiku rounds for every reader prompt) is not met in full. `reader/workbook` has no committed set.
 
 **Keep rule applied:** DEC-235 read with DEC-238 (new lines read is the deterministic quality measure, RF-1410), matched per DEC-237.
 
-**Spend:** P10-05 $4.1303 of the $7 slice (targets $2.7559, judge $1.3744). P10-13 lab $0.4212; its slice is $4.50 (DEC-241); journeys **pending P10-13 journeys**. **Detail:** [reader.md](reader.md), [read-more-cap.md](read-more-cap.md).
+**Spend:** P10-05 $4.1303 of the $7 slice (targets $2.7559, judge $1.3744). P10-13 $3.015 of its $4.50 slice (DEC-241): lab $0.4212, stack $2.594. **Detail:** [reader.md](reader.md), [read-more-cap.md](read-more-cap.md).
 
 ### Plan gap and repair prompts (P10-07, #1398, #1411)
 
@@ -194,7 +204,7 @@ Three apps end to end on Haiku 5.5 on the new `rosetta-p10` stack (from `develop
 | eShop behaviour kept by no task card              | 14 items (2 cards) | 98 items (13 cards), P10-D6 |
 | Package judge, overall (advisory)                 | 2.8 to 3.0         | 3.0 on each app             |
 
-EV-100 (Continue then plan) and EV-108 (requirements built by no card) are fixed. Eight defects are proposed: P10-D6 major, seven minor (see [Proposed follow-up cards](#proposed-follow-up-cards)).
+EV-100 (Continue then plan) and EV-108 (requirements built by no card) are fixed. The eShop plan of the P10-13 journey, on the same planner code, left 44 items of 3 cards kept by no task card, with 38 task cards: against 98 items in P10-11, a large run-to-run variance. Eight defects are proposed: P10-D6 major, seven minor (see [Proposed follow-up cards](#proposed-follow-up-cards)).
 
 ## The judge sample for the owner
 
@@ -204,25 +214,26 @@ The judge (Opus 5.5) agreed with all 12 calibration claims. Its overall score wa
 
 ## Spend
 
-**Method.** The shared lab ledger is a JSONL file of `hold`, `settle` and `release` entries. The total is the sum of the `micros` of every `settle` entry: 4,298 entries, **26,128,284 micro-dollars ($26.1283)**, last entry 2026-11-15 00:07 UTC. Two holds of 2026-11-13 21:30 UTC were never settled or released (68,115 and 68,260 micros, **$0.136**); a hold older than 30 minutes that was never settled does not count. The stack's spend is not in the ledger; it comes from the stack's account totals in [end-to-end.md](end-to-end.md).
+**Method.** The shared lab ledger is a JSONL file of `hold`, `settle` and `release` entries. The total is the sum of the `micros` of every `settle` entry: 4,328 entries, **26,162,309 micro-dollars ($26.1623)**, last entry 2026-11-15 10:20 UTC. Two holds of 2026-11-13 21:30 UTC were never settled or released (68,115 and 68,260 micros, **$0.136**); a hold older than 30 minutes that was never settled does not count. The stacks' spend is not in the ledger: P10-11's comes from the stack's account totals in [end-to-end.md](end-to-end.md), P10-13's from the stack's month figure in #1418.
 
 **Split by card.** The ledger has no card field. Where cards ran alone, the ledger window gives the card's spend exactly; where they ran at the same time, the cards' own docs give the split.
 
-| Card   | Slice                       | Spent                                                                       | Source                                                                 |
-| ------ | --------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| P10-01 | none                        | $0 (fake provider only)                                                     | #1392                                                                  |
-| P10-02 | none                        | $0 (captured from saved runs)                                               | #1393                                                                  |
-| P10-03 | $3                          | $2.5415: rejected key $2.1247, judge check $0.3633, two judged runs $0.0534 | [judge-sample.md](judge-sample.md); ledger to 2026-11-13 20:00 UTC     |
-| P10-04 | $6                          | $3.4573 (judge $0.9886)                                                     | [baseline.md](baseline.md); ledger window 20:00 to 21:00 UTC           |
-| P10-10 | $1.50                       | about $1.5 (judge $1.3), plus $0.014 of the reserve                         | [shared.md](shared.md)                                                 |
-| P10-08 | $6                          | about $4.6                                                                  | [plan-docs.md](plan-docs.md)                                           |
-| P10-09 | $4.50                       | $3.66 (no judge)                                                            | [cards.md](cards.md)                                                   |
-| P10-05 | $7                          | $4.1303 (judge $1.3744)                                                     | [reader.md](reader.md)                                                 |
-| P10-07 | $3.50 (incl. $0.50 reserve) | $3.3032 (no judge)                                                          | [plan-gap.md](plan-gap.md)                                             |
-| P10-06 | $3                          | $1.1103 (judge $0.4470)                                                     | ledger window 2026-11-14 06:00 to 09:00 UTC                            |
-| P10-11 | $6                          | $3.776: stack $2.523, judge $1.2528 (ledger)                                | [end-to-end.md](end-to-end.md); ledger window 12:00 to 14:00 UTC       |
-| P10-13 | $4.50 (DEC-241, was $1.50)  | lab $0.4212; journeys **pending P10-13 journeys**                           | [read-more-cap.md](read-more-cap.md); ledger from 2026-11-14 23:00 UTC |
-| P10-12 | none                        | $0                                                                          | this card makes no model call                                          |
+| Card   | Slice                       | Spent                                                                                                                | Source                                                                                                                            |
+| ------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| P10-01 | none                        | $0 (fake provider only)                                                                                              | #1392                                                                                                                             |
+| P10-02 | none                        | $0 (captured from saved runs)                                                                                        | #1393                                                                                                                             |
+| P10-03 | $3                          | $2.5415: rejected key $2.1247, judge check $0.3633, two judged runs $0.0534                                          | [judge-sample.md](judge-sample.md); ledger to 2026-11-13 20:00 UTC                                                                |
+| P10-04 | $6                          | $3.4573 (judge $0.9886)                                                                                              | [baseline.md](baseline.md); ledger window 20:00 to 21:00 UTC                                                                      |
+| P10-10 | $1.50                       | about $1.5 (judge $1.3), plus $0.014 of the reserve                                                                  | [shared.md](shared.md)                                                                                                            |
+| P10-08 | $6                          | about $4.6                                                                                                           | [plan-docs.md](plan-docs.md)                                                                                                      |
+| P10-09 | $4.50                       | $3.66 (no judge)                                                                                                     | [cards.md](cards.md)                                                                                                              |
+| P10-05 | $7                          | $4.1303 (judge $1.3744)                                                                                              | [reader.md](reader.md)                                                                                                            |
+| P10-07 | $3.50 (incl. $0.50 reserve) | $3.3032 (no judge)                                                                                                   | [plan-gap.md](plan-gap.md)                                                                                                        |
+| P10-06 | $3                          | $1.1103 (judge $0.4470)                                                                                              | ledger window 2026-11-14 06:00 to 09:00 UTC                                                                                       |
+| P10-11 | $6                          | $3.776: stack $2.523, judge $1.2528 (ledger)                                                                         | [end-to-end.md](end-to-end.md); ledger window 12:00 to 14:00 UTC                                                                  |
+| P10-13 | $4.50 (DEC-241, was $1.50)  | $3.015: lab $0.4212 (ledger); stack $2.594 (Invoice $0.262, Asset Manager $0.126, eShop $2.109, plan options $0.097) | [read-more-cap.md](read-more-cap.md); ledger 2026-11-14 23:00 to 2026-11-15 00:07 UTC; the stack's month figure, $2.523 to $5.118 |
+| P10-15 | see #1417                   | $0.0340 (lab, six Haiku runs)                                                                                        | ledger 2026-11-15 10:16 to 10:20 UTC                                                                                              |
+| P10-12 | none                        | $0                                                                                                                   | this card makes no model call                                                                                                     |
 
 Checks of the split against the ledger windows:
 
@@ -232,18 +243,18 @@ Checks of the split against the ledger windows:
 
 **Totals.**
 
-| Item                                           | Amount                      |
-| ---------------------------------------------- | --------------------------- |
-| Lab ledger, settled                            | $26.1283                    |
-| `rosetta-p10` stack (P10-11)                   | $2.523                      |
-| **Phase 10 so far**                            | **$28.651**                 |
-| of which the rejected key of P10-03 (RST-1518) | $2.1247                     |
-| For reference: without the rejected key        | $26.527                     |
-| P10-13 stack journeys                          | **pending P10-13 journeys** |
-| Room under the $40 stop line                   | $11.35                      |
-| Room under the $50 total                       | $21.35                      |
+| Item                                           | Amount      |
+| ---------------------------------------------- | ----------- |
+| Lab ledger, settled                            | $26.1623    |
+| `rosetta-p10` stack, P10-11                    | $2.523      |
+| `rosetta-p10` stack, P10-13                    | $2.594      |
+| **Phase 10 in all**                            | **$31.279** |
+| of which the rejected key of P10-03 (RST-1518) | $2.1247     |
+| For reference: without the rejected key        | $29.155     |
+| Room under the $40 stop line                   | $8.72       |
+| Room under the $50 total                       | $18.72      |
 
-The P10-13 slice is $4.50 (DEC-241), of which $0.4212 is spent. If the journeys spent the whole rest ($4.08), Phase 10 would end at $32.73, under the stop line.
+The P10-13 window of the ledger is closed: its last entry is 2026-11-15 00:07 UTC, and the only later entries are the six P10-15 runs. P10-13 spent $3.015 of its $4.50 slice.
 
 ## Lab measures added in Phase 10
 
@@ -254,32 +265,32 @@ The P10-13 slice is $4.50 (DEC-241), of which $0.4212 is spent. If the journeys 
 - **RF-1411** The 30 calibration claims as a lab set with a held-back third, and wrong verdicts counted by kind.
 - **RF-1412** Merge labels (`Invalid`, `Lumped`, `Unrelated`, `Thin`) with merged-id counts, and overview labels (`Empty`, `Lumped`, `Missed`), as guards.
 - **RF-1413** The verifier's retry replayed with a fixed unreadable first answer.
-- **RF-1414** The read-more line cap, graded in the lab with the same cut as the run (`cutLines`).
+- **RF-1414** The read-more line cap, graded in the lab with the same cut as the run (`cutLines`); off by default since DEC-246.
 
 ## Owner questions left
 
-The owner answered every question on 2026-11-15 (DEC-242 to DEC-245). Questions 8 and 9 came later from the P10-14 builder (#1416). No question is left open.
+The owner answered every question on 2026-11-15 (DEC-242 to DEC-245, DEC-247; DEC-246 is the orchestrator's choice under DEC-242). Questions 8 and 9 came later from the P10-14 builder (#1416). No question is left open.
 
-1. **The final read-more cap** (P10-13). **Answered (DEC-242):** the owner delegated the choice to the orchestrator, with a rule. Take the largest cap that keeps every app measured in the P10-13 journeys within the +15% of DEC-235 (c), on both the call after the reads and the last call of an asked task, with no rise in failed tasks or wasted repeats: 350 lines with v3 if it holds on Asset Manager, Invoice and eShop; 300 with v3 if any app is over; v2 with a cap if 300 cannot hold either. **Chosen cap: pending P10-13 journeys.**
-2. **The $2.12 booked for rejected calls.** P10-03's first judge check ran with a key Anthropic rejected (RST-1518); nothing was answered, but the ledger settled the calls at their worst case, $2.1247. **Answered (DEC-243 c):** it counts toward the Phase 10 total, $28.65 so far.
+1. **The final read-more cap** (P10-13). **Answered (DEC-242):** the owner delegated the choice to the orchestrator, with a rule. Take the largest cap that keeps every app measured in the P10-13 journeys within the +15% of DEC-235 (c), on both the call after the reads and the last call of an asked task, with no rise in failed tasks or wasted repeats: 350 lines with v3 if it holds on Asset Manager, Invoice and eShop; 300 with v3 if any app is over; v2 with a cap if 300 cannot hold either. **Chosen (DEC-246): no cap, `read-more` v2.** Every capped option split Invoice's ask (last call +44.8%), and v3 with no cap is over on Asset Manager.
+2. **The $2.12 booked for rejected calls.** P10-03's first judge check ran with a key Anthropic rejected (RST-1518); nothing was answered, but the ledger settled the calls at their worst case, $2.1247. **Answered (DEC-243 c):** it counts toward the Phase 10 total, $31.28 in all.
 3. **Re-capture the local lab sets** (`lab/local-cases/`, the Asset Manager and Invoice workbook sets, never committed). They were captured before the second round of lab fixes and may hold twins, an older split and text the masker now masks. **Answered (DEC-243 d):** they are re-captured at the start of the next tuning round, not now, so the comparisons of Phase 10 stay valid.
 4. **P10-D6 (plan regression, major): priority.** **Answered (DEC-243 a):** P10-D6 is the next card, before P9-18 and P9-19.
 5. **Release Phase 10 to `main`.** Nothing of Phase 9 or Phase 10 is released. **Answered (DEC-243 b):** Phase 10 is released to `main` after the P10-D6 fix is merged; the release stays the owner's (DEC-175).
 6. **The judge sample** ([judge-sample.md](judge-sample.md)). **Answered (DEC-244 a):** the default stands. The judge is trusted for a family at 80% of calibration claims and 80% within one point per criterion; a family below that uses the judge as advisory only, as Phase 10 applied it.
-7. **`shared/masked-value` v2.** It raises secret-handling from 2.5 to 4.8 on Haiku but adds about 23% output tokens per masked-value answer, over DEC-235 (c). **Answered (DEC-244 b):** v2 is kept by the owner's ruling, as an exception to DEC-235 (c), because the secret-handling gain outweighs +23% output on a small, rare call. Wiring it is card P10-15, in its own pull request; if that card finds the change reaches many calls, the owner gets the facts before it merges.
+7. **`shared/masked-value` v2.** It raises secret-handling from 2.5 to 4.8 on Haiku but adds about 23% output tokens per masked-value answer, over DEC-235 (c). **Answered (DEC-244 b):** v2 is kept by the owner's ruling, as an exception to DEC-235 (c), because the secret-handling gain outweighs +23% output on a small, rare call. Wiring it is card P10-15, in its own pull request; if that card finds the change reaches many calls, the owner gets the facts before it merges. P10-15 found that it does; the owner said "Keep v2 anyway" (DEC-247).
 8. **Behaviour kept by no task card: fail or report?** (from the P10-14 builder, #1416). Should a plan whose `checks.md` lists behaviour kept by no task card fail the run (RST-1806), as a requirement built by no card does, rather than only report it? **Answered (DEC-245 a):** it is reported in `checks.md` only and does not fail the run (RST-1806); it is still listed there.
 9. **A requirement that cites an out-of-scope journey** (from the P10-14 builder, #1416). Should it be flagged as inconsistent? **Answered (DEC-245 b):** it stays listed as "kept by no card", with the out-of-scope reason kept in `flows/README.md`; it is not flagged separately.
 
 ## Proposed follow-up cards
 
-Proposals only: no GitHub issue and no task card is filed by this report. Each line gives its source. Carded since the report was written: **P10-14**, the P10-D6 fix, which also carries P10-D7 (PR #1416, in review), and **P10-15**, wiring `shared/masked-value` v2 (DEC-244), in its own pull request.
+Proposals only: no GitHub issue and no task card is filed by this report. Each line gives its source. Carded since the report was written: **P10-14**, the P10-D6 fix, which also carries P10-D7 (PR #1416, in review), and **P10-15**, wiring `shared/masked-value` v2 (DEC-244, DEC-247; #1417).
 
-1. P10-D1: `read-more.v3` over +15% per call on Asset Manager; now P10-13 (DEC-239), left: a real run on Sonnet and Opus before it becomes their default (#1413).
+1. P10-D1: `read-more.v3` over +15% per call on Asset Manager; settled by P10-13 and DEC-246 (v2, no cap); what is left is follow-up 27 (#1413, #1418).
 2. P10-D2: `verifier/claim.v6` reasons above 150 characters and three verdicts on the context margin; add held-back cases where only the margin shows the claim (#1413).
 3. P10-D3: the data-model check of `checks.md` lists a deployment placeholder token as a missing table (#1413).
 4. P10-D4: field-presence claims counted apart from the verifier's verdicts; repeat the Asset Manager understand for the feature-card yield (#1413).
 5. P10-D5: the DEC-228 env-file order and an evaluation-stack runbook (#1413).
-6. P10-D6 (major): behaviour kept by no task card grew on eShop (14 to 98 items); find the cause (gap.v5 against v6) and give each cited item a task card or state it as left out (#1413). **In P10-14** (#1416, in review), the next card (DEC-243 a).
+6. P10-D6 (major): behaviour kept by no task card grew on eShop (14 to 98 items); find the cause (gap.v5 against v6) and give each cited item a task card or state it as left out (#1413). **In P10-14** (#1416, in review), the next card (DEC-243 a). Run-to-run variance is large: the P10-13 eShop plan, on the same planner code, had 44 items of 3 cards with 38 task cards, against 98 in P10-11.
 7. P10-D7: data-model "dropped" entries rejected by the schema when one entry lists many fields (#1413). **In P10-14** (#1416).
 8. P10-D8: a summariser answer cut at the output limit skips its batch's merges (#1413).
 9. The sqlcmd masker redesign, on branch `task/p10-masker-gaps`, with a 674-entry corpus; its pull request #1404 was closed unmerged on 2026-11-13, and the gaps came from the verifier of #1402.
@@ -300,6 +311,7 @@ Proposals only: no GitHub issue and no task card is filed by this report. Each l
 24. Count identical refused reads within one ask toward the loop limit (#1414).
 25. The lab and the runtime differ on an unlisted path when the budget is spent (#1414).
 26. An out-of-sample verifier calibration set, since `claim.v6` was tuned on the 30 claims of RF-305 (#1412).
+27. Compact or drop a refused final answer in a task's later calls, then measure `read-more.v3` with a cap again (DEC-246, #1418).
 
 ## Verifier minors not yet fixed
 
