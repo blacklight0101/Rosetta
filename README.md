@@ -19,7 +19,7 @@ one approved amount (ADR-027): each step is offered in place, and a run pauses a
 For contributors, a prompt lab measures prompt versions on recorded cases before they are kept
 ([runbook](docs/runbooks/prompt-lab.md)).
 
-**Status: release 1 (v1.0.0) is built, with phases P1 to P3 and P5 to P10; the hosted application runs `main` (first
+**Status: release 1 (v1.0.0, now at v1.0.1) is built, with phases P1 to P3 and P5 to P10; the hosted application runs `main` (first
 deployed 2026-10-24, last deployed 2026-11-16).** You can create a project from a public GitHub URL, a zip or Excel workbooks, scan it, run the agents
 that write the cited specification, watch them live, Deepen the result, answer the open questions, build the HTML
 report and run `plan` to write the hand-off package, with an estimate before every run and a cap on its cost and
@@ -172,7 +172,7 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 
 ## Milestone hand-in (2026-10-26)
 
-- Release notes: [docs/releases.md](docs/releases.md) (v1.0.0 is the current release; v0.1.0 was this milestone and was never tagged).
+- Release notes: [docs/releases.md](docs/releases.md) (v1.0.1, a security update of release 1 (v1.0.0), is the current release; v0.1.0 was this milestone and was never tagged).
 - Hosted application URL: <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (Azure Container Apps, Spain Central; first deployed 2026-10-24, card P1-55; last deployed 2026-11-16).
 - Hand-in values and the owner's day-before checklist: [docs/hand-in/m1.md](docs/hand-in/m1.md).
 - Slides URL: <https://github.com/blacklight0101/Rosetta/blob/main/docs/hand-in/slides/Rosetta-Hito1.pdf> (PDF, always the latest version on `main`; PowerPoint file: <https://github.com/blacklight0101/Rosetta/raw/main/docs/hand-in/slides/Rosetta-Hito1.pptx>). Spanish. The earlier Marp draft is [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md).

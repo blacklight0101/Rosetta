@@ -180,7 +180,7 @@ applied, and fixing it is part of applying the decision.
   pull request afterwards.
 - Commits use Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`) and end with `Refs:` naming the ids.
 - Milestones group issues by phase; every release is a tag and a GitHub release (DEC-29). Every release pull request
-  bumps the version in `package.json` and adds its section to `docs/releases.md`; the current version is 1.0.0
+  bumps the version in `package.json` and adds its section to `docs/releases.md`; the current version is 1.0.1
   (DEC-248).
 - Commit only when asked; the working tree is clean before a multi-file change starts.
 

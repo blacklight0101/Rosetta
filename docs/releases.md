@@ -5,20 +5,36 @@ here; after it merges, a tag `vX.Y.Z` and a GitHub release with the same notes a
 ([environments-and-delivery.md](environments-and-delivery.md) section 8, DEC-29). Every release pull request bumps the
 version (DEC-248). Versions follow Semantic Versioning; 1.0.0 is release 1.
 
-The v1.0.0 section describes the whole system by area. The v0.1.0 section below is kept as history: every requirement
+Patch releases of release 1 (v1.0.x) list only what changed. The v1.0.0 section describes the whole system by area. The v0.1.0 section below is kept as history: every requirement
 id in it is backed by the [milestone verification matrix](verification/m1-matrix.md), the evidence for the P1 exit
 criterion, and it claims nothing the matrix marks as a gap. Where the system has moved on since that matrix was
 reviewed, the v0.1.0 section says what closed, and the matrix itself is not revised.
 
+## v1.0.1 - Security and dependency update
+
+|             | Patch release of release 1                                                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**  | The current system. The tag `v1.0.1` and the GitHub release are made on `main` after this version merges, by the orchestrator on the owner's word ("Yes, release it", 2026-11-16). |
+| **Date**    | 2026-11-16                                                                                                                                                                         |
+| **Version** | 1.0.1, as reported by `GET /healthz` from the deploy of `main` that carries it (RF-1303).                                                                                          |
+| **Changes** | No feature or behaviour change.                                                                                                                                                    |
+
+### What v1.0.1 changes
+
+| Area         | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Security     | The two moderate advisories open on 2026-11-16 are fixed (DEC-251, under DEC-169): `glob` GHSA-3g3m-2fjr-6pw4 and `minimatch` GHSA-g3hv-75wg-m249. `@fastify/static` moves to 10.1.11, which brings `glob` 14 and `minimatch` 11 into the image; `eslint` moves to 10.15.0, and an npm override gives typescript-eslint's parser `minimatch` 11. `npm audit` reports no finding. ([#1430](https://github.com/blacklight0101/Rosetta/pull/1430))                                                                          |
+| Dependencies | The Dependabot minor and patch updates: `@fastify/cookie` 11.1.5, `@fastify/helmet` 13.2.0, `openai` 7.45.1, `preact` 11.1.0, `ignore` 7.0.14 and development tools, including `marked` 18.1.2 and Playwright 1.64.1 ([#1428](https://github.com/blacklight0101/Rosetta/pull/1428), [#1072](https://github.com/blacklight0101/Rosetta/pull/1072), [#1073](https://github.com/blacklight0101/Rosetta/pull/1073)). `typescript-eslint` stays at 8.71 and `@axe-core/playwright` at 4.13 until the code they flag is fixed. |
+
 ## v1.0.0 - Release 1
 
-|                | Release 1                                                                                                                                                                                                                                             |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**     | The current system, called version 1.0.0 by the owner on 2026-11-16 (DEC-248). The tag `v1.0.0` and the GitHub release are made on `main` after this version merges, by the orchestrator on the owner's word; until then they are the plan, not done. |
-| **Date**       | 2026-11-16                                                                                                                                                                                                                                            |
-| **Version**    | 1.0.0, as reported by `GET /healthz` and recorded in every run manifest (RF-1303). The hosted application reported 0.1.0 up to the deploy of 2026-11-16 and reports 1.0.0 from the next deploy of `main`.                                             |
-| **Supersedes** | v0.1.0, which was never tagged (see below)                                                                                                                                                                                                            |
-| **Run it**     | the [README quick start](../README.md#quick-start) and the [local runbook](runbooks/local.md): Docker Compose, one image, `http://127.0.0.1:8080`; hosted: see Where to find it                                                                       |
+|                | Release 1                                                                                                                                                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**     | Release 1, called version 1.0.0 by the owner on 2026-11-16 (DEC-248); superseded by v1.0.1. The tag `v1.0.0` and the GitHub release are made on `main` after this version merges, by the orchestrator on the owner's word; both were made on 2026-11-16. |
+| **Date**       | 2026-11-16                                                                                                                                                                                                                                               |
+| **Version**    | 1.0.0, as reported by `GET /healthz` and recorded in every run manifest (RF-1303). The hosted application reported 0.1.0 up to the deploy of 2026-11-16 and 1.0.0 from the deploy of `b23d1ccff` that day (Release run 43865830420).                     |
+| **Supersedes** | v0.1.0, which was never tagged (see below)                                                                                                                                                                                                               |
+| **Run it**     | the [README quick start](../README.md#quick-start) and the [local runbook](runbooks/local.md): Docker Compose, one image, `http://127.0.0.1:8080`; hosted: see Where to find it                                                                          |
 
 Rosetta turns a legacy codebase into an evidence-cited functional specification and a tool-agnostic modernisation
 hand-off package. Release 1 is the whole pipeline as a web application with accounts and cost control: a public
