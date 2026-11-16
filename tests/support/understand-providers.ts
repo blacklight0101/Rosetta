@@ -52,6 +52,7 @@ interface Hooks {
   readonly decorate?: DecorateAnswer | undefined;
   readonly beforeVerifier?: BeforeCall | undefined;
   readonly beforeGap?: BeforeCall | undefined;
+  readonly beforeAdrModel?: BeforeCall | undefined;
 }
 
 /**
@@ -104,6 +105,7 @@ class HookedProvider implements LlmProvider {
       return this.coverage.complete(request, observer);
     }
     if (request.context.agentTaskId === 'planner-adr-model') {
+      await this.hooks.beforeAdrModel?.(1, request.signal);
       return this.adrModel.complete(request, observer);
     }
     this.calls += 1;
@@ -147,6 +149,8 @@ export interface UnderstandProviderParts {
   readonly adrModelRecording?: Recording;
   /** Runs before the gap call reaches the fake; a rejection is the guard refusing it. */
   readonly beforeGapCall?: BeforeCall;
+  /** P9-18: runs before the check of the data model reaches the fake; the owner's Stop can come here. */
+  readonly beforeAdrModelCall?: BeforeCall;
   readonly beforeCall?: BeforeCall;
   /** Runs before each `verifier` call, counted from 1 (the judgement step). */
   readonly beforeVerifierCall?: BeforeCall;
@@ -229,6 +233,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
   const adapter = new HookedProvider(recordingsOf(parts), {
     ...{ before: parts.beforeCall, decorate: parts.decorateAnswer },
     ...{ beforeVerifier: parts.beforeVerifierCall, beforeGap: parts.beforeGapCall },
+    beforeAdrModel: parts.beforeAdrModelCall,
   });
   const memory = new MemoryCostLedger();
   const ledger = new SpyLedger(memory);

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { decideOnce, keptPlannerIds } from '../../../../src/domain/planning/brief-restated.js';
+import { decideOnce } from '../../../../src/domain/planning/brief-restated.js';
 import { assemblePlan } from '../../../../src/domain/planning/plan-content.js';
 import type { DraftDecision } from '../../../../src/domain/planning/plan-draft.js';
 import { buildBrief } from '../../../../src/domain/planning/planning-brief.js';
 import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 // P9-15, RF-623, RF-608: the data model is checked against the planner's own decision records only,
-// told from the records of the brief by the ids decideOnce gives the planner records it keeps, never
+// told from the records of the brief by the ids decideOnce returns for the planner records it keeps (P9-18), never
 // by their titles (a brief record may carry the same title as one of the planner's).
 
 const supported = new Set(['FEAT-001', 'BR-001']);
@@ -45,8 +45,7 @@ describe('the ids of the planner records decideOnce keeps', () => {
       decision('Migration strategy: Strangler Fig', ['BR-001']),
     ];
 
-    const { content, restated } = decided(planner);
-    const ids = keptPlannerIds(planner.length, restated.length);
+    const { content, restated, plannerIds: ids } = decided(planner);
 
     expect(restated).toHaveLength(1);
     expect(ids).toEqual(['ADR-001', 'ADR-002']);
@@ -60,6 +59,6 @@ describe('the ids of the planner records decideOnce keeps', () => {
   });
 
   it('RF-623 P9-15 a plan whose records all restate the brief keeps none', () => {
-    expect(keptPlannerIds(2, 2)).toEqual([]);
+    expect(decided([decision('Adopt layered architecture')]).plannerIds).toEqual([]);
   });
 });
