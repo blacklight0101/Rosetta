@@ -375,7 +375,7 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 
 ## 8. Versioning and releases
 
-- Semantic Versioning (DEC-29). The current system is `1.0.0` (DEC-248); `v0.1.0`, the 2026-10-26 milestone, was never tagged and is superseded by it.
+- Semantic Versioning (DEC-29). The current system is `1.0.1` (release 1, `1.0.0`, with the security update of DEC-251; DEC-248); `v0.1.0`, the 2026-10-26 milestone, was never tagged and is superseded by it.
 - A version is a pull request into `develop` that bumps `package.json` and adds a section to `docs/releases.md`; it
   reaches `main` in a release pull request (section 5), then the owner tags the merge commit on `main` `vX.Y.Z` and
   creates a GitHub release with the same notes.

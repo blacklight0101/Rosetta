@@ -10,8 +10,8 @@ DEC-171). The procedure follows `docs/environments-and-delivery.md` sections 10 
 
 **State on 2026-11-16: provisioned and deployed; the app runs `main`.** Gates G-07 and G-08 are open; Azure provision
 and Release ran on `main` for the first time on 2026-10-24, the smoke test passed and the teacher account signs in,
-which opened G-06 (first row of Deployment record). Release has deployed four more times since then; the last deploy was
-on 2026-11-16 (`sha-f61dc06`, Deployment record). Staging is off: `ROSETTA_STAGING_ENABLED` is not set, and only
+which opened G-06 (first row of Deployment record). Release has deployed five more times since then; the last deploy was
+on 2026-11-16 (`sha-b23d1cc`, version 1.0.0, Deployment record). Staging is off: `ROSETTA_STAGING_ENABLED` is not set, and only
 `ROSETTA_DEPLOY_ENABLED` is `true`. Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
 the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
 
@@ -428,6 +428,7 @@ It prints P50 and P95 of each page (`/`, `/healthz`, `/api/session`, `/api/proje
 | 2026-11-03 | `sha-fb08d7c` | by hand                  | passed               | Release run 41600977028, started 09:07 Madrid by running Release (release #1120, phases 7 and 8)        |
 | 2026-11-09 | `sha-344bdc9` | by hand                  | passed               | Release run 42611396920, started 12:44 Madrid by running Scheduled release (release #1351, phase 8)     |
 | 2026-11-16 | `sha-f61dc06` | by hand                  | passed (3rd attempt) | Release run 43839301332 (release #1423); see the three attempts below                                   |
+| 2026-11-16 | `sha-b23d1cc` | by hand                  | passed               | Release run 43865830420 (release #1426, version 1.0.0); `/healthz` reports 1.0.0                        |
 
 The deploy of 2026-11-16 (release #1423, merge commit `f61dc0606`) needed three attempts of the same run:
 
@@ -441,7 +442,7 @@ The deploy of 2026-11-16 (release #1423, merge commit `f61dc0606`) needed three 
 
 The rows after the first were read from `gh run list` and `gh run view` on 2026-11-16: each ran Release on `main`, and
 the smoke test passed in each (the third attempt for 2026-11-16). Up to the deploy of 2026-11-16 the smoke log shows
-`/healthz` reporting version 0.1.0; the deploy of this release (v1.0.0) is the first to report 1.0.0, the version of
+`/healthz` reporting version 0.1.0; the deploy of v1.0.0 (`sha-b23d1cc`, the last row) is the first to report 1.0.0, the version of
 `package.json` (RF-1303).
 
 Checks of 2026-10-24 on `https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io`:
