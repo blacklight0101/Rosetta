@@ -10,6 +10,7 @@ import type { Project } from '../projects/project.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
+import { withProjectLock } from '../journey/journey-lock.js';
 import { capsOf } from '../runs/accepted-manifest.js';
 import type { RunQueue } from '../runs/run-queue.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -32,7 +33,9 @@ import { anyRoleWithoutKey, type RoleKeyDependencies } from '../runs/role-keys.j
 // and once at a time. A reader that would send code off this machine needs the run's consent (RF-143).
 // P9-16, RF-435, RF-1108: a run queued before the current journey keeps its queue time when resumed,
 // as Continue does (P9-01), so its spend never moves into the newer journey; that queue time puts it
-// ahead of the runs queued after it. Any other run is queued at the end of the queue.
+// ahead of the runs queued after it. Any other run is queued at the end of the queue. P9-18: the read
+// of the journey and the reopen happen under the project's journey lock, as in Continue, so an Analyse
+// cannot record a new journey between them.
 
 export interface ResumeRunDependencies {
   readonly projects: ProjectRepository;
@@ -86,8 +89,12 @@ export class ResumeRun {
     if (refused !== undefined) return err(refused);
     // One queue step: no dispatch can start the run from the old manifest, and the run is not
     // taken while this process is still writing its end. A second Resume finds the run queued.
-    const reopened = await this.deps.queue.exclusive(run.id, () =>
-      this.reopen(userId, run, project, withOverviewMark(stored, overviewOnly ? run : undefined)),
+    // P9-18, RF-435: under the project's journey lock, so an Analyse cannot record a journey between
+    // the read of the journey and the reopen and make this run a step of the new journey.
+    const reopened = await withProjectLock(project.id, () =>
+      this.deps.queue.exclusive(run.id, () =>
+        this.reopen(userId, run, project, withOverviewMark(stored, overviewOnly ? run : undefined)),
+      ),
     );
     if (!reopened.ok || reopened.value === undefined) return err(ERROR_CODES.runNotResumable);
     const current = await runs.find(userId, run.id);

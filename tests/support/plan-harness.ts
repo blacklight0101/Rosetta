@@ -91,14 +91,16 @@ export interface PlanHarness {
   handoffOf(run: Run): Promise<Readonly<Record<string, string>>>;
 }
 
+type Hook = ((harness: PlanHarness) => Promise<void>) | undefined; // a test's hook
 export interface PlanHarnessOptions {
   /** RF-627: the planner's answer to the coverage call; tests/recordings/fake/planner-coverage.json if absent. */
   readonly coverageRecording?: Recording;
   /** Q-45: the answer to the call for the items no card builds (no card if absent), and a hook before it. */
   readonly gapRecording?: Recording;
-  readonly beforeGapCall?: (harness: PlanHarness) => Promise<void>;
+  readonly beforeGapCall?: Hook;
   /** P9-15: the answer to the check of the data model against the decision records (none if absent). */
   readonly adrModelRecording?: Recording;
+  readonly beforeAdrModelCall?: Hook;
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
@@ -108,7 +110,7 @@ export interface PlanHarnessOptions {
   /** The scan results the plan run measures the data shapes from; none readable if absent. */
   readonly scans?: ScanResults;
   /** Runs before the planner call reaches the fake. */
-  readonly beforeCall?: (harness: PlanHarness) => Promise<void>;
+  readonly beforeCall?: Hook;
   /** P8-139, DEC-226: where the planner stores the source it chose; nowhere if absent. */
   readonly journeyFacts?: Pick<JourneyFactsStore, 'recordPlanSource'>;
 }
@@ -118,6 +120,9 @@ const goneScans: ScanResults = {
   open: () =>
     Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'The scan has no code map.')),
 };
+
+const hooked = async (harness: PlanHarness | undefined, hook: Hook): Promise<void> =>
+  harness === undefined ? undefined : hook?.(harness);
 
 export function planExecutor(
   s: Stores,
@@ -278,13 +283,10 @@ export async function createPlanHarness(
     ...(options.adrModelRecording === undefined
       ? {}
       : { adrModelRecording: options.adrModelRecording }),
-    beforeGapCall: async () => {
-      if (made.harness !== undefined) await options.beforeGapCall?.(made.harness);
-    },
+    beforeAdrModelCall: () => hooked(made.harness, options.beforeAdrModelCall),
+    beforeGapCall: () => hooked(made.harness, options.beforeGapCall),
     ...(cloud ? { serverOpenAiKey: serverKeyText } : {}),
-    beforeCall: async () => {
-      if (made.harness !== undefined) await options.beforeCall?.(made.harness);
-    },
+    beforeCall: () => hooked(made.harness, options.beforeCall),
   });
   const scans = options.scans ?? goneScans;
   made.harness = harnessOf({

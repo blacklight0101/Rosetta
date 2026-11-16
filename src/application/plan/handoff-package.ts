@@ -90,6 +90,8 @@ export interface HandoffPackage {
   readonly choices: BriefChoices;
   /** RF-608: the planner decisions left out because the record of the brief already decides them. */
   readonly restated: readonly RestatedDecision[];
+  /** P9-18: the ids of the planner's own records the package keeps. */
+  readonly plannerIds: readonly string[];
   /** RF-608: the components that break the rule of the chosen style, and those with no role of it. */
   readonly styleCheck: StyleCheck;
   /** RF-609: the clashes the stack check found in the brief's stack and the API contract decision. */

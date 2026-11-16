@@ -174,3 +174,25 @@ describe('RF-432 a Continue whose room shrank after the pause', () => {
     expect(continued.value.granted).toEqual(continued.value.offered);
   });
 });
+
+describe('RF-432 a Continue of a run that is at its own ceiling', () => {
+  it('RF-432 P9-14 grants only the N the run itself got, not what the journey took', async () => {
+    const set = await journeyStepSet();
+    const paused = await pausedStep(set);
+    const { manifests, scopeOf } = set.harness;
+    const stored = await manifests.read(scopeOf(paused));
+    if (stored === undefined) throw new Error('No manifest.');
+    const near = 100;
+    const approved = { tokens: MAX_RUN_TOKENS - near, costMicros: 0 };
+    await manifests.write(scopeOf(paused), {
+      ...stored,
+      options: { ...stored.options, approvedAmount: approved },
+    });
+
+    const continued = await set.continueRun.execute({ actor: userAmy, runId: paused.id, extra });
+
+    if (!continued.ok) throw new Error('The Continue was refused.');
+    expect((await approvedOf(set.harness, paused))?.tokens).toBe(MAX_RUN_TOKENS);
+    expect(continued.value.granted).toEqual({ tokens: near, costMicros: 0 });
+  });
+});
