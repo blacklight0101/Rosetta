@@ -159,6 +159,7 @@ export function handoffOf(
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
     restated: [],
+    plannerIds: [],
     styleCheck: noStyleFindings,
     dataModel: dataModelOf(text),
     flows: flowsOf(text),

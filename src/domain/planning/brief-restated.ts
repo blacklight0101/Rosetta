@@ -33,6 +33,8 @@ export interface DecidedOnce {
   readonly content: PlanContent;
   readonly choices: BriefChoices;
   readonly restated: readonly RestatedDecision[];
+  /** P9-18, RF-623: the ids of the planner records kept (they come first, from ADR-001). */
+  readonly plannerIds: readonly string[];
 }
 
 /** Where the brief decides a choice: the style, the migration or the answered layer at `layer`. */
@@ -213,11 +215,14 @@ export function decideOnce(
   );
   const ids = new Map<string, string>();
   const restated: RestatedDecision[] = [];
+  const plannerIds: string[] = [];
   let next = 0;
   content.decisions.forEach((decision, at) => {
     const where = found[at];
     if (where === undefined) {
-      ids.set(decision.id, planId('ADR', ++next));
+      const kept = planId('ADR', ++next);
+      ids.set(decision.id, kept);
+      plannerIds.push(kept);
       return;
     }
     const record = recordOf(where, fromBrief.choices);
@@ -238,13 +243,6 @@ export function decideOnce(
     },
     choices: fromBrief.choices,
     restated,
+    plannerIds,
   };
-}
-
-/**
- * P9-15, RF-623: the ids decideOnce gives the planner records it keeps: they come first, numbered
- * from ADR-001 in order, one per record of the plan answer that does not restate the brief.
- */
-export function keptPlannerIds(planned: number, restated: number): string[] {
-  return Array.from({ length: Math.max(planned - restated, 0) }, (_, at) => planId('ADR', at + 1));
 }

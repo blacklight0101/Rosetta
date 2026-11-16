@@ -1,6 +1,5 @@
 import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { keptPlannerIds } from '../../domain/planning/brief-restated.js';
 import {
   adrModelFindings,
   decisionsNeedingData,
@@ -59,8 +58,6 @@ const AGENT_TASK = 'planner-adr-model';
 interface AdrModelRun {
   readonly warn: (message: string) => Promise<void>;
   readonly refused: unknown;
-  /** The decisions of the plan answer; the records Rosetta writes from the brief are not checked. */
-  readonly records: readonly unknown[];
 }
 
 /**
@@ -74,7 +71,7 @@ export async function withAdrModelCheck(
   run: AdrModelRun,
 ): Promise<HandoffPackage> {
   if (run.refused !== undefined) return handoff;
-  const ids = new Set(keptPlannerIds(run.records.length, handoff.restated.length));
+  const ids = new Set(handoff.plannerIds);
   const decisions = handoff.content.decisions.filter((record) => ids.has(record.id));
   const input = { decisions, dataModel: handoff.dataModel };
   const check = await planAdrModelCheck({ ...call, agentTaskId: AGENT_TASK }, input);

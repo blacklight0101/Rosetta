@@ -206,7 +206,7 @@ export class BuildPlan implements RunExecutor {
         ...links.leftOut,
       ],
     });
-    const planned = { warn, refused: links.refusal, records: assembly.content.decisions };
+    const planned = { warn, refused: links.refusal };
     const adrCall = { ...linking, prompt: prompts.adrModel };
     const checked = await withAdrModelCheck(adrCall, handoff, planned);
     await this.deps.handoff.write(scopeOf(run), checked);

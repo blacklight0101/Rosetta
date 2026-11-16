@@ -264,7 +264,7 @@ export function handoffPackageOf(
       questions,
       secrets: documents.secrets,
     }),
-    ...{ choices: decided.choices, restated: decided.restated },
+    ...{ choices: decided.choices, restated: decided.restated, plannerIds: decided.plannerIds },
     styleCheck,
     ...stackFindings(brief, apiContract, catalogue, documents.proposal),
     sources,
