@@ -8,9 +8,11 @@ DEC-171). The procedure follows `docs/environments-and-delivery.md` sections 10 
 
 > History: the first host choice, Railway (ADR-020), was dropped on 2026-10-24 because its sign-ups were paused (DEC-171).
 
-**State on 2026-10-24: provisioned and deployed.** Gates G-07 and G-08 are open; Azure provision and Release ran on
-`main`, the smoke test passed and the teacher account signs in, which opened G-06 (first row of Deployment record).
-Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
+**State on 2026-11-16: provisioned and deployed; the app runs `main`.** Gates G-07 and G-08 are open; Azure provision
+and Release ran on `main` for the first time on 2026-10-24, the smoke test passed and the teacher account signs in,
+which opened G-06 (first row of Deployment record). Release has deployed four more times since then; the last deploy was
+on 2026-11-16 (`sha-f61dc06`, Deployment record). Staging is off: `ROSETTA_STAGING_ENABLED` is not set, and only
+`ROSETTA_DEPLOY_ENABLED` is `true`. Running either workflow again changes billed resources; the owner says when in chat. The workflows, the smoke script,
 the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are in the repository and tested:
 
 | Piece                       | Where                                                                                                   | Checked by                                                                                                                                                                                                                                 |
@@ -23,7 +25,7 @@ the HTTPS redirect of the app, the ZAP baseline in CI and the RNF-017 script are
 | Checks of the release merge | `.github/workflows/release-checks.yml`                                                                  | `tests/integration/tooling/release-checks-workflow.test.ts`, `tests/integration/tooling/release-checks-ready.test.ts`, `tests/integration/tooling/release-ready-status.test.ts`, `tests/integration/tooling/release-checks-notify.test.ts` |
 | Smoke script                | `scripts/smoke.mjs`                                                                                     | `tests/integration/scripts/smoke.test.ts`; the `compose-smoke` job of CI                                                                                                                                                                   |
 | HTTP to HTTPS redirect      | `src/presentation/web/https-redirect.ts`                                                                | `tests/integration/presentation/web/https-redirect.test.ts`                                                                                                                                                                                |
-| OWASP ZAP baseline          | job `zap-baseline` of `.github/workflows/ci.yml`                                                        | runs on every pull request and push to `main`; summary in the job summary                                                                                                                                                                  |
+| OWASP ZAP baseline          | job `zap-baseline` of `.github/workflows/ci.yml`                                                        | runs on every pull request and on every push to `main` or `develop` (`ci.yml`); summary in the job summary                                                                                                                                 |
 | RNF-017 measurement         | `scripts/measure-rnf017.mjs`                                                                            | `tests/integration/scripts/measure-rnf017.test.ts`                                                                                                                                                                                         |
 | Backup and restore scripts  | `npm run backup`, `npm run restore` ([backup.md](backup.md))                                            | the local restore drill of backup.md section 4                                                                                                                                                                                             |
 
@@ -135,7 +137,8 @@ resource names in the job summary. Afterwards, copy the URL into the `production
 
 ## Staging
 
-Every push to `develop` deploys to the staging app and runs the smoke test there (`staging.yml`, job
+Once the repository variable `ROSETTA_STAGING_ENABLED` is `true` (it is not set yet, so a push to `develop` skips the
+staging workflow), every push to `develop` deploys to the staging app and runs the smoke test there (`staging.yml`, job
 `deploy (staging)`, DEC-175, ADR-025); Release refuses to deploy a `main` whose tree did not pass it. Staging shares
 the environment `cae-rosetta`, the workspace, the storage account and the PostgreSQL server with production, with its
 own app, migrate job, database and share. It scales to zero (one replica at most) and holds no server provider keys,
@@ -184,8 +187,9 @@ to `main`.
   (the image and the SBOM of the tag are still published). Deploys come from `main` only: run Release by hand
   (`workflow_dispatch`) on `main`.
 
-Before v0.1.0 the deployment runs the `sha-<short>` image of `main` (DEC-104): run the workflow by hand on `main` and
-read the tag in the summary of the image job.
+The deployment runs the `sha-<short>` image of `main` (DEC-104), also now that the system is v1.0.0 (DEC-248): the
+tag `vX.Y.Z` and its GitHub release are made after the release pull request merges, and the deploy comes from `main`.
+To deploy by hand, run the workflow on `main` and read the tag in the summary of the image job.
 
 ## Release to production
 
@@ -234,9 +238,11 @@ DEC-175, ADR-025. Teachers may sign in at any time, so nothing reaches productio
    summary says the run "was not listed after a minute", check Actions before running Release by hand. Release rebuilds the image from `main` and deploys it
    (section Deploy) only when the ZAP baseline passed on the commit, its tree equals the tree of its `develop`
    parent, and `deploy (staging)` passed on that parent. While the repository variable `ROSETTA_STAGING_ENABLED` is not `true` (no staging app yet), the check is skipped with a warning in the job summary (`staging is not enabled; the staging check is skipped (DEC-175)`), so a squash commit on `main` deploys too; once it is `true` the check is enforced and only `skip-staging-check` overrides it.
-5. To deploy at once instead of at 06:07, once CI on `main` has passed the `zap-baseline` check:
-   Actions, Release, Run workflow, branch `main`. The 06:07 run then sees a successful run of that commit and does
-   nothing.
+5. To deploy at once instead of at 06:07, wait until CI on `main` shows `zap-baseline` = success on the merge commit,
+   then: Actions, Release, Run workflow, branch `main`. The 06:07 run then sees a successful run of that commit and
+   does nothing. A Release started by hand before `zap-baseline` has passed is refused in its deploy job ("The ZAP
+   baseline did not pass on this commit; nothing is deployed"), and the next scheduled slot starts it again
+   (2026-11-16: the first attempt was refused this way, a rerun deployed).
 6. Emergency only: the same with the input `skip-staging-check` ticked, which deploys without the staging check and
    writes a warning in the job summary. A fix still goes through `develop` and a release pull request afterwards, so
    `main` and `develop` hold the same tree again; a commit made only on `main` fails the check of every later release.
@@ -282,7 +288,13 @@ and never printed.) It checks, and prints one `ok` or `FAIL` line each:
 - `landing`: the landing page answers;
 - `sign-in`: the account signs in and does not have to change its password (RF-1107);
 - `scan`: a cheap scan (no provider) of `ROSETTA_SMOKE_REPO`, by default `dotnet-architecture/eShopModernizing`,
-  completes; the project it created is deleted again, so the teacher's workspace stays empty.
+  completes; the project it created is deleted again, so the teacher's workspace stays empty. The check waits for
+  the scan up to `ROSETTA_SMOKE_SCAN_TIMEOUT_MS` (default 300000, five minutes, `scripts/smoke.mjs`); a scan that is
+  slower fails the check with "The operation was aborted due to timeout" (2026-11-16: the second attempt of the
+  deploy failed on the scan this way after `health`, `redirect`, `landing` and `sign-in` had passed; the third
+  attempt passed in about 20 seconds). Set the variable in the environment of the script to wait longer, and rerun
+  the failed job: the new image is already live and the migration already applied, so a rerun only repeats the
+  deploy steps and the smoke test.
 
 Exit 0 means every check passed. The verifier's own check of the redirect:
 
@@ -409,9 +421,28 @@ It prints P50 and P95 of each page (`/`, `/healthz`, `/api/session`, `/api/proje
 
 ## Deployment record
 
-| Date       | Image tag     | By                       | Smoke test | Notes                                                                                                   |
-| ---------- | ------------- | ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------- |
-| 2026-10-24 | `sha-6baab02` | orchestrator, owner's OK | passed     | first provisioning (Azure provision, four runs: OIDC subject, public access, schema owner, a CLI crash) |
+| Date       | Image tag     | By                       | Smoke test           | Notes                                                                                                   |
+| ---------- | ------------- | ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------- |
+| 2026-10-24 | `sha-6baab02` | orchestrator, owner's OK | passed               | first provisioning (Azure provision, four runs: OIDC subject, public access, schema owner, a CLI crash) |
+| 2026-10-30 | `sha-86174d9` | by hand                  | passed               | Release run 41006957132, started 06:10 Madrid by running Scheduled release (release #1035, phase 6)     |
+| 2026-11-03 | `sha-fb08d7c` | by hand                  | passed               | Release run 41600977028, started 09:07 Madrid by running Release (release #1120, phases 7 and 8)        |
+| 2026-11-09 | `sha-344bdc9` | by hand                  | passed               | Release run 42611396920, started 12:44 Madrid by running Scheduled release (release #1351, phase 8)     |
+| 2026-11-16 | `sha-f61dc06` | by hand                  | passed (3rd attempt) | Release run 43839301332 (release #1423); see the three attempts below                                   |
+
+The deploy of 2026-11-16 (release #1423, merge commit `f61dc0606`) needed three attempts of the same run:
+
+1. 09:23 UTC: refused in the deploy job at "The ZAP baseline passed on this commit". The Release was started by hand
+   right after the merge, before the `zap-baseline` check of CI on the merge commit had passed ("The ZAP baseline did
+   not pass on this commit; nothing is deployed"). Nothing was deployed.
+2. 09:38 UTC: the checks passed and the new image was deployed (migrate, image, `/healthz`), but the smoke test
+   failed on `scan` ("The operation was aborted due to timeout") at its five-minute limit
+   (`ROSETTA_SMOKE_SCAN_TIMEOUT_MS`, default 300000). The first four checks had passed.
+3. 09:46 UTC: the rerun of the deploy job passed, with the smoke test in about 20 seconds.
+
+The rows after the first were read from `gh run list` and `gh run view` on 2026-11-16: each ran Release on `main`, and
+the smoke test passed in each (the third attempt for 2026-11-16). Up to the deploy of 2026-11-16 the smoke log shows
+`/healthz` reporting version 0.1.0; the deploy of this release (v1.0.0) is the first to report 1.0.0, the version of
+`package.json` (RF-1303).
 
 Checks of 2026-10-24 on `https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io`:
 
