@@ -95,6 +95,40 @@ function textOf(first: FirstCalls, cap: Short): string {
   );
 }
 
+function warningOf(first: FirstCalls, cap: Short, runCapFromProject: boolean): FirstCallWarning {
+  return {
+    id: `first-calls-${cap.kind}`,
+    text: textOf(first, cap),
+    projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
+  };
+}
+
+/**
+ * RF-434, P9-19: beside a journey the approved amount replaces the project's run caps, but the
+ * first reader calls still reserve their worst case against it: when that is above the approvable
+ * figure, in dollars or in tokens, the run could not make them, so the page says so against the
+ * approved amount, in one line.
+ */
+function approvedLineWarning(estimate: RunEstimate, first: FirstCalls): FirstCallWarning[] {
+  const approvable = estimate.journey?.approvable;
+  if (approvable === undefined) return [];
+  const micros = BigInt(approvable.costMicros);
+  const tokens = BigInt(approvable.tokens);
+  const dollarsShort = BigInt(first.reservedMicros) > micros;
+  if (!dollarsShort && BigInt(first.reservedTokens) <= tokens) return [];
+  const unit = dollarsShort ? 'micros' : 'tokens';
+  const calls = `${String(first.calls)} first reader ${first.calls === 1 ? 'call' : 'calls'}`;
+  return [
+    {
+      id: 'first-calls-approved',
+      text:
+        `The ${calls} reserve ${amount(unit, reservedOf(first, unit))} together, more than the ` +
+        `approved amount of ${amount(unit, dollarsShort ? micros : tokens)}: the run would stop at its first calls.`,
+      projectCaps: false,
+    },
+  ];
+}
+
 // RF-405, DEC-159
 /**
  * `runCapFromProject`: the run cap the page holds is the project's, not the administrator's binding
@@ -109,13 +143,16 @@ export function firstCallWarnings(
   const first = estimate.firstCalls;
   if (first === undefined || first.calls === 0) return [];
   // P9-14, RF-434: a journey's approved amount replaces the project's run caps, so they are not named.
-  const replaced = (kind: string): boolean =>
-    approvedLine && (kind === 'run-cost' || kind === 'run-tokens');
-  return shortCaps(estimate, first, runCapMicros)
-    .filter((cap) => !replaced(cap.kind))
-    .map((cap) => ({
-      id: `first-calls-${cap.kind}`,
-      text: textOf(first, cap),
-      projectCaps: cap.kind === 'run-cost' ? runCapFromProject : projectCapKinds.has(cap.kind),
-    }));
+  if (approvedLine) {
+    const own = shortCaps(estimate, first, runCapMicros).filter(
+      (cap) => cap.kind !== 'run-cost' && cap.kind !== 'run-tokens',
+    );
+    return [
+      ...approvedLineWarning(estimate, first),
+      ...own.map((cap) => warningOf(first, cap, runCapFromProject)),
+    ];
+  }
+  return shortCaps(estimate, first, runCapMicros).map((cap) =>
+    warningOf(first, cap, runCapFromProject),
+  );
 }

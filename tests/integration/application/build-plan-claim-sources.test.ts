@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { scopeOf } from '../../../src/application/runs/run-scope.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { createPlanHarness } from '../../support/plan-harness.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
@@ -230,7 +231,10 @@ describe('BuildPlan: which answers the repair round is for (EV-83)', () => {
     // written with it and the run ends RST-1806 instead of completing.
     expect(plain((await h.handoffOf(run))['requirements.md'])).toContain('Place an order');
     expect(plain((await h.handoffOf(run))['checks.md'])).toContain('Requirements built by no card');
-    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
+    const events = await h.s.log.read(scopeOf(run), 0);
+    expect(events.filter((event) => event.type === 'run.ended').at(-1)?.data).toMatchObject({
+      errorCode: 'RST-1806',
+    });
   });
 
   it('P8-02 RF-607 one card left without a requirement while others keep theirs gets no round', async () => {
