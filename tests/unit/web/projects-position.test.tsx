@@ -37,7 +37,7 @@ async function positionOf(
   renderPage(<ProjectsPage />, {
     [overviewPath]: json(200, { projects: rows, truncated: false }),
   });
-  return whereCell(await screen.findByRole('link', { name: 'octo/demo', exact: true })).textContent;
+  return whereCell(await screen.findByRole('link', { name: 'octo/demo' })).textContent;
 }
 
 /** A row whose project has these journey facts, with its newest run. */
@@ -161,9 +161,9 @@ describe('RF-432 a run paused for approval in the projects list', () => {
         truncated: false,
       }),
     });
-    const link = await screen.findByRole('link', { name: 'octo/demo', exact: true });
+    const link = await screen.findByRole('link', { name: 'octo/demo' });
 
-    expect(screen.getByRole('link', { name: 'acme/shop', exact: true })).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'acme/shop' })).not.toBeNull();
     expect(whereCell(link).textContent).toContain('Paused for approval');
     expect(link.closest('tr')?.querySelector('td[data-label="Last run"]')?.textContent).toBe(
       '12 Oct, 09:30',
@@ -179,7 +179,7 @@ describe('RF-010 the columns of the projects list', () => {
         truncated: false,
       }),
     });
-    const link = await screen.findByRole('link', { name: 'octo/demo', exact: true });
+    const link = await screen.findByRole('link', { name: 'octo/demo' });
 
     expect(screen.getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual([
       'Project',
@@ -208,7 +208,7 @@ describe('RF-010 the position comes with the overview', () => {
     const page = renderPage(<ProjectsPage />, {
       [overviewPath]: json(200, { projects: rows, truncated: false }),
     });
-    await screen.findByRole('link', { name: 'octo/p3', exact: true });
+    await screen.findByRole('link', { name: 'octo/p3' });
 
     expect(screen.getAllByText('Package ready')).toHaveLength(3);
     const paths = page.calls.map((call) => call.path);
@@ -223,7 +223,7 @@ describe('RF-010 the position comes with the overview', () => {
         truncated: false,
       }),
     });
-    const cell = whereCell(await screen.findByRole('link', { name: 'octo/demo', exact: true }));
+    const cell = whereCell(await screen.findByRole('link', { name: 'octo/demo' }));
 
     expect(within(cell).getByText('2 areas failed')).not.toBeNull();
   });
