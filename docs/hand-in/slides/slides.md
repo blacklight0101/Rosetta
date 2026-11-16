@@ -6,6 +6,8 @@ lang: es
 footer: 'Rosetta - Hito 1 (entrega 2026-10-26)'
 ---
 
+<!-- Borrador anterior en Marp. La versión entregada es el PDF Rosetta-Hito1.pdf que nombra README.md; este borrador no se actualiza y sus marcadores [PENDIENTE] se dejan como están. -->
+
 <!-- Fuente de todas las cifras: el propio repositorio (ver el pie de cada diapositiva). Lo que aún no se conoce figura como [PENDIENTE]. -->
 
 # Rosetta

@@ -20,7 +20,8 @@ import { secretFindings } from '../../support/secret-scan.js';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const siteFolder = `${root}site/`;
 const runKey = '20261012-100000-understand';
-const sampleLabel = "Sample run (recorded test data); the owner's demo run replaces it (DEC-105)";
+const sampleLabel =
+  'Sample run (recorded test data); permanent sample data, kept as the recorded test fixture and not replaced by a live run (DEC-250, DEC-105)';
 const execFileAsync = promisify(execFile);
 const staleFixture = join(root, 'tests/fixtures/pages/index-without-run.html');
 
