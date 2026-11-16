@@ -153,7 +153,12 @@ export class ContinueRun {
       manifest: { ...manifest, options: { ...manifest.options, approvedAmount: raised } },
       journey,
       offered,
-      granted: journey.extra,
+      // P9-19: what this run got, not what its journey took: the two differ where the run's own
+      // ceiling clipped the sum.
+      granted: {
+        tokens: Math.max(0, raised.tokens - approvedAmount.tokens),
+        costMicros: Math.max(0, raised.costMicros - approvedAmount.costMicros),
+      },
     };
   }
 }
