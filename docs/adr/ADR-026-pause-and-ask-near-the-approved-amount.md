@@ -1,7 +1,7 @@
 # ADR-026: Pause a run near its approved amount and ask, instead of a hard stop
 
 **Date**: 2026-10-29
-**Status**: Proposed
+**Status**: Accepted (2026-11-16, DEC-249)
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context

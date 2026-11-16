@@ -21,11 +21,11 @@ project's tokens and cost, and Rosetta talks to AI providers over their APIs. No
 
 | Key                  | Value                                                                                                                                                                                                                                                                                                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Local path           | `C:\BuildingFolder\Rosetta`                                                                                                                                                                                                                                                                                                                                                          |
+| Local path           | `G:\BuildingFolder\Rosetta` (the owner's checkout; any path works)                                                                                                                                                                                                                                                                                                                   |
 | Short code           | `RST` (prefix for names that must be unique across systems, see `docs/conventions.md`)                                                                                                                                                                                                                                                                                               |
 | Product owner        | BlackLigth (blacklight0101)                                                                                                                                                                                                                                                                                                                                                          |
 | Version control      | git; default branch `develop` (integration), `main` = what is deployed or about to be (DEC-175); remote `origin` = public GitHub `blacklight0101/Rosetta` (created at gate G-03); never push unless asked                                                                                                                                                                            |
-| Branching            | branch off `develop` per change -> review -> squash merge into `develop` (linear history) -> staging; a release pull request `develop` -> `main`, merged only by the owner with a merge commit, deploys at 06:00 Madrid ([ADR-025](docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md))                                                                                |
+| Branching            | branch off `develop` per change -> review -> squash merge into `develop` (linear history) -> staging; a release pull request `develop` -> `main`, merged only by the owner with a merge commit, deploys from the 06:07 Madrid scheduled slot or by hand; staging is not enabled yet ([ADR-025](docs/adr/ADR-025-develop-branch-staging-and-scheduled-release.md))                    |
 | Hosting target       | One container image ([ADR-014](docs/adr/ADR-014-container-image-local-and-hosted.md)): locally Docker Compose (app + PostgreSQL, port on `127.0.0.1:8080`); hosted on Azure Container Apps in Spain Central ([ADR-024](docs/adr/ADR-024-host-on-azure-container-apps-spain-central.md), Q-18) for the teachers; the sample report is also published as a static site on GitHub Pages |
 | Data store           | PostgreSQL for accounts, sessions, keys, projects, run index, cost ledger and audit; files in the data folder for snapshots and run output ([ADR-016](docs/adr/ADR-016-postgresql-and-files.md), [docs/data-model.md](docs/data-model.md))                                                                                                                                           |
 | Read-only references | Snapshots of the public GitHub repositories being analysed, including `dotnet-architecture/eShopModernizing`                                                                                                                                                                                                                                                                         |
@@ -169,7 +169,9 @@ applied, and fixing it is part of applying the decision.
   section (DEC-212).
 - **Releases (DEC-175).** When the owner says a batch is ready, the orchestrator opens one pull request `develop` ->
   `main` listing its cards, labelled `needs-owner`; only the owner merges it, with a merge commit (never squash), and
-  production deploys it at 06:00 Europe/Madrid the next morning. The orchestrator never merges a release.
+  production deploys it from the scheduled slot at 06:07 Europe/Madrid the next morning (backups until 07:59), or at
+  once when Release is started by hand after `zap-baseline` has passed on the merge commit. Staging is not enabled yet
+  (`ROSETTA_STAGING_ENABLED` is not set). The orchestrator never merges a release.
 - **Trace everything:** one GitHub issue per task card; one branch per issue (`task/<card-id>-<slug>` in lower case,
   or `docs/<topic>` for documentation that belongs to no card; exact names in `docs/conventions.md`); one pull
   request per branch, filled from the template, citing the card, `RF`, `ADR` and `DEC` ids and closing its issue.
@@ -177,7 +179,9 @@ applied, and fixing it is part of applying the decision.
   pull request. The merge is a squash so `develop` stays linear; the branch is deleted. The owner can review any merged
   pull request afterwards.
 - Commits use Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`) and end with `Refs:` naming the ids.
-- Milestones group issues by phase; every release is a tag and a GitHub release (DEC-29).
+- Milestones group issues by phase; every release is a tag and a GitHub release (DEC-29). Every release pull request
+  bumps the version in `package.json` and adds its section to `docs/releases.md`; the current version is 1.0.0
+  (DEC-248).
 - Commit only when asked; the working tree is clean before a multi-file change starts.
 
 ## Documentation protocol
@@ -194,19 +198,25 @@ applied, and fixing it is part of applying the decision.
   conversation record itself is private and lives outside this repository (DEC-33, DEC-38).
 - Session end -> `handoff.md` (resume point, agenda, gates, session log entry at the top).
 
-## Planned solution layout (scaffolded in Phase 1, not before)
+## Solution layout (built)
 
 ```text
 src/domain/          entities, value objects, domain rules (claims, citations, budgets)
-src/application/     use cases (scan, understand, verify, answer, report, plan, estimate, export) and ports
-src/infrastructure/  LLM providers, egress and budget guards, file system, language packs, writers, zip
-src/presentation/    Fastify web server, routes and composition root
+src/application/     use cases (scan, understand, verify, answer, report, plan, estimate, export, lab) and ports
+src/infrastructure/  LLM providers, egress and budget guards, file system, language packs, sources (GitHub, zip,
+                     workbook), writers
+src/presentation/    Fastify web server, routes, composition root and the prompt lab command
 web/                 front end (landing page, web UI, report components)
 db/migrations/       numbered SQL migrations
 Dockerfile, compose.yaml, .env.example   container image and local deployment
-prompts/         versioned agent prompts and card templates
-tests/           unit, integration and end-to-end tests, recorded provider responses, golden set
-site/            the published sample report (GitHub Pages)
+prompts/             versioned agent prompts and card templates
+eval/                golden sets, calibration claims and the evaluation runner config (eval/README.md)
+lab/                 prompt lab case sets, rubrics and sources (docs/runbooks/prompt-lab.md)
+scripts/             command-line helpers for the owner and CI: smoke test, backup and restore, lab, release tags
+templates/           templates of the generated report and hand-off package
+prices/              the price table of the models (default prices and model list)
+tests/               unit, integration and end-to-end tests, recorded provider responses
+site/                the published sample report (GitHub Pages; permanent sample data, DEC-250)
 ```
 
 The detailed layout is in [docs/architecture.md](docs/architecture.md).

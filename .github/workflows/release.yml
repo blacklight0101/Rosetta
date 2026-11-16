@@ -3,7 +3,7 @@
 # tag); for a tag it also attaches a CycloneDX SBOM to the GitHub release. It runs only on a pushed
 # v* tag or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published
 # before v0.1.0, DEC-104); never on a pull request or a push to main. Since DEC-175 (ADR-025)
-# scheduled-release.yml starts it on main at 06:00 Europe/Madrid the morning after main changed,
+# scheduled-release.yml starts it on main at 06:07 Europe/Madrid (backups until 07:59) the morning after main changed,
 # and the deploy job refuses a main whose tree did not pass staging (staging.yml), once the
 # repository variable ROSETTA_STAGING_ENABLED is 'true' (until then the check is skipped with a
 # warning); the input skip-staging-check skips that check, for emergencies only.

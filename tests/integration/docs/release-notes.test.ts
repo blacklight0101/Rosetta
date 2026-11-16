@@ -11,8 +11,8 @@ import {
   section,
 } from '../../support/release-docs.js';
 
-// DEC-29, RF-801, P1-52: the v0.1.0 release notes, honest against the milestone matrix, and the version
-// bump. A missing file reads as empty so the checks fail on their assertions.
+// DEC-29, DEC-248, RF-801, P1-52: the release notes (v1.0.0 current, v0.1.0 kept as history and honest
+// against the milestone matrix) and the version bump. A missing file reads as empty so the checks fail on their assertions.
 const read = (name: string): Promise<string> =>
   readFile(new URL(`../../../${name}`, import.meta.url), 'utf8').catch(() => '');
 
@@ -73,15 +73,24 @@ describe('version bump', () => {
     expect(lock.packages[''].version).toBe(newest);
   });
 
-  it('DEC-29 the notes have a section for the milestone release v0.1.0', () => {
+  it('DEC-248 the notes have a section for release 1, v1.0.0, and keep v0.1.0 as history', () => {
+    expect(releases).toMatch(/^## v1\.0\.0\b/mu);
     expect(releases).toMatch(/^## v0\.1\.0\b/mu);
   });
 
-  it('DEC-29 the notes say the tag is not created yet and that the owner creates it', () => {
-    const head = releases.slice(releases.indexOf('## v0.1.0'));
+  it('DEC-248 v1.0.0 says its tag is made after the merge on the owner word, not before', () => {
+    const current = section(releases, '## v1.0.0 - Release 1');
 
-    expect(head).toMatch(/not tagged/iu);
-    expect(head).toMatch(/owner creates the tag/iu);
+    expect(current).toMatch(/tag `v1\.0\.0`/iu);
+    expect(current).toMatch(/after this version merges/iu);
+    expect(current).toMatch(/owner's word/iu);
+  });
+
+  it('DEC-248 the notes say v0.1.0 was never tagged and is superseded by v1.0.0', () => {
+    const old = releases.slice(releases.indexOf('## v0.1.0'));
+
+    expect(old).toMatch(/never tagged/iu);
+    expect(old).toMatch(/superseded by v1\.0\.0/iu);
   });
 });
 
@@ -142,40 +151,42 @@ describe('links', () => {
       'https://github.com/blacklight0101/rosetta',
       'https://blacklight0101.github.io/rosetta',
       'http://127.0.0.1:8080',
+      'https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io',
+      'https://youtu.be/zu1smxurm6y',
     ],
   };
 
-  it('RF-801 carries no link except the repository, the sample report and the local address', () => {
+  it('RF-801 carries no link except the repository, the sample report, the hosted application, the video and the local address', () => {
     expect(linksIn(releases).filter((link) => !isPermittedLink(link, allowed))).toEqual([]);
   });
 
   it.each(['Hosted application', 'Slides', 'Video'])(
-    'RF-801 marks the %s URL as pending, with no address',
+    'RF-801 the %s URL is filled in under Links, with no placeholder left',
     (label) => {
       const line = links.split('\n').find((text) => text.includes(label)) ?? '';
 
-      expect(line).toContain('[PENDIENTE');
-      expect(linksIn(line)).toEqual([]);
+      expect(line).not.toContain('PENDIENTE');
+      expect(linksIn(line)).toHaveLength(1);
     },
   );
 });
 
 describe('README status and links', () => {
-  it('RF-801 the status names v0.1.0 and links the notes', async () => {
+  it('DEC-248 the status names v1.0.0 and links the notes', async () => {
     const readme = await read('README.md');
     const status = readme.slice(readme.indexOf('**Status:'), readme.indexOf('## Quick start'));
 
-    expect(status).toContain('v0.1.0');
+    expect(status).toContain('v1.0.0');
     expect(status).toContain('docs/releases.md');
     expect(status).not.toMatch(/in progress/iu);
   });
 
-  it('RF-801 the milestone hand-in list links the release notes and says who creates the tag', async () => {
+  it('DEC-248 the milestone hand-in list links the release notes and says v0.1.0 was never tagged', async () => {
     const readme = await read('README.md');
     const line = readme.split('\n').find((text) => text.startsWith('- Release notes:'));
 
     expect(line).toContain('(docs/releases.md)');
-    expect(line).toMatch(/owner creates the tag/u);
+    expect(line).toMatch(/never tagged/u);
   });
 
   it('RF-801 the README holds the hosted URL of the deployment that opened G-06', async () => {
@@ -188,7 +199,7 @@ describe('README status and links', () => {
 
   it('RF-801 the docs index lists docs/releases.md and no longer plans it', async () => {
     const index = await read('docs/README.md');
-    const planned = section(index, '## Planned documents (not written yet)');
+    const planned = section(index, '## Planned documents');
 
     expect(index).toMatch(/^\| \[releases\.md\]\(releases\.md\) +\|/mu);
     expect(planned).not.toContain('docs/releases.md');
