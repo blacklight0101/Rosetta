@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-11-16. Release 1 is built and hosted, and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 with its follow-ups P9-14..P9-17 and Phase 10, the prompt lab, are released to `main` by #1419 (`887c0285e`, merged 2026-11-15, not yet deployed on the morning of 2026-11-16: the scheduled slots have run hours late every day since 2026-11-08); P9-18 (#1421) and P9-19 (#1420) are merged into `develop` on 2026-11-16 and not released ([prompt-lab README](docs/evaluation/prompt-lab/README.md)). The latest state is the first entry of the resume point below._
+_Last updated 2026-11-16. Release 1 is built and hosted as version 1.0.0 (DEC-248), and the milestone hand-in is submitted (G-05); card counts are in the [tasks.md totals](docs/orchestration/tasks.md). The hosted URL is <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io>. Phase 8 waves 2 and 3 are released to `main` by #1351 (`344bdc9d`, deployed by hand on 2026-11-09); Phase 9 (P9-01..P9-19) and Phase 10, the prompt lab, are released to `main` by #1419 and #1423 and deployed by hand on 2026-11-16 at `f61dc0606`; the documentation audit of 2026-11-16 (#1424 and the release 1.0.0 documents) brings every document up to date, and release 1.0.0 follows it ([prompt-lab README](docs/evaluation/prompt-lab/README.md)). The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -8,11 +8,11 @@ _Last updated 2026-11-16. Release 1 is built and hosted, and the milestone hand-
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Accepted** (DEC-113).
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-024; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-247.
+- `docs/adr/` - ADR-001..ADR-029; counts by status in the [index](docs/adr/README.md).
+- `docs/decision-log.md` - decisions DEC-01..DEC-250.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
-- `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
+- `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-opus`, `verifier-fable`,
   `orchestrator` (rewritten 2026-10-11 for DEC-96 and DEC-100).
 - Model bands changed by DEC-115: builders haiku 1-5, sonnet 6-8, opus 9-10; verifiers sonnet 1-8, opus 9-10; fable only by owner approval at the third FAIL; usage throttle: one agent at a time (README section 8.1); on 2026-10-13 (evening) the owner allowed two agents in flight "for now" (to record as a DEC), with the usage bands still gating each launch.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
@@ -29,6 +29,8 @@ _Last updated 2026-11-16. Release 1 is built and hosted, and the milestone hand-
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Resume (2026-11-16, documentation audit and version 1.0.0).** On the owner's word ("merge it to main and publish the site again") release #1423 (P9-18, P9-19) was merged into `main` (`f61dc0606`) and deployed by hand: the first attempt was refused because main's `zap-baseline` had not finished (wait for main's CI before starting Release by hand), the second deployed but the smoke scan hit its 5-minute timeout, the third passed. A documentation audit then found the narrative documents behind the code (README, releases, roadmap, docs index, handoff, architecture ports and use cases, conventions status list, spec traceability); the owner said "update everything and lets call the current version 1.0 all other default": DEC-248 (version 1.0.0; every release pull request bumps the version, then a tag and a GitHub release), DEC-249 (ADR-021, ADR-022, ADR-023 and ADR-026 accepted; ADR-028 stays Proposed because its scheduler job, P8-66..P8-71, is not built - confirm with the owner), DEC-250 (the published sample stays the recorded fixture). Fixed in #1424 (technical documents) and the release 1.0.0 documents pull request; then a release pull request to `main`, the tag `v1.0.0` with its GitHub release, and a deploy so `/healthz` reports 1.0.0. Still open for the owner: RF-1002 (the live agent view watched in a real run) has no recorded owner check; RFC-005 still reads Proposed although built; ADR-028.
 
 **Resume (2026-11-16, P9-18 and P9-19 merged).** `develop` is at `aae8ce685` (#1421) and holds two cards not yet on `main`: P9-19 (#1420, `8ab7e3daf`): beside a journey the Start page warns in one line when the first calls reserve more than the approvable figure; Continue's `granted` is the run's own raise (the overstatement in the card was not reproduced, the change makes it hold by construction); the Continue row is in `docs/architecture.md`; the RST-1806 test asserts the end code. P9-18 (#1421): Resume holds the project lock around the journey read and the reopen; the data model check's two stop paths are tested; `decideOnce` returns `plannerIds`. Verifier PASS on both (P9-18 after a round-1 FAIL on two `docs/architecture.md` sentences, fixed by the orchestrator as wording). Production still runs `344bdc9d` (2026-11-09) until a scheduled slot starts Release for `887c0285e`; on 2026-11-16 no slot had run by 09:25 Madrid, and a late slot deploys because #1419 was merged before 06:00 that day. Docker Desktop was down on the morning of 2026-11-16 (start it from the desktop icon only); the P9-19 Start-page e2e specs ran in CI only. Open for the owner: the next release, the 27 follow-up candidates of the Phase 10 report, and the minor note that the P9-18 interleaving test waits on a real 20 ms timer.
 
@@ -423,7 +425,7 @@ Next, in this order (ask the owner before each):
 Blockers: none. G-04 (Ollama with the DEC-53 models folder and an OpenAI key) holds only the live checks of P1-25,
 P1-26 and P1-47; the reader model of Q-04 comes from the P1-47 spike.
 
-## Agenda for the next session (ask the owner first)
+## Agenda of October 2026 (historic; the current agenda is the first entry of the resume point)
 
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
@@ -486,7 +488,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | G-03 | Public GitHub repository ready            | Open   | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected                                                                                                                                                              |
 | G-04 | Provider access ready                     | Open   | 2026-10-13 | opened by BlackLigth (blacklight0101): Ollama runs on the host (0.40.2) and the app reached it with `gemma4:e4b` (Test providers); OpenAI and Anthropic keys are stored; releases the live-check parts of P1-25, P1-26 and P1-47 (DEC-104); the reader model (Q-04) still comes from the P1-47 spike |
 | G-05 | Milestone hand-in approved                | Open   | 2026-10-26 | opened by BlackLigth (blacklight0101) on 2026-10-26: the M1 hand-in form submitted with the hosted URL, the teacher account and the video (RF-803)                                                                                                                                                   |
-| G-06 | Hosted deployment ready                   | Open   | 2026-10-24 | opened on 2026-10-24: image `sha-6baab02` deployed to Azure Container Apps, smoke test passed, the teacher account signs in (P1-55, deploy.md Deployment record)                                                                                                                                     |
+| G-06 | Hosted deployment ready                   | Open   | 2026-10-24 | opened on 2026-10-24: image `sha-6baab02` deployed to Azure Container Apps (production runs `f61dc0606` since 2026-11-16, see the deployment record in `docs/runbooks/deploy.md`), smoke test passed, the teacher account signs in (P1-55, deploy.md Deployment record)                              |
 | G-07 | Host account and secrets ready            | Open   | 2026-10-24 | opened by BlackLigth (blacklight0101) on 2026-10-24: Azure subscription, budget, resource group, deploy identity with federated credentials, `production` variables and secrets (DEC-171, ADR-024)                                                                                                   |
 | G-08 | Local acceptance                          | Open   | 2026-10-13 | opened by BlackLigth (blacklight0101) after a first hands-on test of the Compose stack ("so far so good"); the bugs that test found are card P1-147 (in progress) and are re-tested by the owner when it merges; releases P1-49 and P1-50, and P1-55 now waits only for G-07 (DEC-133)               |
 | G-09 | Standard modules started                  | Closed | -          | held by the owner: the standard modules checklist of DEC-164 (phase 4) does not start, and no card for it is written, until the owner opens this gate                                                                                                                                                |
@@ -494,11 +496,12 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Decisions pending
 
-- Open questions Q-01..Q-22 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
+- Open questions Q-01..Q-68 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
 
+- **2026-11-16 (documentation audit, version 1.0.0)** - release #1423 deployed by hand at `f61dc0606`; documentation audit of the whole set; DEC-248..DEC-250; pull requests #1424 and `docs/release-1-0-docs`; the earlier October agenda is marked historic.
 - **2026-11-16 (P9-18 and P9-19)** - docs pull request `docs/build-status-2026-11-16`: P9-19 (#1420) and P9-18 (#1421) merged into `develop` after verifier PASS and green CI, Status lines set to Done, resume point updated; Phase 9 and Phase 10 were released to `main` by #1419 on 2026-11-15.
 - **2026-11-08 (Phase 8 wave 3 round 2)** - docs pull request `docs/build-status-2026-11-08`: 23 cards merged into `develop` (none released), Status lines set to Done, follow-ups of the verdicts and the owner agenda written in the first entry of the resume point.
 - **2026-11-05 (Phase 8 wave 3 stopped)** - docs pull request `docs/build-status-wave3-final`: the owner stopped new cards; 38 cards of the wave are merged into `develop` and none is released. DEC-223 (Q-68 answered) and DEC-224 recorded, follow-up cards P8-134..P8-138 appended, Status lines and totals updated, the P8-60 counting rule and the row menu's scroll rule corrected. Owner agenda, next cards and costs are in the first entry of the resume point.

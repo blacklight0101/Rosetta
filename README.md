@@ -13,17 +13,20 @@ From that specification it produces a tool-agnostic modernisation hand-off packa
 records, roadmap and task cards) that any team can build from in its own way. It works with any legacy stack, runs
 against any AI provider (local models through Ollama, OpenAI, Anthropic and OpenAI-compatible services), and keeps
 the cost of every run visible and capped. It is a web application with accounts: a page shows every agent it
-spawns, live, and the published report replays their work. One container image runs it on your machine with Docker
-Compose or on a server for invited users.
+spawns, live, and the published report replays their work. A guided journey takes a project from scan to plan under
+one approved amount (ADR-027): each step is offered in place, and a run pauses and asks near the amount
+(ADR-026). One container image runs it on your machine with Docker Compose or on a server for invited users.
+For contributors, a prompt lab measures prompt versions on recorded cases before they are kept
+([runbook](docs/runbooks/prompt-lab.md)).
 
-**Status: release 1 is built (2026-10-21) and runs end to end with Docker Compose; the hosted application is not
-deployed yet.** You can create a project from a public GitHub URL, a zip or Excel workbooks, scan it, run the agents
+**Status: release 1 (v1.0.0) is built, with phases P1 to P3 and P5 to P10; the hosted application runs `main` (first
+deployed 2026-10-24, last deployed 2026-11-16).** You can create a project from a public GitHub URL, a zip or Excel workbooks, scan it, run the agents
 that write the cited specification, watch them live, Deepen the result, answer the open questions, build the HTML
 report and run `plan` to write the hand-off package, with an estimate before every run and a cap on its cost and
 tokens. The cards still open wait for an owner gate or check (counts in the
-[tasks.md totals](docs/orchestration/tasks.md); current state in [handoff.md](handoff.md)); the hosted deployment
-waits for the owner to declare the local system ready (G-08). [docs/releases.md](docs/releases.md) lists what v0.1.0
-(the milestone slice; the owner creates the tag) delivers by requirement area. The design documents are in this
+[tasks.md totals](docs/orchestration/tasks.md); current state in [handoff.md](handoff.md)).
+[docs/releases.md](docs/releases.md) lists what v1.0.0 delivers by area, and keeps the notes of the v0.1.0 milestone
+slice that came before it. The design documents are in this
 repository: [docs/roadmap.md](docs/roadmap.md) has the phases and [docs/README.md](docs/README.md) the full map.
 
 ## Quick start
@@ -90,7 +93,7 @@ The app is published on `127.0.0.1` only. `docker compose down` stops it and kee
 deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and troubleshooting) are in
 [docs/runbooks/local.md](docs/runbooks/local.md).
 
-A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> once GitHub Pages is enabled for the repository (source: GitHub Actions).
+A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> (live since 2026-10-25; it stays a recorded sample, not a live run).
 
 ## Tested providers and models
 
@@ -108,7 +111,10 @@ workbook (7 sheets, 335 formulas, 13 VBA modules, about 28,000 tokens of text) a
 | Anthropic `claude-sonnet-5-5` | Invoice  | 14 cards, 33 of 46 Supported       | 18 cards, 67 of 85 Supported | Completed, 18 task cards | $1.67  |
 | OpenAI `gpt-5-nano`           | Invoice  | 10 cards, 42 of 52 Supported       | 14 cards, 55 of 67 Supported | Completed, 5 task cards  | $0.11  |
 
-Evaluated on 2026-10-21. What the runs show:
+Evaluated on 2026-10-21. Later rounds re-ran the three-app evaluation after the fixes of Phases 7 and 8 (2026-10-29,
+2026-11-02 and 2026-11-09; the last reports wait for the owner to read them, cards P7-19 and P8-46 to P8-49), and the
+prompt lab measured every prompt version on recorded cases between 2026-11-13 and 2026-11-15 (the report is
+[docs/evaluation/prompt-lab/README.md](docs/evaluation/prompt-lab/README.md)). What the 2026-10-21 runs show:
 
 - Every provider completes the journey. A hosted model writes more precise cards (named business rules such as due
   dates, VAT and invoice numbering, and flows such as drafting the customer email) and a larger plan; a small local
@@ -128,18 +134,18 @@ Evaluated on 2026-10-21. What the runs show:
 - `gpt-5-nano` is a reasoning model: calls take 30 to 80 seconds, and with the default 4,096-token output limit its
   answers came back empty (card P3-86). Long planner answers of `gpt-5-nano` and `claude-sonnet-5-5` need more than
   the default 120-second call timeout (card P3-93); the Sonnet run used 600 seconds.
-- Known limits being fixed: every hosted model is still assumed to have a 128,000-token context and every role the
-  same output limit (card P3-85), so a hosted reader's long answer can be cut and retried; the follow-ups found in
-  the evaluation are cards P3-87 to P3-95.
+- Limits found then and since fixed: every hosted model was assumed to have a 128,000-token context and every role
+  the same output limit (card P3-85, done), so a hosted reader's long answer could be cut and retried; the other
+  follow-ups of that evaluation, cards P3-87 to P3-95, are done too.
 
 ## Release 1 scope in three lines
 
 - Release 1 covers the full pipeline as a web application with sign-in: `scan`, `understand` (agents plus
   verifier), the open-question loop, the HTML report and `plan` (the hand-off package), with cost control, on any
   legacy stack.
-- The first milestone (2026-10-26) is a working slice: `scan` and `understand` on one area of the demo legacy app,
+- The first milestone (2026-10-26) was a working slice: `scan` and `understand` on one area of the demo legacy app,
   running locally with Docker Compose and hosted for the evaluators with a teacher account, plus the published sample
-  report, slides and video.
+  report, slides and video. It is past and was submitted on 2026-10-26 (G-05).
 - Later: a second demo target in a different stack and a provider comparison report. Out of scope: a command-line
   interface and the Claude Code plugin run mode (DEC-59, DEC-60); rebuilding the legacy system is deliberately not
   part of Rosetta.
@@ -154,7 +160,7 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 | Product owner                | **BlackLigth (blacklight0101)**, sole owner; master final project                                                                                          | -                                                       |
 | Replaces a system            | **No.** Rosetta analyses third-party legacy codebases                                                                                                      | -                                                       |
 | First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only               |
-| Repository                   | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`**                                                                         | Local only, GitHub later                                |
+| Repository                   | **Local git (the owner's checkout is `G:\BuildingFolder\Rosetta`; any path works), public GitHub `blacklight0101/Rosetta`**                                | Local only, GitHub later                                |
 | Document language            | **English**                                                                                                                                                | Spanish; mixed                                          |
 | Stack                        | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI)                                                    | .NET 10; Python                                         |
 | AI access                    | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic)                                                                 | Claude Agent SDK (Claude only); Claude Code plugin only |
@@ -166,8 +172,8 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 
 ## Milestone hand-in (2026-10-26)
 
-- Release notes: [docs/releases.md](docs/releases.md) (v0.1.0; the owner creates the tag).
-- Hosted application URL: <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (Azure Container Apps, Spain Central; deployed 2026-10-24, card P1-55).
+- Release notes: [docs/releases.md](docs/releases.md) (v1.0.0 is the current release; v0.1.0 was this milestone and was never tagged).
+- Hosted application URL: <https://ca-rosetta.nicewater-1ef3fc33.spaincentral.azurecontainerapps.io> (Azure Container Apps, Spain Central; first deployed 2026-10-24, card P1-55; last deployed 2026-11-16).
 - Hand-in values and the owner's day-before checklist: [docs/hand-in/m1.md](docs/hand-in/m1.md).
 - Slides URL: <https://github.com/blacklight0101/Rosetta/blob/main/docs/hand-in/slides/Rosetta-Hito1.pdf> (PDF, always the latest version on `main`; PowerPoint file: <https://github.com/blacklight0101/Rosetta/raw/main/docs/hand-in/slides/Rosetta-Hito1.pptx>). Spanish. The earlier Marp draft is [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md).
 - Video URL: <https://youtu.be/Zu1SmxuRm6Y> (YouTube, Spanish, about 57 minutes: the full walkthrough of the app). Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, the 5-minute outline).

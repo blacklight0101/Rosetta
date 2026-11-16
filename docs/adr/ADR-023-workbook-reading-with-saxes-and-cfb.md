@@ -1,7 +1,7 @@
 # ADR-023: Read Excel workbooks with `yauzl`, `saxes` and `cfb`
 
 **Date**: 2026-10-19
-**Status**: Proposed
+**Status**: Accepted (2026-11-16, DEC-249)
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context

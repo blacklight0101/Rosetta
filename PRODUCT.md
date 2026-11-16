@@ -22,9 +22,9 @@ web
 
 ## Product Purpose
 
-Rosetta takes a public GitHub repository of a legacy system, pins one commit, maps the code without AI, then sends
-a team of AI agents through it to write a functional specification (features, business rules, entities,
-integrations, open questions). Every claim cites the file and line range it comes from, and a verifier rejects
+Rosetta takes the source of a legacy system (a public GitHub repository pinned to one commit, an uploaded zip or
+uploaded Excel workbooks; DEC-48, DEC-148, DEC-150), maps the code without AI, then sends a team of AI agents through
+it to write a functional specification (features, business rules, entities, integrations, open questions). Every claim cites the file and line range it comes from, and a verifier rejects
 what the code does not support. From the verified specification it produces a tool-agnostic modernisation hand-off
 package. Success: a reader can check any finding against the code in minutes, at a known and capped cost.
 
@@ -37,8 +37,10 @@ including free local models, and stops at the hand-off: it never rebuilds the sy
 
 ## Operating Context
 
-- Pipeline: GitHub URL -> snapshot pinned to a commit -> `scan` (code map) -> `understand` (agents write cards) ->
-  verifier -> open questions answered by the user -> `report` (HTML) -> `plan` (hand-off package).
+- Pipeline: GitHub URL, zip or Excel workbooks -> snapshot (pinned to a commit for GitHub) -> `scan` (code map) ->
+  `understand` (agents write cards) -> verifier -> Deepen (re-reads what was left unread and claims that failed) ->
+  open questions answered by the user -> `report` (HTML) -> `plan` (hand-off package). A guided journey takes a
+  project through these steps under one approved amount, offering each next step in place (ADR-027).
 - A web application behind sign-in; one container image runs locally with Docker Compose and hosted for the
   evaluators. Users have private workspaces; runs can wait in a queue.
 - Cost: server keys used under caps per run, per user per day and per server per month; users may add their own
@@ -66,9 +68,10 @@ including free local models, and stops at the hand-off: it never rebuilds the sy
 
 - The demo target: Microsoft eShopLegacyWebForms (`dotnet-architecture/eShopModernizing`, MIT).
 - The approved board shows the live run, API calls, history and report with sample data.
-- No customers, testimonials, press, benchmarks or accuracy figures exist yet. Pages may show demonstration material
-  from the eShop demo, labelled "sample run" until a real run replaces it; they never invent customers, quotes,
-  prices or numbers.
+- Measured figures exist: the live evaluation runs in the [README](README.md) (providers, models, cost and claims
+  supported) and the prompt lab report in [docs/evaluation/prompt-lab/](docs/evaluation/prompt-lab/README.md). No
+  customers, testimonials or press exist. The published sample report is permanent recorded sample data from the eShop
+  demo, labelled "sample run" (DEC-250); pages never invent customers, quotes, prices or numbers.
 
 ## Product Principles
 

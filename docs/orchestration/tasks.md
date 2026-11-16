@@ -9944,7 +9944,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Do**: a capture mode that turns a run's call log (or a recording) into lab cases per prompt id, with the inputs only; build the sets from runs of Asset Manager, Invoice Generator and eShopModernizing (public, their licences cited), marking which cases are held back (at least a third, chosen before any tuning). Each set says its source commit and licence. No answer text from a model is stored as truth; expected facts, where a check needs them, are written by hand from the code (DEC-57).
 - **Delivers**: the capture mode, case sets for every live prompt id (`lab/cases/`), tests, the set format in the runbook.
 - **Done when**: every live prompt id has a case set with held-back cases; CI green.
-- **Refs**: DEC-57, DEC-231; P10-01; GitHub issue #1380
+- **Refs**: RF-1401, RF-1404, RF-1405, DEC-57, DEC-231; P10-01; GitHub issue #1380
 
 ### P10-03 - The judge: rubrics per prompt family and a check of the judge
 
@@ -9972,7 +9972,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Do**: run every live prompt's current version on its tuning cases on Haiku (all cases), Sonnet (half) and Opus (a quarter), with the judge; report per prompt and model the metrics of DEC-231 and the worst cases with a short reason. Rank the prompts by cost share times failure and propose the order and budget slices of P10-05..P10-10 (adjusting the defaults below within the $50).
 - **Delivers**: `docs/evaluation/prompt-lab/baseline.md`, the ranked list.
 - **Done when**: the baseline is written and the ledger shows its spend. Budget slice: $6.
-- **Refs**: DEC-231; P10-01..P10-03; GitHub issue #1382
+- **Refs**: RF-1403, RF-1409, DEC-231; P10-01..P10-03; GitHub issue #1382
 
 ### P10-05 - Tune the reader prompts
 
@@ -9986,7 +9986,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Do**: iterate in rounds on Haiku (try, score, read the failing cases, change one thing, score again), then check the kept version on Sonnet and Opus; keep a version only under the rule of DEC-231; record each round (what changed, why, the figures) in `docs/evaluation/prompt-lab/reader.md`. Land each kept prompt as a new version with its tests and recordings.
 - **Delivers**: new reader prompt versions, the round log, tests and recordings.
 - **Done when**: every reader prompt has been through at least three Haiku rounds and each kept version beats its baseline on the held-back cases; CI green. Budget slice: $9.
-- **Refs**: DEC-231; P10-04; GitHub issue #1383
+- **Refs**: RF-1410, DEC-231; P10-04; GitHub issue #1383
 
 ### P10-06 - Tune the verifier and summariser prompts
 
@@ -10084,7 +10084,7 @@ A prompt version is kept only when it beats the current version on the held-back
 - **Do**: choose where the cap lives (prompt, code or both) and its number of lines from the P10-11 figures (Asset Manager's call after the reads at most +15% against 2026-11-09, with a margin), with the arithmetic written down; a cap in code gets its requirement first (SDD, a red `test:` commit, then the code). Measure it in the lab on the `reader-read-more` set with the RF-1410 grading (Haiku first, matched held-back runs, never pooled; Sonnet for no regression if the budget allows) under DEC-231, DEC-235, DEC-237 and DEC-238. Confirm on the `rosetta-p10` stack rebuilt from the branch: Asset Manager (approved at $4.00) and Invoice Generator end to end on Haiku with the estimates and approvals of P10-11, read-more figures per app against 2026-11-09 and P10-11; eShop only if the lab shows the cap could hurt it and the budget allows. Leave the stack running on the branch's build.
 - **Delivers**: the cap (code, prompt or both), its requirement if in code, `docs/evaluation/prompt-lab/read-more-cap.md` linked from `reader.md`.
 - **Done when**: the cap is measured in the lab and on the two journeys and the write-up says, under the keep rules, whether it is kept; if it cannot meet +15% without losing the RF-1410 gain, the choice is set out for the owner. Budget slice: $1.50 (model calls, lab and stack together; stop at $1.30), raised by the owner to $4.50 on 2026-11-15 (stop at $3.80) to run eShop too.
-- **Refs**: DEC-239; DEC-235, DEC-238; P10-05, P10-11; GitHub issue #1390
+- **Refs**: RF-1414, DEC-239; DEC-235, DEC-238; P10-05, P10-11; GitHub issue #1390
 
 ### P10-14 - Keep every cited behaviour in a task card
 

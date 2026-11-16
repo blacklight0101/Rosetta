@@ -9,9 +9,9 @@ Instructions for any coding agent working on Rosetta (Codex, Claude or another t
 
 Rules worth repeating:
 
-- Never push to or force-push `main`, and never skip git hooks (`--no-verify`).
+- Never push to or force-push `develop` or `main`, and never skip git hooks (`--no-verify`). Everything reaches them through a pull request.
 - Never commit secrets, and nothing from the owner's employer.
-- Never edit `docs/spec`, `docs/adr`, `docs/rfc`, `docs/decision-log.md`, `CLAUDE.md` or this file in a card branch; the owner decides those. An open question goes in your report with the default you applied, keeping today's behaviour on `main`.
+- A card branch may change `docs/spec`, `docs/adr`, `docs/rfc` and `docs/decision-log.md` when its card requires it (DEC-199), but only to record what the card builds or what the owner decided; never `CLAUDE.md` or this file in a card branch. The owner decides those. An open question goes in your report with the default you applied, keeping today's behaviour on `main`.
 - Documents are written in English; identifiers are never renumbered.
 - Commit and pull-request titles follow Conventional Commits (at most 72 characters, lower-case subject); commits end with a `Refs:` line naming the card.
 
