@@ -1,7 +1,7 @@
 # ADR-021: Render the HTML report from Preact components to static HTML
 
 **Date**: 2026-10-17
-**Status**: Proposed
+**Status**: Accepted (2026-11-16, DEC-249)
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context

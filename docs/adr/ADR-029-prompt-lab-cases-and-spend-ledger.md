@@ -1,7 +1,7 @@
 # ADR-029: Describe a prompt lab case by its inputs and keep one append-only spend ledger
 
 **Date**: 2026-11-13
-**Status**: Accepted (2026-11-13, DEC-231)
+**Status**: Amended (accepted 2026-11-13, DEC-231; dated amendments below)
 **Deciders**: Product owner (phase scope, DEC-231); builder P10-01 (design)
 
 ## Context

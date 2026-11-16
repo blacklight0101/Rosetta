@@ -8,7 +8,9 @@ with a dated note. Reference the ADR from commits (`Refs: ADR-004`) and, once co
 the place that implements it.
 
 Status values: `Proposed` (written, not yet accepted), `Accepted`, `Superseded by ADR-nnn`, `Amended` (accepted and
-changed in part by a later decision; see the ADR's Notes).
+changed in part by a later decision; see the ADR's Notes). ADR-021, ADR-022, ADR-023 and ADR-026 were accepted on
+2026-11-16 (DEC-249) because their code is built; ADR-028 stays `Proposed` until its scheduler job is built (cards
+P8-66 to P8-71).
 
 | Id                                                                    | Title                                                                                                                                                                         | Status                | Date       |
 | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------- |
@@ -32,17 +34,17 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-018](ADR-018-planning-brief-and-principle-catalogue.md)          | Drive `plan` from a planning brief and a versioned principle catalogue                                                                                                        | Accepted              | 2026-10-11 |
 | [ADR-019](ADR-019-tarball-extraction-and-ignore-matching.md)          | Extract snapshots with `tar` and match ignore rules with `ignore`                                                                                                             | Accepted              | 2026-10-11 |
 | [ADR-020](ADR-020-host-on-railway-eu-west.md)                         | Host the hosted deployment on Railway in EU West (Amsterdam) (superseded by ADR-024)                                                                                          | Superseded by ADR-024 | 2026-10-11 |
-| [ADR-021](ADR-021-report-rendering-with-preact.md)                    | Render the HTML report from Preact components to static HTML                                                                                                                  | Proposed              | 2026-10-17 |
-| [ADR-022](ADR-022-zip-extraction-with-yauzl.md)                       | Read uploaded zip archives with `yauzl`                                                                                                                                       | Proposed              | 2026-10-19 |
-| [ADR-023](ADR-023-workbook-reading-with-saxes-and-cfb.md)             | Read Excel workbooks with `yauzl`, `saxes` and `cfb`                                                                                                                          | Proposed              | 2026-10-19 |
+| [ADR-021](ADR-021-report-rendering-with-preact.md)                    | Render the HTML report from Preact components to static HTML                                                                                                                  | Accepted              | 2026-10-17 |
+| [ADR-022](ADR-022-zip-extraction-with-yauzl.md)                       | Read uploaded zip archives with `yauzl`                                                                                                                                       | Accepted              | 2026-10-19 |
+| [ADR-023](ADR-023-workbook-reading-with-saxes-and-cfb.md)             | Read Excel workbooks with `yauzl`, `saxes` and `cfb`                                                                                                                          | Accepted              | 2026-10-19 |
 | [ADR-024](ADR-024-host-on-azure-container-apps-spain-central.md)      | Host the hosted deployment on Azure Container Apps in Spain Central (supersedes ADR-020)                                                                                      | Amended               | 2026-10-24 |
 | [ADR-025](ADR-025-develop-branch-staging-and-scheduled-release.md)    | Integrate on develop, deploy it to staging, release main at 06:00 Madrid                                                                                                      | Amended               | 2026-10-27 |
-| [ADR-026](ADR-026-pause-and-ask-near-the-approved-amount.md)          | Pause a run near its approved amount and ask, instead of a hard stop                                                                                                          | Proposed              | 2026-10-29 |
+| [ADR-026](ADR-026-pause-and-ask-near-the-approved-amount.md)          | Pause a run near its approved amount and ask, instead of a hard stop                                                                                                          | Accepted              | 2026-10-29 |
 | [ADR-027](ADR-027-guided-journey-per-project.md)                      | Guide each project through one journey under one approved amount                                                                                                              | Accepted              | 2026-11-01 |
 | [ADR-028](ADR-028-on-time-release-start-from-a-container-apps-job.md) | Start the production release on time from a Container Apps job                                                                                                                | Proposed              | 2026-11-04 |
-| [ADR-029](ADR-029-prompt-lab-cases-and-spend-ledger.md)               | Describe a prompt lab case by its inputs and keep one append-only spend ledger                                                                                                | Accepted              | 2026-11-13 |
+| [ADR-029](ADR-029-prompt-lab-cases-and-spend-ledger.md)               | Describe a prompt lab case by its inputs and keep one append-only spend ledger                                                                                                | Amended               | 2026-11-13 |
 
-**Totals**: 29 in total - Accepted 11, Proposed 5, Amended 12, Superseded 1.
+**Totals**: 29 in total - Accepted 14, Proposed 1, Amended 13, Superseded 1.
 
 ## Relationships
 
@@ -52,7 +54,7 @@ ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does n
 loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-006 (read-only snapshot). ADR-013
 refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. ADR-014 amends ADR-002 and ADR-012 (one container image, no CLI, not loopback-only); ADR-015 and ADR-017 amend ADR-012 (accounts and Fastify replace the URL token and the bare server); ADR-016 applies DEC-37 (PostgreSQL behind adapters). ADR-018 extends ADR-005 (the hand-off package) and runs under ADR-007. ADR-019 adds the two packages ADR-012 (snapshot tarball) and ADR-006 (ignore rules) need. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
 
-ADR-024 supersedes ADR-020 (Railway) and takes its runner-up, Azure Container Apps in Spain Central (DEC-171); it keeps the one-image hosting of ADR-014. ADR-025 extends ADR-024 with a staging app on the same environment, storage account and server, and moves the production deploy to a scheduled release of `main` (DEC-175). ADR-026 (Proposed) extends ADR-007: near the amount the user approved, a run pauses and asks instead of stopping at a hard cap (DEC-196, DEC-197). ADR-007 carries a dated note of 2026-11-01 for the pause as card P7-05 builds it. ADR-027 (Accepted) builds on ADR-026: one approved amount for the whole journey of a project, the steps chained under it and offered in place (DEC-204, DEC-205). ADR-028 (Proposed) extends ADR-024 and amends the start of ADR-025: a Container Apps job starts Release at 06:00 Madrid instead of a GitHub schedule, with every check done before that hour (DEC-207).
+ADR-024 supersedes ADR-020 (Railway) and takes its runner-up, Azure Container Apps in Spain Central (DEC-171); it keeps the one-image hosting of ADR-014. ADR-025 extends ADR-024 with a staging app on the same environment, storage account and server, and moves the production deploy to a scheduled release of `main` (DEC-175). ADR-026 (Accepted 2026-11-16, DEC-249) extends ADR-007: near the amount the user approved, a run pauses and asks instead of stopping at a hard cap (DEC-196, DEC-197). ADR-007 carries a dated note of 2026-11-01 for the pause as card P7-05 builds it. ADR-027 (Accepted) builds on ADR-026: one approved amount for the whole journey of a project, the steps chained under it and offered in place (DEC-204, DEC-205). ADR-028 (Proposed) extends ADR-024 and amends the start of ADR-025: a Container Apps job starts Release at 06:00 Madrid instead of a GitHub schedule, with every check done before that hour (DEC-207).
 
 ## Deferred decisions (write the ADR when the trigger fires)
 
@@ -62,5 +64,5 @@ ADR-024 supersedes ADR-020 (Railway) and takes its runner-up, Azure Container Ap
 | OpenTelemetry (OTLP) exporter for traces                    | a user asks to send traces to their own collector (R2); field names already follow the GenAI conventions (DEC-57) |
 | Development container for contributors                      | a second regular contributor joins (DEC-58; the runtime image of ADR-014 is not a development environment)        |
 | Self sign-up, e-mail password reset or multi-factor sign-in | the owner opens Rosetta beyond invited users                                                                      |
-| npm publishing and package name                             | Q-07 and Q-08 answered                                                                                            |
+| npm publishing and package name                             | Moot: Q-08 is Withdrawn (DEC-59, DEC-61), Rosetta ships as a container image and no package is published          |
 | Move to TypeScript 7                                        | typescript-eslint supports TypeScript 7.x (expected with TypeScript 7.1)                                          |
