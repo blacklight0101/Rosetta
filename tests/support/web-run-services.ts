@@ -276,7 +276,7 @@ export function runServices(
     continueRun: continueRunOf(runs, clock, stores),
     resumeRun: new ResumeRun({
       ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
-      ...{ roleKeys, problem: () => Promise.resolve(undefined) },
+      ...{ roleKeys, problem: () => Promise.resolve(undefined), ...journeysOf(stores) },
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),

@@ -16,6 +16,7 @@ import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { Result } from '../../src/domain/errors/result.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
+import { journeysOf, type JourneyGiven } from './continue-run-of.js';
 import { MemoryBriefStore } from './memory-brief-store.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { scanResultsOf, type Stores } from './understand-run-services.js';
@@ -83,7 +84,7 @@ export function submitOf(s: Stores, queue: RunQueue): SubmitRun {
 }
 
 /** Resumes ended runs as the API does and waits for their end. */
-export function resumerOf(s: Stores, queue: RunQueue): Resumer {
+export function resumerOf(s: Stores, queue: RunQueue, given: JourneyGiven = {}): Resumer {
   const resumeRun = new ResumeRun({
     roleKeys: ALL_KEYS_SERVED,
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
@@ -91,6 +92,7 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
       ...{ runs: s.runs, scans: scanResultsOf(s) },
       taskResults: new FileTaskResults({ writer: s.writer, masker: s.masker }),
     }),
+    ...journeysOf(given),
   });
   const ended = waitUntilEnded(s);
   return async (run, overviewOnly = false) => {
@@ -106,12 +108,10 @@ export function resumerOf(s: Stores, queue: RunQueue): Resumer {
 export type Continuer = (run: Run) => Promise<Result<Run, string>>;
 
 /** RF-432: answers Continue (+N) of a paused run as the API does and waits for it to stop again. */
-export function continuerOf(s: Stores, queue: RunQueue): Continuer {
+export function continuerOf(s: Stores, queue: RunQueue, given: JourneyGiven = {}): Continuer {
   const continueRun = new ContinueRun({
-    runs: s.runs,
-    manifests: s.manifests,
-    queue,
-    clock: s.clock,
+    ...{ runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
+    ...journeysOf(given),
   });
   const ended = waitUntilEnded(s);
   return async (run) => {
