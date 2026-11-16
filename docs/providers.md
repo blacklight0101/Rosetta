@@ -524,10 +524,22 @@ The back-off is the same as Ollama's (section 2.4).
 
 ### 4.5 Tested models
 
-None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds every Anthropic
-model available on the Claude API (section 3.5), so a role on Anthropic is priced on a server key; a model not in it is refused
-with `RST-1601` unless the project settings add a price for it, cache-write price included, or turn on `allowUnpriced`
-for the user's own key (RF-427).
+The owner's live check (`npm run live:anthropic`, gate G-04) has no output recorded here. Anthropic models have been
+run in other work, and the evidence is this:
+
+| Model                            | Where                                                                                                                         | Date                 | What it shows                                                                                                                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Haiku 5.5 (`claude-haiku-5-5`)   | the Haiku battery: every role on Haiku 5.5, over the Asset Manager, Loan and Invoice workbooks and eShopModernizing           | 2026-10-23           | full understand and plan runs; findings HB-01 (library areas read before own code, with HB-10) led to [P3-123](orchestration/tasks.md), HB-03 to DEC-168                        |
+| Haiku 5.5                        | the prompt lab baseline ([baseline.md](evaluation/prompt-lab/baseline.md)); tuning rounds                                     | 2026-11-13           | every tune case of every committed set, with the judge on a sample                                                                                                              |
+| Haiku 5.5                        | the end-to-end check on the `rosetta-p10` stack ([end-to-end.md](evaluation/prompt-lab/end-to-end.md), P10-11)                | 2026-11-14           | three apps through the whole journey: $2.35 against $2.65 on 2026-11-09, about the same coverage, no failed agent task, no HTTP 500                                             |
+| Sonnet 5.5 (`claude-sonnet-5-5`) | the prompt lab baseline and the held-back checks of the kept versions ([README.md](evaluation/prompt-lab/README.md))          | 2026-11-13 and after | a sample only (about two fifths of the tune cases, 1 to 4 per set), so its baseline figures are indicative; `verifier/claim.v6` retried 10% to 3% of answers on held-back cases |
+| Opus 5.5 (`claude-opus-5-5`)     | the prompt lab baseline and held-back checks; the judge of the lab ([judge-sample.md](evaluation/prompt-lab/judge-sample.md)) | 2026-11-13 and after | a sample only (about a quarter of the tune cases); as the judge it scored the 12 calibration claims and the 18 hand-scored samples                                              |
+
+What this does not show: Sonnet 5.5 and Opus 5.5 have not run a whole journey, and no table of agreement and cost per
+model, like the Ollama one in section 2.6, exists for the reader, verifier, summariser and planner roles on Anthropic. The
+price table `prices/default-prices.yaml` holds every Anthropic model available on the Claude API (section 3.5), so a role
+on Anthropic is priced on a server key; a model not in it is refused with `RST-1601` unless the project settings add a
+price for it, cache-write price included, or turn on `allowUnpriced` for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 
