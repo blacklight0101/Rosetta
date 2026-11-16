@@ -90,11 +90,24 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 - Wrap with `cause` when rethrowing; never swallow an error in an empty `catch`. **(tool: `no-empty`)**
 - The HTTP layer maps every error to an HTTP status (RF-007) and returns `RST-xxxx`, a plain message and the next
   step; stack traces only in the `debug` log, never in a response. Authentication and authorization failures never
-  say whether the user or the resource exists. The status of each code with an HTTP cause is listed in
-  `src/presentation/web/error-mapper.ts` (RST-2000..2006 for 400, 401, 403, 404, 409, 429 and 500; RST-2007,
-  RST-2008 and RST-2212 for 403, RST-2201 for 401; the account rules RST-2202..2204, RST-2206, RST-2207, RST-2211 and
-  RST-2214 for 400; RST-2205, RST-2208, RST-2213, RST-2306 (a run, project or snapshot in use cannot be deleted) and RST-2307 (a run that cannot be resumed) and RST-2308 (a run that cannot be deepened) for 409; RST-2309, a Deepen without the owner's confirmation, for 400; RST-2310, a start whose approved figure no longer matches the server's estimate (RF-432), and RST-2311, a step started when nothing is left of the journey's approved amount (RF-435) or a Continue the journey can take none of (RF-432), or Plan setup's options call under a used-up journey (RF-435; its words name Analyse again on the start page, P9-02), for 409; the key rules RST-2301 and RST-2304 for 400; RST-1515, a cloud run without consent, and RST-1521, an uploaded project's cloud run without the private-code confirmation, for 400; RST-1007, a settings save that started from an older version, for 409); any other code
-  answers 500, and the body carries the catalogue message and next step, never the error's own message.
+  say whether the user or the resource exists. The status of each code with an HTTP cause is the table `statusOfCode` in
+  `src/presentation/web/error-mapper.ts`, which is canonical; the codes by status are:
+  400: RST-2000, RST-1900, RST-1901, RST-1005, the account rules RST-2202..2204, RST-2206, RST-2207, RST-2211 and
+  RST-2214, the key rules RST-2301 and RST-2304, RST-1515 (a cloud run without consent), RST-1521 (an uploaded
+  project's cloud run without the private-code confirmation), RST-1307, RST-2309 (a Deepen without the owner's
+  confirmation), the zip rules RST-1909..RST-1915, the workbook rules RST-1921..RST-1928 and RST-1931, and RST-1930;
+  401: RST-2001 and RST-2201; 403: RST-2002, RST-2007, RST-2008 and RST-2212; 404: RST-2003; 408: RST-1918 (an upload
+  that took too long); 409: RST-2004, RST-1007 (a settings save that started from an older version), RST-2205,
+  RST-2208, RST-2213, RST-2305, RST-2306 (a run, project or snapshot in use cannot be deleted), RST-2307 (a run that
+  cannot be resumed), RST-2308 (a run that cannot be deepened), RST-2310 (a start whose approved figure no longer
+  matches the server's estimate, RF-432), RST-2311 (a step started when nothing is left of the journey's approved
+  amount, RF-435, or a Continue the journey can take none of, RF-432, or Plan setup's options call under a used-up
+  journey, RF-435; its words name Analyse again on the start page, P9-02), RST-1919, RST-1920, RST-1203, RST-1801,
+  RST-1802, RST-2302, RST-1517, RST-1601, RST-1523, RST-1600 and RST-1700; 413: RST-1916 (an upload over the limit);
+  429: RST-2005; 502: RST-1506 and RST-1800 (a planner that failed or answered badly in Plan setup, RF-608); 507:
+  RST-1917 (no free space for an upload). A client error that Fastify or a plugin raises without a code is mapped by
+  its status (401, 403, 404, 409 and 429 to their codes, any other 4xx to RST-2000), and a CSRF plugin error is
+  RST-2008. Any other code, RST-2006 included, answers 500, and the body carries the catalogue message and next step, never the error's own message.
 
 **Error-code catalogue** (canonical; a new code gets the next free number in its range). Individual codes live in one
 registry, `src/domain/errors/codes.ts`, one code per line, so two parallel pull requests that take the same number

@@ -27,7 +27,7 @@ export async function rolesWithoutKey(
   for (const role of roles) {
     const name = project.settings.roles[role].provider;
     const config = Object.hasOwn(providers, name) ? providers[name] : undefined;
-    // A provider the settings do not name is refused by the run itself (RST-0402), not here.
+    // A provider the settings do not name is refused by the run itself (RST-1001), not here.
     if (config === undefined) continue;
     const source = await deps.keys.keySourceOf({
       userId: project.userId,
