@@ -23,7 +23,7 @@ const changed = projectOf('p-9', 'OrderDesk', {
 });
 
 function rowOf(text: string): HTMLElement {
-  const row = screen.getByRole('link', { name: text, exact: true }).closest('tr');
+  const row = screen.getByRole('link', { name: text }).closest('tr');
   if (row === null) throw new Error(`No row for ${text}.`);
   return row;
 }
@@ -34,7 +34,7 @@ it('RF-128 the list shows an upload under its name with a Zip badge, and a GitHu
     'GET /api/projects/overview': overview(withSource, github),
   });
 
-  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
+  await screen.findByRole('link', { name: 'OrderDesk' });
   const zipRow = rowOf('OrderDesk');
   expect(within(zipRow).getByText('Zip')).not.toBeNull();
   expect(within(zipRow).queryByText('default branch')).toBeNull();
@@ -49,7 +49,7 @@ it('RF-128 the list says the code changed since the last run, for an upload only
     'GET /api/projects/overview': overview(changed, projectOf('p-1', 'octo/demo')),
   });
 
-  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
+  await screen.findByRole('link', { name: 'OrderDesk' });
 
   expect(within(rowOf('OrderDesk')).getByText(/code changed since the last run/iu)).not.toBeNull();
   expect(within(rowOf('octo/demo')).queryByText(/code changed/iu)).toBeNull();
@@ -63,7 +63,7 @@ it('RF-128 an upload with no source is listed as needing a zip', async () => {
     }),
   });
 
-  await screen.findByRole('link', { name: 'OrderDesk', exact: true });
+  await screen.findByRole('link', { name: 'OrderDesk' });
   const row = rowOf('OrderDesk');
 
   expect(within(row).getByText(/Upload a zip to start/u)).not.toBeNull();

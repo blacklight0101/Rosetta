@@ -42,7 +42,7 @@ const lastRunCell = (row: HTMLElement): string =>
   row.querySelector('td[data-label="Last run"]')?.textContent ?? '';
 
 async function rowOf(name: string): Promise<HTMLElement> {
-  const link = await screen.findByRole('link', { name, exact: true });
+  const link = await screen.findByRole('link', { name });
   const row = link.closest('tr');
   if (row === null) throw new Error(`No row for ${name}.`);
   return row;
@@ -61,9 +61,9 @@ it('RF-010 the name of a project is the link to its page, with no source suffix'
 
   const row = await rowOf('Asset Manager');
 
-  expect(
-    within(row).getByRole('link', { name: 'Asset Manager', exact: true }).getAttribute('href'),
-  ).toBe('/projects/p-2');
+  expect(within(row).getByRole('link', { name: 'Asset Manager' }).getAttribute('href')).toBe(
+    '/projects/p-2',
+  );
   expect(row.textContent).not.toContain('(zip');
   expect(screen.queryByText(/\(Excel,/u)).toBeNull();
   expect(document.querySelector('.rst-mono.rst-zip__file')).toBeNull();
@@ -74,7 +74,7 @@ it('RF-010 the source of each project is a badge in its own Source column', asyn
     [overviewPath]: rows([overviewRow(github), overviewRow(zip), overviewRow(sheets)]),
   });
 
-  await screen.findByRole('link', { name: 'octo/webforms', exact: true });
+  await screen.findByRole('link', { name: 'octo/webforms' });
 
   expect(screen.getAllByRole('columnheader').map((cell) => cell.textContent)).toContain('Source');
   for (const [name, source] of [
@@ -155,7 +155,7 @@ it('RF-1012 Delete project in the row menu asks the confirmation, then removes t
     ).toBe(true);
   });
   await waitFor(() => {
-    expect(screen.queryByRole('link', { name: 'octo/webforms', exact: true })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'octo/webforms' })).toBeNull();
   });
 });
 

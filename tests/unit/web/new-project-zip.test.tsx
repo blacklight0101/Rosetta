@@ -178,7 +178,7 @@ it('RF-128 the new project appears in the list under its name, with the Zip badg
   stored = true;
   server.pending().respond(201, summaryBody);
 
-  const row = (await screen.findByRole('link', { name: 'OrderDesk', exact: true })).closest('tr');
+  const row = (await screen.findByRole('link', { name: 'OrderDesk' })).closest('tr');
   expect(row).not.toBeNull();
   expect(within(row ?? document.body).queryByText(/github/iu)).toBeNull();
 });

@@ -242,7 +242,7 @@ it('RF-150 the new project appears in the list under its name, with the Excel wo
   stored = true;
   await answerFile(server, 3);
 
-  const row = (await screen.findByRole('link', { name: 'Pricing', exact: true })).closest('tr');
+  const row = (await screen.findByRole('link', { name: 'Pricing' })).closest('tr');
   expect(row).not.toBeNull();
   expect(within(row ?? document.body).queryByText(/github/iu)).toBeNull();
 });
