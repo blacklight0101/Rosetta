@@ -49,12 +49,12 @@ it('RF-010 Rename opens a dialog whose Project name field holds the current name
   fireEvent.input(field, { target: { value: 'Order Desk' } });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Rename' }));
 
-  await screen.findByRole('link', { name: 'Order Desk', exact: true });
+  await screen.findByRole('link', { name: 'Order Desk' });
   expect(screen.queryByRole('dialog')).toBeNull();
   const put = calls.find((call) => call.method === 'PUT');
   expect(put).toMatchObject({ path: '/api/projects/p-1/name', body: { name: 'Order Desk' } });
   expect(put?.csrf).not.toBeNull();
-  expect(screen.queryByRole('link', { name: 'octo/webforms', exact: true })).toBeNull();
+  expect(screen.queryByRole('link', { name: 'octo/webforms' })).toBeNull();
 });
 
 it('RF-010 Enter in the Project name field saves the new name', async () => {
@@ -88,7 +88,7 @@ it('RF-010 a refused name is shown next to the field with its code, and the dial
   expect(error.textContent).toContain('RST-2000');
   expect(field.getAttribute('aria-invalid')).toBe('true');
   expect(screen.getByRole('dialog', { name: 'Rename project octo/webforms' })).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'octo/webforms', exact: true })).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'octo/webforms' })).toBeTruthy();
 });
 
 it.each([
