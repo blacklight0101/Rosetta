@@ -311,8 +311,12 @@ action and only `contents: read` and `actions: write`.
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
-packages and GitHub Actions weekly, grouped by minor and patch, with a 14-day cooldown so it proposes only
-versions that are two weeks old (DEC-125); a release that fixes a security advisory is adopted at once (DEC-169).
+packages, GitHub Actions and the Dockerfile base image weekly, with a 14-day cooldown so it proposes only
+versions that are two weeks old (DEC-125); a release that fixes a security advisory is adopted at once (DEC-169), and the
+cooldown does not delay Dependabot security updates, which come grouped in one pull request. Minor and patch updates of
+npm runtime packages and of npm development packages are grouped apart, so a development tool that fails CI never holds
+back a runtime fix; a version that fails our checks is held with an `ignore` entry that names its tracking issue, and
+the Node image stays on major 24 (DEC-252).
 
 ## 7. Package and tool baseline
 

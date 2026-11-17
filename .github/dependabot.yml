@@ -1,7 +1,9 @@
-# Weekly updates for npm packages and GitHub Actions, minor and patch grouped (DEC-42).
+# Weekly updates for npm packages, GitHub Actions and the Dockerfile base image (DEC-42, DEC-252).
 # Commit messages use a lower-case Conventional Commits prefix so pull request titles pass commitlint
-# (the pr-title check): "build(deps): bump ..." for npm and "ci(deps): bump ..." for actions.
+# (the pr-title check): "build(deps): bump ..." for npm runtime packages, "build(deps-dev): bump ..." for
+# npm development packages and "ci(deps): bump ..." for actions.
 # A version is proposed only once it is two weeks old (DEC-125), through the cooldown of each entry.
+# The cooldown does not delay security updates, so a fix for an advisory is proposed at once (DEC-169).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -23,11 +25,31 @@ updates:
         versions: ['>=25.0.0']
       # The Anthropic SDK stays on the exact pin chosen for P2-09; card P2-17 moves it by hand (DEC-125).
       - dependency-name: '@anthropic-ai/sdk'
+      # Held until the code they flag is fixed (#1434, DEC-252): 8.72 reports six deprecated options
+      # as errors, and axe-core 4.14 reports label-content-name-mismatch on the code map and transcript links.
+      # Remove each entry in the change that fixes its findings.
+      - dependency-name: typescript-eslint
+        versions: ['>=8.72.0']
+      - dependency-name: '@axe-core/playwright'
+        versions: ['>=4.14.0']
     groups:
-      npm-minor-and-patch:
+      # Runtime and development packages are grouped apart, so a development tool that fails CI
+      # never holds back a runtime fix (DEC-252). Major versions still arrive one pull request each.
+      npm-runtime:
+        dependency-type: production
         update-types:
           - minor
           - patch
+      npm-development:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      # Security updates for npm come as one pull request (DEC-169).
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -52,3 +74,7 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    ignore:
+      # The image follows the Node runtime major in .nvmrc and package.json engines (24, ">=24.11.0 <25").
+      - dependency-name: node
+        versions: ['>=25']
