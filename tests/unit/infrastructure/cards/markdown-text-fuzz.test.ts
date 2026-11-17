@@ -105,6 +105,9 @@ describe('markdownEscaper fuzz', () => {
     const live = hostile.filter(([, text]) => problem('paragraph', renderMarkdown(text)));
     const names = live.map(([name]) => name);
 
+    // 'a glued www host' is not in this list: marked 18.1.3 starts a GFM www autolink only at a
+    // word boundary (markedjs/marked#4166), as GitHub does, so the raw text no longer links. The
+    // escaper still covers it: the escaped check below runs the whole table, that row included.
     expect(names).toEqual(
       expect.arrayContaining([
         'a script tag',
@@ -113,7 +116,6 @@ describe('markdownEscaper fuzz', () => {
         'an autolink',
         'a bare URL',
         'a glued http URL',
-        'a glued www host',
       ]),
     );
     const escaped = hostile.filter(([, text]) =>
